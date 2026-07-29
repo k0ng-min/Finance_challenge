@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.venv/
+backend/data/*.db
+node_modules/
+frontend/dist/
+.env
+
+# 원본 약관 PDF와 그 전체 텍스트 추출본은 재배포하지 않는다(docs/compliance/source_register.md 참조).
+# 형광펜 근거로 인용하는 조항 발췌는 backend/app/seed_*.py 에만 코드로 남긴다.
+data/raw_pdfs/
+data/processed/
+
+.claude/settings.local.json
