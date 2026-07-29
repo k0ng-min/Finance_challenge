@@ -1,6 +1,7 @@
 :root {
   --cream: #fbeedd;
   --cream-deep: #f6dfc4;
+  --tan: #e8c896; /* 아이콘 배지 전용 — cream-deep보다 진해서 3D 음영 대비가 확실히 산다 */
   --ivory: #fffaf3;
   --card-bg: #ffffff;
   --border: #f1e2cc;
@@ -114,14 +115,15 @@ body {
 .home-card__text span { font-size: 0.8rem; color: var(--muted); }
 .home-card__arrow { font-size: 1.4rem; color: var(--orange); font-weight: 700; }
 
-/* --- 스텝 위저드 --- */
+/* --- 스텝 위저드 (세로 중앙 정렬 — 콘텐츠가 위에 쏠리지 않게) --- */
 .step {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 10px 4px 20px;
-  min-height: calc(100svh - 200px);
+  padding: 24px 4px 20px;
+  min-height: min(560px, calc(100svh - 160px));
 }
 .step__icon-wrap { position: relative; margin-bottom: 14px; }
 .step__icon-glow {
@@ -157,7 +159,7 @@ body {
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.2s; }
 .dot--active { width: 22px; background: var(--orange); }
 
-.step__actions { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-top: auto; }
+.step__actions { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-top: 28px; }
 .step__back { flex: 0 0 auto; }
 .step__next { flex: 1; }
 
@@ -442,7 +444,74 @@ button { cursor: pointer; font-family: inherit; }
   isolation: isolate;
   flex-shrink: 0;
 }
-.icon3d__img { width: 82%; height: 82%; object-fit: contain; mix-blend-mode: multiply; }
+.icon3d__img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+  filter: drop-shadow(0 3px 5px rgba(90, 55, 20, 0.28));
+}
+
+/* --- 로딩 화면 --- */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 60vh;
+  text-align: center;
+}
+.loading-state p { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+
+/* --- 보험사 선택 그리드 (앱스토어 아이콘 느낌) --- */
+.insurer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+.insurer-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 4px 12px;
+  font-family: inherit;
+  box-shadow: 0 4px 12px rgba(196, 138, 82, 0.1);
+}
+.insurer-card--active { box-shadow: 0 0 0 3px var(--orange), 0 6px 16px rgba(217, 116, 56, 0.25); }
+.insurer-card--active::after {
+  content: "✓";
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--orange);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+.insurer-card__logo {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 24%;
+  display: block;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+.insurer-card__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.insurer-card__name { font-size: 0.7rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.3; }
 
 @media (min-width: 600px) {
   .app-main { max-width: 720px; padding: 0 24px 60px; }

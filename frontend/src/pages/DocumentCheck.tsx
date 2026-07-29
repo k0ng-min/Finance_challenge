@@ -5,6 +5,7 @@ import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 import { NextStepCard } from "../components/NextStepCard";
+import { ErrorState } from "../components/ErrorState";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
@@ -78,7 +79,10 @@ export function DocumentCheck() {
         title={"필요한 서류,\n빠짐없이 챙기세요"}
         subtitle="현지에서만 발급 가능한 서류는 귀국 전에 꼭 챙기세요."
       />
-      {error && <div className="error-box">{error}</div>}
+      {error && !checklist && (
+        <ErrorState code="502" title="서류 목록을 불러오지 못했어요" message={error} actionLabel="다시 시도" onAction={load} />
+      )}
+      {error && checklist && <div className="error-box">{error}</div>}
       {loading && !checklist && <p className="muted">불러오는 중...</p>}
 
       {checklist?.validation_results.map((v) => (

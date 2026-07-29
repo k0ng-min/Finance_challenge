@@ -4,6 +4,7 @@ import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { Icon3D } from "../components/Icon3D";
+import { InsurerPicker } from "../components/InsurerPicker";
 import { motion } from "framer-motion";
 
 interface CoverageDraft {
@@ -81,11 +82,8 @@ export function MyPolicies() {
         title: "어느 보험사에\n가입하셨나요?",
         content: (
           <>
-            <label>
-              보험사명
-              <input value={insurerName} onChange={(e) => setInsurerName(e.target.value)} placeholder="예: 삼성화재" autoFocus />
-            </label>
-            <label>
+            <InsurerPicker value={insurerName} onChange={setInsurerName} />
+            <label style={{ marginTop: 16 }}>
               상품명
               <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="예: 해외여행보험" />
             </label>
@@ -205,7 +203,7 @@ export function MyPolicies() {
 
       {policies.length === 0 && (
         <div className="empty-state">
-          <Icon3D src="wallet" size={72} bg="var(--cream-deep)" rounded="34%" />
+          <Icon3D src="wallet" size={72} bg="var(--tan)" rounded="34%" />
           <p className="muted">아직 등록된 보험이 없습니다.</p>
         </div>
       )}

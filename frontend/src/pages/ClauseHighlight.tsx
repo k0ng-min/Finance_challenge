@@ -35,7 +35,7 @@ export function ClauseHighlight() {
       <div className="page">
         <TopBar title="약관 형광펜" />
         <div className="empty-state">
-          <Icon3D src="star" size={72} bg="var(--cream-deep)" rounded="34%" />
+          <Icon3D src="star" size={72} bg="var(--tan)" rounded="34%" />
           <p className="muted">
             "내 여행 준비"에서 보장 추천을 받거나 "사고가 발생했어요"에서 사고를 분석하면, 그 근거가 된
             실제 약관 조항이 여기 색상별로 모입니다.
@@ -57,7 +57,7 @@ export function ClauseHighlight() {
       <TopBar title="약관 형광펜" />
       <PageHero
         icon="notebook"
-        iconBg="var(--cream-deep)"
+        iconBg="var(--tan)"
         eyebrow="CLAUSE HIGHLIGHT"
         title={"근거가 되는 약관,\n색깔로 한눈에"}
         subtitle="추천·경고의 근거가 된 실제 약관 원문입니다. 요약이 아니라 원문 그대로예요."

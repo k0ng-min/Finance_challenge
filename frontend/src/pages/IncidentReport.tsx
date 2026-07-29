@@ -10,7 +10,7 @@ const QUESTION_ICON: Record<string, { icon: string; bg: string }> = {
   diagnosis: { icon: "file-text", bg: "var(--mint-soft)" },
   hospitalized: { icon: "bell", bg: "var(--yellow-soft)" },
   surgery: { icon: "shield", bg: "var(--orange-soft)" },
-  local_treatment: { icon: "map-pin", bg: "var(--cream-deep)" },
+  local_treatment: { icon: "map-pin", bg: "var(--tan)" },
   medical_cost: { icon: "wallet", bg: "var(--orange-soft)" },
   returned_home: { icon: "flag", bg: "var(--mint-soft)" },
 };

@@ -5,6 +5,7 @@ import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { ResultTabs } from "../components/ResultTabs";
 import { NextStepCard } from "../components/NextStepCard";
+import { COUNTRIES } from "../data/countries";
 
 const LS_RESULT = "travel_ai_trip_result";
 const STEP_COUNT = 5;
@@ -93,7 +94,7 @@ export function TripPrep() {
 
   const steps = [
     {
-      icon: "flag", iconBg: "var(--cream-deep)",
+      icon: "flag", iconBg: "var(--tan)",
       eyebrow: "STEP 1 · 목적지",
       title: "어디로 떠나시나요?",
       subtitle: "목적지와 함께할 사람을 알려주세요.",
@@ -101,7 +102,16 @@ export function TripPrep() {
         <>
           <label>
             목적지 국가
-            <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="예: 스위스" autoFocus />
+            <input
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              placeholder="입력하면 국가 목록이 나와요"
+              list="country-list"
+              autoFocus
+            />
+            <datalist id="country-list">
+              {COUNTRIES.map((c) => <option key={c} value={c} />)}
+            </datalist>
           </label>
           <label>
             동반자 유형

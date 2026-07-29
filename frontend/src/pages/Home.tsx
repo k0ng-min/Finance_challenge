@@ -3,12 +3,12 @@ import { motion } from "framer-motion";
 import { Icon3D } from "../components/Icon3D";
 
 const CARDS = [
-  { to: "/trip", icon: "suitcase", bg: "var(--cream-deep)", title: "내 여행 준비", desc: "여행 정보로 딱 맞는 보장을 찾아드려요" },
+  { to: "/trip", icon: "suitcase", bg: "var(--tan)", title: "내 여행 준비", desc: "여행 정보로 딱 맞는 보장을 찾아드려요" },
   { to: "/policies", icon: "umbrella", bg: "var(--orange-soft)", title: "내 보험 보관함", desc: "가입한 보험을 한 곳에 안전하게" },
   { to: "/incident", icon: "chat-bubble", bg: "var(--yellow-soft)", title: "사고가 발생했어요", desc: "당황하지 마세요, 하나씩 도와드릴게요" },
   { to: "/checklist", icon: "file-text", bg: "var(--mint-soft)", title: "서류 체크", desc: "필요한 서류를 빠짐없이" },
   { to: "/mistakes", icon: "shield", bg: "var(--orange-soft)", title: "실수 방지 점검", desc: "놓친 건 없는지 한 번 더" },
-  { to: "/highlights", icon: "notebook", bg: "var(--cream-deep)", title: "약관 형광펜", desc: "근거가 되는 약관을 색깔로" },
+  { to: "/highlights", icon: "notebook", bg: "var(--tan)", title: "약관 형광펜", desc: "근거가 되는 약관을 색깔로" },
 ];
 
 export function Home() {

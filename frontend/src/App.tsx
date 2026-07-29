@@ -6,6 +6,8 @@ import { IncidentReport } from "./pages/IncidentReport";
 import { DocumentCheck } from "./pages/DocumentCheck";
 import { MistakeCheck } from "./pages/MistakeCheck";
 import { ClauseHighlight } from "./pages/ClauseHighlight";
+import { NotFound } from "./pages/NotFound";
+import { LoadingState } from "./components/LoadingState";
 import { useApp } from "./context/AppContext";
 
 function App() {
@@ -17,7 +19,9 @@ function App() {
     <div className={`app-shell${isHome ? " app-shell--home" : ""}`}>
       <main className="app-main">
         {loading ? (
-          <div className="page">불러오는 중...</div>
+          <div className="page">
+            <LoadingState label="여행자보험 AI를 준비하고 있어요..." />
+          </div>
         ) : (
           <Routes>
             <Route path="/" element={<Home />} />
@@ -27,6 +31,7 @@ function App() {
             <Route path="/checklist" element={<DocumentCheck />} />
             <Route path="/mistakes" element={<MistakeCheck />} />
             <Route path="/highlights" element={<ClauseHighlight />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         )}
       </main>

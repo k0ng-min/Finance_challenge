@@ -76,7 +76,7 @@ export function MistakeCheck() {
       <NextStepCard
         to="/highlights"
         icon="notebook"
-        iconBg="var(--cream-deep)"
+        iconBg="var(--tan)"
         label="다음 단계"
         title="근거 약관 확인하러 가기"
       />
