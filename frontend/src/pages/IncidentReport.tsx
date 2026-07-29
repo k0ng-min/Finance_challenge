@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, type IncidentAnalysisOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { FindingCard } from "../components/FindingCard";
+import { PageHero } from "../components/PageHero";
 
 export function IncidentReport() {
   const { userId, incidentId, setIncidentId } = useApp();
@@ -61,11 +62,13 @@ export function IncidentReport() {
 
   return (
     <div className="page">
-      <h1>사고가 발생했어요</h1>
-      <p className="page-desc">
-        사고 상황을 자유롭게 적어주세요. 등록하신 보험을 통합 분석해 청구 검토 대상 담보와 필요 서류를
-        찾아드리고, 부족한 정보는 하나씩 다시 물어봅니다.
-      </p>
+      <PageHero
+        icon="chat-bubble"
+        iconBg="var(--yellow-soft)"
+        eyebrow="INCIDENT"
+        title={"당황하지 마세요,\n하나씩 도와드릴게요"}
+        subtitle="사고 상황을 자유롭게 적어주시면 등록된 보험을 통합 분석해 청구 검토 대상과 필요 서류를 찾아드려요."
+      />
 
       {!analysis && (
         <form className="card form" onSubmit={handleSubmit}>

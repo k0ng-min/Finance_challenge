@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, type ChecklistOut } from "../api";
 import { useApp } from "../context/AppContext";
+import { PageHero } from "../components/PageHero";
+import { Icon3D } from "../components/Icon3D";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
@@ -45,7 +47,10 @@ export function DocumentCheck() {
     return (
       <div className="page">
         <h1>서류 체크</h1>
-        <p className="muted">먼저 "사고가 발생했어요" 메뉴에서 사고를 등록해주세요.</p>
+        <div className="empty-state">
+          <Icon3D src="file-text" size={72} bg="var(--mint-soft)" rounded="34%" />
+          <p className="muted">먼저 "사고가 발생했어요" 메뉴에서 사고를 등록해주세요.</p>
+        </div>
       </div>
     );
   }
@@ -59,11 +64,13 @@ export function DocumentCheck() {
 
   return (
     <div className="page">
-      <h1>서류 체크</h1>
-      <p className="page-desc">
-        현지에서만 발급 가능한 서류는 귀국 전에 꼭 챙기세요. 확보 상태를 표시하면 미확보 서류를 자동으로
-        경고해 드립니다.
-      </p>
+      <PageHero
+        icon="file-text"
+        iconBg="var(--mint-soft)"
+        eyebrow="DOCUMENT CHECK"
+        title={"필요한 서류,\n빠짐없이 챙기세요"}
+        subtitle="현지에서만 발급 가능한 서류는 귀국 전에 꼭 챙기세요. 확보 상태를 표시하면 미확보 서류를 자동으로 경고해 드려요."
+      />
       {error && <div className="error-box">{error}</div>}
       {loading && !checklist && <p className="muted">불러오는 중...</p>}
 

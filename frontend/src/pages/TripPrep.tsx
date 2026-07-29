@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, type RecommendationOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { FindingCard } from "../components/FindingCard";
+import { PageHero } from "../components/PageHero";
 
 const LS_RESULT = "travel_ai_trip_result";
 
@@ -62,11 +63,13 @@ export function TripPrep() {
 
   return (
     <div className="page">
-      <h1>내 여행 준비</h1>
-      <p className="page-desc">
-        여행 정보를 입력하면 위험 프로필을 만들고, 6개 보험사의 실제 약관을 근거로 필요한 보장과
-        가입 전 검토할 상품을 비교해 드립니다.
-      </p>
+      <PageHero
+        icon="suitcase"
+        iconBg="var(--cream-deep)"
+        eyebrow="TRIP PREP"
+        title={"어디로 가든,\n든든한 보장과 함께"}
+        subtitle="여행 정보를 입력하면 6개 보험사의 실제 약관 근거와 함께 맞춤 보장을 한눈에 비교해 드려요."
+      />
 
       <form className="card form" onSubmit={handleSubmit}>
         <div className="form-row">

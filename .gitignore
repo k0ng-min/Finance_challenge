@@ -12,3 +12,10 @@ data/raw_pdfs/
 data/processed/
 
 .claude/settings.local.json
+
+# 헤드리스 브라우저로 디자인 검증할 때 찍은 임시 스크린샷 (앱 에셋 아님)
+.screenshots/
+
+# 디자인 무드보드 참고용 스크린샷 (출처 불명 이미지, 재배포 안 함)
+스크린샷 *.png
+mainpage*.png

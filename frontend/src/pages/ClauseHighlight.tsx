@@ -3,6 +3,8 @@ import { api, type ClauseOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { ClauseCard } from "../components/ClauseCard";
 import { HIGHLIGHT_COLORS } from "../colors";
+import { PageHero } from "../components/PageHero";
+import { Icon3D } from "../components/Icon3D";
 
 const ORDER = ["파랑", "초록", "노랑", "빨강", "회색"];
 
@@ -30,10 +32,13 @@ export function ClauseHighlight() {
     return (
       <div className="page">
         <h1>약관 형광펜</h1>
-        <p className="muted">
-          "내 여행 준비"에서 보장 추천을 받거나 "사고가 발생했어요"에서 사고를 분석하면, 그 근거가 된
-          실제 약관 조항이 여기 색상별로 모입니다.
-        </p>
+        <div className="empty-state">
+          <Icon3D src="star" size={72} bg="var(--cream-deep)" rounded="34%" />
+          <p className="muted">
+            "내 여행 준비"에서 보장 추천을 받거나 "사고가 발생했어요"에서 사고를 분석하면, 그 근거가 된
+            실제 약관 조항이 여기 색상별로 모입니다.
+          </p>
+        </div>
       </div>
     );
   }
@@ -46,11 +51,13 @@ export function ClauseHighlight() {
 
   return (
     <div className="page">
-      <h1>약관 형광펜</h1>
-      <p className="page-desc">
-        추천·경고의 근거가 된 실제 약관 원문입니다. 요약이 아니라 원문 그대로이며, 색상은 조항의 성격을
-        나타냅니다.
-      </p>
+      <PageHero
+        icon="notebook"
+        iconBg="var(--cream-deep)"
+        eyebrow="CLAUSE HIGHLIGHT"
+        title={"근거가 되는 약관,\n색깔로 한눈에"}
+        subtitle="추천·경고의 근거가 된 실제 약관 원문입니다. 요약이 아니라 원문 그대로이며, 색상은 조항의 성격을 나타내요."
+      />
       {loading && <p className="muted">불러오는 중...</p>}
 
       <div className="legend">

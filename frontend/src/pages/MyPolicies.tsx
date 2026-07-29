@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, type UserPolicyOut } from "../api";
 import { useApp } from "../context/AppContext";
+import { PageHero } from "../components/PageHero";
+import { Icon3D } from "../components/Icon3D";
 
 interface CoverageDraft {
   raw_name: string;
@@ -62,11 +64,13 @@ export function MyPolicies() {
 
   return (
     <div className="page">
-      <h1>내 보험 보관함</h1>
-      <p className="page-desc">
-        가입한 보험을 등록하면 보험사명·담보명을 KB의 실제 약관과 자동으로 매칭합니다. 매칭된 담보만
-        사고 후 청구 검토 대상이 됩니다 — 가입하지 않은 담보는 추천하지 않습니다.
-      </p>
+      <PageHero
+        icon="umbrella"
+        iconBg="var(--orange-soft)"
+        eyebrow="MY POLICIES"
+        title={"내 보험,\n한 곳에 안전하게"}
+        subtitle="가입한 보험을 등록하면 보험사명·담보명을 실제 약관과 자동으로 매칭해 보관해 드려요."
+      />
 
       <form className="card form" onSubmit={handleSubmit}>
         <div className="form-row">
@@ -132,7 +136,12 @@ export function MyPolicies() {
       </form>
 
       <h2>등록된 보험</h2>
-      {policies.length === 0 && <p className="muted">아직 등록된 보험이 없습니다.</p>}
+      {policies.length === 0 && (
+        <div className="empty-state">
+          <Icon3D src="wallet" size={72} bg="var(--cream-deep)" rounded="34%" />
+          <p className="muted">아직 등록된 보험이 없습니다. 위 양식으로 첫 보험을 등록해보세요.</p>
+        </div>
+      )}
       {policies.map((p) => (
         <div className="card policy-card" key={p.user_policy_id}>
           <div className="policy-card__head">
