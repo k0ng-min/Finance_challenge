@@ -3,6 +3,7 @@ import { api, type ClauseOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { ClauseCard } from "../components/ClauseCard";
 import { HIGHLIGHT_COLORS } from "../colors";
+import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 
@@ -12,6 +13,7 @@ export function ClauseHighlight() {
   const { tripId, incidentId } = useApp();
   const [clauses, setClauses] = useState<ClauseOut[]>([]);
   const [loading, setLoading] = useState(false);
+  const [activeColor, setActiveColor] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -31,7 +33,7 @@ export function ClauseHighlight() {
   if (!tripId && !incidentId) {
     return (
       <div className="page">
-        <h1>약관 형광펜</h1>
+        <TopBar title="약관 형광펜" />
         <div className="empty-state">
           <Icon3D src="star" size={72} bg="var(--cream-deep)" rounded="34%" />
           <p className="muted">
@@ -48,35 +50,40 @@ export function ClauseHighlight() {
     label: HIGHLIGHT_COLORS[color].label,
     items: clauses.filter((c) => c.highlight_color === color),
   })).filter((g) => g.items.length > 0);
+  const current = grouped.find((g) => g.color === activeColor) ?? grouped[0];
 
   return (
     <div className="page">
+      <TopBar title="약관 형광펜" />
       <PageHero
         icon="notebook"
         iconBg="var(--cream-deep)"
         eyebrow="CLAUSE HIGHLIGHT"
         title={"근거가 되는 약관,\n색깔로 한눈에"}
-        subtitle="추천·경고의 근거가 된 실제 약관 원문입니다. 요약이 아니라 원문 그대로이며, 색상은 조항의 성격을 나타내요."
+        subtitle="추천·경고의 근거가 된 실제 약관 원문입니다. 요약이 아니라 원문 그대로예요."
       />
       {loading && <p className="muted">불러오는 중...</p>}
 
-      <div className="legend">
-        {ORDER.map((color) => (
-          <span key={color} className="legend__item">
-            <span className="legend__dot" style={{ backgroundColor: HIGHLIGHT_COLORS[color].border }} />
-            {color} · {HIGHLIGHT_COLORS[color].label}
-          </span>
-        ))}
-      </div>
-
-      {grouped.map((g) => (
-        <div key={g.color}>
-          <h2>{g.color} · {g.label}</h2>
-          {g.items.map((c) => (
+      {grouped.length > 0 && (
+        <>
+          <div className="tabs">
+            {grouped.map((g) => (
+              <button
+                key={g.color}
+                type="button"
+                className={`tab${g.color === current?.color ? " tab--active" : ""}`}
+                onClick={() => setActiveColor(g.color)}
+                style={g.color === current?.color ? {} : { color: HIGHLIGHT_COLORS[g.color].border }}
+              >
+                {g.color} · {g.items.length}
+              </button>
+            ))}
+          </div>
+          {current?.items.map((c) => (
             <ClauseCard key={c.clause_id} clause={c} />
           ))}
-        </div>
-      ))}
+        </>
+      )}
     </div>
   );
 }

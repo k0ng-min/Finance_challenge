@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { api, type ValidationResultOut } from "../api";
 import { useApp } from "../context/AppContext";
+import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
+import { NextStepCard } from "../components/NextStepCard";
 
 const SEVERITY_LABEL: Record<string, string> = { 오류: "오류", 경고: "경고", 확인: "확인 필요" };
 
@@ -29,7 +31,7 @@ export function MistakeCheck() {
   if (!incidentId) {
     return (
       <div className="page">
-        <h1>실수 방지 점검</h1>
+        <TopBar title="실수 방지 점검" />
         <div className="empty-state">
           <Icon3D src="shield" size={72} bg="var(--orange-soft)" rounded="34%" />
           <p className="muted">먼저 "사고가 발생했어요" 메뉴에서 사고를 등록해주세요.</p>
@@ -40,12 +42,13 @@ export function MistakeCheck() {
 
   return (
     <div className="page">
+      <TopBar title="실수 방지 점검" />
       <PageHero
         icon="shield"
         iconBg="var(--orange-soft)"
         eyebrow="MISTAKE CHECK"
         title={"놓친 건 없는지,\n한번 더 확인해요"}
-        subtitle="보험기간 불일치, 사고정보 누락, 입력 모순, 서류 미확보를 규칙 기반으로 점검합니다. 지급 여부를 판단하지는 않아요."
+        subtitle="보험기간 불일치, 정보 누락, 입력 모순, 서류 미확보를 점검합니다. 지급 여부를 판단하지는 않아요."
       />
       {loading && <p className="muted">불러오는 중...</p>}
       {error && <div className="error-box">{error}</div>}
@@ -69,6 +72,14 @@ export function MistakeCheck() {
           <p>{r.detail}</p>
         </div>
       ))}
+
+      <NextStepCard
+        to="/highlights"
+        icon="notebook"
+        iconBg="var(--cream-deep)"
+        label="다음 단계"
+        title="근거 약관 확인하러 가기"
+      />
     </div>
   );
 }

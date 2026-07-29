@@ -1,5 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
-import { Nav } from "./components/Nav";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { Home } from "./pages/Home";
 import { TripPrep } from "./pages/TripPrep";
 import { MyPolicies } from "./pages/MyPolicies";
 import { IncidentReport } from "./pages/IncidentReport";
@@ -10,20 +10,17 @@ import { useApp } from "./context/AppContext";
 
 function App() {
   const { loading } = useApp();
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   return (
-    <div className="app-shell">
-      <header className="app-header">
-        <span className="app-header__title">여행자보험 전 생애주기 AI</span>
-        <span className="app-header__subtitle">근거 기반 · 6개 보험사 실제 약관</span>
-      </header>
-
+    <div className={`app-shell${isHome ? " app-shell--home" : ""}`}>
       <main className="app-main">
         {loading ? (
           <div className="page">불러오는 중...</div>
         ) : (
           <Routes>
-            <Route path="/" element={<Navigate to="/trip" replace />} />
+            <Route path="/" element={<Home />} />
             <Route path="/trip" element={<TripPrep />} />
             <Route path="/policies" element={<MyPolicies />} />
             <Route path="/incident" element={<IncidentReport />} />
@@ -33,8 +30,6 @@ function App() {
           </Routes>
         )}
       </main>
-
-      <Nav />
     </div>
   );
 }

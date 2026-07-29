@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
 import { api, type UserPolicyOut } from "../api";
 import { useApp } from "../context/AppContext";
-import { PageHero } from "../components/PageHero";
+import { TopBar } from "../components/TopBar";
+import { StepFlow } from "../components/StepFlow";
 import { Icon3D } from "../components/Icon3D";
+import { motion } from "framer-motion";
 
 interface CoverageDraft {
   raw_name: string;
   subscribed_amount: string;
 }
 
+const STEP_COUNT = 3;
+
 export function MyPolicies() {
   const { userId } = useApp();
+  const [mode, setMode] = useState<"list" | "add">("list");
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,9 +26,7 @@ export function MyPolicies() {
   const [policyType, setPolicyType] = useState("직접가입");
   const [periodStart, setPeriodStart] = useState("2026-08-10");
   const [periodEnd, setPeriodEnd] = useState("2026-08-20");
-  const [coverages, setCoverages] = useState<CoverageDraft[]>([
-    { raw_name: "상해사망후유장해", subscribed_amount: "" },
-  ]);
+  const [coverages, setCoverages] = useState<CoverageDraft[]>([{ raw_name: "", subscribed_amount: "" }]);
 
   async function refresh() {
     if (!userId) return;
@@ -39,8 +43,14 @@ export function MyPolicies() {
     setCoverages((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function resetForm() {
+    setStep(0);
+    setInsurerName("");
+    setProductName("");
+    setCoverages([{ raw_name: "", subscribed_amount: "" }]);
+  }
+
+  async function handleSubmit() {
     if (!userId) return;
     setLoading(true);
     setError(null);
@@ -54,7 +64,8 @@ export function MyPolicies() {
         coverages: coverages.filter((c) => c.raw_name.trim()),
       });
       await refresh();
-      setCoverages([{ raw_name: "", subscribed_amount: "" }]);
+      resetForm();
+      setMode("list");
     } catch (err) {
       setError(String(err));
     } finally {
@@ -62,84 +73,140 @@ export function MyPolicies() {
     }
   }
 
+  if (mode === "add") {
+    const steps = [
+      {
+        icon: "umbrella", iconBg: "var(--orange-soft)",
+        eyebrow: "STEP 1 · 보험사",
+        title: "어느 보험사에\n가입하셨나요?",
+        content: (
+          <>
+            <label>
+              보험사명
+              <input value={insurerName} onChange={(e) => setInsurerName(e.target.value)} placeholder="예: 삼성화재" autoFocus />
+            </label>
+            <label>
+              상품명
+              <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="예: 해외여행보험" />
+            </label>
+          </>
+        ),
+        canNext: insurerName.trim().length > 0,
+      },
+      {
+        icon: "calendar", iconBg: "var(--yellow-soft)",
+        eyebrow: "STEP 2 · 가입 정보",
+        title: "가입 유형과\n보험기간을 알려주세요",
+        content: (
+          <>
+            <label>
+              가입 유형
+              <select value={policyType} onChange={(e) => setPolicyType(e.target.value)}>
+                <option value="직접가입">직접가입</option>
+                <option value="카드부가">카드부가</option>
+                <option value="단체">단체</option>
+              </select>
+            </label>
+            <label>
+              보험기간 시작
+              <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+            </label>
+            <label>
+              보험기간 종료
+              <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+            </label>
+          </>
+        ),
+        canNext: true,
+      },
+      {
+        icon: "puzzle", iconBg: "var(--mint-soft)",
+        eyebrow: "STEP 3 · 가입 담보",
+        title: "가입하신 담보를\n알려주세요",
+        subtitle: "증권에 적힌 이름 그대로 입력하시면 실제 약관과 자동으로 매칭해 드려요.",
+        content: (
+          <>
+            {coverages.map((c, i) => (
+              <div className="form-row" key={i}>
+                <input
+                  placeholder="담보명 (예: 해외의료비)"
+                  value={c.raw_name}
+                  onChange={(e) => updateCoverage(i, "raw_name", e.target.value)}
+                />
+                <input
+                  placeholder="가입금액"
+                  value={c.subscribed_amount}
+                  onChange={(e) => updateCoverage(i, "subscribed_amount", e.target.value)}
+                />
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setCoverages((prev) => [...prev, { raw_name: "", subscribed_amount: "" }])}
+            >
+              + 담보 추가
+            </button>
+            {error && <div className="error-box">{error}</div>}
+          </>
+        ),
+        canNext: true,
+      },
+    ];
+
+    const current = steps[step];
+    const isLast = step === steps.length - 1;
+
+    return (
+      <div className="page">
+        <TopBar title="보험 등록" />
+        <StepFlow
+          icon={current.icon}
+          iconBg={current.iconBg}
+          eyebrow={current.eyebrow}
+          title={current.title}
+          subtitle={current.subtitle}
+          stepIndex={step}
+          stepCount={STEP_COUNT}
+          onBack={() => (step > 0 ? setStep((s) => s - 1) : setMode("list"))}
+          onNext={isLast ? handleSubmit : () => setStep((s) => s + 1)}
+          nextLabel={isLast ? "등록 완료" : "다음"}
+          nextDisabled={!current.canNext || loading}
+          loading={loading}
+        >
+          {current.content}
+        </StepFlow>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
-      <PageHero
-        icon="umbrella"
-        iconBg="var(--orange-soft)"
-        eyebrow="MY POLICIES"
-        title={"내 보험,\n한 곳에 안전하게"}
-        subtitle="가입한 보험을 등록하면 보험사명·담보명을 실제 약관과 자동으로 매칭해 보관해 드려요."
-      />
+      <TopBar title="내 보험 보관함" />
+      <p className="page-desc">
+        가입한 보험을 등록하면 보험사명·담보명을 실제 약관과 자동으로 매칭해요. 매칭된 담보만 사고 후
+        청구 검토 대상이 됩니다.
+      </p>
 
-      <form className="card form" onSubmit={handleSubmit}>
-        <div className="form-row">
-          <label>
-            보험사명
-            <input value={insurerName} onChange={(e) => setInsurerName(e.target.value)} required />
-          </label>
-          <label>
-            상품명
-            <input value={productName} onChange={(e) => setProductName(e.target.value)} />
-          </label>
+      <motion.button
+        type="button"
+        className="home-card"
+        style={{ marginBottom: 16 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setMode("add")}
+      >
+        <Icon3D src="gift" size={56} bg="var(--yellow-soft)" rounded="30%" />
+        <div className="home-card__text">
+          <strong>새 보험 등록하기</strong>
+          <span>3단계면 충분해요</span>
         </div>
-        <div className="form-row">
-          <label>
-            가입 유형
-            <select value={policyType} onChange={(e) => setPolicyType(e.target.value)}>
-              <option value="직접가입">직접가입</option>
-              <option value="카드부가">카드부가</option>
-              <option value="단체">단체</option>
-            </select>
-          </label>
-        </div>
-        <div className="form-row">
-          <label>
-            보험기간 시작
-            <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} required />
-          </label>
-          <label>
-            보험기간 종료
-            <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} required />
-          </label>
-        </div>
+        <span className="home-card__arrow">›</span>
+      </motion.button>
 
-        <div className="coverage-list">
-          <div className="coverage-list__label">가입 담보</div>
-          {coverages.map((c, i) => (
-            <div className="form-row" key={i}>
-              <input
-                placeholder="담보명 (예: 해외의료비)"
-                value={c.raw_name}
-                onChange={(e) => updateCoverage(i, "raw_name", e.target.value)}
-              />
-              <input
-                placeholder="가입금액 (예: 1억원)"
-                value={c.subscribed_amount}
-                onChange={(e) => updateCoverage(i, "subscribed_amount", e.target.value)}
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setCoverages((prev) => [...prev, { raw_name: "", subscribed_amount: "" }])}
-          >
-            + 담보 추가
-          </button>
-        </div>
-
-        <button type="submit" disabled={loading || !userId}>
-          {loading ? "등록 중..." : "보험 등록"}
-        </button>
-        {error && <div className="error-box">{error}</div>}
-      </form>
-
-      <h2>등록된 보험</h2>
       {policies.length === 0 && (
         <div className="empty-state">
           <Icon3D src="wallet" size={72} bg="var(--cream-deep)" rounded="34%" />
-          <p className="muted">아직 등록된 보험이 없습니다. 위 양식으로 첫 보험을 등록해보세요.</p>
+          <p className="muted">아직 등록된 보험이 없습니다.</p>
         </div>
       )}
       {policies.map((p) => (
