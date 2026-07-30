@@ -1,28 +1,40 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut } from "../api";
+import { useApp } from "../context/AppContext";
 import { PageHero } from "./PageHero";
 import { ResultTabs } from "./ResultTabs";
-import { NextStepCard } from "./NextStepCard";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 
 type Phase = "tier" | "ranking" | "detail";
 
-export function InsurerRankingFlow({ result }: { result: RecommendationOut }) {
+export function InsurerRankingFlow({
+  result, initialTier,
+}: {
+  result: RecommendationOut;
+  /** 여행 준비 스텝에서 이미 보장유형을 골라온 경우 — 여기서 다시 고르지 않고 바로 순위로 간다. */
+  initialTier?: string | null;
+}) {
+  const navigate = useNavigate();
+  const { userId, isLoggedIn } = useApp();
+  // initialTier가 있어도 phase는 일단 "tier"로 시작한다 — fetchRanking이 끝나면 스스로
+  // "ranking"으로 넘어가므로, 그전까지는 기존 "tier" 단계의 로딩 화면이 자연스럽게 보인다.
   const [phase, setPhase] = useState<Phase>("tier");
   const [tiers, setTiers] = useState<InsurerTierOut[]>([]);
-  const [tier, setTier] = useState<string | null>(null);
+  const [tier, setTier] = useState<string | null>(initialTier ?? null);
   const [ranking, setRanking] = useState<InsurerRankOut[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!!initialTier);
   const [selected, setSelected] = useState<InsurerRankOut | null>(null);
+  const [registering, setRegistering] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
     api.getInsurerTiers().then(setTiers).catch(() => {});
   }, []);
 
-  async function pickTier(tierCode: string) {
-    setTier(tierCode);
+  async function fetchRanking(tierCode: string) {
     setLoading(true);
     try {
       const rp = result.risk_profile;
@@ -40,9 +52,48 @@ export function InsurerRankingFlow({ result }: { result: RecommendationOut }) {
     }
   }
 
+  useEffect(() => {
+    if (initialTier) fetchRanking(initialTier);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTier]);
+
+  async function pickTier(tierCode: string) {
+    setTier(tierCode);
+    await fetchRanking(tierCode);
+  }
+
   function pickInsurer(item: InsurerRankOut) {
     setSelected(item);
+    setRegistered(false);
     setPhase("detail");
+  }
+
+  async function registerToMyPolicies() {
+    if (!selected || !userId) return;
+    if (!isLoggedIn) {
+      navigate("/account");
+      return;
+    }
+    const tripDays = typeof result.risk_profile.trip_days === "number" ? result.risk_profile.trip_days : 7;
+    const startDate = typeof result.risk_profile.start_date === "string" ? result.risk_profile.start_date : undefined;
+    const today = new Date();
+    const start = startDate ? new Date(startDate) : today;
+    const end = new Date(start);
+    end.setDate(end.getDate() + tripDays);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+    setRegistering(true);
+    try {
+      await api.registerPolicy(userId, {
+        insurer_name_raw: selected.insurer_name,
+        product_name_raw: null,
+        period_start: iso(start),
+        period_end: iso(end),
+      });
+      setRegistered(true);
+    } finally {
+      setRegistering(false);
+    }
   }
 
   if (phase === "tier") {
@@ -133,7 +184,6 @@ export function InsurerRankingFlow({ result }: { result: RecommendationOut }) {
                   <strong>{r.insurer_name}</strong>
                   <span className="rank-card__score">적합도 {r.score}점</span>
                 </div>
-                {r.reasons[0] && <p className="rank-card__reason">{r.reasons[0]}</p>}
                 {r.tags.length > 0 && (
                   <div className="rank-card__tags">
                     {r.tags.map((t) => (
@@ -193,12 +243,31 @@ export function InsurerRankingFlow({ result }: { result: RecommendationOut }) {
           )}
       </div>
       <ResultTabs groups={groups} />
-      <NextStepCard
-        to={`/policies?mode=add&insurer=${encodeURIComponent(selected?.insurer_code ?? "")}`}
-        icon="umbrella"
-        label="다음 단계"
-        title={`${selected?.insurer_name} 보험, 바로 등록하기`}
-      />
+
+      <div className="card" style={{ marginTop: 16 }}>
+        {registered ? (
+          <>
+            <p style={{ marginTop: 0, fontWeight: 700 }}>✓ 내 보험에 등록했어요</p>
+            <p className="muted" style={{ fontSize: "0.85rem" }}>
+              여행 기간({String(result.risk_profile.trip_days ?? "-")}일) 기준으로 자동 등록됐어요.
+            </p>
+            <button type="button" className="btn-secondary" style={{ width: "100%" }} onClick={() => navigate("/policies")}>
+              내 보험 보관함에서 확인하기
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
+              {isLoggedIn
+                ? `${selected?.insurer_name}을(를) 지금 준비 중인 여행 기간에 맞춰 내 보험에 바로 등록할 수 있어요.`
+                : "로그인하면 이 보험을 내 보험에 바로 등록해둘 수 있어요."}
+            </p>
+            <button type="button" className="btn-primary" style={{ width: "100%" }} onClick={registerToMyPolicies} disabled={registering}>
+              {registering ? "등록 중..." : isLoggedIn ? `${selected?.insurer_name} 내 보험으로 등록하기` : "로그인하고 등록하기"}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

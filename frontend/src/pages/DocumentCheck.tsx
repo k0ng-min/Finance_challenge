@@ -8,6 +8,7 @@ import { NextStepCard } from "../components/NextStepCard";
 import { ErrorState } from "../components/ErrorState";
 import { IncidentPicker } from "../components/IncidentPicker";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { PickerField } from "../components/PickerField";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
@@ -141,15 +142,13 @@ export function DocumentCheck() {
                     </td>
                     <td>{it.is_mandatory ? "필수" : "상황에 따라"}</td>
                     <td>
-                      <select
+                      <PickerField
                         value={it.status}
                         disabled={saving}
-                        onChange={(e) => updateStatus(it.required_doc_std_id, e.target.value)}
-                      >
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
+                        onChange={(status) => updateStatus(it.required_doc_std_id, status)}
+                        modalTitle="서류 상태"
+                        options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+                      />
                     </td>
                   </tr>
                 ))}

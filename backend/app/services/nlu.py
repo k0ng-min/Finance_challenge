@@ -42,6 +42,10 @@ class IncidentDraft:
     surgery: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0))
     local_treatment: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0))
     returned_home: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0))
+    # 휴대품손해(분실제외) 특약은 "도난"/"파손"만 보상하고 "분실"은 보상하지 않는다(6개
+    # 보험사 약관 공통 조항). 값은 "도난"|"파손"|"분실" 중 하나 또는 None(사고 자체가
+    # 휴대품 관련이 아니거나, 셋 중 무엇인지 원문만으로 판단할 수 없는 경우).
+    item_damage_type: ExtractedField = field(default_factory=lambda: ExtractedField(None, 0.0))
 
     def missing_or_low_confidence(self, threshold: float = 0.6) -> list[str]:
         out = []
@@ -80,6 +84,25 @@ _RETURNED_HOME_HINTS = ["귀국", "한국 도착", "귀국 후"]
 _COUNTRY_HINTS = [  # MVP 데모용 최소 목록. 실제로는 국가 사전 테이블로 분리 예정.
     "일본", "스위스", "태국", "베트남", "필리핀", "미국", "프랑스", "이탈리아", "괌", "사이판",
 ]
+# 순서 중요: 더 구체적인 표현(도난/파손)을 분실보다 먼저 검사한다 — "소매치기당해서
+# 잃어버렸어요"처럼 분실이란 단어가 섞여도 도난이 맞는 경우가 많기 때문.
+_THEFT_KEYWORDS = ["도난", "도둑맞", "소매치기", "훔쳐", "강취", "빼앗"]
+_DAMAGE_KEYWORDS = ["파손", "깨졌", "부서졌", "고장났", "고장 났", "망가졌"]
+_PLAIN_LOSS_KEYWORDS = ["분실", "잃어버", "잃었", "잊어버리고"]
+
+
+def classify_item_damage_type(text: str) -> str | None:
+    """휴대품손해 능동질문 답변("도난이요"/"파손됐어요"/"그냥 잃어버렸어요" 등)을 3분류로
+    정규화한다. RuleBasedNLU 내부 추출과 같은 키워드 규칙을 answer_question(자유서술 답변
+    라운드)에서도 그대로 재사용하기 위해 모듈 함수로 뺐다."""
+    text = text or ""
+    if any(kw in text for kw in _THEFT_KEYWORDS):
+        return "도난"
+    if any(kw in text for kw in _DAMAGE_KEYWORDS):
+        return "파손"
+    if any(kw in text for kw in _PLAIN_LOSS_KEYWORDS):
+        return "분실"
+    return None
 
 
 class RuleBasedNLU:
@@ -115,6 +138,12 @@ class RuleBasedNLU:
                     return ExtractedField(value=True, confidence=0.7, source_span=h)
         return ExtractedField(value=False, confidence=0.3)  # 명시적 부정 근거는 없으므로 저신뢰
 
+    def _find_item_damage_type(self, text: str) -> ExtractedField:
+        value = classify_item_damage_type(text)
+        if value is None:
+            return ExtractedField(value=None, confidence=0.0)
+        return ExtractedField(value=value, confidence=0.7 if value != "분실" else 0.5, source_span="키워드 매칭")
+
     def structure_incident(self, free_text: str) -> IncidentDraft:
         text = free_text or ""
         return IncidentDraft(
@@ -126,6 +155,7 @@ class RuleBasedNLU:
             surgery=self._find_bool(text, _SURGERY_HINTS),
             local_treatment=self._find_bool(text, _LOCAL_TREATMENT_HINTS),
             returned_home=self._find_bool(text, _RETURNED_HOME_HINTS),
+            item_damage_type=self._find_item_damage_type(text),
         )
 
     def normalize_coverage_name(self, raw_name: str, std_candidates: list[tuple[str, str]]) -> tuple[str | None, float]:

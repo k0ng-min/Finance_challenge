@@ -43,9 +43,14 @@ _add_missing_columns("clause", {
 })
 _add_missing_columns("incident", {
     "user_policy_id": "ALTER TABLE incident ADD COLUMN user_policy_id INTEGER",
+    "free_text": "ALTER TABLE incident ADD COLUMN free_text TEXT",
+    "item_damage_type": "ALTER TABLE incident ADD COLUMN item_damage_type VARCHAR",
 })
 _add_missing_columns("analysis_finding", {
     "coverage_amount": "ALTER TABLE analysis_finding ADD COLUMN coverage_amount VARCHAR",
+})
+_add_missing_columns("user_policy", {
+    "subscriber_age": "ALTER TABLE user_policy ADD COLUMN subscriber_age INTEGER",
 })
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")

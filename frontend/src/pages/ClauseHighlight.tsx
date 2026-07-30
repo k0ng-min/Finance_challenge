@@ -37,29 +37,9 @@ function ClauseRelevanceText({
   );
 }
 
-/** "쉬운 말로 보기"를 눌렀을 때만 그때그때 Gemini로 풀어쓴 설명을 가져온다.
- * incidentId가 있으면 그 사고 상황에 맞춰 설명하고, 없으면 일반 설명을 보여준다. */
-function ClausePlainText({ clauseId, incidentId }: { clauseId: number; incidentId: number | null }) {
-  const [text, setText] = useState<string | null>(null);
-  const [supported, setSupported] = useState(true);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    api
-      .getClausePlainText(clauseId, incidentId)
-      .then((res) => {
-        if (cancelled) return;
-        setText(res.plain_text);
-        setSupported(res.supported);
-      })
-      .catch(() => { if (!cancelled) setSupported(false); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [clauseId, incidentId]);
-
-  if (loading) return <p className="clause-plain muted">쉬운 말로 바꾸는 중...</p>;
+/** "쉬운 말로 보기"는 이제 버튼을 누른 순간이 아니라, 조항 목록을 불러올 때 이미 다 준비해
+ * 둔 결과를 그대로 보여주기만 한다(그래서 버튼을 누르면 로딩 없이 바로 뜬다). */
+function ClausePlainText({ text, supported }: { text: string | null; supported: boolean }) {
   if (!supported || !text) return <p className="clause-plain muted">지금은 쉬운말 설명을 만들 수 없어요.</p>;
   return <p className="clause-plain">{text}</p>;
 }
@@ -71,6 +51,8 @@ interface ClauseWithContext {
   findingType: string;
   relevantChars: number;
   segments: { text: string; highlighted: boolean }[] | null;
+  plainText: string | null;
+  plainSupported: boolean;
 }
 
 /** 검색어가 포함된 부분을 표시해서 왜 이 조항이 검색됐는지 한눈에 보이게 한다. */
@@ -104,9 +86,31 @@ export function ClauseHighlight() {
   const [showPlain, setShowPlain] = useState(false);
   const [query, setQuery] = useState("");
 
+  // 사고와 무관하게(가입 전 추천 화면 등에서) 조항 하나만 보러 들어온 경우 — 관련도 하이라이트
+  // 없이 원문 + 쉬운말 설명만 보여주는 훨씬 단순한 모드.
+  const [soloClause, setSoloClause] = useState<ClauseOut | null>(null);
+  const [soloPlain, setSoloPlain] = useState<{ text: string | null; supported: boolean } | null>(null);
+  const [soloLoading, setSoloLoading] = useState(false);
+
   useEffect(() => {
     if (!linkedIncidentId) setActiveIncidentId(incidentId);
   }, [incidentId, linkedIncidentId]);
+
+  useEffect(() => {
+    if (!linkedClauseId || activeIncidentId) {
+      setSoloClause(null);
+      return;
+    }
+    const id = Number(linkedClauseId);
+    setSoloLoading(true);
+    Promise.all([api.getClause(id), api.getClausePlainText(id)])
+      .then(([clause, plain]) => {
+        setSoloClause(clause);
+        setSoloPlain({ text: plain.plain_text, supported: plain.supported });
+      })
+      .catch(() => setSoloClause(null))
+      .finally(() => setSoloLoading(false));
+  }, [linkedClauseId, activeIncidentId]);
 
   useEffect(() => {
     if (!activeIncidentId) {
@@ -127,22 +131,30 @@ export function ClauseHighlight() {
                 findingType: f.finding_type,
                 relevantChars: 0,
                 segments: null,
+                plainText: null,
+                plainSupported: true,
               });
             }
           })
         );
         const list = [...byId.values()];
 
-        // 이 사고와 얼마나 관련 있는지(노란 글자 수)를 전부 미리 계산해서, 관련도 높은
-        // 순서로 보여준다. 조항 개수가 적어(보통 3~6개) 한꺼번에 병렬 조회해도 괜찮다.
+        // 이 사고와 얼마나 관련 있는지(노란 글자 수)와 쉬운말 설명을 전부 미리 계산해서,
+        // "쉬운 말로 보기"를 눌렀을 때 다시 기다리지 않게 한다. 조항 개수가 적어(보통 3~6개)
+        // 한꺼번에 병렬 조회해도 괜찮다.
         const withRelevance = await Promise.all(
           list.map(async (it) => {
-            try {
-              const res = await api.getClauseRelevance(it.clause.clause_id, activeIncidentId);
-              return { ...it, relevantChars: res.relevant_chars, segments: res.segments };
-            } catch {
-              return it;
-            }
+            const [relevance, plain] = await Promise.all([
+              api.getClauseRelevance(it.clause.clause_id, activeIncidentId).catch(() => null),
+              api.getClausePlainText(it.clause.clause_id, activeIncidentId).catch(() => null),
+            ]);
+            return {
+              ...it,
+              relevantChars: relevance?.relevant_chars ?? 0,
+              segments: relevance?.segments ?? null,
+              plainText: plain?.plain_text ?? null,
+              plainSupported: plain?.supported ?? false,
+            };
           })
         );
         withRelevance.sort((a, b) => b.relevantChars - a.relevantChars);
@@ -161,6 +173,37 @@ export function ClauseHighlight() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIncidentId, linkedClauseId]);
+
+  if (soloLoading) {
+    return (
+      <div className="page">
+        <TopBar title="약관 형광펜" />
+        <LoadingScreen icon="notebook" title="조항을 불러오고 있어요" />
+      </div>
+    );
+  }
+
+  if (soloClause) {
+    return (
+      <div className="page">
+        <TopBar title="약관 형광펜" />
+        <PageHero
+          icon="notebook"
+          eyebrow="CLAUSE"
+          title={"이 조항의 실제 원문이에요"}
+          subtitle="특정 사고와 대조한 게 아니라, 조항 자체의 원문과 쉬운말 설명이에요."
+        />
+        <div className="clause-reader__doc">
+          <div className="clause-reader__head">
+            <div className="clause-reader__target">{soloClause.article_no}</div>
+          </div>
+          <p className="clause-reader__text">{soloClause.text}</p>
+          {soloPlain && <ClausePlainText text={soloPlain.text} supported={soloPlain.supported} />}
+          {soloClause.page_ref && <div className="clause-page">원문 위치: {soloClause.page_ref}</div>}
+        </div>
+      </div>
+    );
+  }
 
   if (!activeIncidentId) {
     return (
@@ -296,7 +339,7 @@ export function ClauseHighlight() {
                   {showPlain ? "원문으로 접기" : "💬 쉬운 말로 보기"}
                 </button>
                 {showPlain && (
-                  <ClausePlainText clauseId={activeItem.clause.clause_id} incidentId={activeIncidentId} />
+                  <ClausePlainText text={activeItem.plainText} supported={activeItem.plainSupported} />
                 )}
                 {activeItem.clause.page_ref && (
                   <div className="clause-page">원문 위치: {activeItem.clause.page_ref}</div>

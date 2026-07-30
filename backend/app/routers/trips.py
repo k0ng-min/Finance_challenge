@@ -26,6 +26,8 @@ def create_trip_and_recommend(
     user = db.get(AppUser, payload.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다. 먼저 /users로 사용자를 생성하세요.")
+    if payload.end_date <= payload.start_date:
+        raise HTTPException(status_code=400, detail="종료일은 시작일 다음 날 이후여야 합니다.")
 
     risk_profile = build_risk_profile(
         destination=payload.destination,

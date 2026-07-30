@@ -1,4 +1,5 @@
 import json
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
@@ -6,15 +7,16 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident, Evidence, UserPolicy
-from app.models.kb import RequiredDocStd
+from app.models.kb import RequiredDocStd, Insurer
 from app.models.analysis import AnalysisRun, ValidationRule, ValidationResult
 from app.models.question import QuestionBank, UserQuestionLog
 from app.routers.auth import get_current_user_optional, verify_owner
+from app.routers.policies import create_policy_for_user
 from app.schemas import (
     IncidentCreate, IncidentAnalysisOut, PendingQuestionOut, AnswerIn,
     ChecklistOut, ChecklistItemOut, EvidenceIn, ClauseOut, ValidationResultOut,
 )
-from app.services.nlu import get_nlu_engine, ExtractedField
+from app.services.nlu import get_nlu_engine, ExtractedField, classify_item_damage_type
 from app.services.claim_review import (
     merge_incident_fields, generate_claim_findings, pending_questions, iter_relevant_user_coverages,
 )
@@ -38,7 +40,7 @@ def _serialize_structured(merged: dict[str, ExtractedField]) -> dict:
 
 def _apply_to_incident(incident: Incident, merged: dict[str, ExtractedField]):
     for name in ("country", "cause", "injury_part", "diagnosis", "hospitalized", "surgery",
-                  "local_treatment", "returned_home"):
+                  "local_treatment", "returned_home", "item_damage_type"):
         value = merged[name].value
         if value is not None:
             setattr(incident, name, value)
@@ -112,6 +114,25 @@ def create_incident(
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다. 먼저 /users로 사용자를 생성하세요.")
 
+    # 게스트(비로그인)는 사고 이력을 여러 건 쌓아두지 않는다 — 새 사고를 접수하면 이전
+    # 접수 건은 지운다(로그인 계정은 계속 쌓인다). "다른 사고를 보려면 다시 접수해야 한다"는
+    # 게 의도된 동작이다.
+    if current is None:
+        for old in db.query(Incident).filter(Incident.user_id == payload.user_id).all():
+            delete_incident_cascade(db, old)
+
+    user_policy_id = payload.user_policy_id
+    if user_policy_id is None and payload.insurer_code:
+        insurer = db.query(Insurer).filter(Insurer.code == payload.insurer_code).first()
+        if not insurer:
+            raise HTTPException(status_code=404, detail="알 수 없는 보험사예요.")
+        today = date.today()
+        policy = create_policy_for_user(
+            db, user_id=payload.user_id, insurer_name_raw=insurer.name,
+            period_start=today, period_end=today + timedelta(days=30),
+        )
+        user_policy_id = policy.user_policy_id
+
     nlu = get_nlu_engine()
     explicit = {
         "country": payload.country, "cause": payload.cause, "injury_part": payload.injury_part,
@@ -124,9 +145,10 @@ def create_incident(
     incident = Incident(
         user_id=payload.user_id,
         trip_id=payload.trip_id,
-        user_policy_id=payload.user_policy_id,
+        user_policy_id=user_policy_id,
         occurred_at=payload.occurred_at,
         medical_cost=payload.medical_cost,
+        free_text=payload.free_text,
     )
     _apply_to_incident(incident, merged)
     db.add(incident)
@@ -223,6 +245,10 @@ def answer_question(
     if field in BOOLEAN_FIELDS:
         negated = any(m in payload.answer_text for m in _NEGATIVE_MARKERS)
         value = not negated
+    elif field == "item_damage_type":
+        # 자유서술 답변("소매치기당했어요"/"그냥 잃어버렸어요" 등)을 도난/파손/분실 중
+        # 하나로 정규화한다 — 원문 그대로 저장하면 claim_review.py가 정확히 비교할 수 없다.
+        value = classify_item_damage_type(payload.answer_text)
     else:
         value = payload.answer_text
 
@@ -230,11 +256,11 @@ def answer_question(
         "country": incident.country, "cause": incident.cause, "injury_part": incident.injury_part,
         "diagnosis": incident.diagnosis, "hospitalized": incident.hospitalized, "surgery": incident.surgery,
         "local_treatment": incident.local_treatment, "returned_home": incident.returned_home,
-        "medical_cost": incident.medical_cost,
+        "medical_cost": incident.medical_cost, "item_damage_type": incident.item_damage_type,
     }
     explicit[field] = value
     nlu = get_nlu_engine()
-    merged = merge_incident_fields(nlu, "", explicit)
+    merged = merge_incident_fields(nlu, "", explicit, classify_text=incident.free_text)
     if field == "medical_cost":
         incident.medical_cost = value
 
@@ -251,9 +277,9 @@ def _current_merged(incident: Incident) -> dict[str, ExtractedField]:
         "country": incident.country, "cause": incident.cause, "injury_part": incident.injury_part,
         "diagnosis": incident.diagnosis, "hospitalized": incident.hospitalized, "surgery": incident.surgery,
         "local_treatment": incident.local_treatment, "returned_home": incident.returned_home,
-        "medical_cost": incident.medical_cost,
+        "medical_cost": incident.medical_cost, "item_damage_type": incident.item_damage_type,
     }
-    return merge_incident_fields(get_nlu_engine(), "", explicit)
+    return merge_incident_fields(get_nlu_engine(), "", explicit, classify_text=incident.free_text)
 
 
 @router.get("/{incident_id}/checklist", response_model=ChecklistOut)

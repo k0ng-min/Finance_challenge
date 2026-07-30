@@ -9,7 +9,7 @@ const DEFAULT_MESSAGES = [
 ];
 
 /** 제미나이 호출처럼 몇 초 걸리는 작업을 기다릴 때, 점 세 개 대신 보여주는 전용 로딩 화면.
- * 3D 아이콘이 계속 회전하고, 안내 문구가 몇 초마다 바뀌어 "멈춘 게 아니라 진행 중"임을 알려준다. */
+ * 3D 아이콘이 계속 좌우로 움직이고, 안내 문구가 몇 초마다 바뀌어 "멈춘 게 아니라 진행 중"임을 알려준다. */
 export function LoadingScreen({
   icon = "explorer",
   title = "잠시만 기다려주세요",
@@ -31,8 +31,8 @@ export function LoadingScreen({
       <div className="loading-screen__glow" />
       <motion.div
         className="loading-screen__icon"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+        animate={{ x: [-14, 14, -14] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
       >
         <Icon3D src={icon} size={104} />
       </motion.div>

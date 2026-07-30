@@ -48,8 +48,16 @@ export function StepFlow({
 
       <div className="step__actions">
         {onBack && (
-          <motion.button whileTap={{ scale: 0.96 }} type="button" className="btn-secondary step__back" onClick={onBack}>
-            이전
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            whileHover={{ y: -2 }}
+            type="button"
+            className="step__back"
+            onClick={onBack}
+            aria-label="이전"
+            title="이전"
+          >
+            <span aria-hidden>←</span>
           </motion.button>
         )}
         {onNext && (

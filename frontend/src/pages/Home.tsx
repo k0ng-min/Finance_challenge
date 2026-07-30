@@ -28,7 +28,7 @@ export function Home() {
         <ThemeToggle />
         <span className="home__topbar-spacer" />
         <button type="button" className="account-pill" onClick={() => navigate("/account")}>
-          <Icon3D src="lock" size={18} />
+          <Icon3D src={isLoggedIn ? "key" : "lock"} size={18} />
           {isLoggedIn ? nickname : "로그인"}
         </button>
       </div>
@@ -93,6 +93,8 @@ export function Home() {
           </motion.button>
         ))}
       </div>
+
+      <p className="home__footer">© 2026 BohumPen</p>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 import { Modal } from "../components/Modal";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useApp } from "../context/AppContext";
 import { shortInsurerName } from "../data/insurers";
 import {
@@ -38,6 +39,8 @@ export function Account() {
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
   const [tripModal, setTripModal] = useState<TripSummaryOut | null>(null);
   const [incidentModal, setIncidentModal] = useState<IncidentSummaryOut | null>(null);
+  const [confirmDeleteTrip, setConfirmDeleteTrip] = useState<number | null>(null);
+  const [confirmDeleteIncident, setConfirmDeleteIncident] = useState<number | null>(null);
 
   // 로그인이 기본(주), 회원가입은 그 밑에 작은 링크로 — 카카오·구글만 지원한다(이메일
   // 비밀번호 계정은 서버에 비밀번호를 아예 저장하지 않는 편이 유출 위험이 적어서 만들지
@@ -67,16 +70,16 @@ export function Account() {
   }, [isLoggedIn, userId]);
 
   async function handleDeleteTrip(tripId: number) {
-    if (!window.confirm("이 여행 기록을 삭제할까요?")) return;
     await api.deleteTrip(tripId);
     setTripModal(null);
+    setConfirmDeleteTrip(null);
     refreshHistory();
   }
 
   async function handleDeleteIncident(incidentId: number) {
-    if (!window.confirm("이 사고 접수 이력을 삭제할까요?")) return;
     await api.deleteIncident(incidentId);
     setIncidentModal(null);
+    setConfirmDeleteIncident(null);
     refreshHistory();
   }
 
@@ -118,7 +121,7 @@ export function Account() {
                 type="button"
                 className="history-card__delete"
                 title="삭제"
-                onClick={() => handleDeleteTrip(t.trip_id)}
+                onClick={() => setConfirmDeleteTrip(t.trip_id)}
               >
                 🗑
               </button>
@@ -148,7 +151,7 @@ export function Account() {
                 type="button"
                 className="history-card__delete"
                 title="삭제"
-                onClick={() => handleDeleteIncident(i.incident_id)}
+                onClick={() => setConfirmDeleteIncident(i.incident_id)}
               >
                 🗑
               </button>
@@ -179,7 +182,7 @@ export function Account() {
                 type="button"
                 className="btn-secondary"
                 style={{ width: "100%", marginTop: 6 }}
-                onClick={() => handleDeleteTrip(tripModal.trip_id)}
+                onClick={() => setConfirmDeleteTrip(tripModal.trip_id)}
               >
                 이 여행 기록 삭제
               </button>
@@ -223,13 +226,28 @@ export function Account() {
                 type="button"
                 className="btn-secondary"
                 style={{ width: "100%", marginTop: 8 }}
-                onClick={() => handleDeleteIncident(incidentModal.incident_id)}
+                onClick={() => setConfirmDeleteIncident(incidentModal.incident_id)}
               >
                 이 사고 이력 삭제
               </button>
             </>
           )}
         </Modal>
+
+        <ConfirmDialog
+          open={confirmDeleteTrip !== null}
+          title="여행 기록 삭제"
+          message="이 여행 기록을 삭제할까요? 되돌릴 수 없어요."
+          onConfirm={() => confirmDeleteTrip !== null && handleDeleteTrip(confirmDeleteTrip)}
+          onCancel={() => setConfirmDeleteTrip(null)}
+        />
+        <ConfirmDialog
+          open={confirmDeleteIncident !== null}
+          title="사고 접수 이력 삭제"
+          message="이 사고 접수 이력을 삭제할까요? 되돌릴 수 없어요."
+          onConfirm={() => confirmDeleteIncident !== null && handleDeleteIncident(confirmDeleteIncident)}
+          onCancel={() => setConfirmDeleteIncident(null)}
+        />
 
         <button
           type="button"

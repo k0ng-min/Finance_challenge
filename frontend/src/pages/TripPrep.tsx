@@ -1,19 +1,28 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, type RecommendationOut } from "../api";
+import { api, type RecommendationOut, type InsurerTierOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { InsurerRankingFlow } from "../components/InsurerRankingFlow";
 import { DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { PickerField } from "../components/PickerField";
 import { COUNTRIES } from "../data/countries";
+
+/** "YYYY-MM-DD"에 하루를 더한 문자열을 준다 — 종료일이 시작일 다음 날부터 고를 수 있게 하는 데 쓴다. */
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+}
 
 const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "반려동물 동반"];
 // 현재 KB에 실제 약관이 적재된 담보는 의료비(해외상해의료비)·구조송환뿐이라, 그 두 개만
 // 보험사 순위·추천 점수에 실제로 반영된다. 나머지는 선택은 가능하지만 "약관 미확보"로
 // 정직하게 안내되며(보장 공백 표시) 순위 점수에는 영향을 주지 않는다.
-const KB_BACKED_PRIORITIES = new Set(["의료비", "구조송환"]);
+const KB_BACKED_PRIORITIES = new Set(["의료비", "구조송환", "휴대품 파손·도난"]);
 const PRIORITY_OPTIONS = ["의료비", "구조송환", "휴대품 파손·도난", "배상책임", "항공기 지연", "질병"];
 
 
@@ -30,6 +39,8 @@ export function TripPrep() {
   const [activities, setActivities] = useState("");
   const [coveragePriority, setCoveragePriority] = useState("");
   const [rentalCar, setRentalCar] = useState(false);
+  const [tiers, setTiers] = useState<InsurerTierOut[]>([]);
+  const [tier, setTier] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // /trip으로 다시 들어올 때마다 매번 처음(목적지 선택)부터 시작한다 — 이전 결과를 자동으로 복원하지 않는다.
@@ -44,6 +55,10 @@ export function TripPrep() {
       .then(setResult)
       .finally(() => setResuming(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    api.getInsurerTiers().then(setTiers).catch(() => {});
   }, []);
 
   async function handleSubmit() {
@@ -100,7 +115,7 @@ export function TripPrep() {
     return (
       <div className="page">
         <TopBar title="맞춤 보험 순위" />
-        <InsurerRankingFlow result={result} />
+        <InsurerRankingFlow result={result} initialTier={tier} />
       </div>
     );
   }
@@ -125,10 +140,13 @@ export function TripPrep() {
         <>
           <label>
             목적지 국가
-            <select value={destination} onChange={(e) => setDestination(e.target.value)} autoFocus>
-              <option value="" disabled>국가를 선택하세요</option>
-              {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            <PickerField
+              value={destination}
+              onChange={setDestination}
+              placeholder="국가를 선택하세요"
+              modalTitle="목적지 국가"
+              options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+            />
           </label>
           <label style={{ marginBottom: 10 }}>동반자 유형</label>
           <div className="tabs" style={{ flexWrap: "wrap" }}>
@@ -153,11 +171,26 @@ export function TripPrep() {
       title: "언제부터 언제까지\n떠나시나요?",
       content: (
         <>
-          <DateTimeField label="여행 시작일" value={startDate} onChange={setStartDate} mode="date" />
-          <DateTimeField label="여행 종료일" value={endDate} onChange={setEndDate} mode="date" />
+          <DateTimeField
+            label="여행 시작일"
+            value={startDate}
+            onChange={(v) => {
+              setStartDate(v);
+              // 시작일을 바꿔서 종료일이 그보다 앞서게 되면(또는 아직 비어있으면) 다음 날로 맞춰준다
+              if (v && (!endDate || endDate <= v)) setEndDate(addDays(v, 1));
+            }}
+            mode="date"
+          />
+          <DateTimeField
+            label="여행 종료일"
+            value={endDate}
+            onChange={setEndDate}
+            mode="date"
+            minDate={startDate ? addDays(startDate, 1) : undefined}
+          />
         </>
       ),
-      canNext: !!startDate && !!endDate,
+      canNext: !!startDate && !!endDate && endDate > startDate,
     },
     {
       icon: "explorer",
@@ -215,8 +248,34 @@ export function TripPrep() {
       canNext: true,
     },
     {
+      icon: "target",
+      eyebrow: "STEP 5 · 보장유형",
+      title: "어떤 기준으로\n비교해 드릴까요?",
+      subtitle: "선택한 기준에 따라 6개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요.",
+      content: (
+        <div className="tier-list">
+          {tiers.map((t) => (
+            <button
+              key={t.tier_code}
+              type="button"
+              className={`tier-card${tier === t.tier_code ? " insurer-card--active" : ""}`}
+              style={tier === t.tier_code ? { borderColor: "var(--primary)" } : undefined}
+              onClick={() => setTier(t.tier_code)}
+            >
+              <div className="tier-card__text">
+                <strong>{t.label}</strong>
+                <span>{t.description}</span>
+              </div>
+              <span className="tier-card__arrow">›</span>
+            </button>
+          ))}
+        </div>
+      ),
+      canNext: !!tier,
+    },
+    {
       icon: "tick",
-      eyebrow: "STEP 5 · 확인",
+      eyebrow: "STEP 6 · 확인",
       title: "이대로 분석해\n드릴까요?",
       subtitle: "6개 보험사의 실제 약관 근거와 함께 맞춤 보장을 비교해 드려요.",
       content: (
@@ -228,7 +287,9 @@ export function TripPrep() {
           <div className="muted">목적 / 활동</div>
           <div style={{ marginBottom: 6, fontWeight: 700 }}>{purpose || "-"} {activityList.length ? `· ${activityList.join(", ")}` : ""}</div>
           <div className="muted">보장 우선순위</div>
-          <div style={{ fontWeight: 700 }}>{priorityList.length ? priorityList.join(", ") : "-"}</div>
+          <div style={{ marginBottom: 6, fontWeight: 700 }}>{priorityList.length ? priorityList.join(", ") : "-"}</div>
+          <div className="muted">보장유형</div>
+          <div style={{ fontWeight: 700 }}>{tiers.find((t) => t.tier_code === tier)?.label ?? "-"}</div>
           {error && <div className="error-box">{error}</div>}
         </div>
       ),

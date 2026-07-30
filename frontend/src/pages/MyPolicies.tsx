@@ -1,23 +1,18 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, type InsurerCoverageOut, type UserPolicyOut } from "../api";
+import { api, type UserPolicyOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { Icon3D } from "../components/Icon3D";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { DateTimeField } from "../components/DateTimeField";
 import { INSURERS, shortInsurerName } from "../data/insurers";
 import { motion } from "framer-motion";
 
-interface CoverageSelection {
-  checked: boolean;
-  amount: string;
-}
-
-
 export function MyPolicies() {
-  const { userId } = useApp();
+  const { userId, isLoggedIn } = useApp();
   const [searchParams] = useSearchParams();
   const prefillInsurer = INSURERS.find((i) => i.code === searchParams.get("insurer"))?.name;
   const [mode, setMode] = useState<"list" | "add">(searchParams.get("mode") === "add" ? "add" : "list");
@@ -28,15 +23,13 @@ export function MyPolicies() {
 
   const [insurerName, setInsurerName] = useState(prefillInsurer ?? "");
   const [productName, setProductName] = useState("");
-  const [policyType, setPolicyType] = useState("직접가입");
+  const [age, setAge] = useState("");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
-  const [availableCoverages, setAvailableCoverages] = useState<InsurerCoverageOut[]>([]);
-  const [coveragesLoading, setCoveragesLoading] = useState(false);
-  const [selections, setSelections] = useState<Record<number, CoverageSelection>>({});
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   async function refresh() {
-    if (!userId) return;
+    if (!userId || !isLoggedIn) return;
     const list = await api.listPolicies(userId);
     setPolicies(list);
   }
@@ -44,50 +37,15 @@ export function MyPolicies() {
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
-
-  // 담보명을 자유 입력받으면 사용자가 "이게 뭔지 모르겠다"고 느끼기 쉽고, 오타가 나면
-  // 실제 약관과 매칭이 안 될 수 있다. 대신 그 보험사가 실제로 파는 담보 목록을 그대로
-  // 보여주고 체크만 하게 해서, 매칭 실패 가능성 자체를 없앤다.
-  useEffect(() => {
-    const code = INSURERS.find((i) => i.name === insurerName)?.code;
-    if (!code) {
-      setAvailableCoverages([]);
-      return;
-    }
-    setCoveragesLoading(true);
-    api.getInsurerCoverages(code)
-      .then((list) => {
-        setAvailableCoverages(list);
-        setSelections((prev) => {
-          const next: Record<number, CoverageSelection> = {};
-          for (const c of list) next[c.coverage_id] = prev[c.coverage_id] ?? { checked: false, amount: "" };
-          return next;
-        });
-      })
-      .catch(() => setAvailableCoverages([]))
-      .finally(() => setCoveragesLoading(false));
-  }, [insurerName]);
-
-  function toggleCoverage(coverageId: number) {
-    setSelections((prev) => ({
-      ...prev,
-      [coverageId]: { ...prev[coverageId], checked: !prev[coverageId]?.checked },
-    }));
-  }
-
-  function setCoverageAmount(coverageId: number, amount: string) {
-    setSelections((prev) => ({
-      ...prev,
-      [coverageId]: { ...prev[coverageId], amount },
-    }));
-  }
+  }, [userId, isLoggedIn]);
 
   function resetForm() {
     setStep(0);
     setInsurerName("");
     setProductName("");
-    setSelections({});
+    setAge("");
+    setPeriodStart("");
+    setPeriodEnd("");
   }
 
   async function handleSubmit() {
@@ -95,18 +53,12 @@ export function MyPolicies() {
     setLoading(true);
     setError(null);
     try {
-      const chosen = availableCoverages.filter((c) => selections[c.coverage_id]?.checked);
       await api.registerPolicy(userId, {
         insurer_name_raw: insurerName,
-        product_name_raw: productName,
-        policy_type: policyType,
+        product_name_raw: productName || null,
+        subscriber_age: age ? Number(age) : null,
         period_start: periodStart,
         period_end: periodEnd,
-        coverages: chosen.map((c) => ({
-          coverage_id: c.coverage_id,
-          raw_name: c.raw_name,
-          subscribed_amount: selections[c.coverage_id]?.amount || null,
-        })),
       });
       await refresh();
       resetForm();
@@ -116,6 +68,30 @@ export function MyPolicies() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleDelete(policyId: number) {
+    if (!userId) return;
+    await api.deletePolicy(userId, policyId);
+    setConfirmDeleteId(null);
+    await refresh();
+  }
+
+  // 보험 등록·관리는 로그인 계정에서만 — 게스트는 브라우저를 새로 열 때마다 데이터가
+  // 사실상 새로 시작돼서, 여러 번 다시 찾아와 관리하는 "내 보험" 개념과 맞지 않는다.
+  if (!isLoggedIn) {
+    return (
+      <div className="page">
+        <TopBar title="내 보험 보관함" />
+        <div className="empty-state">
+          <Icon3D src="lock" size={72} />
+          <p className="muted">로그인하면 보험을 등록하고 관리할 수 있어요.</p>
+          <a href="/account" className="btn-primary" style={{ textDecoration: "none", display: "inline-block", padding: "13px 22px" }}>
+            로그인하러 가기
+          </a>
+        </div>
+      </div>
+    );
   }
 
   if (mode === "add") {
@@ -128,7 +104,7 @@ export function MyPolicies() {
           <>
             <InsurerPicker value={insurerName} onChange={setInsurerName} />
             <label style={{ marginTop: 16 }}>
-              상품명
+              상품명 (알고 있으면)
               <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="예: 해외여행보험" />
             </label>
           </>
@@ -138,64 +114,26 @@ export function MyPolicies() {
       {
         icon: "calendar",
         eyebrow: "STEP 2 · 가입 정보",
-        title: "가입 유형과\n보험기간을 알려주세요",
+        title: "나이와 보험기간을\n알려주세요",
         content: (
           <>
             <label>
-              가입 유형
-              <select value={policyType} onChange={(e) => setPolicyType(e.target.value)}>
-                <option value="직접가입">직접가입</option>
-                <option value="카드부가">카드부가</option>
-                <option value="단체">단체</option>
-              </select>
+              나이
+              <input
+                type="number"
+                min={0}
+                max={120}
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                placeholder="예: 30"
+              />
             </label>
             <DateTimeField label="보험기간 시작" value={periodStart} onChange={setPeriodStart} mode="date" />
-            <DateTimeField label="보험기간 종료" value={periodEnd} onChange={setPeriodEnd} mode="date" />
-          </>
-        ),
-        canNext: !!periodStart && !!periodEnd,
-      },
-      {
-        icon: "puzzle",
-        eyebrow: "STEP 3 · 가입 담보",
-        title: "가입하신 담보를\n골라주세요",
-        subtitle: `${insurerName}이(가) 실제로 판매하는 담보 목록이에요. 가입하신 항목만 체크하고, 가입금액을 알고 있으면 적어주세요.`,
-        content: (
-          <>
-            {coveragesLoading && <p className="muted">담보 목록을 불러오는 중...</p>}
-            {!coveragesLoading && availableCoverages.length === 0 && (
-              <p className="muted">이 보험사의 담보 정보를 아직 찾지 못했어요. 담보 없이 등록만 진행할게요.</p>
-            )}
-            {availableCoverages.map((c) => {
-              const sel = selections[c.coverage_id];
-              return (
-                <div className="coverage-pick" key={c.coverage_id}>
-                  <label className="checkbox-label coverage-pick__head">
-                    <input
-                      type="checkbox"
-                      checked={!!sel?.checked}
-                      onChange={() => toggleCoverage(c.coverage_id)}
-                    />
-                    <span>
-                      <strong>{c.std_name ?? c.raw_name}</strong>
-                      {c.limit_amount && <span className="muted"> · {c.limit_amount}</span>}
-                    </span>
-                  </label>
-                  {sel?.checked && (
-                    <input
-                      className="coverage-pick__amount"
-                      placeholder={c.limit_amount ? `가입금액 (한도 ${c.limit_amount})` : "가입금액"}
-                      value={sel.amount}
-                      onChange={(e) => setCoverageAmount(c.coverage_id, e.target.value)}
-                    />
-                  )}
-                </div>
-              );
-            })}
+            <DateTimeField label="보험기간 종료" value={periodEnd} onChange={setPeriodEnd} mode="date" minDate={periodStart || undefined} />
             {error && <div className="error-box">{error}</div>}
           </>
         ),
-        canNext: true,
+        canNext: !!periodStart && !!periodEnd,
       },
     ];
 
@@ -209,7 +147,6 @@ export function MyPolicies() {
           icon={current.icon}
           eyebrow={current.eyebrow}
           title={current.title}
-          subtitle={current.subtitle}
           stepIndex={step}
           onBack={() => (step > 0 ? setStep((s) => s - 1) : setMode("list"))}
           onNext={isLast ? handleSubmit : () => setStep((s) => s + 1)}
@@ -227,8 +164,8 @@ export function MyPolicies() {
     <div className="page">
       <TopBar title="내 보험 보관함" />
       <p className="page-desc">
-        가입한 보험을 등록하면 보험사명·담보명을 실제 약관과 자동으로 매칭해요. 매칭된 담보만 사고 후
-        청구 검토 대상이 됩니다.
+        가입한 보험을 등록하면 보험사명을 실제 약관과 자동으로 매칭해서, 그 상품이 실제로 파는 담보를 그대로
+        불러와요. 매칭된 담보만 사고 후 청구 검토 대상이 됩니다.
       </p>
 
       <motion.button
@@ -241,7 +178,7 @@ export function MyPolicies() {
         <Icon3D src="gift" size={56} />
         <div className="home-card__text">
           <strong>새 보험 등록하기</strong>
-          <span>3단계면 충분해요</span>
+          <span>2단계면 충분해요</span>
         </div>
         <span className="home-card__arrow">›</span>
       </motion.button>
@@ -256,34 +193,49 @@ export function MyPolicies() {
         <div className="card policy-card" key={p.user_policy_id}>
           <div className="policy-card__head">
             <strong>{shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험</strong>
+            <button
+              type="button"
+              className="history-card__delete"
+              title="삭제"
+              style={{ marginLeft: "auto" }}
+              onClick={() => setConfirmDeleteId(p.user_policy_id)}
+            >
+              🗑
+            </button>
           </div>
-          <div className="muted">{p.period_start} ~ {p.period_end} · {p.policy_type}</div>
-          <table className="coverage-table">
-            <thead>
-              <tr>
-                <th>입력한 담보명</th>
-                <th>KB 매칭 결과</th>
-                <th>가입금액</th>
-              </tr>
-            </thead>
-            <tbody>
-              {p.coverages.map((c) => (
-                <tr key={c.user_coverage_id}>
-                  <td>{c.raw_name}</td>
-                  <td>
-                    {c.matched_std_name ? (
-                      <span className="match-ok">✓ {c.matched_std_name}</span>
-                    ) : (
-                      <span className="match-none">매칭 안 됨 (KB에 없는 담보)</span>
-                    )}
-                  </td>
-                  <td>{c.subscribed_amount ?? "-"}</td>
+          <div className="muted">
+            {p.period_start} ~ {p.period_end}{p.subscriber_age ? ` · 만 ${p.subscriber_age}세` : ""}
+          </div>
+          {p.coverages.length > 0 ? (
+            <table className="coverage-table">
+              <thead>
+                <tr>
+                  <th>담보</th>
+                  <th>보장금액</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {p.coverages.map((c) => (
+                  <tr key={c.user_coverage_id}>
+                    <td>{c.matched_std_name ?? c.raw_name}</td>
+                    <td>{c.subscribed_amount ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="muted" style={{ fontSize: "0.82rem" }}>이 보험사의 담보 정보를 아직 찾지 못했어요.</p>
+          )}
         </div>
       ))}
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="보험 삭제"
+        message="이 보험을 삭제할까요? 연결된 사고 접수 이력에서도 이 보험 연결이 풀려요."
+        onConfirm={() => confirmDeleteId !== null && handleDelete(confirmDeleteId)}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

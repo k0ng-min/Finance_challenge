@@ -64,7 +64,8 @@ class UserPolicy(Base):
     policy_version_id = Column(Integer, ForeignKey("policy_version.policy_version_id"), nullable=True)
     insurer_name_raw = Column(String)
     product_name_raw = Column(String)
-    policy_type = Column(String)  # 직접가입/카드부가/단체
+    policy_type = Column(String)  # 직접가입/카드부가/단체 — 더 이상 등록 화면에서 받지 않음(과거 데이터 호환용으로만 남김)
+    subscriber_age = Column(Integer, nullable=True)  # 가입자 나이
     period_start = Column(Date)
     period_end = Column(Date)
 
@@ -109,6 +110,11 @@ class Incident(Base):
     medical_cost = Column(String)
     returned_home = Column(Boolean, nullable=True)
     structured = Column(Text)  # JSON, LLM 구조화 결과
+    # 원문 자유서술 사고 설명 — 재조회 시 분실/도난형 사고 여부를 다시 판별하는 데 쓴다
+    # (Gemini를 또 부르지 않고 키워드로만 재판별하므로 저장해둔 원문이 필요하다).
+    free_text = Column(Text)
+    # "도난"|"파손"|"분실" — 휴대품손해 특약이 분실은 보상하지 않고 도난/파손만 보상하므로 구분한다.
+    item_damage_type = Column(String, nullable=True)
 
     user = relationship("AppUser", back_populates="incidents")
     evidences = relationship("Evidence", back_populates="incident")

@@ -58,6 +58,41 @@
 
 html, body { overflow-x: hidden; max-width: 100%; }
 
+/* 스크롤이 생기는 곳(페이지 전체, 카드 내부 등) 어디서나 기본 굵은 회색 스크롤바 대신
+   앱 톤에 맞는 얇고 둥근 스크롤바를 쓴다. */
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* 앱 전체에서 마우스로 드래그해도 텍스트가 선택되지 않게 한다 — 직접 입력하는
+   input·textarea만 예외로 선택 가능하게 둔다. */
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+input, textarea, [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* select 드롭다운(닫혀있는 상자)에 실제로 스타일을 입힐 수 있는 부분 — OS 네이티브
+   화살표 대신 앱 톤에 맞는 화살표를 쓴다. 펼쳐졌을 때의 옵션 목록 자체는 브라우저가
+   그리는 부분이라 CSS로 못 바꾸지만, color-scheme(위 :root)이 라이트/다크에 맞춰
+   OS 네이티브 스타일을 골라준다. */
+.step__content select, .form select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238592a8' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+.step__content select { background-size: 13px; }
+.form select { background-size: 11px; }
+
 body {
   margin: 0;
   background:
@@ -144,7 +179,7 @@ body {
 }
 
 /* --- 홈 허브 --- */
-.home { padding-top: 8px; }
+.home { padding-top: 8px; display: flex; flex-direction: column; flex: 1; }
 .home__topbar { display: flex; align-items: center; padding: 12px 2px 0; }
 .home__topbar-spacer { flex: 1; }
 .account-pill {
@@ -194,6 +229,7 @@ body {
 
 /* 보조 메뉴 — 아이콘 + 라벨만, 설명 없이 컴팩트하게 */
 .home__quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.home__footer { text-align: center; font-size: 0.72rem; color: var(--muted); margin: 0 0 4px; margin-top: auto; padding-top: 20px; }
 .home-quick {
   display: flex;
   flex-direction: column;
@@ -243,9 +279,72 @@ body {
 .step__content .form label { margin-bottom: 16px; }
 
 
-.step__actions { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-top: 20px; }
-.step__back { flex: 0 0 auto; }
+.step__actions { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-top: 20px; align-items: center; }
+.step__back {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--card-bg);
+  color: var(--primary-dark);
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.12);
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s, color 0.12s;
+}
+.step__back:hover { border-color: var(--primary); color: var(--primary); box-shadow: 0 6px 18px rgba(var(--shadow-tint), 0.18); }
 .step__next { flex: 1; }
+
+/* --- PickerField: select 대체용 커스텀 선택 상자(펼치면 모달로 목록을 보여준다) --- */
+.picker-field {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 1.05rem;
+  padding: 15px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: inherit;
+  background: var(--ivory);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.picker-field:hover { border-color: var(--primary); }
+.picker-field:disabled { opacity: 0.55; cursor: not-allowed; }
+.picker-field__value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-field__value--placeholder { color: var(--muted); }
+.picker-field__chevron { color: var(--muted); font-size: 1rem; flex: 0 0 auto; transition: transform 0.15s; }
+.form .picker-field, .coverage-table .picker-field { font-size: 0.92rem; padding: 11px 14px; border-radius: var(--radius-sm); }
+
+.picker-list { display: flex; flex-direction: column; gap: 4px; }
+.picker-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.picker-list__item:hover { background: var(--cream); }
+.picker-list__item--active { background: var(--primary-soft); color: var(--primary-dark); font-weight: 700; }
+.picker-list__check { color: var(--primary); font-weight: 800; }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -1250,9 +1349,10 @@ button { cursor: pointer; font-family: inherit; }
   }
 
   /* 화면(라우트)이 바뀌어도 카드 크기가 흔들리지 않도록 고정 — 내용이 넘치면 .app-main 내부에서만 스크롤.
-     세로로 길게 늘어지지 않는 적당한 비율의 네모(760x680)로, 화면 안에 스크롤 없이 들어가게 한다. */
+     세로로 길게 늘어지지 않는 적당한 비율의 네모로, 화면 안에 스크롤 없이 들어가게 한다.
+     위아래로 배경 아이콘(96px) 반개 크기(48px)씩 더 늘려서 700 -> 796. */
   .app-shell {
-    height: min(700px, calc(100vh - 80px));
+    height: min(796px, calc(100vh - 80px));
     min-height: 0;
     width: 760px;
     flex: none;

@@ -91,7 +91,7 @@ export interface UserPolicyOut {
   user_policy_id: number;
   insurer_name_raw: string;
   product_name_raw: string | null;
-  policy_type: string;
+  subscriber_age: number | null;
   period_start: string;
   period_end: string;
   matched_insurer_code: string | null;
@@ -218,6 +218,9 @@ export const api = {
   registerPolicy: (userId: number, payload: object) =>
     request<UserPolicyOut>(`/users/${userId}/policies`, { method: "POST", body: JSON.stringify(payload) }),
 
+  deletePolicy: (userId: number, policyId: number) =>
+    request<{ status: string }>(`/users/${userId}/policies/${policyId}`, { method: "DELETE" }),
+
   createIncident: (payload: object) =>
     request<IncidentAnalysisOut>("/incidents", { method: "POST", body: JSON.stringify(payload) }),
 
@@ -254,6 +257,8 @@ export const api = {
     if (tripContext?.coverage_priority?.length) params.set("coverage_priority", tripContext.coverage_priority.join(","));
     return request<InsurerRankingOut>(`/insurers/ranking?${params.toString()}`);
   },
+
+  getClause: (clauseId: number) => request<ClauseOut>(`/clauses/${clauseId}`),
 
   getClauseSpans: (clauseId: number) =>
     request<HighlightSpanOut[] | null>(`/clauses/${clauseId}/spans`),

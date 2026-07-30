@@ -6,11 +6,24 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import Clause
 from app.models.user import Incident
-from app.schemas import HighlightSpanOut
+from app.schemas import HighlightSpanOut, ClauseOut
 from app.services.clause_spans_gemini import get_highlight_spans, get_incident_relevance
 from app.services.nlu import get_nlu_engine
 
 router = APIRouter(prefix="/clauses", tags=["clauses"])
+
+
+@router.get("/{clause_id}", response_model=ClauseOut)
+def get_clause(clause_id: int, db: Session = Depends(get_db)):
+    """사고 맥락 없이 조항 원문 자체만 필요할 때(예: 가입 전 추천 화면에서 근거 조항을 약관
+    형광펜으로 열어보는 경우) 쓴다."""
+    clause = db.get(Clause, clause_id)
+    if not clause:
+        raise HTTPException(status_code=404, detail="조항을 찾을 수 없습니다.")
+    return ClauseOut(
+        clause_id=clause.clause_id, article_no=clause.article_no, text=clause.text,
+        page_ref=clause.page_ref, default_color=clause.default_color, highlight_color=clause.default_color,
+    )
 
 
 @router.get("/{clause_id}/spans", response_model=list[HighlightSpanOut] | None)

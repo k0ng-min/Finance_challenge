@@ -56,6 +56,9 @@ class _IncidentExtractionSchema(BaseModel):
     returned_home: bool | None = None
     returned_home_confidence: float = 0.0
     returned_home_span: str | None = None
+    item_damage_type: str | None = None
+    item_damage_type_confidence: float = 0.0
+    item_damage_type_span: str | None = None
 
 
 class _CoverageMatchSchema(BaseModel):
@@ -73,7 +76,13 @@ _INCIDENT_PROMPT = """당신은 여행자보험 사고 접수를 돕는 정보 �
 3. 텍스트에 언급이 없으면 값은 null, confidence는 0.0, span도 null로 두세요.
 4. hospitalized/surgery/local_treatment/returned_home은 "아직 ~ 아니다/전이다"처럼 명시적으로
    부정된 경우 false로, 명확히 확인된 경우 true로, 언급이 아예 없으면 null로 하세요.
-5. confidence는 0.0~1.0. 문맥상 추론이 섞였으면 낮게(0.4~0.6), 원문에 그대로 명시돼 있으면
+5. item_damage_type: 사고가 휴대품(휴대폰, 카메라, 캐리어, 가방, 지갑 등 물건)의 분실·도난·
+   파손에 관한 것이면 "도난", "파손", "분실" 중 하나로 분류하세요. 신체 상해·질병에 관한
+   사고이거나 물건과 무관하면 null로 두세요. "도난"은 누군가 훔쳐간 경우, "파손"은 물건이
+   망가진 경우, "분실"은 본인의 부주의로 물건이 없어진 경우입니다. 이 셋 중 어느 것인지
+   원문만으로 명확히 판단할 수 없으면(예: 그냥 "잃어버렸다"고만 하고 도난인지 단순부주의인지
+   불명확하면) 추측하지 말고 null로 두세요 — 애매하면 능동 질문으로 다시 확인합니다.
+6. confidence는 0.0~1.0. 문맥상 추론이 섞였으면 낮게(0.4~0.6), 원문에 그대로 명시돼 있으면
    높게(0.8~1.0) 매기세요.
 
 사고 설명:
@@ -172,6 +181,7 @@ class GeminiNLU:
             surgery=self._field_from(result.surgery, result.surgery_confidence, result.surgery_span),
             local_treatment=self._field_from(result.local_treatment, result.local_treatment_confidence, result.local_treatment_span),
             returned_home=self._field_from(result.returned_home, result.returned_home_confidence, result.returned_home_span),
+            item_damage_type=self._field_from(result.item_damage_type, result.item_damage_type_confidence, result.item_damage_type_span),
         )
 
     def normalize_coverage_name(self, raw_name: str, std_candidates: list[tuple[str, str]]) -> tuple[str | None, float]:

@@ -93,26 +93,51 @@ interface DateTimeFieldProps {
   onChange: (v: string) => void;
   mode?: "date" | "datetime";
   placeholder?: string;
+  /** 이 날짜(포함) 이전은 고를 수 없다. YYYY-MM-DD. */
+  minDate?: string;
+  /** 이 날짜(포함) 이후는 고를 수 없다. YYYY-MM-DD. */
+  maxDate?: string;
 }
 
 /**
  * iOS 설정/캘린더 앱의 휠 스피너를 참고한 바텀시트형 날짜·시간 선택기.
  * 모바일에서 가장 널리 쓰이는 날짜 입력 패턴이라 네이티브 date input보다 손에 익는다.
  */
-export function DateTimeField({ label, value, onChange, mode = "date", placeholder = "선택해주세요" }: DateTimeFieldProps) {
+export function DateTimeField({
+  label, value, onChange, mode = "date", placeholder = "선택해주세요", minDate, maxDate,
+}: DateTimeFieldProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Parsed>(() => parseValue(value, mode));
 
+  const minParsed = minDate ? parseValue(minDate, "date") : null;
+  const maxParsed = maxDate ? parseValue(maxDate, "date") : null;
+
+  function clampToRange(p: Parsed): Parsed {
+    const key = (a: Parsed) => a.y * 10000 + a.m * 100 + a.d;
+    let next = p;
+    if (minParsed && key(next) < key(minParsed)) next = { ...minParsed, h: next.h, min: next.min };
+    if (maxParsed && key(next) > key(maxParsed)) next = { ...maxParsed, h: next.h, min: next.min };
+    return next;
+  }
+
   function openSheet() {
-    setDraft(parseValue(value, mode));
+    setDraft(clampToRange(parseValue(value, mode)));
     setOpen(true);
   }
 
-  const years = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 1 + i);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const yearFrom = minParsed ? minParsed.y : new Date().getFullYear() - 1;
+  const yearTo = maxParsed ? maxParsed.y : new Date().getFullYear() + 4;
+  const years = Array.from({ length: Math.max(1, yearTo - yearFrom + 1) }, (_, i) => yearFrom + i);
+
+  const monthFrom = minParsed && draft.y === minParsed.y ? minParsed.m : 1;
+  const monthTo = maxParsed && draft.y === maxParsed.y ? maxParsed.m : 12;
+  const months = Array.from({ length: Math.max(1, monthTo - monthFrom + 1) }, (_, i) => monthFrom + i);
+
   const maxDay = daysInMonth(draft.y, draft.m);
-  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
-  const dClamped = Math.min(draft.d, maxDay);
+  const dayFrom = minParsed && draft.y === minParsed.y && draft.m === minParsed.m ? minParsed.d : 1;
+  const dayTo = maxParsed && draft.y === maxParsed.y && draft.m === maxParsed.m ? Math.min(maxParsed.d, maxDay) : maxDay;
+  const days = Array.from({ length: Math.max(1, dayTo - dayFrom + 1) }, (_, i) => dayFrom + i);
+  const dClamped = Math.min(Math.max(draft.d, dayFrom), dayTo);
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const minutes = Array.from({ length: 60 }, (_, i) => i);
 
@@ -144,18 +169,18 @@ export function DateTimeField({ label, value, onChange, mode = "date", placehold
               <div className="wheel-highlight" />
               <WheelCol
                 items={years.map(String)}
-                index={years.indexOf(draft.y)}
-                onIndex={(i) => setDraft((p) => ({ ...p, y: years[i] }))}
+                index={Math.max(0, years.indexOf(draft.y))}
+                onIndex={(i) => setDraft((p) => clampToRange({ ...p, y: years[i] }))}
               />
               <WheelCol
                 items={months.map((mm) => `${mm}월`)}
-                index={draft.m - 1}
-                onIndex={(i) => setDraft((p) => ({ ...p, m: months[i] }))}
+                index={Math.max(0, months.indexOf(draft.m))}
+                onIndex={(i) => setDraft((p) => clampToRange({ ...p, m: months[i] }))}
               />
               <WheelCol
                 items={days.map((dd) => `${dd}일`)}
-                index={dClamped - 1}
-                onIndex={(i) => setDraft((p) => ({ ...p, d: days[i] }))}
+                index={Math.max(0, days.indexOf(dClamped))}
+                onIndex={(i) => setDraft((p) => clampToRange({ ...p, d: days[i] }))}
               />
               {mode === "datetime" && (
                 <>

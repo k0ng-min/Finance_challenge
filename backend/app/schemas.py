@@ -63,9 +63,11 @@ class UserCoverageIn(BaseModel):
 class UserPolicyCreate(BaseModel):
     insurer_name_raw: str
     product_name_raw: Optional[str] = None
-    policy_type: str  # 직접가입/카드부가/단체
+    subscriber_age: Optional[int] = None
     period_start: dt.date
     period_end: dt.date
+    # 담보는 더 이상 프론트에서 직접 고르지 않는다 — 매칭된 상품의 실제 담보 목록을
+    # 서버가 자동으로 채운다(insurers.py의 실제 Coverage 데이터 기준). 과거 호환용으로만 남김.
     coverages: list[UserCoverageIn] = []
 
 
@@ -92,7 +94,7 @@ class UserPolicyOut(BaseModel):
     user_policy_id: int
     insurer_name_raw: str
     product_name_raw: Optional[str]
-    policy_type: str
+    subscriber_age: Optional[int] = None
     period_start: dt.date
     period_end: dt.date
     matched_insurer_code: Optional[str] = None
@@ -105,6 +107,9 @@ class IncidentCreate(BaseModel):
     user_id: int
     trip_id: Optional[int] = None
     user_policy_id: Optional[int] = None  # 이 사고 청구가 어느 등록 보험을 대상으로 하는지
+    # 게스트(비로그인)는 "내 보험"을 쓸 수 없어 등록된 보험이 없다 — 대신 6개 보험사 중
+    # 하나를 바로 고르면, 서버가 그 보험사로 최소한의 보험 기록을 대신 만들어 청구 검토에 쓴다.
+    insurer_code: Optional[str] = None
     free_text: str = ""
     country: Optional[str] = None
     occurred_at: Optional[dt.datetime] = None

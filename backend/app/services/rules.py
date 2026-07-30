@@ -20,9 +20,10 @@ RISKY_ACTIVITY_KEYWORDS = [
 ]
 
 # MVP KB에 존재하지 않는(=시드되지 않은) 대분류. 근거 없이 추천하지 않기 위해 명시적으로 '확인불가' 처리한다.
+# (휴대품손해는 6개 보험사 원문을 확인해 실제로 KB에 추가했으므로 이 목록에서 뺐다 —
+# app/seed_personal_effects.py, PERSONAL_EFFECTS 참고.)
 NOT_YET_IN_KB = [
     ("질병의료비", "해외여행 중 질병으로 인한 의료비 (해외발생 질병의료비 특약)"),
-    ("휴대품손해", "여행중 휴대품손해(분실제외) 특약"),
     ("배상책임", "여행중 배상책임 특약"),
     ("항공기지연", "항공기 및 수하물 지연·결항 추가비용 특약"),
 ]
@@ -116,6 +117,26 @@ def generate_pre_trip_findings(db: Session, risk_profile: dict) -> list[dict]:
                 f"[{insurer.name}] 해외 의료기관에서 상해 치료를 받을 경우 실제 부담한 의료비를 보상하는 "
                 f"담보입니다. 여행지({risk_profile['destination']})의 의료비 수준을 고려할 때 우선 검토가 "
                 "필요합니다."
+            ),
+            "coverage_amount": cov.limit_amount,
+            "confidence": "높음",
+            "evidence": [(c, c.default_color) for c in clauses],
+        })
+
+    # 2-1. 기본 담보: 휴대품손해(분실제외) (보험사별 비교) — 도난·파손만 보상, 분실은 면책이라는
+    # 실제 약관상 제약을 추천 문구에도 그대로 밝힌다.
+    for insurer, cov, clauses in _coverages_with_clauses(db, "PERSONAL_EFFECTS", ["보장정의"]):
+        if not clauses:
+            continue
+        findings.append({
+            "finding_type": "추천담보",
+            "status": "우선 검토 대상",
+            "target_ref": cov.raw_name,
+            "insurer_code": insurer.code,
+            "insurer_name": insurer.name,
+            "description": (
+                f"[{insurer.name}] 여행 중 휴대품이 도난·파손됐을 때 보상하는 담보입니다(1개·1조·1쌍당 "
+                "20만원 한도). 단, 본인 부주의로 인한 단순 '분실'은 보상하지 않으니 유의하세요."
             ),
             "coverage_amount": cov.limit_amount,
             "confidence": "높음",
