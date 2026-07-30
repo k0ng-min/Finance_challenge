@@ -374,6 +374,7 @@ body {
 .step__content input[type="text"],
 .step__content input[type="date"],
 .step__content input[type="datetime-local"],
+.step__content input[type="number"],
 .step__content input:not([type]),
 .step__content select,
 .step__content textarea {
@@ -392,6 +393,15 @@ body {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-soft);
   background: var(--card-bg);
+}
+/* 네이티브 숫자칸의 위아래 스피너 화살표는 앱 톤과 안 맞아서 없애고, 텍스트 입력처럼 깔끔하게 둔다. */
+.step__content input[type="number"] {
+  -moz-appearance: textfield;
+}
+.step__content input[type="number"]::-webkit-outer-spin-button,
+.step__content input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .step__content label {
   display: flex;
