@@ -451,6 +451,12 @@ body {
   border-color: var(--primary);
   background: var(--card-bg);
 }
+.form input[type="number"] { -moz-appearance: textfield; }
+.form input[type="number"]::-webkit-outer-spin-button,
+.form input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .coverage-pick {
@@ -499,6 +505,21 @@ button { cursor: pointer; font-family: inherit; }
   text-align: center;
   padding: 14px 0 2px;
   font-family: inherit;
+}
+
+/* 회원탈퇴는 로그아웃과 달리 되돌릴 수 없는 위험한 동작이라, 눈에 덜 띄게 작은 링크로만 둔다. */
+.account-withdraw-link {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 14px 0 2px;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .social-login-row { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }

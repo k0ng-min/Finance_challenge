@@ -11,10 +11,15 @@ interface AppState {
   // 인증 상태 — 로그인 전에는 nickname/email이 없는 익명 게스트로 동작한다
   nickname: string | null;
   email: string | null;
+  // 로그인 계정에는 한 번 입력한 나이가 프로필에 저장돼, 여행준비·사고접수·내보험등록에서
+  // 매번 다시 물어보지 않고 자동으로 채워진다(게스트는 세션이 매번 새로 시작돼 저장할 곳이 없다).
+  age: number | null;
   isLoggedIn: boolean;
   loginWithKakao: (code: string, intent: "login" | "signup") => Promise<boolean>;
   loginWithGoogle: (code: string, intent: "login" | "signup") => Promise<boolean>;
   updateNickname: (nickname: string) => Promise<void>;
+  updateAge: (age: number) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -38,6 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [nickname, setNickname] = useState<string | null>(() => localStorage.getItem(LS_NICKNAME));
   const [email, setEmail] = useState<string | null>(() => localStorage.getItem(LS_EMAIL));
+  const [age, setAge] = useState<number | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   async function bootstrapGuest() {
@@ -59,6 +65,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUserId(res.user_id);
     setNickname(res.nickname);
     setEmail(res.email);
+    setAge(res.age);
     setIsLoggedIn(true);
   }
 
@@ -74,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setUserId(me.user_id);
           setNickname(me.nickname);
           setEmail(me.email);
+          setAge(me.age);
           setIsLoggedIn(true);
           setLoading(false);
           return;
@@ -127,6 +135,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNickname(res.nickname);
   }
 
+  async function updateAge(newAge: number) {
+    const res = await api.updateAge(newAge);
+    setAge(res.age);
+  }
+
+  async function deleteAccount() {
+    await api.deleteAccount();
+    // 계정 자체가 사라졌으니 세션도 같이 정리하고 새 게스트로 되돌린다(logout과 동일한 뒷정리).
+    localStorage.removeItem(LS_TOKEN);
+    localStorage.removeItem(LS_NICKNAME);
+    localStorage.removeItem(LS_EMAIL);
+    localStorage.removeItem(LS_USER);
+    clearTripAndIncident();
+    setNickname(null);
+    setEmail(null);
+    setAge(null);
+    setIsLoggedIn(false);
+    setUserId(null);
+    setLoading(true);
+    await bootstrapGuest();
+    setLoading(false);
+  }
+
   async function logout() {
     try {
       await api.logout();
@@ -140,6 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     clearTripAndIncident();
     setNickname(null);
     setEmail(null);
+    setAge(null);
     setIsLoggedIn(false);
     setUserId(null);
     setLoading(true);
@@ -151,7 +183,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppCtx.Provider
       value={{
         userId, tripId, incidentId, setTripId, setIncidentId, loading,
-        nickname, email, isLoggedIn, loginWithKakao, loginWithGoogle, updateNickname, logout,
+        nickname, email, age, isLoggedIn, loginWithKakao, loginWithGoogle,
+        updateNickname, updateAge, deleteAccount, logout,
       }}
     >
       {children}

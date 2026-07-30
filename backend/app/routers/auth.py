@@ -9,6 +9,7 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser
 from app.services.auth import generate_session_token, session_expiry
+from app.services.deletion import delete_user_cascade
 from app.services.oauth import exchange_kakao_code, exchange_google_code
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -49,6 +50,7 @@ class AuthUserOut(BaseModel):
     email: str | None
     auth_provider: str
     token: str
+    age: int | None = None
     is_new_user: bool = False
 
     class Config:
@@ -57,6 +59,10 @@ class AuthUserOut(BaseModel):
 
 class NicknameIn(BaseModel):
     nickname: str
+
+
+class AgeIn(BaseModel):
+    age: int
 
 
 class ProviderStatusOut(BaseModel):
@@ -186,8 +192,16 @@ def logout(user: AppUser = Depends(get_current_user), db: Session = Depends(get_
 def me(user: AppUser = Depends(get_current_user)):
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age,
     )
+
+
+@router.delete("/me")
+def delete_account(user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """회원 탈퇴 — 이 계정과 계정이 만든 모든 여행·사고·보험 기록을 되돌릴 수 없이 삭제한다."""
+    delete_user_cascade(db, user)
+    db.commit()
+    return {"status": "deleted"}
 
 
 @router.get("/providers", response_model=ProviderStatusOut)
@@ -215,7 +229,7 @@ async def kakao_login(request: Request, payload: OAuthIn, db: Session = Depends(
     )
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, is_new_user=is_new,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, is_new_user=is_new,
     )
 
 
@@ -231,7 +245,7 @@ async def google_login(request: Request, payload: OAuthIn, db: Session = Depends
     )
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, is_new_user=is_new,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, is_new_user=is_new,
     )
 
 
@@ -246,5 +260,17 @@ def update_nickname(payload: NicknameIn, user: AppUser = Depends(get_current_use
     db.commit()
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age,
+    )
+
+
+@router.patch("/age", response_model=AuthUserOut)
+def update_age(payload: AgeIn, user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    if payload.age < 0 or payload.age > 120:
+        raise HTTPException(status_code=400, detail="나이를 0~120 사이로 입력해주세요.")
+    user.age = payload.age
+    db.commit()
+    return AuthUserOut(
+        user_id=user.user_id, nickname=user.nickname, email=user.email,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age,
     )

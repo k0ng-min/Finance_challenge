@@ -27,12 +27,13 @@ const PRIORITY_OPTIONS = ["의료비", "구조송환", "휴대품 파손·도난
 
 
 export function TripPrep() {
-  const { userId, setTripId } = useApp();
+  const { userId, setTripId, isLoggedIn, age: profileAge, updateAge } = useApp();
   const [searchParams] = useSearchParams();
   const resumeTripId = Number(searchParams.get("resultOf")) || null;
   const [step, setStep] = useState(0);
   const [destination, setDestination] = useState("");
   const [companionType, setCompanionType] = useState("");
+  const [age, setAge] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -61,11 +62,19 @@ export function TripPrep() {
     api.getInsurerTiers().then(setTiers).catch(() => {});
   }, []);
 
+  // 로그인 계정은 프로필에 저장된 나이를 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
+  useEffect(() => {
+    if (isLoggedIn && profileAge) setAge((prev) => prev || String(profileAge));
+  }, [isLoggedIn, profileAge]);
+
   async function handleSubmit() {
     if (!userId) return;
     setLoading(true);
     setError(null);
     try {
+      if (isLoggedIn && age && Number(age) !== profileAge) {
+        await updateAge(Number(age)).catch(() => {});
+      }
       const res = await api.createTrip({
         user_id: userId,
         destination,
@@ -161,9 +170,20 @@ export function TripPrep() {
               </button>
             ))}
           </div>
+          <label style={{ marginTop: 14 }}>
+            나이
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="예: 30"
+            />
+          </label>
         </>
       ),
-      canNext: destination.trim().length > 0,
+      canNext: destination.trim().length > 0 && !!age,
     },
     {
       icon: "calendar",

@@ -23,7 +23,7 @@ const QUESTION_ICON: Record<string, string> = {
 };
 
 export function IncidentReport() {
-  const { userId, isLoggedIn, setIncidentId } = useApp();
+  const { userId, isLoggedIn, setIncidentId, age: profileAge, updateAge } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resultOfParam = searchParams.get("resultOf");
@@ -42,6 +42,12 @@ export function IncidentReport() {
   const [insurerCode, setInsurerCode] = useState("");
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
+  const [age, setAge] = useState("");
+
+  // 로그인 계정은 프로필에 저장된 나이를 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
+  useEffect(() => {
+    if (isLoggedIn && profileAge) setAge((prev) => prev || String(profileAge));
+  }, [isLoggedIn, profileAge]);
 
   // 로그인 계정: 등록된 보험 중 이번 사고를 어느 보험으로 청구할지 고를 수 있게 목록을 준비한다.
   // 게스트: "내 보험"을 쓸 수 없으니 6개 보험사 중 하나를 바로 고르게 한다(아래 InsurerPicker).
@@ -111,6 +117,9 @@ export function IncidentReport() {
     setLoading(true);
     setError(null);
     try {
+      if (isLoggedIn && age && Number(age) !== profileAge) {
+        await updateAge(Number(age)).catch(() => {});
+      }
       const res = await api.createIncident({
         user_id: userId,
         trip_id: selectedTripId,
@@ -283,13 +292,24 @@ export function IncidentReport() {
       content: (
         <>
           <label>
+            나이
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="예: 30"
+              autoFocus
+            />
+          </label>
+          <label>
             사고 상황 (자유롭게 작성)
             <textarea
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
               rows={5}
               placeholder="예: 스위스에서 트레킹 중 미끄러져 발목을 다쳐서 현지 병원에서 입원 치료를 받았습니다."
-              autoFocus
             />
           </label>
           <DateTimeField
@@ -309,7 +329,7 @@ export function IncidentReport() {
           {error && <div className="error-box">{error}</div>}
         </>
       ),
-      canNext: !!freeText.trim(),
+      canNext: !!freeText.trim() && !!age,
     },
   ];
 

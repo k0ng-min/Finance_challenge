@@ -12,7 +12,7 @@ import { INSURERS, shortInsurerName } from "../data/insurers";
 import { motion } from "framer-motion";
 
 export function MyPolicies() {
-  const { userId, isLoggedIn } = useApp();
+  const { userId, isLoggedIn, age: profileAge, updateAge } = useApp();
   const [searchParams] = useSearchParams();
   const prefillInsurer = INSURERS.find((i) => i.code === searchParams.get("insurer"))?.name;
   const [mode, setMode] = useState<"list" | "add">(searchParams.get("mode") === "add" ? "add" : "list");
@@ -39,6 +39,11 @@ export function MyPolicies() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, isLoggedIn]);
 
+  // 프로필에 저장된 나이를 자동으로 채워준다 — 이미 다른 화면에서 한 번 입력했다면 여기서도 다시 안 물어봄.
+  useEffect(() => {
+    if (mode === "add" && profileAge) setAge((prev) => prev || String(profileAge));
+  }, [mode, profileAge]);
+
   function resetForm() {
     setStep(0);
     setInsurerName("");
@@ -53,6 +58,9 @@ export function MyPolicies() {
     setLoading(true);
     setError(null);
     try {
+      if (age && Number(age) !== profileAge) {
+        await updateAge(Number(age)).catch(() => {});
+      }
       await api.registerPolicy(userId, {
         insurer_name_raw: insurerName,
         product_name_raw: productName || null,

@@ -36,6 +36,7 @@ _add_missing_columns("app_user", {
     "terms_agreed_at": "ALTER TABLE app_user ADD COLUMN terms_agreed_at DATETIME",
     "privacy_agreed_at": "ALTER TABLE app_user ADD COLUMN privacy_agreed_at DATETIME",
     "marketing_agreed_at": "ALTER TABLE app_user ADD COLUMN marketing_agreed_at DATETIME",
+    "age": "ALTER TABLE app_user ADD COLUMN age INTEGER",
 })
 _add_missing_columns("clause", {
     "highlight_spans": "ALTER TABLE clause ADD COLUMN highlight_spans TEXT",

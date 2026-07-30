@@ -31,6 +31,9 @@ class AppUser(Base):
     terms_agreed_at = Column(DateTime, nullable=True)
     privacy_agreed_at = Column(DateTime, nullable=True)
     marketing_agreed_at = Column(DateTime, nullable=True)
+    # 여행 준비·사고 접수·내 보험 등록에서 매번 다시 물어보지 않도록, 로그인 계정에는
+    # 한 번 입력한 나이를 프로필에 저장해두고 자동으로 채워 넣는다.
+    age = Column(Integer, nullable=True)
 
     trips = relationship("Trip", back_populates="user")
     policies = relationship("UserPolicy", back_populates="user")

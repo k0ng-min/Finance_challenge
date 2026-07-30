@@ -173,6 +173,7 @@ export interface AuthUserOut {
   email: string | null;
   auth_provider: string;
   token: string;
+  age: number | null;
   is_new_user: boolean;
 }
 
@@ -308,4 +309,9 @@ export const api = {
 
   updateNickname: (nickname: string) =>
     request<AuthUserOut>("/auth/nickname", { method: "PATCH", body: JSON.stringify({ nickname }) }),
+
+  updateAge: (age: number) =>
+    request<AuthUserOut>("/auth/age", { method: "PATCH", body: JSON.stringify({ age }) }),
+
+  deleteAccount: () => request<{ status: string }>("/auth/me", { method: "DELETE" }),
 };

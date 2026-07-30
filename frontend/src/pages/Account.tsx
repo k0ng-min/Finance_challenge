@@ -31,7 +31,7 @@ function googleAuthorizeUrl(clientId: string, redirectUri: string) {
 }
 
 export function Account() {
-  const { isLoggedIn, userId, nickname, email, logout } = useApp();
+  const { isLoggedIn, userId, nickname, email, logout, deleteAccount } = useApp();
   const navigate = useNavigate();
   const [providers, setProviders] = useState<ProviderStatusOut | null>(null);
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
@@ -41,6 +41,19 @@ export function Account() {
   const [incidentModal, setIncidentModal] = useState<IncidentSummaryOut | null>(null);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState<number | null>(null);
   const [confirmDeleteIncident, setConfirmDeleteIncident] = useState<number | null>(null);
+  const [confirmWithdraw, setConfirmWithdraw] = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
+
+  async function handleWithdraw() {
+    setWithdrawing(true);
+    try {
+      await deleteAccount();
+      navigate("/");
+    } finally {
+      setWithdrawing(false);
+      setConfirmWithdraw(false);
+    }
+  }
 
   // 로그인이 기본(주), 회원가입은 그 밑에 작은 링크로 — 카카오·구글만 지원한다(이메일
   // 비밀번호 계정은 서버에 비밀번호를 아예 저장하지 않는 편이 유출 위험이 적어서 만들지
@@ -248,6 +261,14 @@ export function Account() {
           onConfirm={() => confirmDeleteIncident !== null && handleDeleteIncident(confirmDeleteIncident)}
           onCancel={() => setConfirmDeleteIncident(null)}
         />
+        <ConfirmDialog
+          open={confirmWithdraw}
+          title="회원 탈퇴"
+          message="정말 탈퇴하시겠어요? 이 계정과 저장된 모든 여행·사고·보험 기록이 되돌릴 수 없이 삭제돼요."
+          confirmLabel={withdrawing ? "탈퇴 처리 중..." : "탈퇴하기"}
+          onConfirm={handleWithdraw}
+          onCancel={() => setConfirmWithdraw(false)}
+        />
 
         <button
           type="button"
@@ -259,6 +280,13 @@ export function Account() {
           }}
         >
           로그아웃
+        </button>
+        <button
+          type="button"
+          className="account-withdraw-link"
+          onClick={() => setConfirmWithdraw(true)}
+        >
+          회원 탈퇴
         </button>
       </div>
     );
