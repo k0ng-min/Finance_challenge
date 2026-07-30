@@ -1,36 +1,50 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api, type RecommendationOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
-import { ResultTabs } from "../components/ResultTabs";
-import { NextStepCard } from "../components/NextStepCard";
+import { InsurerRankingFlow } from "../components/InsurerRankingFlow";
+import { DateTimeField } from "../components/DateTimeField";
+import { LoadingScreen } from "../components/LoadingScreen";
 import { COUNTRIES } from "../data/countries";
 
-const LS_RESULT = "travel_ai_trip_result";
-const STEP_COUNT = 5;
+const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "반려동물 동반"];
+// 현재 KB에 실제 약관이 적재된 담보는 의료비(해외상해의료비)·구조송환뿐이라, 그 두 개만
+// 보험사 순위·추천 점수에 실제로 반영된다. 나머지는 선택은 가능하지만 "약관 미확보"로
+// 정직하게 안내되며(보장 공백 표시) 순위 점수에는 영향을 주지 않는다.
+const KB_BACKED_PRIORITIES = new Set(["의료비", "구조송환"]);
+const PRIORITY_OPTIONS = ["의료비", "구조송환", "휴대품 파손·도난", "배상책임", "항공기 지연", "질병"];
+
 
 export function TripPrep() {
   const { userId, setTripId } = useApp();
+  const [searchParams] = useSearchParams();
+  const resumeTripId = Number(searchParams.get("resultOf")) || null;
   const [step, setStep] = useState(0);
-  const [destination, setDestination] = useState("스위스");
-  const [companionType, setCompanionType] = useState("가족");
-  const [startDate, setStartDate] = useState("2026-08-10");
-  const [endDate, setEndDate] = useState("2026-08-20");
-  const [purpose, setPurpose] = useState("휴양 및 관광");
+  const [destination, setDestination] = useState("");
+  const [companionType, setCompanionType] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [purpose, setPurpose] = useState("");
   const [activities, setActivities] = useState("");
   const [coveragePriority, setCoveragePriority] = useState("");
   const [rentalCar, setRentalCar] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RecommendationOut | null>(() => {
-    const cached = localStorage.getItem(LS_RESULT);
-    return cached ? JSON.parse(cached) : null;
-  });
+  // /trip으로 다시 들어올 때마다 매번 처음(목적지 선택)부터 시작한다 — 이전 결과를 자동으로 복원하지 않는다.
+  // 단, 계정의 "내 여행 기록"에서 특정 여행을 선택해 들어온 경우(?resultOf=)에는 그 결과를 바로 보여준다.
+  const [result, setResult] = useState<RecommendationOut | null>(null);
+  const [resuming, setResuming] = useState(!!resumeTripId);
 
   useEffect(() => {
-    if (result) localStorage.setItem(LS_RESULT, JSON.stringify(result));
-  }, [result]);
+    if (!resumeTripId) return;
+    setTripId(resumeTripId);
+    api.getTrip(resumeTripId)
+      .then(setResult)
+      .finally(() => setResuming(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleSubmit() {
     if (!userId) return;
@@ -57,34 +71,36 @@ export function TripPrep() {
     }
   }
 
-  if (result) {
-    const groups = [
-      { key: "추천담보", label: "추천 담보", items: result.findings.filter((f) => f.finding_type === "추천담보") },
-      { key: "제한조건", label: "제한조건", items: result.findings.filter((f) => f.finding_type === "제한조건") },
-      { key: "보장공백", label: "보장 공백", items: result.findings.filter((f) => f.finding_type === "보장공백") },
-    ];
+  if (resuming) {
     return (
       <div className="page">
-        <TopBar title="여행 위험 프로필" />
-        <div className="result-section">
-          <div className="card risk-profile">
-            <div>위험도: <strong>{String(result.risk_profile.risk_level ?? "-")}</strong></div>
-            <div>여행 일수: {String(result.risk_profile.trip_days ?? "-")}일</div>
-            {Array.isArray(result.risk_profile.risky_activity_detected) &&
-              (result.risk_profile.risky_activity_detected as string[]).length > 0 && (
-                <div>감지된 위험활동: {(result.risk_profile.risky_activity_detected as string[]).join(", ")}</div>
-              )}
-          </div>
-          <h2>보장 추천 결과</h2>
-          <ResultTabs groups={groups} />
-          <NextStepCard
-            to="/policies"
-            icon="umbrella"
-            iconBg="var(--orange-soft)"
-            label="다음 단계"
-            title="마음에 드는 보험, 보관함에 등록하기"
-          />
-        </div>
+        <TopBar title="맞춤 보험 순위" />
+        <LoadingScreen icon="suitcase" title="여행 기록을 불러오고 있어요" messages={["예전에 준비했던 여행을 찾고 있어요"]} />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="page">
+        <TopBar title="맞춤 보험 순위" />
+        <LoadingScreen
+          icon="flag"
+          title="딱 맞는 보험 순위를 만들고 있어요"
+          messages={[
+            "목적지·기간·활동을 바탕으로 위험도를 분석하고 있어요",
+            "관련된 실제 약관 조항을 찾고 있어요",
+          ]}
+        />
+      </div>
+    );
+  }
+
+  if (result) {
+    return (
+      <div className="page">
+        <TopBar title="맞춤 보험 순위" />
+        <InsurerRankingFlow result={result} />
       </div>
     );
   }
@@ -92,9 +108,16 @@ export function TripPrep() {
   const activityList = activities.split(",").map((a) => a.trim()).filter(Boolean);
   const priorityList = coveragePriority.split(",").map((a) => a.trim()).filter(Boolean);
 
+  function togglePriority(option: string) {
+    const next = priorityList.includes(option)
+      ? priorityList.filter((p) => p !== option)
+      : [...priorityList, option];
+    setCoveragePriority(next.join(", "));
+  }
+
   const steps = [
     {
-      icon: "flag", iconBg: "var(--tan)",
+      icon: "flag",
       eyebrow: "STEP 1 · 목적지",
       title: "어디로 떠나시나요?",
       subtitle: "목적지와 함께할 사람을 알려주세요.",
@@ -102,45 +125,42 @@ export function TripPrep() {
         <>
           <label>
             목적지 국가
-            <input
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="입력하면 국가 목록이 나와요"
-              list="country-list"
-              autoFocus
-            />
-            <datalist id="country-list">
-              {COUNTRIES.map((c) => <option key={c} value={c} />)}
-            </datalist>
+            <select value={destination} onChange={(e) => setDestination(e.target.value)} autoFocus>
+              <option value="" disabled>국가를 선택하세요</option>
+              {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </label>
-          <label>
-            동반자 유형
-            <input value={companionType} onChange={(e) => setCompanionType(e.target.value)} placeholder="예: 가족, 친구, 혼자" />
-          </label>
+          <label style={{ marginBottom: 10 }}>동반자 유형</label>
+          <div className="tabs" style={{ flexWrap: "wrap" }}>
+            {COMPANION_OPTIONS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`tab${companionType === c ? " tab--active" : ""}`}
+                onClick={() => setCompanionType(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </>
       ),
       canNext: destination.trim().length > 0,
     },
     {
-      icon: "calendar", iconBg: "var(--yellow-soft)",
+      icon: "calendar",
       eyebrow: "STEP 2 · 기간",
       title: "언제부터 언제까지\n떠나시나요?",
       content: (
         <>
-          <label>
-            여행 시작일
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </label>
-          <label>
-            여행 종료일
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </label>
+          <DateTimeField label="여행 시작일" value={startDate} onChange={setStartDate} mode="date" />
+          <DateTimeField label="여행 종료일" value={endDate} onChange={setEndDate} mode="date" />
         </>
       ),
       canNext: !!startDate && !!endDate,
     },
     {
-      icon: "explorer", iconBg: "var(--mint-soft)",
+      icon: "explorer",
       eyebrow: "STEP 3 · 활동",
       title: "무엇을 하며\n보내실 예정인가요?",
       subtitle: "위험도가 있는 활동은 자동으로 감지해서 필요한 보장을 알려드려요.",
@@ -164,41 +184,49 @@ export function TripPrep() {
       canNext: true,
     },
     {
-      icon: "shield", iconBg: "var(--orange-soft)",
+      icon: "shield",
       eyebrow: "STEP 4 · 우선순위",
       title: "가장 중요하게\n생각하는 보장은?",
+      subtitle: "여러 개를 골라도 돼요.",
       content: (
         <>
-          <label>
-            보장 우선순위 (쉼표로 구분)
-            <input value={coveragePriority} onChange={(e) => setCoveragePriority(e.target.value)} placeholder="의료비, 구조송환" />
-          </label>
+          <label style={{ marginBottom: 4 }}>보장 우선순위</label>
+          <p className="muted" style={{ fontSize: "0.78rem", marginTop: 0, marginBottom: 10 }}>
+            "준비중" 항목은 아직 실제 약관을 확보하지 못해 순위 점수에는 반영되지 않아요.
+          </p>
+          <div className="tabs" style={{ marginBottom: 14, flexWrap: "wrap" }}>
+            {PRIORITY_OPTIONS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`tab${priorityList.includes(p) ? " tab--active" : ""}`}
+                onClick={() => togglePriority(p)}
+              >
+                {p}{!KB_BACKED_PRIORITIES.has(p) && " (준비중)"}
+              </button>
+            ))}
+          </div>
           <label className="checkbox-label">
             <input type="checkbox" checked={rentalCar} onChange={(e) => setRentalCar(e.target.checked)} />
             렌터카를 이용할 예정입니다
           </label>
-          {priorityList.length > 0 && (
-            <div className="tabs" style={{ marginTop: 4 }}>
-              {priorityList.map((a) => <span key={a} className="tab tab--active">{a}</span>)}
-            </div>
-          )}
         </>
       ),
       canNext: true,
     },
     {
-      icon: "tick", iconBg: "var(--mint-soft)",
+      icon: "tick",
       eyebrow: "STEP 5 · 확인",
       title: "이대로 분석해\n드릴까요?",
       subtitle: "6개 보험사의 실제 약관 근거와 함께 맞춤 보장을 비교해 드려요.",
       content: (
-        <div className="card" style={{ textAlign: "left" }}>
+        <div className="card" style={{ textAlign: "left", marginBottom: 0, padding: 16 }}>
           <div className="muted">목적지</div>
-          <div style={{ marginBottom: 10, fontWeight: 700 }}>{destination} · {companionType}</div>
+          <div style={{ marginBottom: 6, fontWeight: 700 }}>{destination} · {companionType}</div>
           <div className="muted">기간</div>
-          <div style={{ marginBottom: 10, fontWeight: 700 }}>{startDate} ~ {endDate}</div>
+          <div style={{ marginBottom: 6, fontWeight: 700 }}>{startDate} ~ {endDate}</div>
           <div className="muted">목적 / 활동</div>
-          <div style={{ marginBottom: 10, fontWeight: 700 }}>{purpose || "-"} {activityList.length ? `· ${activityList.join(", ")}` : ""}</div>
+          <div style={{ marginBottom: 6, fontWeight: 700 }}>{purpose || "-"} {activityList.length ? `· ${activityList.join(", ")}` : ""}</div>
           <div className="muted">보장 우선순위</div>
           <div style={{ fontWeight: 700 }}>{priorityList.length ? priorityList.join(", ") : "-"}</div>
           {error && <div className="error-box">{error}</div>}
@@ -216,15 +244,13 @@ export function TripPrep() {
       <TopBar title="내 여행 준비" />
       <StepFlow
         icon={current.icon}
-        iconBg={current.iconBg}
         eyebrow={current.eyebrow}
         title={current.title}
         subtitle={current.subtitle}
         stepIndex={step}
-        stepCount={STEP_COUNT}
         onBack={step > 0 ? () => setStep((s) => s - 1) : undefined}
         onNext={isLast ? handleSubmit : () => setStep((s) => s + 1)}
-        nextLabel={isLast ? "위험 프로필 생성하기" : "다음"}
+        nextLabel={isLast ? "보험사 순위 확인하기" : "다음"}
         nextDisabled={!current.canNext || !userId}
         loading={loading}
       >

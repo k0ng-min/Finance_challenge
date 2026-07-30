@@ -94,6 +94,8 @@ class Clause(Base):
     page_ref = Column(String)
     embedding_id = Column(String)
     default_color = Column(String)  # 파랑/초록/노랑/빨강/회색
+    highlight_spans = Column(Text, nullable=True)  # Gemini가 나눈 인라인 색상 구간 캐시 (JSON)
+    plain_text = Column(Text, nullable=True)  # Gemini가 풀어쓴 쉬운말 설명 캐시
 
     policy_version = relationship("PolicyVersion", back_populates="clauses")
     coverage = relationship("Coverage", back_populates="clauses")

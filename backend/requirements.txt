@@ -1,6 +1,15 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 sqlalchemy==2.0.35
-pydantic==2.9.2
+pydantic==2.13.4
 pdfplumber==0.11.4
 python-multipart==0.0.9
+httpx==0.28.1
+python-dotenv==1.0.1
+google-genai==2.15.0
+
+# 보안 — 직접 짠 코드 대신 널리 쓰이고 검증된 라이브러리로 처리한다
+# (passlib은 2020년 이후 관리가 끊겨 최신 bcrypt와 호환이 깨져 있어 빼고, bcrypt를 직접 쓴다)
+bcrypt==5.0.0
+slowapi==0.1.10
+secure==2.0.1

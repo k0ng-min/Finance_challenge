@@ -28,10 +28,24 @@ def check_period_mismatch(db: Session, user_id: int, occurred_at) -> dict | None
     return {"rule_code": "PERIOD_MISMATCH", "passed": passed, "detail": detail}
 
 
+FIELD_LABELS = {
+    "country": "사고 발생 국가",
+    "cause": "사고 원인",
+    "injury_part": "다친 부위",
+    "diagnosis": "진단명·증상",
+    "hospitalized": "입원 여부",
+    "surgery": "수술 여부",
+    "local_treatment": "현지 치료 여부",
+    "returned_home": "귀국 여부",
+    "medical_cost": "의료비",
+}
+
+
 def check_info_missing(merged: dict[str, ExtractedField]) -> dict:
     missing = [name for name, f in merged.items() if f.value is None or f.confidence < 0.6]
     passed = len(missing) == 0
-    detail = f"미확인 항목: {', '.join(missing)}" if missing else "핵심 사고정보가 모두 확인되었습니다."
+    labels = [FIELD_LABELS.get(name, name) for name in missing]
+    detail = f"미확인 항목: {', '.join(labels)}" if labels else "핵심 사고정보가 모두 확인되었습니다."
     return {"rule_code": "INFO_MISSING", "passed": passed, "detail": detail}
 
 

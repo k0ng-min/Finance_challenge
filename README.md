@@ -23,6 +23,9 @@ python -m venv .venv
 .venv/Scripts/activate   # Windows
 pip install -r requirements.txt
 
+cp .env.example .env   # Windows: copy .env.example .env — 값 채우는 방법은 파일 안 주석 참고
+                        # (카카오/구글/Gemini 키를 안 채워도 게스트 모드로 정상 동작합니다)
+
 # 약관 원문 PDF를 먼저 확보해 data/raw_pdfs/ 에 두어야 시드가 동작합니다 (아래 "약관 원문" 참고)
 python -m app.seed_samsung
 python -m app.seed_hyundai
@@ -58,7 +61,9 @@ npm run dev
 - 내 보험 보관함 (`/users/{id}/policies`) — 보험사명·담보명 KB 자동 매칭
 - 사고 후 청구 검토 + 능동 질문 (`/incidents`, `/incidents/{id}/answers`)
 - 서류 체크 + 누락·모순 검증 (`/incidents/{id}/checklist`, `/evidence`)
+- 약관 형광펜 — 사고 상황과 직접 관련된 조항 구간만 노란색으로 표시, 검색 지원
 - 모든 결과는 실제 약관 조항(clause) 근거가 없으면 자동으로 "확인불가" 처리 (형광펜 근거검증)
 - LLM 역할(자유서술 구조화·담보명 표준화)은 `backend/app/services/nlu.py`의 `NLUEngine` 인터페이스로 분리 — 현재는 규칙기반 구현체이며, 외부 AI API 대신 자체 경량 모델로 교체할 자리로 설계함
+- 인증/보안 — 카카오·구글 로그인(비밀번호를 서버에 저장하지 않음, bcrypt는 이메일 계정용으로만 남아있으나 이메일 가입 자체는 비활성화), 회원가입 시 이용약관·개인정보 수집 동의, 로그인 계정 간 데이터 접근 차단(IDOR 방지), 로그인·Gemini 호출 엔드포인트 요청 빈도 제한(slowapi), 보안 HTTP 헤더(secure), CORS origin 제한
 
-미구현: React 화면의 실사용자 UX 다듬기, 평가지표(eval_log) 자동 산출, 질병·휴대품·배상책임 등 확장 담보.
+미구현: 평가지표(eval_log) 자동 산출, 질병·휴대품·배상책임 등 확장 담보, 실제 PASS/FDS 등 금융권 수준 본인인증·이상거래탐지(외부 유료 연동이 필요해 이번 프로젝트 범위에서는 제외).

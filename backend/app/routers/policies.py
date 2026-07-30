@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import AppUser, UserPolicy, UserCoverage
-from app.models.kb import CoverageStd
+from app.models.kb import Coverage, CoverageStd
+from app.routers.auth import get_current_user_optional, verify_owner
 from app.schemas import UserPolicyCreate, UserPolicyOut, UserCoverageOut
 from app.services.nlu import get_nlu_engine
 from app.services.policy_matching import match_insurer, match_product_and_version, match_coverage
@@ -31,6 +32,7 @@ def _to_out(policy: UserPolicy) -> UserPolicyOut:
         policy_type=policy.policy_type,
         period_start=policy.period_start,
         period_end=policy.period_end,
+        matched_insurer_code=policy.product.insurer.code if policy.product else None,
         matched_insurer_name=policy.product.insurer.name if policy.product else None,
         matched_product_name=policy.product.name if policy.product else None,
         coverages=coverages_out,
@@ -38,7 +40,11 @@ def _to_out(policy: UserPolicy) -> UserPolicyOut:
 
 
 @router.post("", response_model=UserPolicyOut)
-def register_policy(user_id: int, payload: UserPolicyCreate, db: Session = Depends(get_db)):
+def register_policy(
+    user_id: int, payload: UserPolicyCreate, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    verify_owner(user_id, current)
     user = db.get(AppUser, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
@@ -65,7 +71,14 @@ def register_policy(user_id: int, payload: UserPolicyCreate, db: Session = Depen
     # match_confidence는 ERD에 없는 필드라 DB에는 저장하지 않고, 응답 편의를 위해 인메모리로만 들고 있는다.
     confidences: dict[int, float] = {}
     for cov_in in payload.coverages:
-        coverage_id, coverage_std_id, confidence = match_coverage(db, nlu, cov_in.raw_name, policy_version)
+        if cov_in.coverage_id is not None:
+            # 실제 담보 체크리스트에서 고른 경우 — 퍼지 매칭 없이 그대로 연결한다(신뢰도 100%).
+            picked = db.get(Coverage, cov_in.coverage_id)
+            coverage_id = picked.coverage_id if picked else None
+            coverage_std_id = picked.coverage_std_id if picked else None
+            confidence = 1.0 if picked else 0.0
+        else:
+            coverage_id, coverage_std_id, confidence = match_coverage(db, nlu, cov_in.raw_name, policy_version)
         uc = UserCoverage(
             user_policy_id=policy.user_policy_id,
             coverage_id=coverage_id,
@@ -87,7 +100,11 @@ def register_policy(user_id: int, payload: UserPolicyCreate, db: Session = Depen
 
 
 @router.get("", response_model=list[UserPolicyOut])
-def list_policies(user_id: int, db: Session = Depends(get_db)):
+def list_policies(
+    user_id: int, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    verify_owner(user_id, current)
     user = db.get(AppUser, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")

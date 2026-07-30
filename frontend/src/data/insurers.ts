@@ -12,3 +12,10 @@ export const INSURERS: InsurerOption[] = [
   { code: "DB", name: "DB손해보험", logo: "/insurers/db.jpg" },
   { code: "KAKAOPAY", name: "카카오페이손해보험", logo: "/insurers/kakaopay.jpg" },
 ];
+
+/** 보험사 정식명(예: "삼성화재해상보험")은 목록/드롭다운에서 너무 길어 보이므로,
+ * 6개 보험사 공통 짧은 이름으로 통일해서 보여줄 때 쓴다. */
+export function shortInsurerName(code?: string | null, fallback?: string | null): string {
+  const found = INSURERS.find((i) => i.code === code);
+  return found?.name ?? fallback ?? "보험사 미상";
+}

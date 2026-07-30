@@ -1,8 +1,13 @@
 const API_BASE = "http://localhost:8000";
+const LS_TOKEN = "travel_ai_token";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem(LS_TOKEN);
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     ...options,
   });
   if (!res.ok) {
@@ -12,6 +17,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export interface HighlightSpanOut {
+  text: string;
+  color: string;
+}
+
+export interface RelevanceSegment {
+  text: string;
+  highlighted: boolean;
+}
+
+export interface ClauseRelevanceOut {
+  segments: RelevanceSegment[];
+  relevant_chars: number;
+  supported: boolean;
+}
+
 export interface ClauseOut {
   clause_id: number;
   article_no: string;
@@ -19,6 +40,7 @@ export interface ClauseOut {
   page_ref: string | null;
   default_color: string;
   highlight_color: string;
+  highlight_spans?: HighlightSpanOut[] | null;
 }
 
 export interface FindingOut {
@@ -30,6 +52,7 @@ export interface FindingOut {
   insurer_name: string | null;
   description: string;
   confidence: string | null;
+  coverage_amount: string | null;
   clauses: ClauseOut[];
 }
 
@@ -54,6 +77,16 @@ export interface UserCoverageOut {
   match_confidence: number;
 }
 
+export interface InsurerCoverageOut {
+  coverage_id: number;
+  std_code: string | null;
+  std_name: string | null;
+  raw_name: string;
+  definition: string | null;
+  limit_amount: string | null;
+  deductible: string | null;
+}
+
 export interface UserPolicyOut {
   user_policy_id: number;
   insurer_name_raw: string;
@@ -61,6 +94,7 @@ export interface UserPolicyOut {
   policy_type: string;
   period_start: string;
   period_end: string;
+  matched_insurer_code: string | null;
   matched_insurer_name: string | null;
   matched_product_name: string | null;
   coverages: UserCoverageOut[];
@@ -88,6 +122,9 @@ export interface IncidentAnalysisOut {
   findings: FindingOut[];
   pending_questions: PendingQuestionOut[];
   validation_results: ValidationResultOut[];
+  linked_insurer_code: string | null;
+  linked_insurer_name: string | null;
+  linked_product_name: string | null;
 }
 
 export interface ChecklistItemOut {
@@ -107,6 +144,64 @@ export interface ChecklistOut {
   incident_id: number;
   items: ChecklistItemOut[];
   validation_results: ValidationResultOut[];
+}
+
+export interface InsurerTierOut {
+  tier_code: string;
+  label: string;
+  description: string;
+}
+
+export interface InsurerRankOut {
+  rank: number;
+  insurer_code: string;
+  insurer_name: string;
+  score: number;
+  reasons: string[];
+  tags: string[];
+  official_url: string | null;
+}
+
+export interface InsurerRankingOut {
+  tier_code: string;
+  ranking: InsurerRankOut[];
+}
+
+export interface AuthUserOut {
+  user_id: number;
+  nickname: string;
+  email: string | null;
+  auth_provider: string;
+  token: string;
+  is_new_user: boolean;
+}
+
+export interface ProviderStatusOut {
+  kakao_enabled: boolean;
+  google_enabled: boolean;
+  kakao_client_id: string;
+  google_client_id: string;
+  kakao_redirect_uri: string;
+  google_redirect_uri: string;
+}
+
+export interface TripSummaryOut {
+  trip_id: number;
+  destination: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  risk_level: string | null;
+}
+
+export interface IncidentSummaryOut {
+  incident_id: number;
+  country: string | null;
+  occurred_at: string | null;
+  diagnosis: string | null;
+  cause: string | null;
+  user_policy_id: number | null;
+  linked_insurer_code: string | null;
+  linked_insurer_name: string | null;
 }
 
 export const api = {
@@ -136,9 +231,76 @@ export const api = {
 
   getChecklist: (incidentId: number) => request<ChecklistOut>(`/incidents/${incidentId}/checklist`),
 
+  getInsurerTiers: () => request<InsurerTierOut[]>("/insurers/ranking-tiers"),
+
+  getInsurerCoverages: (insurerCode: string) =>
+    request<InsurerCoverageOut[]>(`/insurers/${insurerCode}/coverages`),
+
+  getInsurerRanking: (
+    tier: string,
+    tripContext?: {
+      destination?: string;
+      risk_level?: string;
+      trip_days?: number;
+      activities?: string[];
+      coverage_priority?: string[];
+    }
+  ) => {
+    const params = new URLSearchParams({ tier });
+    if (tripContext?.destination) params.set("destination", tripContext.destination);
+    if (tripContext?.risk_level) params.set("risk_level", tripContext.risk_level);
+    if (tripContext?.trip_days) params.set("trip_days", String(tripContext.trip_days));
+    if (tripContext?.activities?.length) params.set("activities", tripContext.activities.join(","));
+    if (tripContext?.coverage_priority?.length) params.set("coverage_priority", tripContext.coverage_priority.join(","));
+    return request<InsurerRankingOut>(`/insurers/ranking?${params.toString()}`);
+  },
+
+  getClauseSpans: (clauseId: number) =>
+    request<HighlightSpanOut[] | null>(`/clauses/${clauseId}/spans`),
+
+  getClauseRelevance: (clauseId: number, incidentId: number) =>
+    request<ClauseRelevanceOut>(`/clauses/${clauseId}/relevance?incident_id=${incidentId}`),
+
+  getClausePlainText: (clauseId: number, incidentId?: number | null) =>
+    request<{ plain_text: string | null; supported: boolean }>(
+      `/clauses/${clauseId}/plain${incidentId ? `?incident_id=${incidentId}` : ""}`
+    ),
+
+  listTrips: (userId: number) => request<TripSummaryOut[]>(`/users/${userId}/trips`),
+
+  listIncidents: (userId: number) => request<IncidentSummaryOut[]>(`/users/${userId}/incidents`),
+
+  deleteTrip: (tripId: number) => request<{ status: string }>(`/trips/${tripId}`, { method: "DELETE" }),
+
+  deleteIncident: (incidentId: number) => request<{ status: string }>(`/incidents/${incidentId}`, { method: "DELETE" }),
+
   submitEvidence: (incidentId: number, items: { required_doc_std_id: number; status: string; memo?: string }[]) =>
     request<ChecklistOut>(`/incidents/${incidentId}/evidence`, {
       method: "POST",
       body: JSON.stringify(items),
     }),
+
+  // 이메일/비밀번호 회원가입·로그인은 지원하지 않는다 — 카카오·구글만 쓴다.
+  submitConsent: (consent: { agreeTerms: boolean; agreePrivacy: boolean; agreeMarketing: boolean }) =>
+    request<{ status: string }>("/auth/consent", {
+      method: "POST",
+      body: JSON.stringify({
+        agree_terms: consent.agreeTerms, agree_privacy: consent.agreePrivacy, agree_marketing: consent.agreeMarketing,
+      }),
+    }),
+
+  getMe: () => request<AuthUserOut>("/auth/me"),
+
+  logout: () => request<{ status: string }>("/auth/logout", { method: "POST" }),
+
+  getAuthProviders: () => request<ProviderStatusOut>("/auth/providers"),
+
+  loginWithKakao: (code: string, userId: number | null, intent: "login" | "signup") =>
+    request<AuthUserOut>("/auth/kakao", { method: "POST", body: JSON.stringify({ code, user_id: userId, intent }) }),
+
+  loginWithGoogle: (code: string, userId: number | null, intent: "login" | "signup") =>
+    request<AuthUserOut>("/auth/google", { method: "POST", body: JSON.stringify({ code, user_id: userId, intent }) }),
+
+  updateNickname: (nickname: string) =>
+    request<AuthUserOut>("/auth/nickname", { method: "PATCH", body: JSON.stringify({ nickname }) }),
 };

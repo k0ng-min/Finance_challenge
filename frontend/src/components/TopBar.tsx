@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function TopBar({ title }: { title: string }) {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export function TopBar({ title }: { title: string }) {
       </button>
       <span className="topbar__title">{title}</span>
       <span className="topbar__spacer" />
+      <ThemeToggle />
     </div>
   );
 }

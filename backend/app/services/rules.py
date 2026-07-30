@@ -40,6 +40,8 @@ def build_risk_profile(destination: str, start_date, end_date, purpose: str,
     risky_hits = _has_risky_activity(activities, purpose)
     return {
         "destination": destination,
+        "start_date": str(start_date) if start_date else None,
+        "end_date": str(end_date) if end_date else None,
         "trip_days": trip_days,
         "purpose": purpose,
         "activities": activities,
@@ -95,6 +97,7 @@ def generate_pre_trip_findings(db: Session, risk_profile: dict) -> list[dict]:
                 f"[{insurer.name}] 해외여행 중 상해로 인한 사망·후유장해를 보장하는 기본 담보입니다. "
                 "해외여행자보험 가입 시 가장 먼저 검토해야 하는 보장항목입니다."
             ),
+            "coverage_amount": cov.limit_amount,
             "confidence": "높음",
             "evidence": [(c, c.default_color) for c in clauses],
         })
@@ -114,6 +117,7 @@ def generate_pre_trip_findings(db: Session, risk_profile: dict) -> list[dict]:
                 f"담보입니다. 여행지({risk_profile['destination']})의 의료비 수준을 고려할 때 우선 검토가 "
                 "필요합니다."
             ),
+            "coverage_amount": cov.limit_amount,
             "confidence": "높음",
             "evidence": [(c, c.default_color) for c in clauses],
         })
@@ -142,6 +146,7 @@ def generate_pre_trip_findings(db: Session, risk_profile: dict) -> list[dict]:
             "insurer_code": insurer.code,
             "insurer_name": insurer.name,
             "description": desc,
+            "coverage_amount": cov.limit_amount,
             "confidence": confidence,
             "evidence": [(c, c.default_color) for c in clauses],
         })

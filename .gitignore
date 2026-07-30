@@ -11,7 +11,8 @@ frontend/dist/
 data/raw_pdfs/
 data/processed/
 
-.claude/settings.local.json
+# Claude Code 로컬 세션/도구 상태(설정, 락 파일 등) — 프로젝트 소스가 아니라 개인 개발환경 상태라 통째로 제외
+.claude/
 
 # 헤드리스 브라우저로 디자인 검증할 때 찍은 임시 스크린샷 (앱 에셋 아님)
 .screenshots/

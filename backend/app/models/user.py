@@ -15,6 +15,23 @@ class AppUser(Base):
     nickname = Column(String)
     created_at = Column(DateTime, server_default=func.now())
 
+    # 인증 관련 (게스트로 시작했다가 이메일 가입 시 같은 계정에 이메일·비밀번호만 붙는다 —
+    # 게스트로 쌓은 여행/보험 데이터를 그대로 이어받기 위함)
+    email = Column(String, unique=True, nullable=True)
+    password_hash = Column(String, nullable=True)
+    password_salt = Column(String, nullable=True)
+    auth_provider = Column(String, default="guest")  # guest/email/kakao/google
+    session_token = Column(String, unique=True, nullable=True)
+    session_expires_at = Column(DateTime, nullable=True)
+    kakao_id = Column(String, unique=True, nullable=True)
+    google_id = Column(String, unique=True, nullable=True)
+
+    # 개인정보보호법상 회원가입 동의 기록 — 각 항목에 실제로 동의한 시각을 남긴다
+    # (동의 안 함 = NULL). 마케팅은 선택 동의라 없어도 가입 자체는 막지 않는다.
+    terms_agreed_at = Column(DateTime, nullable=True)
+    privacy_agreed_at = Column(DateTime, nullable=True)
+    marketing_agreed_at = Column(DateTime, nullable=True)
+
     trips = relationship("Trip", back_populates="user")
     policies = relationship("UserPolicy", back_populates="user")
     incidents = relationship("Incident", back_populates="user")
@@ -78,6 +95,7 @@ class Incident(Base):
     incident_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("app_user.user_id"), nullable=False)
     trip_id = Column(Integer, ForeignKey("trip.trip_id"), nullable=True)
+    user_policy_id = Column(Integer, ForeignKey("user_policy.user_policy_id"), nullable=True)
     country = Column(String)
     occurred_at = Column(DateTime)
     cause = Column(String)
@@ -94,6 +112,7 @@ class Incident(Base):
 
     user = relationship("AppUser", back_populates="incidents")
     evidences = relationship("Evidence", back_populates="incident")
+    user_policy = relationship("UserPolicy")
 
 
 class Evidence(Base):

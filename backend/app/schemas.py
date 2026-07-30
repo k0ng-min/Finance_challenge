@@ -16,6 +16,11 @@ class TripCreate(BaseModel):
     coverage_priority: list[str] = []
 
 
+class HighlightSpanOut(BaseModel):
+    text: str
+    color: str
+
+
 class ClauseOut(BaseModel):
     clause_id: int
     article_no: str
@@ -23,6 +28,7 @@ class ClauseOut(BaseModel):
     page_ref: Optional[str]
     default_color: str
     highlight_color: str
+    highlight_spans: Optional[list[HighlightSpanOut]] = None
 
     class Config:
         from_attributes = True
@@ -37,6 +43,7 @@ class FindingOut(BaseModel):
     insurer_name: Optional[str] = None
     description: str
     confidence: Optional[str]
+    coverage_amount: Optional[str] = None
     clauses: list[ClauseOut]
 
 
@@ -50,6 +57,7 @@ class RecommendationOut(BaseModel):
 class UserCoverageIn(BaseModel):
     raw_name: str
     subscribed_amount: Optional[str] = None
+    coverage_id: Optional[int] = None  # 실제 KB 담보 체크리스트에서 선택한 경우, 그 담보를 그대로 지정(퍼지 매칭 생략)
 
 
 class UserPolicyCreate(BaseModel):
@@ -70,6 +78,16 @@ class UserCoverageOut(BaseModel):
     match_confidence: float
 
 
+class InsurerCoverageOut(BaseModel):
+    coverage_id: int
+    std_code: Optional[str] = None
+    std_name: Optional[str] = None
+    raw_name: str
+    definition: Optional[str] = None
+    limit_amount: Optional[str] = None
+    deductible: Optional[str] = None
+
+
 class UserPolicyOut(BaseModel):
     user_policy_id: int
     insurer_name_raw: str
@@ -77,6 +95,7 @@ class UserPolicyOut(BaseModel):
     policy_type: str
     period_start: dt.date
     period_end: dt.date
+    matched_insurer_code: Optional[str] = None
     matched_insurer_name: Optional[str] = None
     matched_product_name: Optional[str] = None
     coverages: list[UserCoverageOut]
@@ -85,6 +104,7 @@ class UserPolicyOut(BaseModel):
 class IncidentCreate(BaseModel):
     user_id: int
     trip_id: Optional[int] = None
+    user_policy_id: Optional[int] = None  # 이 사고 청구가 어느 등록 보험을 대상으로 하는지
     free_text: str = ""
     country: Optional[str] = None
     occurred_at: Optional[dt.datetime] = None
@@ -120,6 +140,9 @@ class IncidentAnalysisOut(BaseModel):
     findings: list[FindingOut]
     pending_questions: list[PendingQuestionOut]
     validation_results: list[ValidationResultOut] = []
+    linked_insurer_code: Optional[str] = None
+    linked_insurer_name: Optional[str] = None
+    linked_product_name: Optional[str] = None
 
 
 class AnswerIn(BaseModel):
@@ -150,3 +173,24 @@ class ChecklistOut(BaseModel):
     incident_id: int
     items: list[ChecklistItemOut]
     validation_results: list[ValidationResultOut] = []
+
+
+class InsurerTierOut(BaseModel):
+    tier_code: str
+    label: str
+    description: str
+
+
+class InsurerRankOut(BaseModel):
+    rank: int
+    insurer_code: str
+    insurer_name: str
+    score: float
+    reasons: list[str]
+    tags: list[str] = []
+    official_url: Optional[str] = None
+
+
+class InsurerRankingOut(BaseModel):
+    tier_code: str
+    ranking: list[InsurerRankOut]

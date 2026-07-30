@@ -51,15 +51,20 @@ def relevant_std_codes(merged: dict[str, ExtractedField]) -> set[str]:
     return codes
 
 
-def iter_relevant_user_coverages(db: Session, user_id: int, merged: dict[str, ExtractedField]):
-    """사고와 관련 가능성이 있는(std_code 기준) 사용자의 KB매칭 담보를 (user_coverage, coverage, insurer)로 순회."""
+def iter_relevant_user_coverages(
+    db: Session, user_id: int, merged: dict[str, ExtractedField], user_policy_id: int | None = None
+):
+    """사고와 관련 가능성이 있는(std_code 기준) 사용자의 KB매칭 담보를 (user_coverage, coverage, insurer)로 순회.
+    user_policy_id가 지정되면 그 보험 하나만, 없으면(예: 과거 데이터·미선택) 등록된 보험 전체를 대상으로 한다."""
     codes = relevant_std_codes(merged)
-    rows = (
+    query = (
         db.query(UserCoverage)
         .join(UserPolicy, UserCoverage.user_policy_id == UserPolicy.user_policy_id)
         .filter(UserPolicy.user_id == user_id, UserCoverage.coverage_id.isnot(None))
-        .all()
     )
+    if user_policy_id is not None:
+        query = query.filter(UserPolicy.user_policy_id == user_policy_id)
+    rows = query.all()
     for uc in rows:
         cov = uc.coverage
         if not cov or not cov.coverage_std or cov.coverage_std.std_code not in codes:
@@ -67,16 +72,20 @@ def iter_relevant_user_coverages(db: Session, user_id: int, merged: dict[str, Ex
         yield uc, cov, cov.policy_version.product.insurer
 
 
-def generate_claim_findings(db: Session, user_id: int, merged: dict[str, ExtractedField]) -> list[dict]:
+def generate_claim_findings(
+    db: Session, user_id: int, merged: dict[str, ExtractedField], user_policy_id: int | None = None
+) -> list[dict]:
     findings: list[dict] = []
-    unmatched_count = (
+    unmatched_query = (
         db.query(UserCoverage)
         .join(UserPolicy, UserCoverage.user_policy_id == UserPolicy.user_policy_id)
         .filter(UserPolicy.user_id == user_id, UserCoverage.coverage_id.is_(None))
-        .count()
     )
+    if user_policy_id is not None:
+        unmatched_query = unmatched_query.filter(UserPolicy.user_policy_id == user_policy_id)
+    unmatched_count = unmatched_query.count()
 
-    for uc, cov, insurer in iter_relevant_user_coverages(db, user_id, merged):
+    for uc, cov, insurer in iter_relevant_user_coverages(db, user_id, merged, user_policy_id):
         def_clauses = (
             db.query(Clause)
             .filter(Clause.coverage_id == cov.coverage_id, Clause.clause_type == "보장정의")
@@ -84,6 +93,11 @@ def generate_claim_findings(db: Session, user_id: int, merged: dict[str, Extract
         )
         if not def_clauses:
             continue  # 근거 없이 청구 후보로 올리지 않음
+
+        # 사고 시 "얼마나 보장되는지"가 가장 궁금한 부분이므로 별도 필드로 뽑아둔다(카드에
+        # 배지로 짧게 보여주기 위함). 실제 가입금액(사용자 입력)을 우선하고 없으면 약관상
+        # 보장한도 원문을 그대로 쓴다 — 둘 다 실제 데이터이며 지어낸 숫자는 넣지 않는다.
+        coverage_amount = uc.subscribed_amount or cov.limit_amount
 
         findings.append({
             "finding_type": "추천담보",
@@ -95,6 +109,7 @@ def generate_claim_findings(db: Session, user_id: int, merged: dict[str, Extract
                 f"[{insurer.name}] 등록하신 '{cov.raw_name}' 담보가 이번 사고 내용과 관련될 가능성이 있어 "
                 "청구 검토를 권장합니다. 실제 지급 여부는 보험회사 심사 결과에 따릅니다."
             ),
+            "coverage_amount": coverage_amount,
             "confidence": "높음",
             "evidence": [(c, c.default_color) for c in def_clauses],
         })

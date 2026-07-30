@@ -8,7 +8,7 @@ const TYPE_LABEL: Record<string, string> = {
   필요서류: "필요 서류",
 };
 
-export function FindingCard({ finding }: { finding: FindingOut }) {
+export function FindingCard({ finding, incidentId }: { finding: FindingOut; incidentId?: number }) {
   return (
     <div className="finding-card">
       <div className="finding-card__head">
@@ -18,10 +18,16 @@ export function FindingCard({ finding }: { finding: FindingOut }) {
       </div>
       {finding.target_ref && <div className="finding-target">{finding.target_ref}</div>}
       <p className="finding-desc">{finding.description}</p>
+      {finding.coverage_amount && (
+        <div className="finding-amount">
+          <span className="finding-amount__label">보장금액</span>
+          <span className="finding-amount__value">{finding.coverage_amount}</span>
+        </div>
+      )}
       {finding.clauses.length > 0 && (
         <div className="finding-clauses">
           {finding.clauses.map((c) => (
-            <ClauseCard key={c.clause_id} clause={c} />
+            <ClauseCard key={c.clause_id} clause={c} incidentId={incidentId} />
           ))}
         </div>
       )}

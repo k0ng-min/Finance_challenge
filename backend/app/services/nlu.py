@@ -62,8 +62,10 @@ class NLUEngine(Protocol):
         가장 가까운 std_code로 매핑한다. (std_code, confidence) 반환. 매칭 실패 시 (None, 0.0)."""
         ...
 
-    def explain_clause_plain(self, clause_text: str) -> str:
-        """약관 원문을 쉬운 말로 바꾼다. 원문 자체를 대체하지 않고 병기용으로만 쓴다."""
+    def explain_clause_plain(self, clause_text: str, incident_context: dict | None = None) -> str:
+        """약관 원문을 쉬운 말로 바꾼다. 원문 자체를 대체하지 않고 병기용으로만 쓴다.
+        incident_context(사고 국가/원인/진단 등)가 있으면 그 상황에 맞춰 설명하되,
+        원문에 없는 사실은 추가하지 않는다."""
         ...
 
 
@@ -138,7 +140,7 @@ class RuleBasedNLU:
             return None, 0.0
         return best_code, round(best_score, 2)
 
-    def explain_clause_plain(self, clause_text: str) -> str:
+    def explain_clause_plain(self, clause_text: str, incident_context: dict | None = None) -> str:
         # 진짜 쉬운말 변환(패러프레이즈)은 모델이 필요한 영역이라 지금은 수행하지 않는다.
         # 원문을 그대로 반환해 "쉬운말 설명 미지원(원문 표시)"임을 명확히 한다.
         return clause_text
@@ -149,13 +151,15 @@ _engine_singleton: NLUEngine | None = None
 
 def get_nlu_engine() -> NLUEngine:
     """
-    의존성 주입 지점. 지금은 RuleBasedNLU 고정.
-    자체 경량 모델이 준비되면 여기 분기만 추가한다. 예:
-        backend = os.getenv("NLU_BACKEND", "rule_based")
-        if backend == "light_local_llm":
-            return LightLocalNLU(model_path=...)
+    의존성 주입 지점. GEMINI_API_KEY가 설정돼 있으면 Gemini+RAG 구현체를,
+    없으면 규칙기반 스텁을 반환한다. 호출부(routers, rules.py)는 이 분기를 몰라도 된다.
     """
     global _engine_singleton
     if _engine_singleton is None:
-        _engine_singleton = RuleBasedNLU()
+        from app import config
+        if config.GEMINI_ENABLED:
+            from app.services.nlu_gemini import GeminiNLU
+            _engine_singleton = GeminiNLU()
+        else:
+            _engine_singleton = RuleBasedNLU()
     return _engine_singleton

@@ -9,7 +9,7 @@ interface Group {
 }
 
 /** 결과를 카테고리 탭으로 나눠서 한 화면에 다 몰아넣지 않는다. */
-export function ResultTabs({ groups }: { groups: Group[] }) {
+export function ResultTabs({ groups, incidentId }: { groups: Group[]; incidentId?: number }) {
   const nonEmpty = groups.filter((g) => g.items.length > 0);
   const [active, setActive] = useState(nonEmpty[0]?.key);
   const activeGroup = nonEmpty.find((g) => g.key === active) ?? nonEmpty[0];
@@ -31,7 +31,7 @@ export function ResultTabs({ groups }: { groups: Group[] }) {
         ))}
       </div>
       {activeGroup.items.map((f) => (
-        <FindingCard key={f.finding_id} finding={f} />
+        <FindingCard key={f.finding_id} finding={f} incidentId={incidentId} />
       ))}
     </div>
   );

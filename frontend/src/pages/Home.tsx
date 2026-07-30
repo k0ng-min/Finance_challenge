@@ -1,20 +1,38 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Icon3D } from "../components/Icon3D";
+import { FloatingIcon } from "../components/FloatingIcon";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { useApp } from "../context/AppContext";
 
-const CARDS = [
-  { to: "/trip", icon: "suitcase", bg: "var(--tan)", title: "내 여행 준비", desc: "여행 정보로 딱 맞는 보장을 찾아드려요" },
-  { to: "/policies", icon: "umbrella", bg: "var(--orange-soft)", title: "내 보험 보관함", desc: "가입한 보험을 한 곳에 안전하게" },
-  { to: "/incident", icon: "chat-bubble", bg: "var(--yellow-soft)", title: "사고가 발생했어요", desc: "당황하지 마세요, 하나씩 도와드릴게요" },
-  { to: "/checklist", icon: "file-text", bg: "var(--mint-soft)", title: "서류 체크", desc: "필요한 서류를 빠짐없이" },
-  { to: "/mistakes", icon: "shield", bg: "var(--orange-soft)", title: "실수 방지 점검", desc: "놓친 건 없는지 한 번 더" },
-  { to: "/highlights", icon: "notebook", bg: "var(--tan)", title: "약관 형광펜", desc: "근거가 되는 약관을 색깔로" },
+// 자주 쓰는 핵심 기능만 설명과 함께 크게 보여준다.
+const MAIN_CARDS = [
+  { to: "/trip", icon: "suitcase", title: "내 여행 준비", desc: "여행 정보로 딱 맞는 보장을 찾아드려요" },
+  { to: "/incident", icon: "chat-bubble", title: "사고가 발생했어요", desc: "당황하지 마세요, 하나씩 도와드릴게요" },
+];
+
+// 나머지는 아이콘 + 이름만 두고, 들어가서 살펴보게 한다.
+const QUICK_ITEMS = [
+  { to: "/policies", icon: "umbrella", title: "내 보험" },
+  { to: "/checklist", icon: "file-text", title: "서류 체크" },
+  { to: "/mistakes", icon: "shield", title: "실수 방지" },
+  { to: "/highlights", icon: "notebook", title: "약관 형광펜" },
 ];
 
 export function Home() {
   const navigate = useNavigate();
+  const { isLoggedIn, nickname } = useApp();
   return (
     <div className="page home">
+      <div className="home__topbar">
+        <ThemeToggle />
+        <span className="home__topbar-spacer" />
+        <button type="button" className="account-pill" onClick={() => navigate("/account")}>
+          <Icon3D src="lock" size={18} />
+          {isLoggedIn ? nickname : "로그인"}
+        </button>
+      </div>
+
       <motion.div
         className="home__hero"
         initial={{ opacity: 0, y: -10 }}
@@ -26,7 +44,9 @@ export function Home() {
           animate={{ scale: 1, rotate: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 220, damping: 16 }}
         >
-          <Icon3D src="explorer" size={104} bg="var(--yellow-soft)" rounded="38%" />
+          <FloatingIcon>
+            <Icon3D src="explorer" size={104} />
+          </FloatingIcon>
         </motion.div>
         <h1 className="home__title">안녕하세요!{"\n"}오늘도 든든하게 떠나볼까요?</h1>
         <p className="home__subtitle">
@@ -35,7 +55,7 @@ export function Home() {
       </motion.div>
 
       <div className="home__grid">
-        {CARDS.map((c, i) => (
+        {MAIN_CARDS.map((c, i) => (
           <motion.button
             key={c.to}
             className="home-card"
@@ -46,12 +66,30 @@ export function Home() {
             whileTap={{ scale: 0.98 }}
             whileHover={{ y: -3 }}
           >
-            <Icon3D src={c.icon} size={68} bg={c.bg} rounded="32%" />
+            <Icon3D src={c.icon} size={68} />
             <div className="home-card__text">
               <strong>{c.title}</strong>
               <span>{c.desc}</span>
             </div>
             <span className="home-card__arrow">›</span>
+          </motion.button>
+        ))}
+      </div>
+
+      <div className="home__quick-grid">
+        {QUICK_ITEMS.map((c, i) => (
+          <motion.button
+            key={c.to}
+            type="button"
+            className="home-quick"
+            onClick={() => navigate(c.to)}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06 * i + 0.16, duration: 0.3 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Icon3D src={c.icon} size={44} />
+            <span className="home-quick__label">{c.title}</span>
           </motion.button>
         ))}
       </div>

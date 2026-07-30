@@ -32,6 +32,7 @@ class AnalysisFinding(Base):
     target_ref = Column(String)
     description = Column(Text)  # 확정적 지급표현 금지
     confidence = Column(String)
+    coverage_amount = Column(String, nullable=True)  # 실제 가입금액(사용자 입력) 또는 약관상 보장한도 원문
 
     analysis_run = relationship("AnalysisRun", back_populates="findings")
     evidence_links = relationship("FindingEvidenceLink", back_populates="finding")
@@ -46,6 +47,7 @@ class FindingEvidenceLink(Base):
     highlight_color = Column(String)  # 파랑/초록/노랑/빨강/회색
 
     finding = relationship("AnalysisFinding", back_populates="evidence_links")
+    clause = relationship("Clause")
 
 
 class ValidationRule(Base):

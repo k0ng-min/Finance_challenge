@@ -1,33 +1,39 @@
 import { useEffect, useState } from "react";
-import { api, type UserPolicyOut } from "../api";
+import { useSearchParams } from "react-router-dom";
+import { api, type InsurerCoverageOut, type UserPolicyOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { Icon3D } from "../components/Icon3D";
 import { InsurerPicker } from "../components/InsurerPicker";
+import { DateTimeField } from "../components/DateTimeField";
+import { INSURERS, shortInsurerName } from "../data/insurers";
 import { motion } from "framer-motion";
 
-interface CoverageDraft {
-  raw_name: string;
-  subscribed_amount: string;
+interface CoverageSelection {
+  checked: boolean;
+  amount: string;
 }
 
-const STEP_COUNT = 3;
 
 export function MyPolicies() {
   const { userId } = useApp();
-  const [mode, setMode] = useState<"list" | "add">("list");
+  const [searchParams] = useSearchParams();
+  const prefillInsurer = INSURERS.find((i) => i.code === searchParams.get("insurer"))?.name;
+  const [mode, setMode] = useState<"list" | "add">(searchParams.get("mode") === "add" ? "add" : "list");
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [insurerName, setInsurerName] = useState("삼성화재");
-  const [productName, setProductName] = useState("해외여행보험");
+  const [insurerName, setInsurerName] = useState(prefillInsurer ?? "");
+  const [productName, setProductName] = useState("");
   const [policyType, setPolicyType] = useState("직접가입");
-  const [periodStart, setPeriodStart] = useState("2026-08-10");
-  const [periodEnd, setPeriodEnd] = useState("2026-08-20");
-  const [coverages, setCoverages] = useState<CoverageDraft[]>([{ raw_name: "", subscribed_amount: "" }]);
+  const [periodStart, setPeriodStart] = useState("");
+  const [periodEnd, setPeriodEnd] = useState("");
+  const [availableCoverages, setAvailableCoverages] = useState<InsurerCoverageOut[]>([]);
+  const [coveragesLoading, setCoveragesLoading] = useState(false);
+  const [selections, setSelections] = useState<Record<number, CoverageSelection>>({});
 
   async function refresh() {
     if (!userId) return;
@@ -40,15 +46,48 @@ export function MyPolicies() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  function updateCoverage(i: number, field: keyof CoverageDraft, value: string) {
-    setCoverages((prev) => prev.map((c, idx) => (idx === i ? { ...c, [field]: value } : c)));
+  // 담보명을 자유 입력받으면 사용자가 "이게 뭔지 모르겠다"고 느끼기 쉽고, 오타가 나면
+  // 실제 약관과 매칭이 안 될 수 있다. 대신 그 보험사가 실제로 파는 담보 목록을 그대로
+  // 보여주고 체크만 하게 해서, 매칭 실패 가능성 자체를 없앤다.
+  useEffect(() => {
+    const code = INSURERS.find((i) => i.name === insurerName)?.code;
+    if (!code) {
+      setAvailableCoverages([]);
+      return;
+    }
+    setCoveragesLoading(true);
+    api.getInsurerCoverages(code)
+      .then((list) => {
+        setAvailableCoverages(list);
+        setSelections((prev) => {
+          const next: Record<number, CoverageSelection> = {};
+          for (const c of list) next[c.coverage_id] = prev[c.coverage_id] ?? { checked: false, amount: "" };
+          return next;
+        });
+      })
+      .catch(() => setAvailableCoverages([]))
+      .finally(() => setCoveragesLoading(false));
+  }, [insurerName]);
+
+  function toggleCoverage(coverageId: number) {
+    setSelections((prev) => ({
+      ...prev,
+      [coverageId]: { ...prev[coverageId], checked: !prev[coverageId]?.checked },
+    }));
+  }
+
+  function setCoverageAmount(coverageId: number, amount: string) {
+    setSelections((prev) => ({
+      ...prev,
+      [coverageId]: { ...prev[coverageId], amount },
+    }));
   }
 
   function resetForm() {
     setStep(0);
     setInsurerName("");
     setProductName("");
-    setCoverages([{ raw_name: "", subscribed_amount: "" }]);
+    setSelections({});
   }
 
   async function handleSubmit() {
@@ -56,13 +95,18 @@ export function MyPolicies() {
     setLoading(true);
     setError(null);
     try {
+      const chosen = availableCoverages.filter((c) => selections[c.coverage_id]?.checked);
       await api.registerPolicy(userId, {
         insurer_name_raw: insurerName,
         product_name_raw: productName,
         policy_type: policyType,
         period_start: periodStart,
         period_end: periodEnd,
-        coverages: coverages.filter((c) => c.raw_name.trim()),
+        coverages: chosen.map((c) => ({
+          coverage_id: c.coverage_id,
+          raw_name: c.raw_name,
+          subscribed_amount: selections[c.coverage_id]?.amount || null,
+        })),
       });
       await refresh();
       resetForm();
@@ -77,7 +121,7 @@ export function MyPolicies() {
   if (mode === "add") {
     const steps = [
       {
-        icon: "umbrella", iconBg: "var(--orange-soft)",
+        icon: "umbrella",
         eyebrow: "STEP 1 · 보험사",
         title: "어느 보험사에\n가입하셨나요?",
         content: (
@@ -92,7 +136,7 @@ export function MyPolicies() {
         canNext: insurerName.trim().length > 0,
       },
       {
-        icon: "calendar", iconBg: "var(--yellow-soft)",
+        icon: "calendar",
         eyebrow: "STEP 2 · 가입 정보",
         title: "가입 유형과\n보험기간을 알려주세요",
         content: (
@@ -105,46 +149,49 @@ export function MyPolicies() {
                 <option value="단체">단체</option>
               </select>
             </label>
-            <label>
-              보험기간 시작
-              <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
-            </label>
-            <label>
-              보험기간 종료
-              <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
-            </label>
+            <DateTimeField label="보험기간 시작" value={periodStart} onChange={setPeriodStart} mode="date" />
+            <DateTimeField label="보험기간 종료" value={periodEnd} onChange={setPeriodEnd} mode="date" />
           </>
         ),
-        canNext: true,
+        canNext: !!periodStart && !!periodEnd,
       },
       {
-        icon: "puzzle", iconBg: "var(--mint-soft)",
+        icon: "puzzle",
         eyebrow: "STEP 3 · 가입 담보",
-        title: "가입하신 담보를\n알려주세요",
-        subtitle: "증권에 적힌 이름 그대로 입력하시면 실제 약관과 자동으로 매칭해 드려요.",
+        title: "가입하신 담보를\n골라주세요",
+        subtitle: `${insurerName}이(가) 실제로 판매하는 담보 목록이에요. 가입하신 항목만 체크하고, 가입금액을 알고 있으면 적어주세요.`,
         content: (
           <>
-            {coverages.map((c, i) => (
-              <div className="form-row" key={i}>
-                <input
-                  placeholder="담보명 (예: 해외의료비)"
-                  value={c.raw_name}
-                  onChange={(e) => updateCoverage(i, "raw_name", e.target.value)}
-                />
-                <input
-                  placeholder="가입금액"
-                  value={c.subscribed_amount}
-                  onChange={(e) => updateCoverage(i, "subscribed_amount", e.target.value)}
-                />
-              </div>
-            ))}
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setCoverages((prev) => [...prev, { raw_name: "", subscribed_amount: "" }])}
-            >
-              + 담보 추가
-            </button>
+            {coveragesLoading && <p className="muted">담보 목록을 불러오는 중...</p>}
+            {!coveragesLoading && availableCoverages.length === 0 && (
+              <p className="muted">이 보험사의 담보 정보를 아직 찾지 못했어요. 담보 없이 등록만 진행할게요.</p>
+            )}
+            {availableCoverages.map((c) => {
+              const sel = selections[c.coverage_id];
+              return (
+                <div className="coverage-pick" key={c.coverage_id}>
+                  <label className="checkbox-label coverage-pick__head">
+                    <input
+                      type="checkbox"
+                      checked={!!sel?.checked}
+                      onChange={() => toggleCoverage(c.coverage_id)}
+                    />
+                    <span>
+                      <strong>{c.std_name ?? c.raw_name}</strong>
+                      {c.limit_amount && <span className="muted"> · {c.limit_amount}</span>}
+                    </span>
+                  </label>
+                  {sel?.checked && (
+                    <input
+                      className="coverage-pick__amount"
+                      placeholder={c.limit_amount ? `가입금액 (한도 ${c.limit_amount})` : "가입금액"}
+                      value={sel.amount}
+                      onChange={(e) => setCoverageAmount(c.coverage_id, e.target.value)}
+                    />
+                  )}
+                </div>
+              );
+            })}
             {error && <div className="error-box">{error}</div>}
           </>
         ),
@@ -160,12 +207,10 @@ export function MyPolicies() {
         <TopBar title="보험 등록" />
         <StepFlow
           icon={current.icon}
-          iconBg={current.iconBg}
           eyebrow={current.eyebrow}
           title={current.title}
           subtitle={current.subtitle}
           stepIndex={step}
-          stepCount={STEP_COUNT}
           onBack={() => (step > 0 ? setStep((s) => s - 1) : setMode("list"))}
           onNext={isLast ? handleSubmit : () => setStep((s) => s + 1)}
           nextLabel={isLast ? "등록 완료" : "다음"}
@@ -193,7 +238,7 @@ export function MyPolicies() {
         whileTap={{ scale: 0.98 }}
         onClick={() => setMode("add")}
       >
-        <Icon3D src="gift" size={56} bg="var(--yellow-soft)" rounded="30%" />
+        <Icon3D src="gift" size={56} />
         <div className="home-card__text">
           <strong>새 보험 등록하기</strong>
           <span>3단계면 충분해요</span>
@@ -203,15 +248,14 @@ export function MyPolicies() {
 
       {policies.length === 0 && (
         <div className="empty-state">
-          <Icon3D src="wallet" size={72} bg="var(--tan)" rounded="34%" />
+          <Icon3D src="wallet" size={72} />
           <p className="muted">아직 등록된 보험이 없습니다.</p>
         </div>
       )}
       {policies.map((p) => (
         <div className="card policy-card" key={p.user_policy_id}>
           <div className="policy-card__head">
-            <strong>{p.matched_insurer_name ?? p.insurer_name_raw}</strong>
-            <span className="muted">{p.matched_product_name ?? p.product_name_raw}</span>
+            <strong>{shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험</strong>
           </div>
           <div className="muted">{p.period_start} ~ {p.period_end} · {p.policy_type}</div>
           <table className="coverage-table">
