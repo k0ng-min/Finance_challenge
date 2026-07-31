@@ -1,6 +1,6 @@
 """영역 A: 약관 지식베이스 (new.md 참조)"""
 from sqlalchemy import (
-    Boolean, Column, Date, ForeignKey, Integer, String, Text, UniqueConstraint
+    Boolean, Column, Date, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 
@@ -99,6 +99,82 @@ class Clause(Base):
 
     policy_version = relationship("PolicyVersion", back_populates="clauses")
     coverage = relationship("Coverage", back_populates="clauses")
+    incident_links = relationship("ClauseIncidentMap", back_populates="clause")
+    terms = relationship("ClauseTerm", back_populates="clause")
+
+
+class IncidentType(Base):
+    """사고유형 사전(2단계 고정 분류).
+
+    담보(coverage_std) 코드에 사고 판단 로직을 직접 매달면, 담보가 늘어날 때마다
+    claim_review.py에 하위 유형 분기가 계속 붙는다(=하위유형 폭발). 그래서 "무슨 일이
+    있었나"(사고유형)와 "무슨 담보로 받나"(담보)를 분리하고, 조항을 사고유형에 매핑한다.
+
+    L1은 8개로 고정한다(INJ/ILL/PROP/LIA/TRV/CHG/EMG/SPC). 새 사고 유형이 생기면
+    L2로만 늘리고, 어디에도 안 맞으면 SPC_OTHER로 보내서 사람이 나중에 재분류한다
+    (조용히 버리지 않는다 — 근거 없는 결과 금지 원칙의 반대편인 '근거 있는데 누락' 방지).
+    """
+
+    __tablename__ = "incident_type"
+
+    type_id = Column(Integer, primary_key=True)
+    l1_code = Column(String, nullable=False)   # 예: "INJ"
+    l2_code = Column(String, nullable=False)   # 예: "INJ_OVERSEAS_TREATMENT" (L1 루트 행은 l1_code와 동일)
+    name = Column(String, nullable=False)      # 한글 표시명
+    parent_id = Column(Integer, ForeignKey("incident_type.type_id"), nullable=True)  # L1 루트는 None
+    is_active = Column(Boolean, default=True)
+    # 런타임 중 Gemini가 기존 L2 후보 어디에도 못 맞춰서 새로 만든 행이면 True.
+    # 조용히 버리지 않고(=SPC_OTHER 원칙을 8개 L1 전체로 일반화) 사람이 나중에 검수하도록 표시만 해둔다.
+    needs_review = Column(Boolean, default=False)
+
+    children = relationship("IncidentType", backref="parent", remote_side=[type_id])
+    clause_links = relationship("ClauseIncidentMap", back_populates="incident_type")
+
+
+class ClauseIncidentMap(Base):
+    """조항 ↔ 사고유형 매핑. 하나의 조항이 여러 사고유형에 걸릴 수 있다.
+
+    relevance:
+      직접   — 이 사고유형이면 곧바로 이 조항이 지급/판단 근거가 된다
+      조건부 — 추가 요건(사망·N일 이상 입원 등)이 충족될 때만 걸린다
+      면책   — 이 사고유형을 명시적으로 보상하지 않는 근거 조항
+    mapped_by: rule/llm/human — 어떤 경로로 만들어졌는지(사람 검수 대상 선별용)
+    """
+
+    __tablename__ = "clause_incident_map"
+
+    map_id = Column(Integer, primary_key=True)
+    clause_id = Column(Integer, ForeignKey("clause.clause_id"), nullable=False)
+    type_id = Column(Integer, ForeignKey("incident_type.type_id"), nullable=False)
+    relevance = Column(String, nullable=False)   # 직접/조건부/면책
+    mapped_by = Column(String, nullable=False)   # rule/llm/human
+    confidence = Column(Float, nullable=True)
+
+    clause = relationship("Clause", back_populates="incident_links")
+    incident_type = relationship("IncidentType", back_populates="clause_links")
+
+
+class ClauseTerm(Base):
+    """조항에서 뽑아낸 정량 조건(지급한도·자기부담금·면책일수·지연기준시간 등).
+
+    raw_text는 반드시 출처 clause.text의 '문자 그대로의 부분 문자열'이어야 한다.
+    (clause_spans_gemini._locate_spans와 같은 원칙 — 원문에 없는 조각은 전부 무효 처리.)
+    행을 넣기 전 app.services.kb_seed_common.raw_text_is_grounded()로 검증할 것.
+    """
+
+    __tablename__ = "clause_term"
+
+    term_id = Column(Integer, primary_key=True)
+    clause_id = Column(Integer, ForeignKey("clause.clause_id"), nullable=False)
+    term_type = Column(String, nullable=False)  # 지급한도/자기부담금/면책일수/지연기준시간 ...
+    value_num = Column(Float, nullable=True)
+    unit = Column(String, nullable=True)        # 원/일/시간/%
+    basis = Column(String, nullable=True)       # 실손/정액 ...
+    condition_text = Column(String, nullable=True)
+    raw_text = Column(Text, nullable=False)     # 반드시 clause.text의 부분 문자열
+    confidence = Column(Float, nullable=True)
+
+    clause = relationship("Clause", back_populates="terms")
 
 
 class RequiredDocStd(Base):

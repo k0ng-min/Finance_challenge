@@ -1,4 +1,5 @@
 import json
+from dataclasses import fields as dc_fields
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -7,16 +8,17 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident, Evidence, UserPolicy
-from app.models.kb import RequiredDocStd, Insurer
+from app.models.kb import RequiredDocStd, Insurer, IncidentType
 from app.models.analysis import AnalysisRun, ValidationRule, ValidationResult
 from app.models.question import QuestionBank, UserQuestionLog
 from app.routers.auth import get_current_user_optional, verify_owner
 from app.routers.policies import create_policy_for_user
 from app.schemas import (
     IncidentCreate, IncidentAnalysisOut, PendingQuestionOut, AnswerIn,
-    ChecklistOut, ChecklistItemOut, EvidenceIn, ClauseOut, ValidationResultOut,
+    ChecklistOut, ChecklistItemOut, EvidenceIn, ClauseOut, ClauseTermOut, ValidationResultOut,
 )
-from app.services.nlu import get_nlu_engine, ExtractedField, classify_item_damage_type
+from app.services.nlu import get_nlu_engine, ExtractedField, IncidentDraft, classify_item_damage_type
+from app.services import incident_classify_gemini as incident_classify
 from app.services.claim_review import (
     merge_incident_fields, generate_claim_findings, pending_questions, iter_relevant_user_coverages,
 )
@@ -29,6 +31,61 @@ router = APIRouter(prefix="/incidents", tags=["incidents"])
 
 _NEGATIVE_MARKERS = ["아니", "안 ", "안했", "못", "없"]
 BOOLEAN_FIELDS = {"hospitalized", "surgery", "local_treatment", "returned_home"}
+_INCIDENT_DRAFT_FIELDS = {f.name for f in dc_fields(IncidentDraft)}
+
+
+def _l1_code_for_type(db: Session, type_id: int | None) -> str | None:
+    if type_id is None:
+        return None
+    type_row = db.get(IncidentType, type_id)
+    return type_row.l1_code if type_row else None
+
+
+def _modifiers_dict(incident: Incident) -> dict:
+    return json.loads(incident.modifiers) if incident.modifiers else {}
+
+
+_RECLASSIFY_CONFIDENCE_THRESHOLD = 0.75
+
+
+def _classify_incident(
+    db: Session, free_text: str, merged: dict[str, ExtractedField],
+    existing_type_id: int | None = None, existing_modifiers: dict | None = None,
+    existing_confidence: float | None = None,
+) -> tuple[int | None, float | None, dict]:
+    """사고를 incident_type(L1→L2)으로 분류한다.
+
+    existing_type_id가 없으면(=최초 접수) L1을 새로 분류하고 modifiers도 처음 추출한다.
+    있으면(=답변 라운드 재분류) 이미 정해진 L1은 그대로 두고 L2만, 지금까지 쌓인 답변으로
+    다시 판단한다 — L1을 매번 다시 물어보면 결과가 흔들려서 재현성이 떨어진다.
+
+    이미 충분히 확신 있게 분류돼 있으면(existing_confidence 높음) 매 답변마다 다시 Gemini를
+    부르지 않는다 — 무료 API 쿼터를 아끼기 위함이자, 이미 답이 정해진 걸 매번 다시 물어서
+    결과가 흔들리는 걸 막기 위함이다."""
+    modifiers = dict(existing_modifiers or {})
+    if existing_type_id is not None and (existing_confidence or 0.0) >= _RECLASSIFY_CONFIDENCE_THRESHOLD:
+        return existing_type_id, existing_confidence, modifiers
+    if existing_type_id is None:
+        l1_code, _l1_conf, _reason = incident_classify.classify_l1(free_text or "")
+        modifiers.update(incident_classify.extract_modifiers(free_text or ""))
+    else:
+        l1_code = _l1_code_for_type(db, existing_type_id)
+
+    if not l1_code:
+        return None, None, modifiers
+
+    answers = {name: str(f.value) for name, f in merged.items() if f.value is not None}
+    answers.update({k: str(v) for k, v in modifiers.items() if v})
+
+    result = incident_classify.classify_l2(db, l1_code, free_text or "", answers)
+    if result.l2_code:
+        return result.type_id, result.confidence, modifiers
+    if result.new_type_suggested:
+        new_type = incident_classify.create_reviewable_type(db, l1_code, result.new_type_suggested["name"])
+        return new_type.type_id, result.confidence, modifiers
+
+    root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
+    return (root.type_id if root else None), result.confidence, modifiers
 
 
 def _serialize_structured(merged: dict[str, ExtractedField]) -> dict:
@@ -68,10 +125,11 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
     db.add(run)
     db.flush()
 
-    finding_specs = generate_claim_findings(db, incident.user_id, merged, incident.user_policy_id)
+    finding_specs = generate_claim_findings(db, incident, merged)
     findings_out = persist_findings(db, run, finding_specs)
 
-    questions = pending_questions(db, merged)
+    l1_code = _l1_code_for_type(db, incident.type_id)
+    questions = pending_questions(db, l1_code, merged, _modifiers_dict(incident))
 
     validation_specs = run_core_validation(db, incident.user_id, incident.occurred_at, merged)
     doc_check = check_docs_not_secured(db, incident.incident_id)
@@ -141,6 +199,7 @@ def create_incident(
         "medical_cost": payload.medical_cost,
     }
     merged = merge_incident_fields(nlu, payload.free_text, explicit)
+    type_id, classify_confidence, modifiers = _classify_incident(db, payload.free_text, merged)
 
     incident = Incident(
         user_id=payload.user_id,
@@ -149,6 +208,9 @@ def create_incident(
         occurred_at=payload.occurred_at,
         medical_cost=payload.medical_cost,
         free_text=payload.free_text,
+        type_id=type_id,
+        classify_confidence=classify_confidence,
+        modifiers=json.dumps(modifiers, ensure_ascii=False) if modifiers else None,
     )
     _apply_to_incident(incident, merged)
     db.add(incident)
@@ -195,7 +257,8 @@ def get_incident(
     ]
 
     merged = _current_merged(incident)
-    questions = pending_questions(db, merged)
+    l1_code = _l1_code_for_type(db, incident.type_id)
+    questions = pending_questions(db, l1_code, merged, _modifiers_dict(incident))
 
     return IncidentAnalysisOut(
         incident_id=incident.incident_id,
@@ -242,29 +305,45 @@ def answer_question(
     ))
 
     field = question.target_field
-    if field in BOOLEAN_FIELDS:
-        negated = any(m in payload.answer_text for m in _NEGATIVE_MARKERS)
-        value = not negated
-    elif field == "item_damage_type":
-        # 자유서술 답변("소매치기당했어요"/"그냥 잃어버렸어요" 등)을 도난/파손/분실 중
-        # 하나로 정규화한다 — 원문 그대로 저장하면 claim_review.py가 정확히 비교할 수 없다.
-        value = classify_item_damage_type(payload.answer_text)
-    else:
-        value = payload.answer_text
-
     explicit = {
         "country": incident.country, "cause": incident.cause, "injury_part": incident.injury_part,
         "diagnosis": incident.diagnosis, "hospitalized": incident.hospitalized, "surgery": incident.surgery,
         "local_treatment": incident.local_treatment, "returned_home": incident.returned_home,
         "medical_cost": incident.medical_cost, "item_damage_type": incident.item_damage_type,
     }
-    explicit[field] = value
+    if field in BOOLEAN_FIELDS:
+        negated = any(m in payload.answer_text for m in _NEGATIVE_MARKERS)
+        explicit[field] = not negated
+    elif field == "item_damage_type":
+        # 자유서술 답변("소매치기당했어요"/"그냥 잃어버렸어요" 등)을 도난/파손/분실 중
+        # 하나로 정규화한다 — 원문 그대로 저장하면 claim_review.py가 정확히 비교할 수 없다.
+        explicit[field] = classify_item_damage_type(payload.answer_text)
+    elif field in _INCIDENT_DRAFT_FIELDS or field == "medical_cost":
+        explicit[field] = payload.answer_text
+        if field == "medical_cost":
+            incident.medical_cost = payload.answer_text
+    else:
+        # IncidentDraft에 없는 필드 — L2 판별 전용 질문(예: flight_delay_hours)이므로
+        # incident.modifiers JSON에 직접 담는다. explicit/merged 경로로는 흐르지 않는다.
+        current_modifiers = _modifiers_dict(incident)
+        current_modifiers[field] = payload.answer_text
+        incident.modifiers = json.dumps(current_modifiers, ensure_ascii=False)
+
     nlu = get_nlu_engine()
     merged = merge_incident_fields(nlu, "", explicit, classify_text=incident.free_text)
-    if field == "medical_cost":
-        incident.medical_cost = value
-
     _apply_to_incident(incident, merged)
+
+    type_id, classify_confidence, modifiers = _classify_incident(
+        db, incident.free_text, merged,
+        existing_type_id=incident.type_id, existing_modifiers=_modifiers_dict(incident),
+        existing_confidence=incident.classify_confidence,
+    )
+    if type_id is not None:
+        incident.type_id = type_id
+        incident.classify_confidence = classify_confidence
+    if modifiers:
+        incident.modifiers = json.dumps(modifiers, ensure_ascii=False)
+
     db.flush()
     db.commit()
     db.refresh(incident)
@@ -300,7 +379,7 @@ def get_checklist(
 
     items: list[ChecklistItemOut] = []
     seen = set()
-    for uc, cov, insurer in iter_relevant_user_coverages(db, incident.user_id, merged, incident.user_policy_id):
+    for uc, cov, insurer in iter_relevant_user_coverages(db, incident.user_id, incident.type_id, merged, incident.user_policy_id):
         doc_maps = db.query(CoverageDocMap).filter(CoverageDocMap.coverage_id == cov.coverage_id).all()
         for dm in doc_maps:
             key = (dm.required_doc_std_id, cov.coverage_id)
@@ -323,6 +402,7 @@ def get_checklist(
                     clause_id=dm.clause.clause_id, article_no=dm.clause.article_no, text=dm.clause.text,
                     page_ref=dm.clause.page_ref, default_color=dm.clause.default_color,
                     highlight_color=dm.clause.default_color,
+                    terms=[ClauseTermOut.model_validate(t) for t in dm.clause.terms],
                 ) if dm.clause else None,
             ))
 

@@ -1,6 +1,6 @@
 """영역 B: 사용자 도메인 (new.md 참조)"""
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text
+    Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -118,8 +118,17 @@ class Incident(Base):
     free_text = Column(Text)
     # "도난"|"파손"|"분실" — 휴대품손해 특약이 분실은 보상하지 않고 도난/파손만 보상하므로 구분한다.
     item_damage_type = Column(String, nullable=True)
+    # 사고유형 분류 결과(incident_type 2단계 사전). item_damage_type 같은 담보별 임시
+    # 플래그를 대체해 나가기 위한 정식 축. app.services.incident_classify_gemini가 채우고,
+    # app.services.claim_review가 이 값을 기준으로 담보를 찾는다(routers/incidents.py 참고).
+    type_id = Column(Integer, ForeignKey("incident_type.type_id"), nullable=True)
+    # 수식자 축(활동/장소/시점/상태/대상) JSON — 같은 사고유형이라도 조항 적용이 갈리는
+    # 부가 정보(예: 활동=스쿠버다이빙 → 상해 면책 조항 검토)를 유형과 분리해서 담는다.
+    modifiers = Column(Text, nullable=True)
+    classify_confidence = Column(Float, nullable=True)
 
     user = relationship("AppUser", back_populates="incidents")
+    incident_type = relationship("IncidentType")
     evidences = relationship("Evidence", back_populates="incident")
     user_policy = relationship("UserPolicy")
 

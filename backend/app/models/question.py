@@ -13,6 +13,8 @@ class QuestionBank(Base):
     question_text = Column(Text, nullable=False)
     target_field = Column(String)
     impact_weight = Column(Float, default=0.0)
+    # 이 질문이 어느 사고유형 L1(예: "INJ")의 L2 판별에 쓰이는지. None이면 L1 공통(예: 의료비).
+    applies_to_l1 = Column(String, nullable=True)
 
     logs = relationship("UserQuestionLog", back_populates="question")
 

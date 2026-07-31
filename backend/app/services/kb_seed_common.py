@@ -7,6 +7,18 @@ required_doc_std(표준 청구서류)와 coverage_std(표준 담보)는 보험�
 from app.models.kb import Insurer, Product, PolicyVersion, CoverageStd, RequiredDocStd
 
 
+def raw_text_is_grounded(clause_text: str, raw_text: str) -> bool:
+    """ClauseTerm.raw_text가 실제 조항 원문의 부분 문자열인지 확인한다.
+
+    clause_spans_gemini._locate_spans와 같은 원칙: 원문에 문자 그대로 존재하지 않는
+    발췌는 근거 없는 것으로 보고 거부한다("근거 없는 결과 금지"). ClauseTerm 행을
+    만드는 모든 코드는 db.add 전에 이 함수로 검증해야 한다.
+    """
+    if not clause_text or not raw_text:
+        return False
+    return raw_text.strip() in clause_text
+
+
 def get_or_create_coverage_std(db, std_code: str, std_name: str, category: str, is_base: bool) -> CoverageStd:
     obj = db.query(CoverageStd).filter_by(std_code=std_code).first()
     if obj:

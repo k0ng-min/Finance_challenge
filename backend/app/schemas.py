@@ -21,6 +21,18 @@ class HighlightSpanOut(BaseModel):
     color: str
 
 
+class ClauseTermOut(BaseModel):
+    term_type: str  # 지급한도/자기부담금/면책일수/지연기준시간 ...
+    value_num: Optional[float] = None
+    unit: Optional[str] = None  # 원/일/시간/%
+    basis: Optional[str] = None  # 실손/정액 ...
+    condition_text: Optional[str] = None
+    raw_text: str  # 조항 원문 중 이 수치의 근거가 된 부분(그대로 인용)
+
+    class Config:
+        from_attributes = True
+
+
 class ClauseOut(BaseModel):
     clause_id: int
     article_no: str
@@ -29,6 +41,7 @@ class ClauseOut(BaseModel):
     default_color: str
     highlight_color: str
     highlight_spans: Optional[list[HighlightSpanOut]] = None
+    terms: list[ClauseTermOut] = []
 
     class Config:
         from_attributes = True

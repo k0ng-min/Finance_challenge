@@ -19,6 +19,8 @@ export function ClauseCard({ clause, incidentId }: { clause: ClauseOut; incident
     navigate(`/highlights?${params.toString()}`);
   }
 
+  const terms = clause.terms ?? [];
+
   return (
     <button type="button" className="clause-card clause-card--compact" style={highlightStyle(clause.highlight_color)} onClick={handleClick}>
       <div className="clause-card__head">
@@ -28,6 +30,17 @@ export function ClauseCard({ clause, incidentId }: { clause: ClauseOut; incident
         <span className="clause-article">{clause.article_no}</span>
       </div>
       <p className="clause-text">{snippet}</p>
+      {terms.length > 0 && (
+        <div className="clause-terms">
+          {terms.map((t, i) => (
+            <span key={i} className="clause-term-badge">
+              {t.term_type}
+              {t.value_num != null && `: ${t.value_num.toLocaleString()}${t.unit ?? ""}`}
+              {t.basis && ` (${t.basis})`}
+            </span>
+          ))}
+        </div>
+      )}
       <span className="clause-card__link">약관형광펜에서 자세히 보기 →</span>
       {clause.page_ref && <div className="clause-page">원문 위치: {clause.page_ref}</div>}
     </button>

@@ -6,7 +6,11 @@ finding spec(dict) -> AnalysisFinding/FindingEvidenceLink DB 저장 + FindingOut
 from sqlalchemy.orm import Session
 
 from app.models.analysis import AnalysisFinding, FindingEvidenceLink, AnalysisRun
-from app.schemas import FindingOut, ClauseOut
+from app.schemas import FindingOut, ClauseOut, ClauseTermOut
+
+
+def _terms_out(clause) -> list[ClauseTermOut]:
+    return [ClauseTermOut.model_validate(t) for t in clause.terms]
 
 
 def persist_findings(db: Session, run: AnalysisRun, finding_specs: list[dict]) -> list[FindingOut]:
@@ -43,6 +47,7 @@ def persist_findings(db: Session, run: AnalysisRun, finding_specs: list[dict]) -
                 page_ref=clause.page_ref,
                 default_color=clause.default_color,
                 highlight_color=color,
+                terms=_terms_out(clause),
             ))
 
         findings_out.append(FindingOut(
@@ -84,6 +89,7 @@ def load_findings_out(db: Session, analysis_run_id: int) -> list[FindingOut]:
                 page_ref=link.clause.page_ref,
                 default_color=link.clause.default_color,
                 highlight_color=link.highlight_color,
+                terms=_terms_out(link.clause),
             )
             for link in links
         ]

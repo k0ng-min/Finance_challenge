@@ -46,12 +46,21 @@ _add_missing_columns("incident", {
     "user_policy_id": "ALTER TABLE incident ADD COLUMN user_policy_id INTEGER",
     "free_text": "ALTER TABLE incident ADD COLUMN free_text TEXT",
     "item_damage_type": "ALTER TABLE incident ADD COLUMN item_damage_type VARCHAR",
+    "type_id": "ALTER TABLE incident ADD COLUMN type_id INTEGER",
+    "modifiers": "ALTER TABLE incident ADD COLUMN modifiers TEXT",
+    "classify_confidence": "ALTER TABLE incident ADD COLUMN classify_confidence FLOAT",
 })
 _add_missing_columns("analysis_finding", {
     "coverage_amount": "ALTER TABLE analysis_finding ADD COLUMN coverage_amount VARCHAR",
 })
 _add_missing_columns("user_policy", {
     "subscriber_age": "ALTER TABLE user_policy ADD COLUMN subscriber_age INTEGER",
+})
+_add_missing_columns("incident_type", {
+    "needs_review": "ALTER TABLE incident_type ADD COLUMN needs_review BOOLEAN DEFAULT 0",
+})
+_add_missing_columns("question_bank", {
+    "applies_to_l1": "ALTER TABLE question_bank ADD COLUMN applies_to_l1 VARCHAR",
 })
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")

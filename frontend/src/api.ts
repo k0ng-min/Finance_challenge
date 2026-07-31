@@ -33,6 +33,15 @@ export interface ClauseRelevanceOut {
   supported: boolean;
 }
 
+export interface ClauseTermOut {
+  term_type: string;
+  value_num: number | null;
+  unit: string | null;
+  basis: string | null;
+  condition_text: string | null;
+  raw_text: string;
+}
+
 export interface ClauseOut {
   clause_id: number;
   article_no: string;
@@ -41,6 +50,7 @@ export interface ClauseOut {
   default_color: string;
   highlight_color: string;
   highlight_spans?: HighlightSpanOut[] | null;
+  terms?: ClauseTermOut[];
 }
 
 export interface FindingOut {

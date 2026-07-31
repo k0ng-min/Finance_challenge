@@ -818,6 +818,12 @@ button { cursor: pointer; font-family: inherit; }
 .clause-tag { font-size: 0.72rem; font-weight: 800; }
 .clause-article { font-size: 0.72rem; color: var(--muted); font-weight: 700; }
 .clause-text { font-size: 0.83rem; line-height: 1.65; margin: 0; white-space: pre-wrap; color: var(--text); }
+.clause-terms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.clause-term-badge {
+  display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 3px 8px;
+  border-radius: 999px; background: var(--primary-soft); color: var(--primary-dark);
+  border: 1px solid var(--border);
+}
 .clause-card__link { display: block; font-size: 0.74rem; font-weight: 700; color: var(--primary-dark); margin-top: 6px; }
 .clause-page { font-size: 0.72rem; color: var(--muted); margin-top: 6px; }
 

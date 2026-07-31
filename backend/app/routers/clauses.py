@@ -6,8 +6,9 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import Clause
 from app.models.user import Incident
-from app.schemas import HighlightSpanOut, ClauseOut
+from app.schemas import HighlightSpanOut, ClauseOut, ClauseTermOut
 from app.services.clause_spans_gemini import get_highlight_spans, get_incident_relevance
+from app.services.incident_context import build_incident_context
 from app.services.nlu import get_nlu_engine
 
 router = APIRouter(prefix="/clauses", tags=["clauses"])
@@ -23,6 +24,7 @@ def get_clause(clause_id: int, db: Session = Depends(get_db)):
     return ClauseOut(
         clause_id=clause.clause_id, article_no=clause.article_no, text=clause.text,
         page_ref=clause.page_ref, default_color=clause.default_color, highlight_color=clause.default_color,
+        terms=[ClauseTermOut.model_validate(t) for t in clause.terms],
     )
 
 
@@ -37,20 +39,6 @@ def get_clause_spans(request: Request, clause_id: int, db: Session = Depends(get
     return get_highlight_spans(db, clause)
 
 
-_CONTEXT_LABELS = {
-    "country": "사고 발생 국가",
-    "cause": "사고 원인",
-    "injury_part": "다친 부위",
-    "diagnosis": "진단명·증상",
-}
-
-
-def _incident_context(incident: Incident) -> dict:
-    return {
-        _CONTEXT_LABELS[f]: getattr(incident, f)
-        for f in ("country", "cause", "injury_part", "diagnosis")
-        if getattr(incident, f)
-    }
 
 
 @router.get("/{clause_id}/relevance")
@@ -65,7 +53,7 @@ def get_clause_relevance(request: Request, clause_id: int, incident_id: int, db:
     if not incident:
         raise HTTPException(status_code=404, detail="사고 정보를 찾을 수 없습니다.")
 
-    result = get_incident_relevance(clause.text, _incident_context(incident))
+    result = get_incident_relevance(clause.text, build_incident_context(db, incident))
     if result is None:
         return {"segments": [{"text": clause.text, "highlighted": False}], "relevant_chars": 0, "supported": False}
     segments, relevant_chars = result
@@ -88,7 +76,7 @@ def get_clause_plain_text(request: Request, clause_id: int, incident_id: int | N
         incident = db.get(Incident, incident_id)
         if not incident:
             raise HTTPException(status_code=404, detail="사고 정보를 찾을 수 없습니다.")
-        context = _incident_context(incident)
+        context = build_incident_context(db, incident)
         explained = get_nlu_engine().explain_clause_plain(clause.text, context or None)
         if explained and explained.strip() and explained.strip() != clause.text.strip():
             return {"plain_text": explained.strip(), "supported": True}
