@@ -18,7 +18,7 @@ interface WheelColProps {
 
 function WheelCol({ items, index, onIndex }: WheelColProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const timer = useRef<number>();
+  const timer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const el = ref.current;
