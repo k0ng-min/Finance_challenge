@@ -5,6 +5,9 @@ import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 import { Modal } from "../components/Modal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { PickerField } from "../components/PickerField";
+import { DateTimeField } from "../components/DateTimeField";
+import { COUNTRIES } from "../data/countries";
 import { useApp } from "../context/AppContext";
 import { shortInsurerName } from "../data/insurers";
 import {
@@ -38,6 +41,12 @@ export function Account() {
   const [incidents, setIncidents] = useState<IncidentSummaryOut[]>([]);
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
   const [tripModal, setTripModal] = useState<TripSummaryOut | null>(null);
+  // 사고 접수 중에 급히 만든 여행처럼, 나중에 목적지·기간을 고칠 수 있게 한다.
+  const [editingTrip, setEditingTrip] = useState(false);
+  const [editDestination, setEditDestination] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [savingTrip, setSavingTrip] = useState(false);
   const [incidentModal, setIncidentModal] = useState<IncidentSummaryOut | null>(null);
   const [confirmDeleteTrip, setConfirmDeleteTrip] = useState<number | null>(null);
   const [confirmDeleteIncident, setConfirmDeleteIncident] = useState<number | null>(null);
@@ -172,7 +181,7 @@ export function Account() {
           ))}
         </div>
 
-        <Modal open={!!tripModal} onClose={() => setTripModal(null)} title="여행 기록">
+        <Modal open={!!tripModal} onClose={() => { setTripModal(null); setEditingTrip(false); }} title="여행 기록">
           {tripModal && (
             <>
               <p style={{ marginTop: 0 }}>
@@ -191,14 +200,80 @@ export function Account() {
                   ))}
                 </div>
               ))}
-              <button
-                type="button"
-                className="btn-secondary"
-                style={{ width: "100%", marginTop: 6 }}
-                onClick={() => setConfirmDeleteTrip(tripModal.trip_id)}
-              >
-                이 여행 기록 삭제
-              </button>
+              {editingTrip ? (
+                <>
+                  <label>
+                    목적지 국가
+                    <PickerField
+                      value={editDestination}
+                      onChange={setEditDestination}
+                      placeholder="국가를 선택하세요"
+                      modalTitle="목적지 국가"
+                      options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+                    />
+                  </label>
+                  <DateTimeField label="여행 시작일" value={editStart} onChange={setEditStart} />
+                  <DateTimeField label="여행 종료일" value={editEnd} onChange={setEditEnd} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      style={{ flex: 1 }}
+                      onClick={() => setEditingTrip(false)}
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      style={{ flex: 1 }}
+                      disabled={savingTrip}
+                      onClick={async () => {
+                        setSavingTrip(true);
+                        try {
+                          await api.updateTrip(tripModal.trip_id, {
+                            destination: editDestination || null,
+                            start_date: editStart || null,
+                            end_date: editEnd || null,
+                          });
+                          const list = await api.listTrips(userId!);
+                          setTrips(list);
+                          setTripModal(list.find((t) => t.trip_id === tripModal.trip_id) ?? null);
+                          setEditingTrip(false);
+                        } finally {
+                          setSavingTrip(false);
+                        }
+                      }}
+                    >
+                      {savingTrip ? "저장 중..." : "저장"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    style={{ width: "100%", marginTop: 6 }}
+                    onClick={() => {
+                      setEditDestination(tripModal.destination ?? "");
+                      setEditStart(tripModal.start_date ?? "");
+                      setEditEnd(tripModal.end_date ?? "");
+                      setEditingTrip(true);
+                    }}
+                  >
+                    여행 정보 수정
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    style={{ width: "100%", marginTop: 8 }}
+                    onClick={() => setConfirmDeleteTrip(tripModal.trip_id)}
+                  >
+                    이 여행 기록 삭제
+                  </button>
+                </>
+              )}
             </>
           )}
         </Modal>

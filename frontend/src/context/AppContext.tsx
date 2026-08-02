@@ -14,11 +14,14 @@ interface AppState {
   // 로그인 계정에는 한 번 입력한 나이가 프로필에 저장돼, 여행준비·사고접수·내보험등록에서
   // 매번 다시 물어보지 않고 자동으로 채워진다(게스트는 세션이 매번 새로 시작돼 저장할 곳이 없다).
   age: number | null;
+  /** "M" | "F" — 보험료가 나이와 함께 성별로도 갈려서 같이 들고 다닌다. */
+  sex: string | null;
   isLoggedIn: boolean;
   loginWithKakao: (code: string, intent: "login" | "signup") => Promise<boolean>;
   loginWithGoogle: (code: string, intent: "login" | "signup") => Promise<boolean>;
   updateNickname: (nickname: string) => Promise<void>;
   updateAge: (age: number) => Promise<void>;
+  updateSex: (sex: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -31,6 +34,9 @@ const LS_INCIDENT = "travel_ai_incident_id";
 const LS_TOKEN = "travel_ai_token";
 const LS_NICKNAME = "travel_ai_nickname";
 const LS_EMAIL = "travel_ai_email";
+// 나이·성별은 게스트도 다시 묻지 않도록 로컬에도 남긴다(로그인 계정은 서버 프로필이 우선).
+const LS_AGE = "travel_ai_age";
+const LS_SEX = "travel_ai_sex";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<number | null>(null);
@@ -43,7 +49,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [nickname, setNickname] = useState<string | null>(() => localStorage.getItem(LS_NICKNAME));
   const [email, setEmail] = useState<string | null>(() => localStorage.getItem(LS_EMAIL));
-  const [age, setAge] = useState<number | null>(null);
+  const [age, setAge] = useState<number | null>(() => Number(localStorage.getItem(LS_AGE)) || null);
+  const [sex, setSex] = useState<string | null>(() => localStorage.getItem(LS_SEX));
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   async function bootstrapGuest() {
@@ -66,6 +73,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNickname(res.nickname);
     setEmail(res.email);
     setAge(res.age);
+    setSex(res.sex ?? null);
     setIsLoggedIn(true);
   }
 
@@ -82,6 +90,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setNickname(me.nickname);
           setEmail(me.email);
           setAge(me.age);
+          setSex(me.sex ?? null);
           setIsLoggedIn(true);
           setLoading(false);
           return;
@@ -98,6 +107,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     restore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 지금까지는 "지금 보고 있는 사고"를 localStorage에만 들고 있어서, 로그인하거나 브라우저를
+  // 껐다 켜거나 다른 기기에서 열면 그 값이 비고 → 약관 형광펜·서류 체크·실수 방지 화면이
+  // 사고가 여러 건 접수돼 있는데도 "접수된 사고가 없어요"로 보였다. 서버 이력을 기준으로
+  // 다시 맞춘다: 저장된 ID가 실제로 남아 있으면 그대로 쓰고, 없거나 비었으면 가장 최근 사고를 고른다.
+  useEffect(() => {
+    if (loading || !userId) return;
+    let cancelled = false;
+    api.listIncidents(userId)
+      .then((list) => {
+        if (cancelled) return;
+        if (list.length === 0) {
+          localStorage.removeItem(LS_INCIDENT);
+          setIncidentIdState(null);
+          return;
+        }
+        const stored = Number(localStorage.getItem(LS_INCIDENT)) || null;
+        const stillExists = stored != null && list.some((i) => i.incident_id === stored);
+        const resolved = stillExists ? stored! : list[0].incident_id;
+        localStorage.setItem(LS_INCIDENT, String(resolved));
+        setIncidentIdState(resolved);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, userId, isLoggedIn]);
 
   const setTripId = (id: number) => {
     localStorage.setItem(LS_TRIP, String(id));
@@ -136,8 +172,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function updateAge(newAge: number) {
+    localStorage.setItem(LS_AGE, String(newAge));
+    setAge(newAge);
+    if (!localStorage.getItem(LS_TOKEN)) return; // 게스트는 로컬에만 남긴다
     const res = await api.updateAge(newAge);
     setAge(res.age);
+  }
+
+  async function updateSex(newSex: string) {
+    localStorage.setItem(LS_SEX, newSex);
+    setSex(newSex);
+    if (!localStorage.getItem(LS_TOKEN)) return; // 게스트는 로컬에만 남긴다
+    const res = await api.updateSex(newSex);
+    setSex(res.sex ?? newSex);
   }
 
   async function deleteAccount() {
@@ -183,8 +230,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppCtx.Provider
       value={{
         userId, tripId, incidentId, setTripId, setIncidentId, loading,
-        nickname, email, age, isLoggedIn, loginWithKakao, loginWithGoogle,
-        updateNickname, updateAge, deleteAccount, logout,
+        nickname, email, age, sex, isLoggedIn, loginWithKakao, loginWithGoogle,
+        updateNickname, updateAge, updateSex, deleteAccount, logout,
       }}
     >
       {children}

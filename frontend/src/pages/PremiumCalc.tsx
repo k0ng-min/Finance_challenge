@@ -1,0 +1,212 @@
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { api, type PremiumComparisonOut } from "../api";
+import { useApp } from "../context/AppContext";
+import { TopBar } from "../components/TopBar";
+import { PageHero } from "../components/PageHero";
+import { Icon3D } from "../components/Icon3D";
+
+const INSURERS = [
+  { code: "SAMSUNG", label: "삼성화재" },
+  { code: "HYUNDAI", label: "현대해상" },
+  { code: "MERITZ", label: "메리츠화재" },
+  { code: "KB", label: "KB손보" },
+  { code: "DB", label: "DB손보" },
+  { code: "KAKAOPAY", label: "카카오페이손보" },
+];
+
+/**
+ * 보험료 계산기 — 보험사를 골라 나이·성별·여행일수를 넣으면 총 보험료를 비교해 준다.
+ *
+ * 숫자는 약관에서 뽑은 값이 아니라 보험다모아 비교공시에서 수집한 값이라, 산출 전제와
+ * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
+ */
+export function PremiumCalc() {
+  const { age: profileAge, sex: profileSex } = useApp();
+  // 처음엔 아무것도 고르지 않은 상태로 시작한다 — 전부 켜둔 채로 열면 "내가 고른 것"이
+  // 아니라 "일단 다 나온 것"으로 보여서, 비교하려고 고르는 행동 자체가 흐려진다.
+  const [selected, setSelected] = useState<string[]>([]);
+  const [age, setAge] = useState<number>(profileAge ?? 30);
+  const [sex, setSex] = useState<"M" | "F">(profileSex === "F" ? "F" : "M");
+  const [days, setDays] = useState<number>(7);
+  const [order, setOrder] = useState<"asc" | "desc">("asc");
+  const [data, setData] = useState<PremiumComparisonOut | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (profileAge != null) setAge(profileAge);
+  }, [profileAge]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    api
+      .getPremiumComparison(age, sex, days, order)
+      .then((res) => {
+        if (!cancelled) setData(res);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setData(null);
+          setError("이 나이는 6개사 모두 가입연령 범위 밖이라 비교공시에 보험료가 없어요.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [age, sex, days, order]);
+
+  function toggle(code: string) {
+    setSelected((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    );
+  }
+
+  const rows = useMemo(
+    () => (data?.items ?? []).filter((i) => selected.includes(i.insurer_code)),
+    [data, selected]
+  );
+  // 고른 보험사 중 이 나이·성별로는 상품이 없는 곳 — 조용히 빼지 않고 이유를 밝힌다.
+  const missing = useMemo(() => {
+    const present = new Set((data?.items ?? []).map((i) => i.insurer_code));
+    return INSURERS.filter((i) => selected.includes(i.code) && !present.has(i.code));
+  }, [data, selected]);
+
+  return (
+    <div className="page">
+      <TopBar title="보험료 계산기" />
+      <PageHero
+        icon="wallet"
+        eyebrow="PREMIUM"
+        title={"얼마나 나올지\n먼저 계산해봐요"}
+        subtitle="보험사를 골라 나이·성별·여행일수를 넣으면 총 보험료를 비교해 드려요."
+      />
+
+      <div className="card">
+        <p className="section-label" style={{ marginBottom: 8 }}>비교할 보험사</p>
+        <div className="calc-chips">
+          {INSURERS.map((i) => (
+            <button
+              key={i.code}
+              type="button"
+              className={`premium-chip${selected.includes(i.code) ? " premium-chip--on" : ""}`}
+              onClick={() => toggle(i.code)}
+            >
+              {i.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="calc-grid">
+          <label>
+            나이 (만)
+            <input
+              type="number"
+              min={0}
+              max={80}
+              value={age}
+              onChange={(e) => setAge(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            여행일수
+            <input
+              type="number"
+              min={1}
+              max={180}
+              value={days}
+              onChange={(e) => setDays(Math.max(1, Number(e.target.value)))}
+            />
+          </label>
+        </div>
+
+        <div className="calc-row">
+          <div className="calc-seg">
+            {(["M", "F"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={`premium-chip${sex === s ? " premium-chip--on" : ""}`}
+                onClick={() => setSex(s)}
+              >
+                {s === "M" ? "남자" : "여자"}
+              </button>
+            ))}
+          </div>
+          <div className="calc-seg">
+            <button
+              type="button"
+              className={`premium-chip${order === "asc" ? " premium-chip--on" : ""}`}
+              onClick={() => setOrder("asc")}
+            >
+              낮은 가격순
+            </button>
+            <button
+              type="button"
+              className={`premium-chip${order === "desc" ? " premium-chip--on" : ""}`}
+              onClick={() => setOrder("desc")}
+            >
+              높은 가격순
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>계산하는 중...</p>}
+      {!loading && error && <div className="error-box">{error}</div>}
+
+      {!loading && !error && selected.length === 0 && (
+        <div className="empty-state">
+          <Icon3D src="wallet" size={56} />
+          <p className="muted">비교할 보험사를 한 곳 이상 골라주세요.</p>
+        </div>
+      )}
+
+      {!loading && data && selected.length > 0 && (
+        <>
+          <ul className="premium-list">
+            {rows.map((item, i) => (
+              <motion.li
+                key={item.insurer_code}
+                className="premium-row"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+              >
+                <span className="premium-row__rank">{i + 1}</span>
+                <span className="premium-row__name">
+                  {item.insurer_name}
+                  {item.product_name && <em>{item.product_name}</em>}
+                </span>
+                <span className="premium-row__cost">{item.premium_total.toLocaleString()}원</span>
+              </motion.li>
+            ))}
+          </ul>
+
+          {missing.length > 0 && (
+            <p className="muted premium-basis">
+              {missing.map((m) => m.label).join(", ")} — 만 {age}세 {sex === "M" ? "남성" : "여성"}은
+              가입연령 범위 밖이라 비교공시에 상품이 나오지 않아요.
+            </p>
+          )}
+
+          <p className="premium-basis">
+            {data.basis}
+            <br />
+            {days}일 기준 총액으로 계산했어요. 실제 보험료는 여행지·담보 구성에 따라 달라져요.{" "}
+            {data.source_url && (
+              <a href={data.source_url} target="_blank" rel="noreferrer">
+                {data.source} ({data.collected_at} 수집) →
+              </a>
+            )}
+          </p>
+        </>
+      )}
+    </div>
+  );
+}

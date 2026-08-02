@@ -16,6 +16,27 @@ class TripCreate(BaseModel):
     coverage_priority: list[str] = []
 
 
+class TripUpdate(BaseModel):
+    """이미 등록한 여행의 기본 정보 수정 — 사고 접수 중에 급히 만든 여행을 나중에
+    제대로 채워 넣을 수 있게 한다. 넘긴 항목만 바뀐다."""
+    destination: Optional[str] = None
+    start_date: Optional[dt.date] = None
+    end_date: Optional[dt.date] = None
+    purpose: Optional[str] = None
+    companion_type: Optional[str] = None
+
+
+class TripDetailOut(BaseModel):
+    trip_id: int
+    destination: Optional[str] = None
+    start_date: Optional[dt.date] = None
+    end_date: Optional[dt.date] = None
+    purpose: Optional[str] = None
+    companion_type: Optional[str] = None
+    user_policy_id: Optional[int] = None
+    insurer_name: Optional[str] = None
+
+
 class HighlightSpanOut(BaseModel):
     text: str
     color: str
@@ -82,6 +103,9 @@ class UserCoverageIn(BaseModel):
 
 
 class UserPolicyCreate(BaseModel):
+    # 이 보험이 어느 여행에 대한 것인지. 넘기면 그 여행에 보험이 연결돼서, 나중에 사고를
+    # 접수할 때 "어느 여행의 어느 보험으로 청구하는지"가 자동으로 이어진다.
+    trip_id: Optional[int] = None
     insurer_name_raw: str
     product_name_raw: Optional[str] = None
     subscriber_age: Optional[int] = None
@@ -111,6 +135,43 @@ class InsurerCoverageOut(BaseModel):
     deductible: Optional[str] = None
 
 
+class InsurerPremiumOut(BaseModel):
+    """나이·성별 하나에 대한 보험사별 예시 보험료 한 줄."""
+    insurer_code: str
+    insurer_name: str
+    product_name: Optional[str] = None
+    premium: int              # 비교공시 기준 보험료(1건)
+    premium_total: int        # 여행일수를 곱한 총액
+    age_range: Optional[str] = None
+
+
+class PremiumPointOut(BaseModel):
+    age: int
+    premium: int
+
+
+class InsurerPremiumCurveOut(BaseModel):
+    """한 보험사의 나이별 보험료 곡선."""
+    insurer_code: str
+    insurer_name: str
+    product_name: Optional[str] = None
+    sex: str
+    points: list[PremiumPointOut]
+
+
+class PremiumComparisonOut(BaseModel):
+    """보험료는 외부 비교공시에서 가져온 값이라 전제·출처를 항상 함께 내려보낸다."""
+    age: int
+    sex: str
+    basis: Optional[str] = None
+    source: Optional[str] = None
+    source_url: Optional[str] = None
+    collected_at: Optional[dt.date] = None
+    days: int = 1
+    items: list[InsurerPremiumOut]
+    unavailable_insurers: list[str] = []
+
+
 class UserPolicyOut(BaseModel):
     user_policy_id: int
     insurer_name_raw: str
@@ -127,6 +188,11 @@ class UserPolicyOut(BaseModel):
 class IncidentCreate(BaseModel):
     user_id: int
     trip_id: Optional[int] = None
+    # 연결할 여행이 아직 없을 때, 사고 접수 화면에서 목적지·기간만 받아 여행도 같이 만든다.
+    # (trip_id가 오면 이 값들은 무시한다.)
+    new_trip_destination: Optional[str] = None
+    new_trip_start_date: Optional[dt.date] = None
+    new_trip_end_date: Optional[dt.date] = None
     user_policy_id: Optional[int] = None  # 이 사고 청구가 어느 등록 보험을 대상으로 하는지
     # 게스트(비로그인)는 "내 보험"을 쓸 수 없어 등록된 보험이 없다 — 대신 6개 보험사 중
     # 하나를 바로 고르면, 서버가 그 보험사로 최소한의 보험 기록을 대신 만들어 청구 검토에 쓴다.
@@ -245,6 +311,11 @@ class InsurerRankOut(BaseModel):
     reasons: list[str]
     tags: list[str] = []
     official_url: Optional[str] = None
+    # 나이·성별을 함께 받은 경우에만 채워진다(보험다모아 비교공시 기준 예시 보험료).
+    premium: Optional[int] = None            # 비교공시에서 받아온 기준 보험료(1건)
+    premium_total: Optional[int] = None      # 여행일수를 곱한 총액 — 화면에는 이 값을 보여준다
+    premium_days: Optional[int] = None       # 총액 계산에 쓴 여행일수
+    premium_note: Optional[str] = None
 
 
 class InsurerRankingOut(BaseModel):

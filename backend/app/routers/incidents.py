@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.limiter import limiter
-from app.models.user import AppUser, Incident, Evidence, UserPolicy
+from app.models.user import AppUser, Incident, Evidence, Trip, UserPolicy
 from app.models.kb import RequiredDocStd, Insurer, IncidentType
 from app.models.analysis import AnalysisRun, ValidationRule, ValidationResult
 from app.models.question import QuestionBank, UserQuestionLog
@@ -25,7 +25,7 @@ from app.services.claim_review import (
 )
 from app.services.finding_persistence import persist_findings, load_findings_out
 from app.services.validation import run_core_validation, persist_validation, check_docs_not_secured
-from app.services.deletion import delete_incident_cascade
+from app.services.deletion import delete_incident_cascade, delete_trip_cascade
 from app.models.kb import CoverageDocMap
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
@@ -189,14 +189,43 @@ def create_incident(
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다. 먼저 /users로 사용자를 생성하세요.")
 
-    # 게스트(비로그인)는 사고 이력을 여러 건 쌓아두지 않는다 — 새 사고를 접수하면 이전
-    # 접수 건은 지운다(로그인 계정은 계속 쌓인다). "다른 사고를 보려면 다시 접수해야 한다"는
-    # 게 의도된 동작이다.
+    # 게스트(비로그인)는 "여행 1개 + 거기 이어지는 보험 1개 + 사고 1개"만 들고 간다.
+    # 새 사고를 접수하면 앞의 기록은 전부 정리한다 — 단, 이번 요청이 방금 만든 여행을
+    # 가리키고 있다면(trip_id) 그건 이 흐름의 일부라 지우지 않는다.
     if current is None:
+        keep_trip_id = payload.trip_id
         for old in db.query(Incident).filter(Incident.user_id == payload.user_id).all():
             delete_incident_cascade(db, old)
+        for old_trip in db.query(Trip).filter(Trip.user_id == payload.user_id).all():
+            if old_trip.trip_id != keep_trip_id:
+                delete_trip_cascade(db, old_trip)
+
+    # 연결할 여행이 없으면 사고 접수 화면에서 받은 목적지·기간으로 여행을 여기서 만들어준다.
+    # "사고부터 접수한 사람"도 여행 기록이 남아야 나중에 서류체크·형광펜 화면에서 같은
+    # 여행 맥락으로 이어서 볼 수 있다.
+    trip_id = payload.trip_id
+    if trip_id is None and payload.new_trip_destination:
+        start = payload.new_trip_start_date or date.today()
+        end = payload.new_trip_end_date or (start + timedelta(days=7))
+        if end <= start:
+            end = start + timedelta(days=1)
+        new_trip = Trip(
+            user_id=payload.user_id,
+            destination=payload.new_trip_destination,
+            start_date=start, end_date=end,
+            purpose="사고 접수 중 등록",
+        )
+        db.add(new_trip)
+        db.flush()
+        trip_id = new_trip.trip_id
 
     user_policy_id = payload.user_policy_id
+    # 여행에 이미 보험이 묶여 있으면 그걸 그대로 쓴다 — 여행만 고르면 보험이 따라오게 하는 핵심.
+    if user_policy_id is None and trip_id is not None:
+        linked_trip = db.get(Trip, trip_id)
+        if linked_trip and linked_trip.user_policy_id:
+            user_policy_id = linked_trip.user_policy_id
+
     if user_policy_id is None and payload.insurer_code:
         insurer = db.query(Insurer).filter(Insurer.code == payload.insurer_code).first()
         if not insurer:
@@ -207,6 +236,12 @@ def create_incident(
             period_start=today, period_end=today + timedelta(days=30),
         )
         user_policy_id = policy.user_policy_id
+
+    # 이번에 고른 보험을 이 여행에도 묶어둔다 — 다음에 같은 여행으로 사고를 접수하면 자동 연결된다.
+    if trip_id is not None and user_policy_id is not None:
+        linked_trip = db.get(Trip, trip_id)
+        if linked_trip and linked_trip.user_policy_id is None:
+            linked_trip.user_policy_id = user_policy_id
 
     nlu = get_nlu_engine()
     explicit = {
@@ -220,7 +255,7 @@ def create_incident(
 
     incident = Incident(
         user_id=payload.user_id,
-        trip_id=payload.trip_id,
+        trip_id=trip_id,
         user_policy_id=user_policy_id,
         occurred_at=payload.occurred_at,
         medical_cost=payload.medical_cost,

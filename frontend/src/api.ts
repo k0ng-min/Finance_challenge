@@ -196,11 +196,39 @@ export interface InsurerRankOut {
   reasons: string[];
   tags: string[];
   official_url: string | null;
+  /** 나이·성별을 함께 넘긴 경우에만 채워진다. 가입연령 밖이면 null이고 사유가 premium_note에 온다. */
+  premium: number | null;
+  /** 여행일수를 곱한 총액 — 화면에는 이 값을 보여준다. */
+  premium_total: number | null;
+  premium_days: number | null;
+  premium_note: string | null;
 }
 
 export interface InsurerRankingOut {
   tier_code: string;
   ranking: InsurerRankOut[];
+}
+
+export interface InsurerPremiumOut {
+  insurer_code: string;
+  insurer_name: string;
+  product_name: string | null;
+  premium: number;
+  premium_total: number;
+  age_range: string | null;
+}
+
+export interface PremiumComparisonOut {
+  age: number;
+  sex: string;
+  basis: string | null;
+  source: string | null;
+  source_url: string | null;
+  collected_at: string | null;
+  days: number;
+  items: InsurerPremiumOut[];
+  /** 해당 나이가 가입연령 밖이라 비교공시에 나오지 않는 보험사 */
+  unavailable_insurers: string[];
 }
 
 export interface AuthUserOut {
@@ -210,6 +238,7 @@ export interface AuthUserOut {
   auth_provider: string;
   token: string;
   age: number | null;
+  sex: string | null;
   is_new_user: boolean;
 }
 
@@ -220,6 +249,17 @@ export interface ProviderStatusOut {
   google_client_id: string;
   kakao_redirect_uri: string;
   google_redirect_uri: string;
+}
+
+export interface TripDetailOut {
+  trip_id: number;
+  destination: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  purpose: string | null;
+  companion_type: string | null;
+  user_policy_id: number | null;
+  insurer_name: string | null;
 }
 
 export interface TripSummaryOut {
@@ -250,6 +290,11 @@ export const api = {
 
   getTrip: (tripId: number) => request<RecommendationOut>(`/trips/${tripId}`),
 
+  getTripDetail: (tripId: number) => request<TripDetailOut>(`/trips/${tripId}/detail`),
+
+  updateTrip: (tripId: number, payload: object) =>
+    request<TripDetailOut>(`/trips/${tripId}`, { method: "PATCH", body: JSON.stringify(payload) }),
+
   listPolicies: (userId: number) => request<UserPolicyOut[]>(`/users/${userId}/policies`),
 
   registerPolicy: (userId: number, payload: object) =>
@@ -275,6 +320,9 @@ export const api = {
 
   getIncidentTypes: () => request<IncidentTypeOut[]>("/incidents/types"),
 
+  getPremiumComparison: (age: number, sex: string, days: number, order: "asc" | "desc") =>
+    request<PremiumComparisonOut>(`/insurers/premiums?age=${age}&sex=${sex}&days=${days}&order=${order}`),
+
   getInsurerCoverages: (insurerCode: string) =>
     request<InsurerCoverageOut[]>(`/insurers/${insurerCode}/coverages`),
 
@@ -289,9 +337,12 @@ export const api = {
       trip_days?: number;
       activities?: string[];
       coverage_priority?: string[];
-    }
+    },
+    profile?: { age?: number | null; sex?: string | null }
   ) => {
     const params = new URLSearchParams({ tier });
+    if (profile?.age != null) params.set("age", String(profile.age));
+    if (profile?.sex) params.set("sex", profile.sex);
     if (tripContext?.destination) params.set("destination", tripContext.destination);
     if (tripContext?.risk_level) params.set("risk_level", tripContext.risk_level);
     if (tripContext?.trip_days) params.set("trip_days", String(tripContext.trip_days));
@@ -353,6 +404,9 @@ export const api = {
 
   updateAge: (age: number) =>
     request<AuthUserOut>("/auth/age", { method: "PATCH", body: JSON.stringify({ age }) }),
+
+  updateSex: (sex: string) =>
+    request<AuthUserOut>("/auth/sex", { method: "PATCH", body: JSON.stringify({ sex }) }),
 
   deleteAccount: () => request<{ status: string }>("/auth/me", { method: "DELETE" }),
 };

@@ -99,6 +99,17 @@ python -m app.seed_samsung && python -m app.seed_hyundai && python -m app.seed_m
 # 보험사별로 순서대로 실행하면 이번에 확장한 딥다이브 데이터까지 재구성됩니다.
 ```
 
+### 1-1. 보험료 데이터 갱신 (선택)
+
+보험료는 `backend/data/premiums.json`에 수집된 상태로 저장소에 포함돼 있어 그대로 쓰면 됩니다.
+비교공시 값이 바뀌어 다시 받고 싶을 때만 아래를 실행하세요(협회 서버 부담을 줄이려고 요청 간
+1.2초 간격을 두므로 전체 수집에 4분쯤 걸립니다).
+
+```bash
+python -m app.crawl_premiums    # 만 0~80세 × 남/녀, data/premiums.json 갱신
+python -m app.seed_premiums     # insurer_premium 테이블에 적재(있으면 덮어씀)
+```
+
 ### 2. 프론트엔드
 
 ```bash
@@ -151,7 +162,10 @@ backend/
       clause_spans_gemini.py       약관 형광펜 관련도 계산
       validation.py                결정적 누락·모순 검증
     seed_*.py               6개사 약관 데이터 시딩 스크립트
+    crawl_premiums.py       보험다모아 나이·성별별 보험료 수집
+    seed_premiums.py        수집한 보험료를 insurer_premium 테이블에 적재
   data/app.db              SQLite DB(정제된 데이터 포함, 저장소에 커밋됨)
+  data/premiums.json       수집한 보험료 원본(출처·전제·수집일 포함)
   PDF_EXTRACTION_PLAYBOOK.md      조항 추출 원칙 문서
   CLAUSE_TERM_DOC_PLAYBOOK.md     수치·서류 구조화 원칙 문서
 frontend/   React + TypeScript + Vite
@@ -187,8 +201,13 @@ data/raw_pdfs/  원본 약관 PDF (gitignore, 로컬 전용 — 아래 "약관 �
 - 모바일·태블릿·데스크톱 반응형 레이아웃 — 화면 크기별 아이콘/글자 크기 최적화
 - Render 무료 호스팅 배포 — GitHub 연동 자동배포(`render.yaml` 블루프린트)
 
+- **나이·성별별 실제 보험료 비교** — 보험다모아(손해보험협회 비교공시)에서 수집한 6개사 보험료를
+  보험사 순위 화면에서 바로 비교(만 0~80세 × 남/녀, 763건). 산출 전제·출처·수집일을 항상 함께
+  표시하고, 해당 나이가 가입연령 밖이라 공시에 안 나오는 보험사는 조용히 빼지 않고 사유를 밝힘
+
 미구현/알려진 한계:
-- 실제 가입금액(상품요약서·보험다모아 기준 숫자)은 아직 반영되지 않음 — 약관에 명시된 조건·한도까지만 반영됨
+- 담보별 가입금액(상품요약서 기준 숫자)은 아직 반영되지 않음 — 약관에 명시된 조건·한도까지만 반영됨.
+  상품 전체 보험료는 위 비교공시 수집으로 반영됨
 - 카카오페이손해보험의 배상책임/휴대물품손해/항공기납치/구조송환/여행중단/여권분실 6개 담보는 검수 중 원문이 아닌 요약본으로 확인되어 제거함 — 재추출 필요
 - L1 분류가 애매할 때 후보 2~3개를 직접 골라 확인하는 UX는 아직 없음(추가 질문으로만 좁힘)
 - 벡터 임베딩 기반 RAG는 구현되어 있지 않음(SQL 기반 후보 필터링만 사용)

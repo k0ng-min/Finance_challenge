@@ -18,7 +18,7 @@ export function InsurerRankingFlow({
   initialTier?: string | null;
 }) {
   const navigate = useNavigate();
-  const { userId, isLoggedIn } = useApp();
+  const { userId, isLoggedIn, age, sex } = useApp();
   // initialTier가 있어도 phase는 일단 "tier"로 시작한다 — fetchRanking이 끝나면 스스로
   // "ranking"으로 넘어가므로, 그전까지는 기존 "tier" 단계의 로딩 화면이 자연스럽게 보인다.
   const [phase, setPhase] = useState<Phase>("tier");
@@ -44,7 +44,7 @@ export function InsurerRankingFlow({
         trip_days: typeof rp.trip_days === "number" ? rp.trip_days : undefined,
         activities: Array.isArray(rp.activities) ? (rp.activities as string[]) : undefined,
         coverage_priority: Array.isArray(rp.coverage_priority) ? (rp.coverage_priority as string[]) : undefined,
-      });
+      }, { age, sex });
       setRanking(res.ranking);
       setPhase("ranking");
     } finally {
@@ -85,6 +85,9 @@ export function InsurerRankingFlow({
     setRegistering(true);
     try {
       await api.registerPolicy(userId, {
+        // 이 보험을 지금 준비한 여행에 묶는다 — 나중에 사고를 접수할 때 여행만 고르면
+        // 보험이 자동으로 따라오게 하는 연결 고리다.
+        trip_id: result.trip_id,
         insurer_name_raw: selected.insurer_name,
         product_name_raw: null,
         period_start: iso(start),
@@ -163,8 +166,8 @@ export function InsurerRankingFlow({
           target="_blank"
           rel="noreferrer"
         >
-          💳 실제 보험료가 궁금하신가요? 보험다모아(공식 보험 비교 사이트)에서 여행 일수·목적지 기준
-          실시간 견적을 바로 확인할 수 있어요 →
+          💳 여행 일수·목적지까지 반영한 실시간 견적은 보험다모아(공식 보험 비교 사이트)에서 바로
+          확인할 수 있어요 →
         </a>
         <div className="rank-list">
           {ranking.map((r, i) => (
@@ -182,7 +185,14 @@ export function InsurerRankingFlow({
               <div className="rank-card__text">
                 <div className="rank-card__toprow">
                   <strong>{r.insurer_name}</strong>
-                  <span className="rank-card__score">적합도 {r.score}점</span>
+                  <span className="rank-card__meta">
+                    <span className="rank-card__score">적합도 {r.score}점</span>
+                    {r.premium_total != null ? (
+                      <span className="rank-card__premium">{r.premium_total.toLocaleString()}원</span>
+                    ) : (
+                      <span className="rank-card__premium rank-card__premium--none">가입연령 밖</span>
+                    )}
+                  </span>
                 </div>
                 {r.tags.length > 0 && (
                   <div className="rank-card__tags">

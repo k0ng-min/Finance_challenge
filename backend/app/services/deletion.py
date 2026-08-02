@@ -41,15 +41,27 @@ def delete_incident_cascade(db: Session, incident: Incident):
     db.delete(incident)
 
 
-def delete_user_cascade(db: Session, user: AppUser):
-    """회원 탈퇴 — 이 계정이 만든 사고·여행·보험 기록을 전부 지우고 계정 자체도 지운다.
-    되돌릴 수 없으므로 라우터에서 반드시 확인(ConfirmDialog) 후에만 호출해야 한다."""
-    for incident in db.query(Incident).filter(Incident.user_id == user.user_id).all():
+def wipe_user_data(db: Session, user_id: int):
+    """계정은 남기고 그 계정이 만든 사고·여행·보험 기록만 전부 지운다.
+
+    두 군데서 쓴다.
+    1) 게스트가 로그인·회원가입할 때 — 로그인 전에 체험 삼아 만든 기록이 정식 계정 이력에
+       섞이면 안 된다.
+    2) 비로그인 사용자가 새 여행/사고를 다시 등록할 때 — 게스트는 "여행 1개 + 거기 이어지는
+       사고 1개"만 들고 갈 수 있어서, 새로 시작하면 앞의 기록을 정리한다.
+    """
+    for incident in db.query(Incident).filter(Incident.user_id == user_id).all():
         delete_incident_cascade(db, incident)
-    for trip in db.query(Trip).filter(Trip.user_id == user.user_id).all():
+    for trip in db.query(Trip).filter(Trip.user_id == user_id).all():
         delete_trip_cascade(db, trip)
-    policy_ids = [p.user_policy_id for p in db.query(UserPolicy).filter(UserPolicy.user_id == user.user_id).all()]
+    policy_ids = [p.user_policy_id for p in db.query(UserPolicy).filter(UserPolicy.user_id == user_id).all()]
     if policy_ids:
         db.query(UserCoverage).filter(UserCoverage.user_policy_id.in_(policy_ids)).delete(synchronize_session=False)
         db.query(UserPolicy).filter(UserPolicy.user_policy_id.in_(policy_ids)).delete(synchronize_session=False)
+
+
+def delete_user_cascade(db: Session, user: AppUser):
+    """회원 탈퇴 — 이 계정이 만든 사고·여행·보험 기록을 전부 지우고 계정 자체도 지운다.
+    되돌릴 수 없으므로 라우터에서 반드시 확인(ConfirmDialog) 후에만 호출해야 한다."""
+    wipe_user_data(db, user.user_id)
     db.delete(user)

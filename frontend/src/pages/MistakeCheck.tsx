@@ -12,7 +12,7 @@ import type { IncidentAnalysisOut } from "../api";
 
 const SEVERITY_LABEL: Record<string, string> = { 오류: "오류", 경고: "경고", 확인: "확인 필요" };
 
-export function MistakeCheck() {
+export function MistakeCheck({ embedded = false }: { embedded?: boolean } = {}) {
   const { userId, incidentId } = useApp();
   const [activeIncidentId, setActiveIncidentId] = useState<number | null>(incidentId);
   const [incident, setIncident] = useState<IncidentAnalysisOut | null>(null);
@@ -41,8 +41,8 @@ export function MistakeCheck() {
 
   if (!activeIncidentId) {
     return (
-      <div className="page">
-        <TopBar title="실수 방지 점검" />
+      <div className={embedded ? "" : "page"}>
+        {!embedded && <TopBar title="실수 방지 점검" />}
         <div className="empty-state">
           <Icon3D src="shield" size={72} />
           <p className="muted">먼저 "사고가 발생했어요" 메뉴에서 사고를 등록해주세요.</p>
@@ -52,14 +52,14 @@ export function MistakeCheck() {
   }
 
   return (
-    <div className="page">
-      <TopBar title="실수 방지 점검" />
-      <PageHero
+    <div className={embedded ? "" : "page"}>
+      {!embedded && <TopBar title="실수 방지 점검" />}
+      {!embedded && <PageHero
         icon="shield"
         eyebrow="MISTAKE CHECK"
         title={"놓친 건 없는지,\n한번 더 확인해요"}
         subtitle="보험기간 불일치, 정보 누락, 입력 모순, 서류 미확보를 점검합니다. 지급 여부를 판단하지는 않아요."
-      />
+      />}
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
       {incident && (
         <TripContextBadge

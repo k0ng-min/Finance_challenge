@@ -22,13 +22,14 @@ const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "�
 
 
 export function TripPrep() {
-  const { userId, setTripId, isLoggedIn, age: profileAge, updateAge } = useApp();
+  const { userId, setTripId, age: profileAge, updateAge, sex: profileSex, updateSex } = useApp();
   const [searchParams] = useSearchParams();
   const resumeTripId = Number(searchParams.get("resultOf")) || null;
   const [step, setStep] = useState(0);
   const [destination, setDestination] = useState("");
   const [companionType, setCompanionType] = useState("");
   const [age, setAge] = useState("");
+  const [sex, setSex] = useState<"M" | "F" | "">("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [purpose, setPurpose] = useState("");
@@ -62,19 +63,23 @@ export function TripPrep() {
     api.getIncidentTypes().then(setIncidentTypes).catch(() => {});
   }, []);
 
-  // 로그인 계정은 프로필에 저장된 나이를 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
+  // 한 번 입력한 나이·성별은 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
+  // (로그인 계정은 서버 프로필에, 게스트는 로컬에 남아 있다.)
   useEffect(() => {
-    if (isLoggedIn && profileAge) setAge((prev) => prev || String(profileAge));
-  }, [isLoggedIn, profileAge]);
+    if (profileAge) setAge((prev) => prev || String(profileAge));
+  }, [profileAge]);
+  useEffect(() => {
+    if (profileSex === "M" || profileSex === "F") setSex((prev) => prev || profileSex);
+  }, [profileSex]);
 
   async function handleSubmit() {
     if (!userId) return;
     setLoading(true);
     setError(null);
     try {
-      if (isLoggedIn && age && Number(age) !== profileAge) {
-        await updateAge(Number(age)).catch(() => {});
-      }
+      // 나이·성별은 보험료 조회(순위 화면)에 바로 쓰이므로 여행 생성 전에 먼저 저장한다.
+      if (age && Number(age) !== profileAge) await updateAge(Number(age)).catch(() => {});
+      if (sex && sex !== profileSex) await updateSex(sex).catch(() => {});
       const res = await api.createTrip({
         user_id: userId,
         destination,
@@ -181,9 +186,23 @@ export function TripPrep() {
               placeholder="예: 30"
             />
           </label>
+          {/* 여행자보험료는 나이뿐 아니라 성별로도 갈려서 둘 다 받아야 실제 금액을 보여줄 수 있다. */}
+          <label style={{ marginTop: 14, marginBottom: 10 }}>성별</label>
+          <div className="tabs">
+            {([["M", "남자"], ["F", "여자"]] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                className={`tab${sex === v ? " tab--active" : ""}`}
+                onClick={() => setSex(v)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </>
       ),
-      canNext: destination.trim().length > 0 && !!age,
+      canNext: destination.trim().length > 0 && !!age && !!sex,
     },
     {
       icon: "calendar",

@@ -14,8 +14,8 @@ const MAIN_CARDS = [
 // 나머지는 아이콘 + 이름만 두고, 들어가서 살펴보게 한다.
 const QUICK_ITEMS = [
   { to: "/policies", icon: "umbrella", title: "내 보험" },
-  { to: "/checklist", icon: "file-text", title: "서류 체크" },
-  { to: "/mistakes", icon: "shield", title: "실수 방지" },
+  { to: "/checklist", icon: "file-text", title: "청구 전 점검" },
+  { to: "/premium", icon: "wallet", title: "보험료 계산기" },
   { to: "/highlights", icon: "notebook", title: "약관 형광펜" },
 ];
 

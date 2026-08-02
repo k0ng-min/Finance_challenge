@@ -32,8 +32,10 @@ class AppUser(Base):
     privacy_agreed_at = Column(DateTime, nullable=True)
     marketing_agreed_at = Column(DateTime, nullable=True)
     # 여행 준비·사고 접수·내 보험 등록에서 매번 다시 물어보지 않도록, 로그인 계정에는
-    # 한 번 입력한 나이를 프로필에 저장해두고 자동으로 채워 넣는다.
+    # 한 번 입력한 나이·성별을 프로필에 저장해두고 자동으로 채워 넣는다.
+    # 성별은 보험료가 나이와 함께 성별로도 갈리기 때문에 같이 받는다("M"/"F").
     age = Column(Integer, nullable=True)
+    sex = Column(String, nullable=True)
 
     trips = relationship("Trip", back_populates="user")
     policies = relationship("UserPolicy", back_populates="user")
@@ -54,8 +56,12 @@ class Trip(Base):
     rental_car = Column(Boolean, default=False)
     risk_profile = Column(Text)  # JSON
     coverage_priority = Column(Text)  # JSON
+    # 이 여행에 대해 실제로 등록한 보험. 여행과 보험을 한 묶음으로 들고 있어야 나중에 사고를
+    # 접수할 때 "어느 여행의 어느 보험으로 청구하는지"가 자동으로 이어진다.
+    user_policy_id = Column(Integer, ForeignKey("user_policy.user_policy_id"), nullable=True)
 
     user = relationship("AppUser", back_populates="trips")
+    user_policy = relationship("UserPolicy", foreign_keys=[user_policy_id])
 
 
 class UserPolicy(Base):

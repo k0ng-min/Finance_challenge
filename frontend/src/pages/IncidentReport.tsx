@@ -23,8 +23,16 @@ const QUESTION_ICON: Record<string, string> = {
   returned_home: "flag",
 };
 
+/** "YYYY-MM-DD"에 하루를 더한 문자열 — 종료일이 시작일보다 앞서지 않게 맞추는 데 쓴다. */
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + days);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+}
+
 export function IncidentReport() {
-  const { userId, isLoggedIn, setIncidentId, age: profileAge, updateAge } = useApp();
+  const { userId, isLoggedIn, setIncidentId, age: profileAge, updateAge, sex: profileSex, updateSex } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resultOfParam = searchParams.get("resultOf");
@@ -44,15 +52,22 @@ export function IncidentReport() {
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const [age, setAge] = useState("");
+  const [sex, setSex] = useState<"M" | "F" | "">("");
   // 등록된 여행이 하나도 없으면(=사고만 단독 접수) 어느 나라에서 있었던 일인지 이 화면에서
   // 바로 물어본다 — 안 그러면 이 사고가 서류체크/실수방지/약관형광펜 화면에서 아무 여행
   // 맥락 없이 뜨게 된다.
   const [destination, setDestination] = useState("");
+  // 연결할 여행이 없을 때 여기서 여행도 같이 등록한다 — 사고만 덩그러니 남지 않게.
+  const [newTripStart, setNewTripStart] = useState("");
+  const [newTripEnd, setNewTripEnd] = useState("");
 
-  // 로그인 계정은 프로필에 저장된 나이를 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
+  // 한 번 입력한 나이·성별은 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
   useEffect(() => {
-    if (isLoggedIn && profileAge) setAge((prev) => prev || String(profileAge));
-  }, [isLoggedIn, profileAge]);
+    if (profileAge) setAge((prev) => prev || String(profileAge));
+  }, [profileAge]);
+  useEffect(() => {
+    if (profileSex === "M" || profileSex === "F") setSex((prev) => prev || profileSex);
+  }, [profileSex]);
 
   // 로그인 계정: 등록된 보험 중 이번 사고를 어느 보험으로 청구할지 고를 수 있게 목록을 준비한다.
   // 게스트: "내 보험"을 쓸 수 없으니 6개 보험사 중 하나를 바로 고르게 한다(아래 InsurerPicker).
@@ -122,9 +137,8 @@ export function IncidentReport() {
     setLoading(true);
     setError(null);
     try {
-      if (isLoggedIn && age && Number(age) !== profileAge) {
-        await updateAge(Number(age)).catch(() => {});
-      }
+      if (age && Number(age) !== profileAge) await updateAge(Number(age)).catch(() => {});
+      if (sex && sex !== profileSex) await updateSex(sex).catch(() => {});
       const res = await api.createIncident({
         user_id: userId,
         trip_id: selectedTripId,
@@ -133,6 +147,10 @@ export function IncidentReport() {
         free_text: freeText,
         occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
         country: trips.length === 0 ? destination || null : null,
+        // 여행이 하나도 없으면 방금 입력한 목적지·기간으로 여행도 같이 만든다.
+        new_trip_destination: trips.length === 0 ? destination || null : null,
+        new_trip_start_date: trips.length === 0 ? newTripStart || null : null,
+        new_trip_end_date: trips.length === 0 ? newTripEnd || null : null,
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
@@ -309,17 +327,50 @@ export function IncidentReport() {
               autoFocus
             />
           </label>
+          {/* 나이·성별은 담보 판단과 보험료 안내에 모두 쓰이므로 사고 접수 때도 같이 받는다. */}
+          <label style={{ marginBottom: 10 }}>성별</label>
+          <div className="tabs">
+            {([["M", "남자"], ["F", "여자"]] as const).map(([v, label]) => (
+              <button
+                key={v}
+                type="button"
+                className={`tab${sex === v ? " tab--active" : ""}`}
+                onClick={() => setSex(v)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {trips.length === 0 && (
-            <label>
-              여행 국가 (알고 있으면)
-              <PickerField
-                value={destination}
-                onChange={setDestination}
-                placeholder="국가를 선택하세요"
-                modalTitle="여행 국가"
-                options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+            <>
+              <label>
+                여행 국가
+                <PickerField
+                  value={destination}
+                  onChange={setDestination}
+                  placeholder="국가를 선택하세요"
+                  modalTitle="여행 국가"
+                  options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+                />
+              </label>
+              <DateTimeField
+                label="여행 시작일"
+                value={newTripStart}
+                onChange={(v) => {
+                  setNewTripStart(v);
+                  if (v && (!newTripEnd || newTripEnd <= v)) setNewTripEnd(addDays(v, 1));
+                }}
               />
-            </label>
+              <DateTimeField
+                label="여행 종료일"
+                value={newTripEnd}
+                onChange={setNewTripEnd}
+                minDate={newTripStart ? addDays(newTripStart, 1) : undefined}
+              />
+              <p className="muted" style={{ fontSize: "0.76rem", marginTop: -8 }}>
+                등록된 여행이 없어서 이 사고와 함께 여행도 등록해 드려요. 나중에 계정 화면에서 고칠 수 있어요.
+              </p>
+            </>
           )}
           <label>
             사고 상황 (자유롭게 작성)
@@ -347,7 +398,7 @@ export function IncidentReport() {
           {error && <div className="error-box">{error}</div>}
         </>
       ),
-      canNext: !!freeText.trim() && !!age,
+      canNext: !!freeText.trim() && !!age && !!sex && (trips.length > 0 || (!!destination && !!newTripStart && !!newTripEnd)),
     },
   ];
 

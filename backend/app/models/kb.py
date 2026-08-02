@@ -204,3 +204,29 @@ class CoverageDocMap(Base):
     coverage = relationship("Coverage", back_populates="doc_links")
     required_doc_std = relationship("RequiredDocStd", back_populates="coverage_links")
     clause = relationship("Clause")
+
+
+class InsurerPremium(Base):
+    """보험다모아에서 수집한 나이·성별별 예시 보험료.
+
+    약관에서 뽑아낸 보장 조건과 달리 이 값은 외부 비교공시 사이트에서 가져온 숫자다.
+    그래서 어떤 전제(basis)로 산출된 값인지, 어디서 언제 가져왔는지를 행마다 같이
+    저장한다 — 근거 없이 숫자만 보여주지 않는다는 원칙은 보험료에도 똑같이 적용한다.
+    """
+    __tablename__ = "insurer_premium"
+    __table_args__ = (UniqueConstraint("insurer_id", "sex", "age", name="uq_premium_insurer_sex_age"),)
+
+    premium_id = Column(Integer, primary_key=True)
+    insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=False)
+    sex = Column(String, nullable=False)          # M/F
+    age = Column(Integer, nullable=False)         # 보험나이(만)
+    premium = Column(Integer, nullable=False)     # 원
+    product_name = Column(String)                 # 비교공시상 상품명
+    source_product_code = Column(String)          # 보험다모아 상품코드
+    age_range = Column(String)                    # 해당 상품의 가입연령 표기(예: "19~79")
+    basis = Column(String)                        # 보험료 산출 전제
+    source = Column(String)
+    source_url = Column(String)
+    collected_at = Column(Date)
+
+    insurer = relationship("Insurer")

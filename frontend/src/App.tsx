@@ -1,10 +1,10 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Home } from "./pages/Home";
 import { TripPrep } from "./pages/TripPrep";
 import { MyPolicies } from "./pages/MyPolicies";
 import { IncidentReport } from "./pages/IncidentReport";
-import { DocumentCheck } from "./pages/DocumentCheck";
-import { MistakeCheck } from "./pages/MistakeCheck";
+import { ClaimCheck } from "./pages/ClaimCheck";
+import { PremiumCalc } from "./pages/PremiumCalc";
 import { ClauseHighlight } from "./pages/ClauseHighlight";
 import { Account } from "./pages/Account";
 import { SetNickname } from "./pages/SetNickname";
@@ -41,8 +41,10 @@ function App() {
             <Route path="/trip" element={<TripPrep />} />
             <Route path="/policies" element={<MyPolicies />} />
             <Route path="/incident" element={<IncidentReport />} />
-            <Route path="/checklist" element={<DocumentCheck />} />
-            <Route path="/mistakes" element={<MistakeCheck />} />
+            <Route path="/checklist" element={<ClaimCheck />} />
+            {/* 예전 경로로 들어와도 합쳐진 화면으로 보낸다 */}
+            <Route path="/mistakes" element={<Navigate to="/checklist" replace />} />
+            <Route path="/premium" element={<PremiumCalc />} />
             <Route path="/highlights" element={<ClauseHighlight />} />
             <Route path="/account" element={<Account />} />
             <Route path="/account/nickname" element={<SetNickname />} />

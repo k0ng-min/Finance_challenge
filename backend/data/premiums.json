@@ -1,0 +1,8686 @@
+{
+ "source": "보험다모아(손해보험협회 온라인 보험슈퍼마켓)",
+ "source_url": "http://203.229.168.79/tripIns/tripInsList.knia?prdtSmlClsCd=H001",
+ "collected_at": "2026-08-02",
+ "premium_basis": "상해1급(사무직 종사자 등) / 보험기간 7일 / 일시납, 표준보장 담보 기준",
+ "note": "표준보장 담보 기준 예시 보험료로, 실제 가입조건(여행지·기간·담보 구성)에 따라 달라질 수 있습니다. 목록에 나오지 않는 나이는 해당 상품의 가입연령 범위 밖입니다.",
+ "records": [
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4010,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 0
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3340,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 1
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2570,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 2
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2140,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 3
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2040,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 4
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1940,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 5
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2110,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 6
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1980,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 7
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2010,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 8
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2030,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 9
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2040,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 10
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2050,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 11
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2100,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 12
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2170,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 13
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2240,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 14
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3130,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 15
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3210,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 16
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3290,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 17
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3310,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 18
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 19
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3320,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 19
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 19
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4000,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 19
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4040,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 19
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 20
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2440,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 20
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 20
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3330,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 20
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3980,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 20
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4030,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 20
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 21
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2440,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 21
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 21
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3310,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 21
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3950,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 21
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 21
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2000,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 22
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2440,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 22
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 22
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3320,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 22
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3940,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 22
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 22
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 23
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2440,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 23
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 23
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3320,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 23
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3960,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 23
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 23
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 24
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2460,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 24
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 24
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3330,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 24
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3980,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 24
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4050,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 24
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2060,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 25
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2470,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 25
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 25
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3340,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 25
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4000,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 25
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4060,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 25
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2070,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 26
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2490,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 26
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 26
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3380,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 26
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 26
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4090,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 26
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2080,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 27
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2500,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 27
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 27
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3380,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 27
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4050,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 27
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4100,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 27
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2090,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 28
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2520,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 28
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 28
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3400,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 28
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4080,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 28
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4110,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 28
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2110,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 29
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2530,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 29
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 29
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3440,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 29
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4100,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 29
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4120,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 29
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2120,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 30
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2550,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 30
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 30
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3470,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 30
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4120,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 30
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4130,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 30
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2120,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 31
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2570,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 31
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 31
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3480,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 31
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4120,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 31
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4170,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 31
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2140,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 32
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2590,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 32
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 32
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3490,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 32
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4130,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 32
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4200,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 32
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2160,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 33
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2620,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 33
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 33
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3530,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 33
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4160,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 33
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4250,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 33
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2190,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 34
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2660,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 34
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 34
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3560,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 34
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4160,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 34
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4310,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 34
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2220,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 35
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2700,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 35
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 35
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3590,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 35
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4180,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 35
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4370,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 35
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2250,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 36
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2750,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 36
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 36
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3670,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 36
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4200,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 36
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4440,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 36
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2290,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 37
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2780,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 37
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 37
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3710,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 37
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4240,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 37
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4510,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 37
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2310,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 38
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2860,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 38
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 38
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3770,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 38
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4240,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 38
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4560,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 38
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2330,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 39
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2920,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 39
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3600,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 39
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3810,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 39
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4260,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 39
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4500,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 39
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2350,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 40
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2980,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 40
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3600,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 40
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3900,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 40
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4260,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 40
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4390,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 40
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2370,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 41
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3040,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 41
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3600,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 41
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3970,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 41
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4300,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 41
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4320,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 41
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2430,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 42
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3090,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 42
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3600,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 42
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4040,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 42
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4300,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 42
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4350,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 42
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2500,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 43
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3210,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 43
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 43
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4140,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 43
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4340,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 43
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4450,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 43
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2550,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 44
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3290,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 44
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 44
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4240,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 44
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4380,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 44
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4550,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 44
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2620,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 45
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3400,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 45
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3800,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 45
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4340,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 45
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4460,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 45
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4650,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 45
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2690,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 46
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3500,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 46
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3900,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 46
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4480,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 46
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4550,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 46
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4760,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 46
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2760,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 47
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3600,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 47
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4000,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 47
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4560,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 47
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4610,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 47
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4880,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 47
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2870,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 48
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3750,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 48
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4100,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 48
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4710,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 48
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4730,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 48
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 48
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2970,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 49
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3900,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 49
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 49
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4820,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 49
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4870,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 49
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5170,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 49
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3080,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 50
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4020,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 50
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 50
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4930,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 50
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5040,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 50
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5330,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 50
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3190,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 51
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4180,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 51
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 51
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 51
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5200,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 51
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5490,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 51
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3290,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 52
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4330,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 52
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 52
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5150,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 52
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5350,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 52
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5680,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 52
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3450,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 53
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4560,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 53
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 53
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5270,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 53
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5590,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 53
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5890,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 53
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3610,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 54
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4770,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 54
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4900,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 54
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5400,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 54
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5780,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 54
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6110,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 54
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3750,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 55
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5000,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 55
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5010,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 55
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5540,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 55
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6040,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 55
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6350,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 55
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3920,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 56
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 56
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5230,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 56
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5670,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 56
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6250,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 56
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6580,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 56
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4070,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 57
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 57
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5440,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 57
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5820,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 57
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6510,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 57
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6830,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 57
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4260,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 58
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 58
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5720,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 58
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5970,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 58
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6770,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 58
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7100,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 58
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4470,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 59
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 59
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5990,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 59
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6130,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 59
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7050,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 59
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7390,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 59
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4670,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 60
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6000,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 60
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6280,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 60
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6290,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 60
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7330,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 60
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7670,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 60
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4880,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 61
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 61
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6460,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 61
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6550,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 61
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7620,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 61
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7960,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 61
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5080,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 62
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 62
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6630,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 62
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6830,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 62
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7890,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 62
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 8250,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 62
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5300,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 63
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 63
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6840,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 63
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 7130,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 63
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8180,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 63
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 8560,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 63
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5520,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 64
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6900,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 64
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7020,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 64
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 7440,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 64
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8500,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 64
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 8880,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 64
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5750,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 65
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7100,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 65
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7230,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 65
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 7730,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 65
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8860,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 65
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 9200,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 65
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5980,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 66
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 66
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7440,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 66
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8050,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 66
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9180,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 66
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 9520,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 66
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6210,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 67
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7600,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 67
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7690,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 67
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8370,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 67
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9490,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 67
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 9850,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 67
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6380,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 68
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7800,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 68
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7820,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 68
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8610,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 68
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9760,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 68
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10100,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 68
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6550,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 69
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8000,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 69
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 69
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8840,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 69
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9970,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 69
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10350,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 69
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6730,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 70
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8160,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 70
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 70
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9090,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 70
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10240,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 70
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10580,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 70
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6890,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 71
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8300,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 71
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8330,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 71
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9290,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 71
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10420,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 71
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10790,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 71
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7060,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 72
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8480,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 72
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 72
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9490,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 72
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10620,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 72
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 72
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7220,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 73
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8610,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 73
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 73
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9700,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 73
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10880,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 73
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11210,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 73
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7400,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 74
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8770,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 74
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8900,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 74
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9920,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 74
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11080,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 74
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11420,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 74
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7550,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 75
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8890,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 75
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9000,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 75
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 10120,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 75
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11280,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 75
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11630,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 75
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7730,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 76
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9010,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 76
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9200,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 76
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 10330,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 76
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11490,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 76
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11840,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 76
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7880,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 77
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9160,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 77
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9400,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 77
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 10530,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 77
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11720,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 77
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 12050,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 77
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 8050,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 78
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9310,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 78
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9500,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 78
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 10710,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 78
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11910,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 78
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 12230,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 78
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 8200,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 79
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9440,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 79
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9700,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 79
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 10900,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 79
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 12110,
+   "age_range": "0~79",
+   "sex": "M",
+   "age": 79
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 12430,
+   "age_range": "19~79",
+   "sex": "M",
+   "age": 79
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9800,
+   "age_range": "19~80",
+   "sex": "M",
+   "age": 80
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 11100,
+   "age_range": "20~80",
+   "sex": "M",
+   "age": 80
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4150,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 0
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3500,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 1
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2670,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 2
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2190,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 3
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2090,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 4
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2000,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 5
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2170,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 6
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2030,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 7
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2020,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 8
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1990,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 9
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1970,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 10
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1960,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 11
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1940,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 12
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 1980,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 13
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2010,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 14
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2840,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 15
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2900,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 16
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2940,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 17
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 2980,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 18
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2000,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 19
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 19
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3050,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 19
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3530,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 19
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3540,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 19
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2010,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 20
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2120,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 20
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 2800,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 20
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3120,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 20
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3560,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 20
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3580,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 20
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2050,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 21
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2160,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 21
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 2900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 21
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3170,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 21
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3580,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 21
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3630,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 21
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2100,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 22
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2210,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 22
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 2900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 22
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3230,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 22
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3610,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 22
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3640,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 22
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2140,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 23
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2250,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 23
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 2900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 23
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3280,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 23
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3660,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 23
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3670,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 23
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2160,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 24
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2280,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 24
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 24
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3310,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 24
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3690,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 24
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3710,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 24
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 25
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2300,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 25
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 25
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3370,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 25
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3720,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 25
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3760,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 25
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2210,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 26
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2330,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 26
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 26
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3420,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 26
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3740,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 26
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3790,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 26
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2250,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 27
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2350,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 27
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 27
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3440,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 27
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3760,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 27
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3820,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 27
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2250,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 28
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2360,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 28
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 28
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3440,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 28
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3740,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 28
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 28
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2220,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 29
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2360,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 29
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 29
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3430,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 29
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3750,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 29
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 29
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2220,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 30
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2360,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 30
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 30
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3430,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 30
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3750,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 30
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3820,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 30
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 31
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2340,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 31
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 31
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3420,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 31
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3720,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 31
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3820,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 31
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2190,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 32
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2350,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 32
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 32
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3420,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 32
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3730,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 32
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3840,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 32
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2240,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 33
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2410,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 33
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 33
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3510,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 33
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3760,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 33
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3880,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 33
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2300,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 34
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2450,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 34
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 34
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3550,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 34
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3800,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 34
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 3950,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 34
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2360,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 35
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2510,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 35
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 35
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3610,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 35
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 35
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4030,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 35
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2430,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 36
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2560,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 36
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3200,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 36
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3750,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 36
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3870,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 36
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4130,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 36
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2510,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 37
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2630,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 37
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3300,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 37
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3810,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 37
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3940,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 37
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4230,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 37
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2600,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 38
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2720,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 38
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3400,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 38
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 3950,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 38
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4030,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 38
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4310,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 38
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2740,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 39
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2830,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 39
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3500,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 39
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4080,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 39
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4100,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 39
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4340,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 39
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2840,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 40
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 2920,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 40
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3600,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 40
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4190,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 40
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4210,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 40
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4340,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 40
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 2970,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 41
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3030,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 41
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3700,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 41
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4290,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 41
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4360,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 41
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4370,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 41
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3090,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 42
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3120,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 42
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3800,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 42
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4400,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 42
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4460,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 42
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4520,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 42
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 43
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3240,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 43
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 3900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 43
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4450,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 43
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4580,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 43
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4650,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 43
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3320,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 44
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3350,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 44
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 44
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4540,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 44
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4700,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 44
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4840,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 44
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3450,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 45
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3460,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 45
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 45
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4660,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 45
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 45
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5000,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 45
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3580,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 46
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3590,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 46
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4300,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 46
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4750,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 46
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 4970,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 46
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5150,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 46
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3700,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 47
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3710,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 47
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4400,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 47
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4870,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 47
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5120,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 47
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5330,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 47
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3840,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 48
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 3850,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 48
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4500,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 48
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 4970,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 48
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5270,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 48
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5550,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 48
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 3960,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 49
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4010,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 49
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4700,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 49
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5070,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 49
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5440,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 49
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5760,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 49
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4090,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 50
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4170,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 50
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4800,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 50
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 50
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5600,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 50
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5950,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 50
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 51
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4310,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 51
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 4900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 51
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5330,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 51
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5760,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 51
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6150,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 51
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4330,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 52
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4440,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 52
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 52
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5400,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 52
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 5920,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 52
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6360,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 52
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4400,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 53
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4610,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 53
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 53
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5460,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 53
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6090,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 53
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6570,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 53
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4450,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 54
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4780,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 54
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5200,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 54
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5530,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 54
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6260,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 54
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6800,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 54
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4510,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 55
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 4940,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 55
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5200,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 55
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5560,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 55
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6430,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 55
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7010,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 55
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4680,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 56
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5080,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 56
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5400,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 56
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5690,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 56
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6600,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 56
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7240,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 56
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 4830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 57
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5250,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 57
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5500,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 57
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 5830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 57
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 6810,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 57
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7480,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 57
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5130,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 58
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5510,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 58
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 5800,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 58
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6050,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 58
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7060,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 58
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7850,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 58
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5400,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 59
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 5780,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 59
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 59
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6230,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 59
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7340,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 59
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8200,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 59
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5700,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 60
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6030,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 60
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6440,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 60
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6500,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 60
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7620,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 60
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8570,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 60
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 5980,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 61
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6290,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 61
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6640,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 61
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 6700,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 61
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 7900,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 61
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8910,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 61
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6280,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 62
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6570,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 62
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 6840,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 62
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 62
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 8200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 62
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9300,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 62
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 6640,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 63
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 6880,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 63
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7130,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 63
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7300,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 63
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 8520,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 63
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9760,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 63
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7000,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 64
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 7220,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 64
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7350,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 64
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7600,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 64
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 8880,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 64
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10220,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 64
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7380,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 65
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 7560,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 65
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7660,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 65
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 7900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 65
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 9250,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 65
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10690,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 65
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 7750,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 66
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 7910,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 66
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 7910,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 66
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8200,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 66
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 9610,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 66
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11220,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 66
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 8130,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 67
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8200,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 67
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8260,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 67
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8600,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 67
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 9980,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 67
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11690,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 67
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8410,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 68
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 8420,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 68
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8510,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 68
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 8900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 68
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10270,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 68
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 12060,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 68
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8610,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 69
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 8710,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 69
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 8780,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 69
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9100,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 69
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10550,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 69
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 12450,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 69
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 8850,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 70
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 8990,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 70
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9030,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 70
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9500,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 70
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 10810,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 70
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 12820,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 70
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9030,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 71
+  },
+  {
+   "insurer_code": "MERITZ",
+   "company_label": "메리츠화재",
+   "prdt_cd": "N01H001000004",
+   "product_name": "다이렉트 해외여행보험",
+   "premium": 9250,
+   "age_range": "20~80",
+   "sex": "F",
+   "age": 71
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 9270,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 71
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 9700,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 71
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11050,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 71
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 13160,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 71
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9240,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 72
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 9540,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 72
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 10000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 72
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11340,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 72
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 13500,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 72
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9530,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 73
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 10000,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 73
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 10400,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 73
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11630,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 73
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 14060,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 73
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 9830,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 74
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 10440,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 74
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 10900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 74
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 11980,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 74
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 14590,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 74
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10150,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 75
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 10920,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 75
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 11400,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 75
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 12350,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 75
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 15180,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 75
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10420,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 76
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 11390,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 76
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 11900,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 76
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 12700,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 76
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 15720,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 76
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10750,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 77
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 11860,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 77
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 12400,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 77
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 13070,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 77
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 16290,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 77
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 10890,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 78
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 12090,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 78
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 12600,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 78
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 13250,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 78
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 16560,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 78
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "company_label": "카카오페이손해보험",
+   "prdt_cd": "N70H001000001",
+   "product_name": "해외여행보험",
+   "premium": 11050,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 79
+  },
+  {
+   "insurer_code": "KB",
+   "company_label": "KB손보",
+   "prdt_cd": "N10H001000003",
+   "product_name": "KB해외여행보험_다이렉트플랜",
+   "premium": 12310,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 79
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 12800,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 79
+  },
+  {
+   "insurer_code": "DB",
+   "company_label": "DB손보",
+   "prdt_cd": "N11H001000016",
+   "product_name": "프로미 다이렉트 해외여행보험",
+   "premium": 13450,
+   "age_range": "19~79",
+   "sex": "F",
+   "age": 79
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "company_label": "삼성화재",
+   "prdt_cd": "N08H001000001",
+   "product_name": "해외여행보험",
+   "premium": 16830,
+   "age_range": "0~79",
+   "sex": "F",
+   "age": 79
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "company_label": "현대해상",
+   "prdt_cd": "N09H001000001",
+   "product_name": "현대해상다이렉트 해외여행보험",
+   "premium": 13000,
+   "age_range": "19~80",
+   "sex": "F",
+   "age": 80
+  }
+ ],
+ "unavailable": [
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 0
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 0
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 0
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 0
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 0
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 1
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 1
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 1
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 1
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 1
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 2
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 2
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 2
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 2
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 2
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 3
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 3
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 3
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 3
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 3
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 4
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 4
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 4
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 4
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 4
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 5
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 5
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 5
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 5
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 5
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 6
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 6
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 6
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 6
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 6
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 7
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 7
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 7
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 7
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 7
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 8
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 8
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 8
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 8
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 8
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 9
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 9
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 9
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 9
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 9
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 10
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 10
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 10
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 10
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 10
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 11
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 11
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 11
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 11
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 11
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 12
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 12
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 12
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 12
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 12
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 13
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 13
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 13
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 13
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 13
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 14
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 14
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 14
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 14
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 14
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 15
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 15
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 15
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 15
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 15
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 16
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 16
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 16
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 16
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 16
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 17
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 17
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 17
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 17
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 17
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "M",
+   "age": 18
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 18
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 18
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 18
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 18
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "M",
+   "age": 19
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "sex": "M",
+   "age": 80
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "M",
+   "age": 80
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "M",
+   "age": 80
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "M",
+   "age": 80
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 0
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 0
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 0
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 0
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 0
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 1
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 1
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 1
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 1
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 1
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 2
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 2
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 2
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 2
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 2
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 3
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 3
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 3
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 3
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 3
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 4
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 4
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 4
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 4
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 4
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 5
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 5
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 5
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 5
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 5
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 6
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 6
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 6
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 6
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 6
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 7
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 7
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 7
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 7
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 7
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 8
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 8
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 8
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 8
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 8
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 9
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 9
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 9
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 9
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 9
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 10
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 10
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 10
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 10
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 10
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 11
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 11
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 11
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 11
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 11
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 12
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 12
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 12
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 12
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 12
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 13
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 13
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 13
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 13
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 13
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 14
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 14
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 14
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 14
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 14
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 15
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 15
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 15
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 15
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 15
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 16
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 16
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 16
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 16
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 16
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 17
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 17
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 17
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 17
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 17
+  },
+  {
+   "insurer_code": "HYUNDAI",
+   "sex": "F",
+   "age": 18
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 18
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 18
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 18
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 18
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 19
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 72
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 73
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 74
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 75
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 76
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 77
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 78
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 79
+  },
+  {
+   "insurer_code": "SAMSUNG",
+   "sex": "F",
+   "age": 80
+  },
+  {
+   "insurer_code": "MERITZ",
+   "sex": "F",
+   "age": 80
+  },
+  {
+   "insurer_code": "KB",
+   "sex": "F",
+   "age": 80
+  },
+  {
+   "insurer_code": "DB",
+   "sex": "F",
+   "age": 80
+  },
+  {
+   "insurer_code": "KAKAOPAY",
+   "sex": "F",
+   "age": 80
+  }
+ ]
+}

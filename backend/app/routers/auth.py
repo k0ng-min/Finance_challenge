@@ -9,7 +9,7 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident
 from app.services.auth import generate_session_token, session_expiry
-from app.services.deletion import delete_incident_cascade, delete_user_cascade
+from app.services.deletion import delete_user_cascade, wipe_user_data
 from app.services.oauth import exchange_kakao_code, exchange_google_code
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -51,6 +51,7 @@ class AuthUserOut(BaseModel):
     auth_provider: str
     token: str
     age: int | None = None
+    sex: str | None = None
     is_new_user: bool = False
 
     class Config:
@@ -63,6 +64,10 @@ class NicknameIn(BaseModel):
 
 class AgeIn(BaseModel):
     age: int
+
+
+class SexIn(BaseModel):
+    sex: str
 
 
 class ProviderStatusOut(BaseModel):
@@ -97,11 +102,10 @@ def _login_or_upgrade(db: Session, *, id_column, provider_id: str, email: str | 
         candidate = db.get(AppUser, guest_user_id)
         if candidate and candidate.kakao_id is None and candidate.google_id is None and candidate.email is None:
             user = candidate
-            # 게스트 상태에서 접수한 사고는 "체험용" 스크래치 데이터라 정식 계정의 "내 사건보관함"
-            # 이력에 그대로 남으면 안 된다 — 가입 순간 깨끗한 이력으로 시작한다. 여행 준비(trip)는
-            # "로그인하고 보험 등록하기"처럼 가입을 유도하는 의도된 흐름이라 그대로 남긴다.
-            for old_incident in db.query(Incident).filter(Incident.user_id == user.user_id).all():
-                delete_incident_cascade(db, old_incident)
+            # 로그인 전에 만든 여행·보험·사고는 전부 "체험용" 스크래치 데이터다. 정식 계정
+            # 이력에 그대로 딸려오면 내가 등록한 적 없는 여행·사고가 보관함에 들어앉게 되므로,
+            # 가입/로그인 순간 깨끗한 이력으로 시작한다.
+            wipe_user_data(db, user.user_id)
 
     if user is None:
         user = AppUser(nickname=nickname)
@@ -197,7 +201,7 @@ def logout(user: AppUser = Depends(get_current_user), db: Session = Depends(get_
 def me(user: AppUser = Depends(get_current_user)):
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
     )
 
 
@@ -234,7 +238,7 @@ async def kakao_login(request: Request, payload: OAuthIn, db: Session = Depends(
     )
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, is_new_user=is_new,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex, is_new_user=is_new,
     )
 
 
@@ -250,7 +254,7 @@ async def google_login(request: Request, payload: OAuthIn, db: Session = Depends
     )
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, is_new_user=is_new,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex, is_new_user=is_new,
     )
 
 
@@ -265,7 +269,20 @@ def update_nickname(payload: NicknameIn, user: AppUser = Depends(get_current_use
     db.commit()
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
+    )
+
+
+@router.patch("/sex", response_model=AuthUserOut)
+def update_sex(payload: SexIn, user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    sex = payload.sex.upper()
+    if sex not in ("M", "F"):
+        raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
+    user.sex = sex
+    db.commit()
+    return AuthUserOut(
+        user_id=user.user_id, nickname=user.nickname, email=user.email,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
     )
 
 
@@ -277,5 +294,5 @@ def update_age(payload: AgeIn, user: AppUser = Depends(get_current_user), db: Se
     db.commit()
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age,
+        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
     )

@@ -14,7 +14,7 @@ import { usePager, PagerNav } from "../components/Pager";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
-export function DocumentCheck() {
+export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {}) {
   const { userId, incidentId } = useApp();
   const [activeIncidentId, setActiveIncidentId] = useState<number | null>(incidentId);
   const [checklist, setChecklist] = useState<ChecklistOut | null>(null);
@@ -61,8 +61,8 @@ export function DocumentCheck() {
 
   if (!activeIncidentId) {
     return (
-      <div className="page">
-        <TopBar title="서류 체크" />
+      <div className={embedded ? "" : "page"}>
+        {!embedded && <TopBar title="서류 체크" />}
         <div className="empty-state">
           <Icon3D src="file-text" size={72} />
           <p className="muted">먼저 "사고가 발생했어요" 메뉴에서 사고를 등록해주세요.</p>
@@ -83,14 +83,14 @@ export function DocumentCheck() {
   const { page, setPage, totalPages, pageItems } = usePager(items, 4);
 
   return (
-    <div className="page">
-      <TopBar title="서류 체크" />
-      <PageHero
+    <div className={embedded ? "" : "page"}>
+      {!embedded && <TopBar title="서류 체크" />}
+      {!embedded && <PageHero
         icon="file-text"
         eyebrow="DOCUMENT CHECK"
         title={"필요한 서류,\n빠짐없이 챙기세요"}
         subtitle="현지에서만 발급 가능한 서류는 귀국 전에 꼭 챙기세요."
-      />
+      />}
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
       {checklist && (
         <TripContextBadge

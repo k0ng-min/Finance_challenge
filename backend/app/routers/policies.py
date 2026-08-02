@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.user import AppUser, UserPolicy, UserCoverage
+from app.models.user import AppUser, UserPolicy, UserCoverage, Trip
 from app.models.kb import Coverage
 from app.routers.auth import get_current_user, get_current_user_optional, verify_owner
 from app.schemas import UserPolicyCreate, UserPolicyOut, UserCoverageOut
@@ -99,6 +99,17 @@ def register_policy(
         product_name_raw=payload.product_name_raw, subscriber_age=payload.subscriber_age,
         period_start=payload.period_start, period_end=payload.period_end,
     )
+
+    # 여행에 대해 등록한 보험이면 그 여행에 묶어둔다 — 이 연결이 있어야 나중에 사고를 접수할 때
+    # 여행만 고르면 보험이 자동으로 따라온다.
+    if payload.trip_id is not None:
+        trip = db.get(Trip, payload.trip_id)
+        if not trip:
+            raise HTTPException(status_code=404, detail="여행 정보를 찾을 수 없습니다.")
+        verify_owner(trip.user_id, current)
+        trip.user_policy_id = policy.user_policy_id
+        db.commit()
+
     return _to_out(policy)
 
 
