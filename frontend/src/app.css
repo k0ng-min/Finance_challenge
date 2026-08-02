@@ -1443,11 +1443,11 @@ button { cursor: pointer; font-family: inherit; }
   }
   .app-main { max-width: 100%; height: 100%; padding: 0 20px 40px; overflow-y: auto; }
 
-  /* 홈 화면은 콘텐츠가 목록형이라 카드를 2열로 넉넉하게 배치한다 (프레임 크기는 모든 페이지에서 동일) */
+  /* 홈 화면 메인 카드("내 여행 준비"/"사고가 발생했어요")는 데스크톱에서도 모바일과 똑같이
+     세로로 한 줄씩 쌓는다 — 2열로 나란히 배치하면 원래 레이아웃과 달라져 보인다. */
   .home__hero { padding: 18px 24px 26px; }
   .home__title { font-size: 1.5rem; }
   .home__subtitle { font-size: 0.88rem; max-width: 460px; }
-  .home__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .home__quick-grid { gap: 14px; margin-top: 24px; }
   .home-card { padding: 16px 18px; }
 }
