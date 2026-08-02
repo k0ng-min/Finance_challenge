@@ -1450,6 +1450,48 @@ button { cursor: pointer; font-family: inherit; }
   .home__subtitle { font-size: 0.88rem; max-width: 460px; }
   .home__quick-grid { gap: 14px; margin-top: 24px; }
   .home-card { padding: 16px 18px; }
+
+  /* 데스크톱은 카드 프레임 크기가 고정이라(가로 760px 안팎) 모바일용으로 줄인 아이콘·글자를
+     그대로 쓰면 안이 휑해 보인다 — 프레임 크기는 그대로 두고 내용물만 다시 키운다. */
+  .home__hero .icon3d { width: 100px !important; height: 100px !important; }
+  .home-card .icon3d { width: 64px !important; height: 64px !important; }
+  .home-quick .icon3d { width: 42px !important; height: 42px !important; }
+  .home-card__text strong { font-size: 1.08rem; }
+  .home-card__text span { font-size: 0.86rem; }
+  .home-quick__label { font-size: 0.76rem; }
+
+  .step { padding: 28px 4px 20px; min-height: min(600px, calc(100svh - 200px)); }
+  .step__icon-wrap { margin-bottom: 14px; }
+  .step__icon.icon3d { width: 132px !important; height: 132px !important; }
+  .step__eyebrow { font-size: 0.8rem; padding: 6px 16px; }
+  .step__title { font-size: 1.7rem; line-height: 1.4; margin: 0 0 12px; }
+  .step__subtitle { font-size: 0.94rem; max-width: 420px; margin: 0 0 20px; }
+  .step__content { max-width: 460px; }
+  .step__actions { max-width: 460px; margin-top: 22px; }
+  .step__back { width: 52px; height: 52px; font-size: 1.3rem; }
+  .btn-primary { padding: 15px 22px; font-size: 1rem; }
+  .btn-secondary { padding: 13px 20px; font-size: 0.94rem; }
+  .step__content input[type="text"],
+  .step__content input[type="date"],
+  .step__content input[type="datetime-local"],
+  .step__content input[type="number"],
+  .step__content input:not([type]),
+  .step__content select,
+  .step__content textarea,
+  .picker-field { font-size: 1.05rem; padding: 15px 16px; }
+
+  .hero { padding: 24px 26px; gap: 18px; }
+  .hero__icon.icon3d { width: 108px !important; height: 108px !important; }
+  .hero__title { font-size: 1.4rem; line-height: 1.35; }
+  .hero__subtitle { font-size: 0.88rem; }
+
+  .loading-screen__icon .icon3d { width: 100px !important; height: 100px !important; }
+  .loading-screen__title { font-size: 1.18rem; }
+  .loading-screen__msg { font-size: 0.92rem; }
+
+  .insurer-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; }
+  .insurer-card { padding: 10px 6px 12px; gap: 7px; }
+  .insurer-card__name { font-size: 0.74rem; }
 }
 
 @media (max-width: 380px) {
