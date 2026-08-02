@@ -337,6 +337,16 @@ def generate_claim_findings(
     return findings
 
 
+def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
+    """applies_to_l1=NULL은 모든 L1에서 후보가 되는 완전 공통 질문. 값이 있으면(콤마로 여러
+    L1을 나열 가능, 예: "INJ,ILL") 지금 분류된 l1_code가 그 안에 있을 때만 후보가 된다."""
+    if applies_to_l1 is None:
+        return True
+    if not l1_code:
+        return False
+    return l1_code in {code.strip() for code in applies_to_l1.split(",")}
+
+
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
@@ -347,16 +357,17 @@ def pending_questions(
     L2 판별용 질문(applies_to_l1로 태그됨)이 이 함수의 주 용도다 — L1이 아직 없으면
     (분류 실패/자유서술 없음) 공통 질문만 반환한다."""
     modifiers = modifiers or {}
-    query = db.query(QuestionBank).filter(QuestionBank.context_type == "사고후")
-    if l1_code:
-        query = query.filter(
-            (QuestionBank.applies_to_l1 == l1_code) | (QuestionBank.applies_to_l1.is_(None))
-        )
-    else:
-        query = query.filter(QuestionBank.applies_to_l1.is_(None))
+    all_questions = (
+        db.query(QuestionBank)
+        .filter(QuestionBank.context_type == "사고후")
+        .order_by(QuestionBank.impact_weight.desc())
+        .all()
+    )
 
     pending = []
-    for q in query.order_by(QuestionBank.impact_weight.desc()).all():
+    for q in all_questions:
+        if not _question_applies(q.applies_to_l1, l1_code):
+            continue
         field = q.target_field
         if field in merged:
             f = merged[field]

@@ -38,11 +38,31 @@ FIELD_LABELS = {
     "local_treatment": "현지 치료 여부",
     "returned_home": "귀국 여부",
     "medical_cost": "의료비",
+    "item_damage_type": "휴대품 손해 유형(도난/파손/분실)",
 }
 
+# merged(IncidentDraft) 필드는 원래 상해(INJ) 위주로 설계돼 있어서, 사고유형을 가리지 않고
+# 전부 체크하면 휴대품 분실 같은 사고에도 "다친 부위·진단명·입원 여부"가 미확인으로 뜨는
+# 문제가 생긴다. L1별로 실제 의미가 있는 필드만 확인한다.
+_RELEVANT_FIELDS_BY_L1: dict[str, set[str]] = {
+    "INJ": {
+        "country", "cause", "injury_part", "diagnosis", "hospitalized",
+        "surgery", "local_treatment", "returned_home", "medical_cost",
+    },
+    "ILL": {"country", "cause", "diagnosis", "hospitalized", "local_treatment", "returned_home", "medical_cost"},
+    "PROP": {"country", "item_damage_type"},
+}
+# 나머지 L1(LIA/TRV/CHG/EMG/SPC)은 merged에 전용 필드가 없고 세부 답변은 modifiers에
+# 저장되므로, 여기서는 어느 사고에나 공통으로 의미 있는 "발생 국가"만 확인한다.
+_DEFAULT_RELEVANT_FIELDS = {"country"}
 
-def check_info_missing(merged: dict[str, ExtractedField]) -> dict:
-    missing = [name for name, f in merged.items() if f.value is None or f.confidence < 0.6]
+
+def check_info_missing(merged: dict[str, ExtractedField], l1_code: str | None = None) -> dict:
+    relevant = _RELEVANT_FIELDS_BY_L1.get(l1_code, _DEFAULT_RELEVANT_FIELDS)
+    missing = [
+        name for name, f in merged.items()
+        if name in relevant and (f.value is None or f.confidence < 0.6)
+    ]
     passed = len(missing) == 0
     labels = [FIELD_LABELS.get(name, name) for name in missing]
     detail = f"미확인 항목: {', '.join(labels)}" if labels else "핵심 사고정보가 모두 확인되었습니다."
@@ -62,11 +82,13 @@ def check_surgery_hospitalized_contradiction(merged: dict[str, ExtractedField]) 
     return {"rule_code": "CONTRADICTION_SURGERY_HOSP", "passed": not contradiction, "detail": detail}
 
 
-def run_core_validation(db: Session, user_id: int, occurred_at, merged: dict[str, ExtractedField]) -> list[dict]:
+def run_core_validation(
+    db: Session, user_id: int, occurred_at, merged: dict[str, ExtractedField], l1_code: str | None = None,
+) -> list[dict]:
     results = []
     for r in (
         check_period_mismatch(db, user_id, occurred_at),
-        check_info_missing(merged),
+        check_info_missing(merged, l1_code),
         check_surgery_hospitalized_contradiction(merged),
     ):
         if r is not None:

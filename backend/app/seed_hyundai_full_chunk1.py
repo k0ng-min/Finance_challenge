@@ -498,7 +498,8 @@ def run():
                     coverage_id=coverage_inj.coverage_id,
                     article_no=article,
                     text=text,
-                    clause_type='보장정의'
+                    clause_type='보장정의',
+                    default_color='파랑',
                 )
                 db.add(clause)
 
@@ -516,7 +517,8 @@ def run():
                 coverage_id=coverage_inj.coverage_id,
                 article_no='제3조 국내급여',
                 text=BASIC_INJ_DOM_CLAUSE1_TEXT,
-                clause_type='보장정의'
+                clause_type='보장정의',
+                default_color='파랑',
             )
             db.add(clause_inj_dom)
 
@@ -551,7 +553,8 @@ def run():
                     coverage_id=coverage_inj.coverage_id,
                     article_no=article,
                     text=text,
-                    clause_type='면책'
+                    clause_type='면책',
+                    default_color='빨강',
                 )
                 db.add(clause)
 
@@ -593,7 +596,8 @@ def run():
                     coverage_id=coverage_ill.coverage_id,
                     article_no=article,
                     text=text,
-                    clause_type='보장정의'
+                    clause_type='보장정의',
+                    default_color='파랑',
                 )
                 db.add(clause)
 
@@ -608,7 +612,8 @@ def run():
                 coverage_id=coverage_ill.coverage_id,
                 article_no='제3조 질병국내급여',
                 text=BASIC_ILL_DOM_CLAUSE1_TEXT,
-                clause_type='보장정의'
+                clause_type='보장정의',
+                default_color='파랑',
             )
             db.add(clause)
 
@@ -645,7 +650,8 @@ def run():
                     coverage_id=coverage_ill.coverage_id,
                     article_no=article,
                     text=text,
-                    clause_type='면책'
+                    clause_type='면책',
+                    default_color='빨강',
                 )
                 db.add(clause)
 
@@ -660,7 +666,8 @@ def run():
                 coverage_id=coverage_inj.coverage_id,
                 article_no='제4조의2',
                 text=BASIC_NON_COVERED_CLAUSE1_TEXT,
-                clause_type='제한'
+                clause_type='제한',
+                default_color='초록',
             )
             db.add(clause)
 
@@ -675,7 +682,8 @@ def run():
                 coverage_id=coverage_inj.coverage_id,
                 article_no='제5조',
                 text=BASIC_LIMIT_CLAUSE1_TEXT,
-                clause_type='제한'
+                clause_type='제한',
+                default_color='초록',
             )
             db.add(clause)
 
@@ -690,7 +698,8 @@ def run():
                 coverage_id=coverage_inj.coverage_id,
                 article_no='제6조',
                 text=BASIC_NOTICE_CLAUSE_TEXT,
-                clause_type='조건'
+                clause_type='조건',
+                default_color='회색',
             )
             db.add(clause)
 
@@ -705,7 +714,8 @@ def run():
                 coverage_id=coverage_inj.coverage_id,
                 article_no='제7조',
                 text=BASIC_CLAIM_CLAUSE_TEXT,
-                clause_type='서류'
+                clause_type='서류',
+                default_color='노랑',
             )
             db.add(clause)
 
@@ -730,7 +740,8 @@ def run():
                     coverage_id=coverage_inj.coverage_id,
                     article_no=article,
                     text=text,
-                    clause_type='조건'
+                    clause_type='조건',
+                    default_color='회색',
                 )
                 db.add(clause)
 

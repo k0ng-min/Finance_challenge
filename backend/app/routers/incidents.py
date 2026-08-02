@@ -16,6 +16,7 @@ from app.routers.policies import create_policy_for_user
 from app.schemas import (
     IncidentCreate, IncidentAnalysisOut, PendingQuestionOut, AnswerIn,
     ChecklistOut, ChecklistItemOut, EvidenceIn, ClauseOut, ClauseTermOut, ValidationResultOut,
+    IncidentTypeOut,
 )
 from app.services.nlu import get_nlu_engine, ExtractedField, IncidentDraft, classify_item_damage_type
 from app.services import incident_classify_gemini as incident_classify
@@ -116,6 +117,21 @@ def _linked_policy_names(incident: Incident) -> tuple[str | None, str | None, st
     return insurer_code, insurer_name, product_name
 
 
+def _trip_context(incident: Incident) -> dict:
+    """서류체크·실수방지·약관형광펜 화면에서 "이 사고가 어느 여행 건인지"를 한눈에 보여주기
+    위한 컨텍스트. 연결된 여행(trip_id)이 있으면 그 목적지·기간을, 없으면(사고만 단독 접수한
+    경우) 사고 접수 시 입력한 country만 보여준다 — 여행 기록과 사고 기록이 서로 무관하게
+    따로 떠 보이던 문제를 없애기 위함."""
+    trip = incident.trip if incident.trip_id else None
+    return {
+        "trip_id": incident.trip_id,
+        "trip_destination": trip.destination if trip else None,
+        "trip_start_date": trip.start_date.isoformat() if trip and trip.start_date else None,
+        "trip_end_date": trip.end_date.isoformat() if trip and trip.end_date else None,
+        "incident_country": incident.country,
+    }
+
+
 def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedField]) -> IncidentAnalysisOut:
     run = AnalysisRun(
         user_id=incident.user_id,
@@ -131,7 +147,7 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
     l1_code = _l1_code_for_type(db, incident.type_id)
     questions = pending_questions(db, l1_code, merged, _modifiers_dict(incident))
 
-    validation_specs = run_core_validation(db, incident.user_id, incident.occurred_at, merged)
+    validation_specs = run_core_validation(db, incident.user_id, incident.occurred_at, merged, l1_code)
     doc_check = check_docs_not_secured(db, incident.incident_id)
     if doc_check:
         validation_specs.append(doc_check)
@@ -158,6 +174,7 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
         linked_insurer_code=insurer_code,
         linked_insurer_name=insurer_name,
         linked_product_name=product_name,
+        **_trip_context(incident),
     )
 
 
@@ -221,6 +238,15 @@ def create_incident(
     return _run_analysis(db, incident, merged)
 
 
+@router.get("/types", response_model=list[IncidentTypeOut])
+def list_incident_l1_types(db: Session = Depends(get_db)):
+    """사고유형 대분류(L1) 8개 고정 목록. 여행 준비 단계에서 "관심 있는 사고유형"을 고르거나
+    (내 여행 STEP4), 보험사 상세화면에서 그 유형에 맞는 약관을 조회할 때(insurers 라우터) 쓴다.
+    /{incident_id}보다 먼저 등록해야 "/types"가 int로 파싱 시도되는 걸 막을 수 있다."""
+    rows = db.query(IncidentType).filter(IncidentType.parent_id.is_(None)).order_by(IncidentType.type_id).all()
+    return [IncidentTypeOut(type_id=t.type_id, l1_code=t.l1_code, name=t.name) for t in rows]
+
+
 @router.get("/{incident_id}", response_model=IncidentAnalysisOut)
 def get_incident(
     incident_id: int, db: Session = Depends(get_db),
@@ -275,6 +301,7 @@ def get_incident(
         linked_insurer_code=_linked_policy_names(incident)[0],
         linked_insurer_name=_linked_policy_names(incident)[1],
         linked_product_name=_linked_policy_names(incident)[2],
+        **_trip_context(incident),
     )
 
 
@@ -416,7 +443,10 @@ def get_checklist(
                 passed=doc_check["passed"], detail=doc_check["detail"],
             ))
 
-    return ChecklistOut(incident_id=incident_id, items=items, validation_results=validation_results)
+    return ChecklistOut(
+        incident_id=incident_id, items=items, validation_results=validation_results,
+        **_trip_context(incident),
+    )
 
 
 @router.post("/{incident_id}/evidence", response_model=ChecklistOut)

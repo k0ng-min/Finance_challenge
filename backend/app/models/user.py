@@ -131,6 +131,7 @@ class Incident(Base):
     incident_type = relationship("IncidentType")
     evidences = relationship("Evidence", back_populates="incident")
     user_policy = relationship("UserPolicy")
+    trip = relationship("Trip")
 
 
 class Evidence(Base):

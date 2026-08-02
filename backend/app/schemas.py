@@ -1,7 +1,7 @@
 import datetime as dt
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class TripCreate(BaseModel):
@@ -42,6 +42,14 @@ class ClauseOut(BaseModel):
     highlight_color: str
     highlight_spans: Optional[list[HighlightSpanOut]] = None
     terms: list[ClauseTermOut] = []
+
+    # 일부 조항(seed 스크립트 누락)은 default_color가 DB에 NULL로 남아있을 수 있다.
+    # 색상 하나 누락됐다고 전체 API 응답이 500으로 죽으면 안 되므로, 여기서 무채색(회색)으로
+    # 안전하게 대체한다 — 근거 조항 자체는 그대로 보여주는 게 우선이다.
+    @field_validator("default_color", "highlight_color", mode="before")
+    @classmethod
+    def _fallback_color(cls, v):
+        return v or "회색"
 
     class Config:
         from_attributes = True
@@ -161,6 +169,14 @@ class IncidentAnalysisOut(BaseModel):
     linked_insurer_code: Optional[str] = None
     linked_insurer_name: Optional[str] = None
     linked_product_name: Optional[str] = None
+    # 이 사고가 어느 여행과 연결됐는지 — 서류체크/실수방지/약관형광펜 화면에서 "무슨 여행 중
+    # 사고인지"를 한눈에 보여주기 위함. 연결된 여행(trip)이 없으면 사고 접수 시 직접 입력한
+    # country만 대신 보여준다(둘 다 없으면 전부 None).
+    trip_id: Optional[int] = None
+    trip_destination: Optional[str] = None
+    trip_start_date: Optional[str] = None
+    trip_end_date: Optional[str] = None
+    incident_country: Optional[str] = None
 
 
 class AnswerIn(BaseModel):
@@ -191,6 +207,28 @@ class ChecklistOut(BaseModel):
     incident_id: int
     items: list[ChecklistItemOut]
     validation_results: list[ValidationResultOut] = []
+    trip_id: Optional[int] = None
+    trip_destination: Optional[str] = None
+    trip_start_date: Optional[str] = None
+    trip_end_date: Optional[str] = None
+    incident_country: Optional[str] = None
+
+
+class IncidentTypeOut(BaseModel):
+    type_id: int
+    l1_code: str
+    name: str
+
+
+class InsurerIncidentCoverageOut(BaseModel):
+    """가입 전, 특정 보험사가 특정 사고유형(L1)을 실제로 어떤 담보·조항으로 보상하는지.
+    사용자가 등록한 보험이 없어도(아직 가입 전이므로) 그 보험사의 KB(약관 원문) 자체를
+    기준으로 조회한다는 점이 사고 후 청구검토(claim_review.py)와 다르다."""
+    coverage_id: int
+    coverage_name: str
+    relevance: str  # 직접/조건부/면책
+    limit_amount: Optional[str] = None
+    clauses: list[ClauseOut] = []
 
 
 class InsurerTierOut(BaseModel):

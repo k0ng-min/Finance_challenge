@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from app import config
 from app.database import get_db
 from app.limiter import limiter
-from app.models.user import AppUser
+from app.models.user import AppUser, Incident
 from app.services.auth import generate_session_token, session_expiry
-from app.services.deletion import delete_user_cascade
+from app.services.deletion import delete_incident_cascade, delete_user_cascade
 from app.services.oauth import exchange_kakao_code, exchange_google_code
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -97,6 +97,11 @@ def _login_or_upgrade(db: Session, *, id_column, provider_id: str, email: str | 
         candidate = db.get(AppUser, guest_user_id)
         if candidate and candidate.kakao_id is None and candidate.google_id is None and candidate.email is None:
             user = candidate
+            # 게스트 상태에서 접수한 사고는 "체험용" 스크래치 데이터라 정식 계정의 "내 사건보관함"
+            # 이력에 그대로 남으면 안 된다 — 가입 순간 깨끗한 이력으로 시작한다. 여행 준비(trip)는
+            # "로그인하고 보험 등록하기"처럼 가입을 유도하는 의도된 흐름이라 그대로 남긴다.
+            for old_incident in db.query(Incident).filter(Incident.user_id == user.user_id).all():
+                delete_incident_cascade(db, old_incident)
 
     if user is None:
         user = AppUser(nickname=nickname)

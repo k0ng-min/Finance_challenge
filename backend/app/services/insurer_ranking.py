@@ -28,10 +28,13 @@
 
 동점이면 보험사 코드 순으로 정렬해 항상 같은 결과가 나오게 한다(임의성 없음).
 """
+import math
 from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 
-from app.models.kb import Insurer, Product, PolicyVersion, Coverage, Clause, CoverageDocMap
+from app.models.kb import (
+    Insurer, Product, PolicyVersion, Coverage, Clause, ClauseIncidentMap, ClauseTerm, CoverageDocMap, IncidentType,
+)
 
 # 의료비 수준이 특히 높다고 널리 알려진 여행지(일반 상식 수준의 지리적 분류이며,
 # 보험사별 데이터가 아니다) — 이 목적지일 때 해외상해의료비 관련 신호의 가중치를 높인다.
@@ -42,6 +45,7 @@ SCORE_MIN, SCORE_MAX = 60.0, 98.0
 
 @dataclass
 class InsurerSignals:
+    insurer_id: int
     insurer_code: str
     insurer_name: str
     exclusion_count: int = 0
@@ -62,7 +66,10 @@ def _collect_signals(db: Session) -> list[InsurerSignals]:
     insurers = db.query(Insurer).order_by(Insurer.code).all()
     result = []
     for insurer in insurers:
-        sig = InsurerSignals(insurer_code=insurer.code, insurer_name=insurer.name, official_url=insurer.official_url)
+        sig = InsurerSignals(
+            insurer_id=insurer.insurer_id, insurer_code=insurer.code, insurer_name=insurer.name,
+            official_url=insurer.official_url,
+        )
 
         coverages = (
             db.query(Coverage)
@@ -117,11 +124,24 @@ def _collect_signals(db: Session) -> list[InsurerSignals]:
     return result
 
 
+_L1_CODES = {"INJ", "ILL", "PROP", "LIA", "TRV", "CHG", "EMG", "SPC"}
+# 내 여행(TripPrep) STEP4에서 이제 "보장 우선순위"를 예전처럼 자유 라벨("의료비" 등)이 아니라
+# 사고유형 L1 코드로 고른다. 아래 점수 함수들은 그대로 예전 키워드("구조송환"/"의료비")를
+# 쓰므로, 그 키워드가 실제로 어느 L1 코드(들)에 해당하는지만 매핑해서 재사용한다.
+_KEYWORD_TO_L1 = {
+    "구조송환": {"EMG"},
+    "의료비": {"INJ", "ILL"},
+}
+
+
 def _priority_selected(trip_context: dict | None, keyword: str) -> bool:
     if not trip_context:
         return False
     priorities = trip_context.get("coverage_priority") or []
-    return any(keyword in p for p in priorities)
+    l1_matches = _KEYWORD_TO_L1.get(keyword, set())
+    if any(p in l1_matches for p in priorities):
+        return True
+    return any(keyword in p for p in priorities)  # 예전 자유 라벨 데이터 호환용 폴백
 
 
 def _high_medical_cost(trip_context: dict | None) -> bool:
@@ -220,6 +240,62 @@ def _normalize(raw_scores: list[float]) -> list[float]:
     return [round(SCORE_MIN + (v - lo) / (hi - lo) * (SCORE_MAX - SCORE_MIN), 1) for v in raw_scores]
 
 
+_USD_TO_KRW = 1300  # 서로 다른 단위(원/USD)로 적힌 지급한도를 상대적으로 비교하기 위한
+                     # 내부용 근사 환율일 뿐이다 — 사용자에게 실제 금액으로 노출하지 않는다.
+
+
+def _max_payout_for_l1(db: Session, insurer_id: int, l1_codes: set[str]) -> float:
+    """이 보험사가 선택된 사고유형(L1)에 대해 실제 약관 원문에서 숫자로 뽑아낸(ClauseTerm)
+    지급한도 중 가장 큰 값을 원화 환산으로 돌려준다(비교 가능한 원/USD 단위만 사용).
+
+    많은 담보의 지급한도가 "가입금액 한도"처럼 고정 숫자가 아니라 가입자가 정하는 금액이라
+    ClauseTerm에 값이 없는 경우가 흔하다 — 그런 경우는 근거 없는 숫자를 지어내지 않고
+    그냥 0(이 신호로는 가점 없음)을 돌려준다."""
+    if not l1_codes:
+        return 0.0
+    type_ids = [t.type_id for t in db.query(IncidentType).filter(IncidentType.l1_code.in_(l1_codes)).all()]
+    if not type_ids:
+        return 0.0
+    terms = (
+        db.query(ClauseTerm)
+        .join(Clause, Clause.clause_id == ClauseTerm.clause_id)
+        .join(Coverage, Coverage.coverage_id == Clause.coverage_id)
+        .join(PolicyVersion, PolicyVersion.policy_version_id == Coverage.policy_version_id)
+        .join(Product, Product.product_id == PolicyVersion.product_id)
+        .join(ClauseIncidentMap, ClauseIncidentMap.clause_id == Clause.clause_id)
+        .filter(
+            Product.insurer_id == insurer_id,
+            ClauseTerm.term_type == "지급한도",
+            ClauseTerm.unit.in_(["원", "USD"]),
+            ClauseIncidentMap.type_id.in_(type_ids),
+            ClauseIncidentMap.relevance == "직접",
+        )
+        .all()
+    )
+    best = 0.0
+    for t in terms:
+        if t.value_num is None:
+            continue
+        krw = t.value_num * _USD_TO_KRW if t.unit == "USD" else t.value_num
+        best = max(best, krw)
+    return best
+
+
+def _incident_type_bonus(db: Session, insurer_id: int, trip_context: dict | None) -> float:
+    """선택한 사고유형의 실제 지급한도가 클수록 순위에 완만한 가점을 준다(로그 스케일 —
+    한도 차이가 수십~수백 배 나도 점수가 튀지 않게). 비교 가능한 숫자가 아예 없으면
+    0(중립)이다 — 근거 없이 특정 보험사를 유·불리하게 만들지 않는다."""
+    if not trip_context:
+        return 0.0
+    l1_codes = {p for p in (trip_context.get("coverage_priority") or []) if p in _L1_CODES}
+    if not l1_codes:
+        return 0.0
+    max_krw = _max_payout_for_l1(db, insurer_id, l1_codes)
+    if max_krw <= 0:
+        return 0.0
+    return min(10.0, math.log10(max_krw + 1) * 1.2)
+
+
 def rank_insurers(db: Session, tier_code: str, trip_context: dict | None = None) -> list[dict]:
     """순위·점수는 항상 이 함수(규칙 기반)가 결정한다. Gemini는 이 결과를 설명 문장으로만
     다듬을 뿐, 순서나 점수를 바꾸지 못한다(insurer_ranking_gemini.explain_ranking이 검증)."""
@@ -228,7 +304,10 @@ def rank_insurers(db: Session, tier_code: str, trip_context: dict | None = None)
 
     score_fn = TIERS[tier_code]["score_fn"]
     signals = _collect_signals(db)
-    raw = [score_fn(s, trip_context) for s in signals]
+    raw = [
+        score_fn(s, trip_context) + _incident_type_bonus(db, s.insurer_id, trip_context)
+        for s in signals
+    ]
     normalized = _normalize(raw)
 
     scored = sorted(zip(normalized, signals), key=lambda t: (-t[0], t[1].insurer_code))

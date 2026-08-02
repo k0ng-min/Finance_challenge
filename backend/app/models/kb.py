@@ -2,7 +2,7 @@
 from sqlalchemy import (
     Boolean, Column, Date, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import backref, relationship
 
 from app.database import Base
 
@@ -127,7 +127,10 @@ class IncidentType(Base):
     # 조용히 버리지 않고(=SPC_OTHER 원칙을 8개 L1 전체로 일반화) 사람이 나중에 검수하도록 표시만 해둔다.
     needs_review = Column(Boolean, default=False)
 
-    children = relationship("IncidentType", backref="parent", remote_side=[type_id])
+    # remote_side는 backref("parent") 쪽에 둬야 children이 실제로 자식 목록을, parent가
+    # 부모 한 건을 돌려준다 — 예전엔 반대로 걸려 있어(children이 부모를, parent가 자식
+    # 목록을 반환) 이름과 실제 동작이 정반대였다.
+    children = relationship("IncidentType", backref=backref("parent", remote_side=[type_id]))
     clause_links = relationship("ClauseIncidentMap", back_populates="incident_type")
 
 
