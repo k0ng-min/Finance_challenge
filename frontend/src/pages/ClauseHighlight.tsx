@@ -8,6 +8,7 @@ import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 import { IncidentPicker } from "../components/IncidentPicker";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { TripContextBadge } from "../components/TripContextBadge";
 
 /** 조항 하나를 그 사고 상황과 대조해서, 직접 관련된 부분만 노란색으로 표시한다.
  * 여러 색으로 나누지 않고 "이 사고와 관련 있는지"만 본다. 관련도 계산은 목록 정렬을 위해
@@ -81,6 +82,9 @@ export function ClauseHighlight() {
     linkedIncidentId ? Number(linkedIncidentId) : incidentId
   );
   const [items, setItems] = useState<ClauseWithContext[]>([]);
+  const [tripContext, setTripContext] = useState<{
+    tripDestination: string | null; tripStartDate: string | null; tripEndDate: string | null; incidentCountry: string | null;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [index, setIndex] = useState(0);
   const [showPlain, setShowPlain] = useState(false);
@@ -115,11 +119,16 @@ export function ClauseHighlight() {
   useEffect(() => {
     if (!activeIncidentId) {
       setItems([]);
+      setTripContext(null);
       return;
     }
     setLoading(true);
     api.getIncident(activeIncidentId)
       .then(async (r) => {
+        setTripContext({
+          tripDestination: r.trip_destination, tripStartDate: r.trip_start_date,
+          tripEndDate: r.trip_end_date, incidentCountry: r.incident_country,
+        });
         const byId = new Map<number, ClauseWithContext>();
         r.findings.forEach((f) =>
           f.clauses.forEach((c) => {
@@ -140,23 +149,24 @@ export function ClauseHighlight() {
         const list = [...byId.values()];
 
         // 이 사고와 얼마나 관련 있는지(노란 글자 수)와 쉬운말 설명을 전부 미리 계산해서,
-        // "쉬운 말로 보기"를 눌렀을 때 다시 기다리지 않게 한다. 조항 개수가 적어(보통 3~6개)
-        // 한꺼번에 병렬 조회해도 괜찮다.
-        const withRelevance = await Promise.all(
-          list.map(async (it) => {
-            const [relevance, plain] = await Promise.all([
-              api.getClauseRelevance(it.clause.clause_id, activeIncidentId).catch(() => null),
-              api.getClausePlainText(it.clause.clause_id, activeIncidentId).catch(() => null),
-            ]);
-            return {
-              ...it,
-              relevantChars: relevance?.relevant_chars ?? 0,
-              segments: relevance?.segments ?? null,
-              plainText: plain?.plain_text ?? null,
-              plainSupported: plain?.supported ?? false,
-            };
-          })
-        );
+        // "쉬운 말로 보기"를 눌렀을 때 다시 기다리지 않게 한다. 조항마다 Gemini를 2번씩
+        // (관련도+쉬운말) 부르는데, 전부 한꺼번에 병렬로 쏘면 무료 티어의 분당 요청 한도를
+        // 넘어서 두 번째 조항부터 조용히 실패(폴백: 하이라이트 없음)하는 문제가 있었다.
+        // 조항 개수가 적어(보통 3~6개) 조항 단위로만 순차 처리해도 체감 속도 차이는 크지 않다.
+        const withRelevance: ClauseWithContext[] = [];
+        for (const it of list) {
+          const [relevance, plain] = await Promise.all([
+            api.getClauseRelevance(it.clause.clause_id, activeIncidentId).catch(() => null),
+            api.getClausePlainText(it.clause.clause_id, activeIncidentId).catch(() => null),
+          ]);
+          withRelevance.push({
+            ...it,
+            relevantChars: relevance?.relevant_chars ?? 0,
+            segments: relevance?.segments ?? null,
+            plainText: plain?.plain_text ?? null,
+            plainSupported: plain?.supported ?? false,
+          });
+        }
         withRelevance.sort((a, b) => b.relevantChars - a.relevantChars);
 
         setItems(withRelevance);
@@ -247,6 +257,14 @@ export function ClauseHighlight() {
         subtitle="이번 사고와 직접 관련된 실제 약관 원문만 노랗게 표시했어요. 관련도가 높은 조항부터 보여드려요."
       />
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
+      {tripContext && (
+        <TripContextBadge
+          tripDestination={tripContext.tripDestination}
+          tripStartDate={tripContext.tripStartDate}
+          tripEndDate={tripContext.tripEndDate}
+          incidentCountry={tripContext.incidentCountry}
+        />
+      )}
 
       {!loading && items.length > 0 && (
         <div className="clause-search">

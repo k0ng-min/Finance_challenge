@@ -7,12 +7,15 @@ import { Icon3D } from "../components/Icon3D";
 import { NextStepCard } from "../components/NextStepCard";
 import { IncidentPicker } from "../components/IncidentPicker";
 import { LoadingScreen } from "../components/LoadingScreen";
+import { TripContextBadge } from "../components/TripContextBadge";
+import type { IncidentAnalysisOut } from "../api";
 
 const SEVERITY_LABEL: Record<string, string> = { 오류: "오류", 경고: "경고", 확인: "확인 필요" };
 
 export function MistakeCheck() {
   const { userId, incidentId } = useApp();
   const [activeIncidentId, setActiveIncidentId] = useState<number | null>(incidentId);
+  const [incident, setIncident] = useState<IncidentAnalysisOut | null>(null);
   const [results, setResults] = useState<ValidationResultOut[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +28,12 @@ export function MistakeCheck() {
     if (!activeIncidentId) return;
     setLoading(true);
     Promise.all([api.getIncident(activeIncidentId), api.getChecklist(activeIncidentId)])
-      .then(([incident, checklist]) => {
+      .then(([inc, checklist]) => {
         const byCode = new Map<string, ValidationResultOut>();
-        incident.validation_results.forEach((r) => byCode.set(r.rule_code, r));
+        inc.validation_results.forEach((r) => byCode.set(r.rule_code, r));
         checklist.validation_results.forEach((r) => byCode.set(r.rule_code, r));
         setResults([...byCode.values()]);
+        setIncident(inc);
       })
       .catch((err) => setError(String(err)))
       .finally(() => setLoading(false));
@@ -57,6 +61,14 @@ export function MistakeCheck() {
         subtitle="보험기간 불일치, 정보 누락, 입력 모순, 서류 미확보를 점검합니다. 지급 여부를 판단하지는 않아요."
       />
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
+      {incident && (
+        <TripContextBadge
+          tripDestination={incident.trip_destination}
+          tripStartDate={incident.trip_start_date}
+          tripEndDate={incident.trip_end_date}
+          incidentCountry={incident.incident_country}
+        />
+      )}
       {loading && <LoadingScreen icon="shield" title="놓친 부분이 없는지 점검하고 있어요" messages={["입력 내용과 서류 현황을 대조하고 있어요"]} />}
       {error && <div className="error-box">{error}</div>}
 

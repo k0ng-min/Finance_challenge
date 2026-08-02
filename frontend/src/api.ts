@@ -135,6 +135,11 @@ export interface IncidentAnalysisOut {
   linked_insurer_code: string | null;
   linked_insurer_name: string | null;
   linked_product_name: string | null;
+  trip_id: number | null;
+  trip_destination: string | null;
+  trip_start_date: string | null;
+  trip_end_date: string | null;
+  incident_country: string | null;
 }
 
 export interface ChecklistItemOut {
@@ -154,6 +159,25 @@ export interface ChecklistOut {
   incident_id: number;
   items: ChecklistItemOut[];
   validation_results: ValidationResultOut[];
+  trip_id: number | null;
+  trip_destination: string | null;
+  trip_start_date: string | null;
+  trip_end_date: string | null;
+  incident_country: string | null;
+}
+
+export interface IncidentTypeOut {
+  type_id: number;
+  l1_code: string;
+  name: string;
+}
+
+export interface InsurerIncidentCoverageOut {
+  coverage_id: number;
+  coverage_name: string;
+  relevance: string;
+  limit_amount: string | null;
+  clauses: ClauseOut[];
 }
 
 export interface InsurerTierOut {
@@ -247,8 +271,13 @@ export const api = {
 
   getInsurerTiers: () => request<InsurerTierOut[]>("/insurers/ranking-tiers"),
 
+  getIncidentTypes: () => request<IncidentTypeOut[]>("/incidents/types"),
+
   getInsurerCoverages: (insurerCode: string) =>
     request<InsurerCoverageOut[]>(`/insurers/${insurerCode}/coverages`),
+
+  getInsurerIncidentCoverages: (insurerCode: string, typeId: number) =>
+    request<InsurerIncidentCoverageOut[]>(`/insurers/${insurerCode}/incident-types/${typeId}/coverages`),
 
   getInsurerRanking: (
     tier: string,

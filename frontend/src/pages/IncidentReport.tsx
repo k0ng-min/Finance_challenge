@@ -12,6 +12,7 @@ import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { PickerField } from "../components/PickerField";
 import { INSURERS } from "../data/insurers";
+import { COUNTRIES } from "../data/countries";
 
 const QUESTION_ICON: Record<string, string> = {
   diagnosis: "file-text",
@@ -43,6 +44,10 @@ export function IncidentReport() {
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const [age, setAge] = useState("");
+  // 등록된 여행이 하나도 없으면(=사고만 단독 접수) 어느 나라에서 있었던 일인지 이 화면에서
+  // 바로 물어본다 — 안 그러면 이 사고가 서류체크/실수방지/약관형광펜 화면에서 아무 여행
+  // 맥락 없이 뜨게 된다.
+  const [destination, setDestination] = useState("");
 
   // 로그인 계정은 프로필에 저장된 나이를 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
   useEffect(() => {
@@ -127,6 +132,7 @@ export function IncidentReport() {
         insurer_code: isLoggedIn ? null : insurerCode || null,
         free_text: freeText,
         occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
+        country: trips.length === 0 ? destination || null : null,
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
@@ -303,6 +309,18 @@ export function IncidentReport() {
               autoFocus
             />
           </label>
+          {trips.length === 0 && (
+            <label>
+              여행 국가 (알고 있으면)
+              <PickerField
+                value={destination}
+                onChange={setDestination}
+                placeholder="국가를 선택하세요"
+                modalTitle="여행 국가"
+                options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+              />
+            </label>
+          )}
           <label>
             사고 상황 (자유롭게 작성)
             <textarea

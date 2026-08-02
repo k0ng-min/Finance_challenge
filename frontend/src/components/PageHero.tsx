@@ -19,7 +19,7 @@ export function PageHero({ icon, eyebrow, title, subtitle }: PageHeroProps) {
         <p className="hero__subtitle">{subtitle}</p>
       </div>
       <FloatingIcon>
-        <Icon3D src={icon} size={116} className="hero__icon" />
+        <Icon3D src={icon} size={76} className="hero__icon" />
       </FloatingIcon>
     </div>
   );

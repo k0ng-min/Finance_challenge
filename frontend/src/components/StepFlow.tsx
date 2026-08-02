@@ -37,7 +37,7 @@ export function StepFlow({
           transition={{ type: "spring", stiffness: 260, damping: 18 }}
         >
           <FloatingIcon>
-            <Icon3D src={icon} size={128} className="step__icon" />
+            <Icon3D src={icon} size={84} className="step__icon" />
           </FloatingIcon>
         </motion.div>
         <span className="step__eyebrow">{eyebrow}</span>

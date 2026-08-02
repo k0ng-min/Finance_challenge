@@ -45,7 +45,7 @@ export function Home() {
           transition={{ type: "spring", stiffness: 220, damping: 16 }}
         >
           <FloatingIcon>
-            <Icon3D src="explorer" size={104} />
+            <Icon3D src="explorer" size={68} />
           </FloatingIcon>
         </motion.div>
         <h1 className="home__title">안녕하세요!{"\n"}오늘도 든든하게 떠나볼까요?</h1>
@@ -66,7 +66,7 @@ export function Home() {
             whileTap={{ scale: 0.98 }}
             whileHover={{ y: -3 }}
           >
-            <Icon3D src={c.icon} size={68} />
+            <Icon3D src={c.icon} size={48} />
             <div className="home-card__text">
               <strong>{c.title}</strong>
               <span>{c.desc}</span>
@@ -88,7 +88,7 @@ export function Home() {
             transition={{ delay: 0.06 * i + 0.16, duration: 0.3 }}
             whileTap={{ scale: 0.95 }}
           >
-            <Icon3D src={c.icon} size={44} />
+            <Icon3D src={c.icon} size={34} />
             <span className="home-quick__label">{c.title}</span>
           </motion.button>
         ))}

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { PageHero } from "./PageHero";
-import { ResultTabs } from "./ResultTabs";
+import { InsurerIncidentClauses } from "./InsurerIncidentClauses";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 
@@ -201,14 +201,9 @@ export function InsurerRankingFlow({
   }
 
   // phase === "detail"
-  const insurerFindings = result.findings.filter(
-    (f) => f.insurer_code === selected?.insurer_code || f.insurer_code === null
-  );
-  const groups = [
-    { key: "추천담보", label: "추천 담보", items: insurerFindings.filter((f) => f.finding_type === "추천담보") },
-    { key: "제한조건", label: "제한조건", items: insurerFindings.filter((f) => f.finding_type === "제한조건") },
-    { key: "보장공백", label: "보장 공백", items: insurerFindings.filter((f) => f.finding_type === "보장공백") },
-  ];
+  const selectedTypeCodes = Array.isArray(result.risk_profile.coverage_priority)
+    ? (result.risk_profile.coverage_priority as string[])
+    : [];
 
   return (
     <div className="result-section">
@@ -227,9 +222,16 @@ export function InsurerRankingFlow({
           🔗 {selected.insurer_name} 공식 홈페이지에서 바로 가입 상담받기 →
         </a>
       )}
-      <button type="button" className="btn-secondary" style={{ marginBottom: 14 }} onClick={() => setPhase("ranking")}>
-        ← 순위로 돌아가기
-      </button>
+      <div className="detail-actions-row" style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+        <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setPhase("ranking")}>
+          ← 순위로 돌아가기
+        </button>
+        {!registered && (
+          <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={registerToMyPolicies} disabled={registering}>
+            {registering ? "등록 중..." : isLoggedIn ? "내 보험으로 등록하기" : "로그인하고 등록하기"}
+          </button>
+        )}
+      </div>
       <div className="card risk-profile" style={{ marginBottom: 16 }}>
         <div>목적지: <strong>{String(result.risk_profile.destination ?? "-")}</strong> · {String(result.risk_profile.companion_type ?? "-")}</div>
         <div>
@@ -242,32 +244,19 @@ export function InsurerRankingFlow({
             <div>감지된 위험활동: {(result.risk_profile.risky_activity_detected as string[]).join(", ")}</div>
           )}
       </div>
-      <ResultTabs groups={groups} />
+      {selected && <InsurerIncidentClauses insurerCode={selected.insurer_code} typeCodes={selectedTypeCodes} />}
 
-      <div className="card" style={{ marginTop: 16 }}>
-        {registered ? (
-          <>
-            <p style={{ marginTop: 0, fontWeight: 700 }}>✓ 내 보험에 등록했어요</p>
-            <p className="muted" style={{ fontSize: "0.85rem" }}>
-              여행 기간({String(result.risk_profile.trip_days ?? "-")}일) 기준으로 자동 등록됐어요.
-            </p>
-            <button type="button" className="btn-secondary" style={{ width: "100%" }} onClick={() => navigate("/policies")}>
-              내 보험 보관함에서 확인하기
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
-              {isLoggedIn
-                ? `${selected?.insurer_name}을(를) 지금 준비 중인 여행 기간에 맞춰 내 보험에 바로 등록할 수 있어요.`
-                : "로그인하면 이 보험을 내 보험에 바로 등록해둘 수 있어요."}
-            </p>
-            <button type="button" className="btn-primary" style={{ width: "100%" }} onClick={registerToMyPolicies} disabled={registering}>
-              {registering ? "등록 중..." : isLoggedIn ? `${selected?.insurer_name} 내 보험으로 등록하기` : "로그인하고 등록하기"}
-            </button>
-          </>
-        )}
-      </div>
+      {registered && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <p style={{ marginTop: 0, fontWeight: 700 }}>✓ 내 보험에 등록했어요</p>
+          <p className="muted" style={{ fontSize: "0.85rem" }}>
+            여행 기간({String(result.risk_profile.trip_days ?? "-")}일) 기준으로 자동 등록됐어요.
+          </p>
+          <button type="button" className="btn-secondary" style={{ width: "100%" }} onClick={() => navigate("/policies")}>
+            내 보험 보관함에서 확인하기
+          </button>
+        </div>
+      )}
     </div>
   );
 }

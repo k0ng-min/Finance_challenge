@@ -9,6 +9,8 @@ import { ErrorState } from "../components/ErrorState";
 import { IncidentPicker } from "../components/IncidentPicker";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { PickerField } from "../components/PickerField";
+import { TripContextBadge } from "../components/TripContextBadge";
+import { usePager, PagerNav } from "../components/Pager";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
@@ -78,6 +80,7 @@ export function DocumentCheck() {
   const targets = [...grouped.keys()];
   const current = activeTarget ?? targets[0];
   const items = current ? grouped.get(current) ?? [] : [];
+  const { page, setPage, totalPages, pageItems } = usePager(items, 4);
 
   return (
     <div className="page">
@@ -89,6 +92,14 @@ export function DocumentCheck() {
         subtitle="현지에서만 발급 가능한 서류는 귀국 전에 꼭 챙기세요."
       />
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
+      {checklist && (
+        <TripContextBadge
+          tripDestination={checklist.trip_destination}
+          tripStartDate={checklist.trip_start_date}
+          tripEndDate={checklist.trip_end_date}
+          incidentCountry={checklist.incident_country}
+        />
+      )}
       {error && !checklist && (
         <ErrorState code="502" title="서류 목록을 불러오지 못했어요" message={error} actionLabel="다시 시도" onAction={load} />
       )}
@@ -130,7 +141,7 @@ export function DocumentCheck() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((it) => (
+                {pageItems.map((it) => (
                   <tr key={`${it.required_doc_std_id}-${current}`}>
                     <td>{it.doc_name}</td>
                     <td>
@@ -154,6 +165,7 @@ export function DocumentCheck() {
                 ))}
               </tbody>
             </table>
+            <PagerNav page={page} totalPages={totalPages} onChange={setPage} label="쪽" />
           </div>
         </>
       )}

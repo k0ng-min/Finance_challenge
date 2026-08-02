@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, type RecommendationOut, type InsurerTierOut } from "../api";
+import { api, type RecommendationOut, type InsurerTierOut, type IncidentTypeOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
@@ -19,11 +19,6 @@ function addDays(dateStr: string, days: number): string {
 }
 
 const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "반려동물 동반"];
-// 현재 KB에 실제 약관이 적재된 담보는 의료비(해외상해의료비)·구조송환뿐이라, 그 두 개만
-// 보험사 순위·추천 점수에 실제로 반영된다. 나머지는 선택은 가능하지만 "약관 미확보"로
-// 정직하게 안내되며(보장 공백 표시) 순위 점수에는 영향을 주지 않는다.
-const KB_BACKED_PRIORITIES = new Set(["의료비", "구조송환", "휴대품 파손·도난"]);
-const PRIORITY_OPTIONS = ["의료비", "구조송환", "휴대품 파손·도난", "배상책임", "항공기 지연", "질병"];
 
 
 export function TripPrep() {
@@ -42,6 +37,7 @@ export function TripPrep() {
   const [rentalCar, setRentalCar] = useState(false);
   const [tiers, setTiers] = useState<InsurerTierOut[]>([]);
   const [tier, setTier] = useState<string | null>(null);
+  const [incidentTypes, setIncidentTypes] = useState<IncidentTypeOut[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // /trip으로 다시 들어올 때마다 매번 처음(목적지 선택)부터 시작한다 — 이전 결과를 자동으로 복원하지 않는다.
@@ -60,6 +56,10 @@ export function TripPrep() {
 
   useEffect(() => {
     api.getInsurerTiers().then(setTiers).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    api.getIncidentTypes().then(setIncidentTypes).catch(() => {});
   }, []);
 
   // 로그인 계정은 프로필에 저장된 나이를 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
@@ -238,24 +238,21 @@ export function TripPrep() {
     },
     {
       icon: "shield",
-      eyebrow: "STEP 4 · 우선순위",
-      title: "가장 중요하게\n생각하는 보장은?",
-      subtitle: "여러 개를 골라도 돼요.",
+      eyebrow: "STEP 4 · 걱정되는 사고",
+      title: "어떤 사고가\n가장 걱정되시나요?",
+      subtitle: "여러 개를 골라도 돼요. 고른 사고유형은 보험사 순위와, 이후 보험사별 상세 화면에서 보여드릴 약관 조항에 그대로 반영돼요.",
       content: (
         <>
-          <label style={{ marginBottom: 4 }}>보장 우선순위</label>
-          <p className="muted" style={{ fontSize: "0.78rem", marginTop: 0, marginBottom: 10 }}>
-            "준비중" 항목은 아직 실제 약관을 확보하지 못해 순위 점수에는 반영되지 않아요.
-          </p>
+          <label style={{ marginBottom: 10 }}>걱정되는 사고유형</label>
           <div className="tabs" style={{ marginBottom: 14, flexWrap: "wrap" }}>
-            {PRIORITY_OPTIONS.map((p) => (
+            {incidentTypes.map((t) => (
               <button
-                key={p}
+                key={t.l1_code}
                 type="button"
-                className={`tab${priorityList.includes(p) ? " tab--active" : ""}`}
-                onClick={() => togglePriority(p)}
+                className={`tab${priorityList.includes(t.l1_code) ? " tab--active" : ""}`}
+                onClick={() => togglePriority(t.l1_code)}
               >
-                {p}{!KB_BACKED_PRIORITIES.has(p) && " (준비중)"}
+                {t.name}
               </button>
             ))}
           </div>
@@ -306,8 +303,12 @@ export function TripPrep() {
           <div style={{ marginBottom: 6, fontWeight: 700 }}>{startDate} ~ {endDate}</div>
           <div className="muted">목적 / 활동</div>
           <div style={{ marginBottom: 6, fontWeight: 700 }}>{purpose || "-"} {activityList.length ? `· ${activityList.join(", ")}` : ""}</div>
-          <div className="muted">보장 우선순위</div>
-          <div style={{ marginBottom: 6, fontWeight: 700 }}>{priorityList.length ? priorityList.join(", ") : "-"}</div>
+          <div className="muted">걱정되는 사고유형</div>
+          <div style={{ marginBottom: 6, fontWeight: 700 }}>
+            {priorityList.length
+              ? priorityList.map((code) => incidentTypes.find((t) => t.l1_code === code)?.name ?? code).join(", ")
+              : "-"}
+          </div>
           <div className="muted">보장유형</div>
           <div style={{ fontWeight: 700 }}>{tiers.find((t) => t.tier_code === tier)?.label ?? "-"}</div>
           {error && <div className="error-box">{error}</div>}

@@ -31,10 +31,11 @@ export function LoadingScreen({
       <div className="loading-screen__glow" />
       <motion.div
         className="loading-screen__icon"
-        animate={{ x: [-14, 14, -14] }}
+        style={{ transformOrigin: "50% 100%" }}
+        animate={{ rotate: [-30, 30, -30] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
       >
-        <Icon3D src={icon} size={104} />
+        <Icon3D src={icon} size={72} />
       </motion.div>
       <h2 className="loading-screen__title">{title}</h2>
       <AnimatePresence mode="wait">

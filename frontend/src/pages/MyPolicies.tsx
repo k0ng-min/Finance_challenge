@@ -10,6 +10,69 @@ import { InsurerPicker } from "../components/InsurerPicker";
 import { DateTimeField } from "../components/DateTimeField";
 import { INSURERS, shortInsurerName } from "../data/insurers";
 import { motion } from "framer-motion";
+import { usePager, PagerNav } from "../components/Pager";
+
+/** 보험 카드 하나. 담보 표가 길어질 수 있어(펼쳤을 때) 스크롤 대신 페이지로 나눠 보여준다.
+ * 훅(usePager)을 목록 map() 콜백 안에서 바로 못 쓰기 때문에 별도 컴포넌트로 뺐다. */
+function PolicyCard({
+  policy, isOpen, onToggle, onDelete,
+}: {
+  policy: UserPolicyOut;
+  isOpen: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const { page, setPage, totalPages, pageItems } = usePager(policy.coverages, 5);
+
+  return (
+    <div className="card policy-card">
+      <div className="policy-card__head">
+        <button
+          type="button"
+          onClick={onToggle}
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "baseline", gap: 8, flex: 1, textAlign: "left" }}
+        >
+          <span className="policy-card__chevron" style={{ transform: isOpen ? "rotate(90deg)" : undefined, transition: "transform 0.15s", display: "inline-block" }}>
+            ›
+          </span>
+          <strong>{shortInsurerName(policy.matched_insurer_code, policy.matched_insurer_name ?? policy.insurer_name_raw)} 여행자보험</strong>
+        </button>
+        <button type="button" className="history-card__delete" title="삭제" onClick={onDelete}>
+          🗑
+        </button>
+      </div>
+      <div className="muted" style={{ fontSize: "0.85rem" }}>
+        {policy.period_start} ~ {policy.period_end}{policy.subscriber_age ? ` · 만 ${policy.subscriber_age}세` : ""}
+        {" · "}담보 {policy.coverages.length}건
+      </div>
+      {isOpen && (
+        policy.coverages.length > 0 ? (
+          <>
+            <table className="coverage-table">
+              <thead>
+                <tr>
+                  <th>담보</th>
+                  <th>보장금액</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((c) => (
+                  <tr key={c.user_coverage_id}>
+                    <td>{c.matched_std_name ?? c.raw_name}</td>
+                    <td>{c.subscribed_amount ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <PagerNav page={page} totalPages={totalPages} onChange={setPage} label="쪽" />
+          </>
+        ) : (
+          <p className="muted" style={{ fontSize: "0.82rem" }}>이 보험사의 담보 정보를 아직 찾지 못했어요.</p>
+        )
+      )}
+    </div>
+  );
+}
 
 export function MyPolicies() {
   const { userId, isLoggedIn, age: profileAge, updateAge } = useApp();
@@ -27,6 +90,9 @@ export function MyPolicies() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  // 담보 표가 길어서 카드마다 다 펼쳐두면 화면이 너무 길어진다 — 기본은 접어두고
+  // 보험 카드를 누르면 그 카드만 펼쳐서 담보 표를 보여준다.
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   async function refresh() {
     if (!userId || !isLoggedIn) return;
@@ -198,43 +264,13 @@ export function MyPolicies() {
         </div>
       )}
       {policies.map((p) => (
-        <div className="card policy-card" key={p.user_policy_id}>
-          <div className="policy-card__head">
-            <strong>{shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험</strong>
-            <button
-              type="button"
-              className="history-card__delete"
-              title="삭제"
-              style={{ marginLeft: "auto" }}
-              onClick={() => setConfirmDeleteId(p.user_policy_id)}
-            >
-              🗑
-            </button>
-          </div>
-          <div className="muted">
-            {p.period_start} ~ {p.period_end}{p.subscriber_age ? ` · 만 ${p.subscriber_age}세` : ""}
-          </div>
-          {p.coverages.length > 0 ? (
-            <table className="coverage-table">
-              <thead>
-                <tr>
-                  <th>담보</th>
-                  <th>보장금액</th>
-                </tr>
-              </thead>
-              <tbody>
-                {p.coverages.map((c) => (
-                  <tr key={c.user_coverage_id}>
-                    <td>{c.matched_std_name ?? c.raw_name}</td>
-                    <td>{c.subscribed_amount ?? "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="muted" style={{ fontSize: "0.82rem" }}>이 보험사의 담보 정보를 아직 찾지 못했어요.</p>
-          )}
-        </div>
+        <PolicyCard
+          key={p.user_policy_id}
+          policy={p}
+          isOpen={expandedId === p.user_policy_id}
+          onToggle={() => setExpandedId(expandedId === p.user_policy_id ? null : p.user_policy_id)}
+          onDelete={() => setConfirmDeleteId(p.user_policy_id)}
+        />
       ))}
 
       <ConfirmDialog

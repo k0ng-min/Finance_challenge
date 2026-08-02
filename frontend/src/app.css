@@ -9,6 +9,9 @@
   --cream: #eef4fd;
   --cream-deep: #dfeaff;
   --card-bg: #ffffff;
+  /* 데스크톱/태블릿 프레임(.app-shell)에서만 쓰는 반투명 버전 — 뒤로 떨어지는 배경 아이콘이
+     은은하게 비치게 하되, 안쪽 카드(.card)는 계속 불투명해서 글자는 또렷하게 유지한다. */
+  --card-bg-translucent: rgba(255, 255, 255, 0.75);
   --border: #e2eaf7;
   --heading: #1f2a3d;
   --text: #33405a;
@@ -45,6 +48,7 @@
   --cream: #121826;
   --cream-deep: #1c2740;
   --card-bg: #1b2333;
+  --card-bg-translucent: rgba(27, 35, 51, 0.75);
   --border: #2b3550;
   --heading: #f0f4fc;
   --text: #ccd5e6;
@@ -101,6 +105,11 @@ body {
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
+  /* 한글은 어절(word) 단위로만 줄바꿈하고(keep-all), 그래도 한 줄에 다 안 들어가는 긴
+     단어·URL 등은 컨테이너를 벗어나지 않게 강제로 끊는다(break-word) — 질문 문구처럼 긴
+     텍스트가 카드 밖으로 삐져나가거나 이상한 자리에서 잘리는 것을 막는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
   line-height: 1.6;
   letter-spacing: -0.01em;
   transition: background-color 0.25s, color 0.25s;
@@ -126,7 +135,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 2px;
+  padding: 10px 2px;
   position: sticky;
   top: 0;
   background: linear-gradient(180deg, var(--ivory) 70%, transparent);
@@ -195,26 +204,26 @@ body {
   color: var(--text);
   box-shadow: 0 3px 10px rgba(var(--shadow-tint), 0.1);
 }
-.home__hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 4px 6px 18px; }
+.home__hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 0 6px 10px; }
 .home__title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  line-height: 1.4;
+  font-size: 1.22rem;
+  line-height: 1.35;
   color: var(--heading);
   white-space: pre-line;
-  margin: 4px 0 0;
+  margin: 2px 0 0;
 }
-.home__subtitle { font-size: 0.88rem; color: var(--muted); max-width: 380px; margin: 0; line-height: 1.6; }
+.home__subtitle { font-size: 0.8rem; color: var(--muted); max-width: 380px; margin: 0; line-height: 1.5; }
 
-.home__grid { display: flex; flex-direction: column; gap: 10px; }
+.home__grid { display: flex; flex-direction: column; gap: 8px; }
 .home-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 11px 14px;
   box-shadow: 0 4px 16px rgba(var(--shadow-tint), 0.08);
   text-align: left;
   font-family: inherit;
@@ -228,17 +237,17 @@ body {
 .home-card__arrow { font-size: 1.4rem; color: var(--primary); font-weight: 700; }
 
 /* 보조 메뉴 — 아이콘 + 라벨만, 설명 없이 컴팩트하게 */
-.home__quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
-.home__footer { text-align: center; font-size: 0.72rem; color: var(--muted); margin: 0 0 4px; margin-top: auto; padding-top: 20px; }
+.home__quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.home__footer { text-align: center; font-size: 0.7rem; color: var(--muted); margin: 0 0 2px; margin-top: auto; padding-top: 10px; }
 .home-quick {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 12px 4px;
+  padding: 9px 4px;
   font-family: inherit;
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(var(--shadow-tint), 0.06);
@@ -252,43 +261,43 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 18px 4px 16px;
-  min-height: min(560px, calc(100svh - 160px));
+  padding: 10px 4px 12px;
+  min-height: min(480px, calc(100svh - 140px));
 }
-.step__icon-wrap { position: relative; margin-bottom: 12px; }
+.step__icon-wrap { position: relative; margin-bottom: 6px; }
 .step__eyebrow {
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 800;
   color: var(--primary-dark);
   background: var(--primary-soft);
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 999px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 0.02em;
 }
 .step__title {
   font-family: var(--font-display);
-  font-size: 1.45rem;
-  line-height: 1.45;
+  font-size: 1.2rem;
+  line-height: 1.35;
   color: var(--heading);
   white-space: pre-line;
-  margin: 0 0 10px;
+  margin: 0 0 6px;
 }
-.step__subtitle { font-size: 0.86rem; color: var(--muted); max-width: 360px; margin: 0 0 18px; line-height: 1.6; }
-.step__content { width: 100%; max-width: 420px; text-align: left; margin-bottom: 12px; }
-.step__content .form label { margin-bottom: 16px; }
+.step__subtitle { font-size: 0.8rem; color: var(--muted); max-width: 360px; margin: 0 0 12px; line-height: 1.5; }
+.step__content { width: 100%; max-width: 420px; text-align: left; margin-bottom: 8px; }
+.step__content .form label { margin-bottom: 10px; }
 
 
-.step__actions { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-top: 20px; align-items: center; }
+.step__actions { display: flex; gap: 10px; width: 100%; max-width: 420px; margin-top: 12px; align-items: center; }
 .step__back {
   flex: 0 0 auto;
-  width: 52px;
-  height: 52px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   border: 1.5px solid var(--border);
   background: var(--card-bg);
   color: var(--primary-dark);
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -306,8 +315,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font-size: 1.05rem;
-  padding: 15px 16px;
+  font-size: 0.98rem;
+  padding: 12px 14px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text);
@@ -351,8 +360,8 @@ body {
   color: white;
   border: none;
   border-radius: var(--radius-sm);
-  padding: 14px 20px;
-  font-size: 0.98rem;
+  padding: 12px 20px;
+  font-size: 0.94rem;
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(53, 104, 201, 0.28);
   transition: transform 0.12s;
@@ -365,8 +374,8 @@ body {
   color: var(--primary-dark);
   border: 1.5px solid var(--primary);
   border-radius: var(--radius-sm);
-  padding: 13px 18px;
-  font-size: 0.9rem;
+  padding: 11px 18px;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -378,8 +387,8 @@ body {
 .step__content input:not([type]),
 .step__content select,
 .step__content textarea {
-  font-size: 1.05rem;
-  padding: 15px 16px;
+  font-size: 0.98rem;
+  padding: 12px 14px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text);
@@ -706,11 +715,11 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   background: linear-gradient(135deg, var(--cream) 0%, var(--cream-deep) 100%);
   border-radius: var(--radius-lg);
-  padding: 22px 22px;
-  margin-bottom: 20px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
   overflow: hidden;
   isolation: isolate;
   box-shadow: var(--shadow-soft);
@@ -718,22 +727,22 @@ button { cursor: pointer; font-family: inherit; }
 .hero__blob { position: absolute; border-radius: 50%; opacity: 0.5; z-index: -1; }
 .hero__blob--a { width: 120px; height: 120px; background: var(--primary-soft); top: -40px; right: 50px; }
 .hero__blob--b { width: 80px; height: 80px; background: var(--card-bg); bottom: -26px; left: 20%; opacity: 0.6; }
-.hero__text { display: flex; flex-direction: column; gap: 6px; max-width: 62%; }
+.hero__text { display: flex; flex-direction: column; gap: 4px; max-width: 62%; }
 .hero__eyebrow {
-  font-size: 0.7rem; font-weight: 800; color: var(--primary-dark);
-  background: rgba(255, 255, 255, 0.6); width: fit-content; padding: 4px 10px; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 800; color: var(--primary-dark);
+  background: rgba(255, 255, 255, 0.6); width: fit-content; padding: 3px 9px; border-radius: 999px;
 }
 :root[data-theme="dark"] .hero__eyebrow { background: rgba(0, 0, 0, 0.25); }
-.hero__title { font-family: var(--font-display); font-size: 1.32rem; line-height: 1.35; color: var(--heading); margin: 2px 0 0; white-space: pre-line; }
-.hero__subtitle { font-size: 0.82rem; color: var(--muted); margin: 0; line-height: 1.5; }
+.hero__title { font-family: var(--font-display); font-size: 1.14rem; line-height: 1.3; color: var(--heading); margin: 2px 0 0; white-space: pre-line; }
+.hero__subtitle { font-size: 0.78rem; color: var(--muted); margin: 0; line-height: 1.45; }
 .hero__icon { flex-shrink: 0; }
 
 @media (max-width: 480px) {
-  .hero { padding: 18px 16px; }
+  .hero { padding: 14px 14px; }
   .hero__text { max-width: 62%; }
-  .hero__title { font-size: 1.05rem; }
-  .hero__subtitle { font-size: 0.76rem; }
-  .hero__icon.icon3d { width: 68px !important; height: 68px !important; }
+  .hero__title { font-size: 1rem; }
+  .hero__subtitle { font-size: 0.72rem; }
+  .hero__icon.icon3d { width: 56px !important; height: 56px !important; }
 }
 
 /* --- 탭 --- */
@@ -905,6 +914,21 @@ button { cursor: pointer; font-family: inherit; }
 }
 .clause-reader__navbtn:disabled { opacity: 0.35; color: var(--muted); }
 .clause-reader__count { font-size: 0.78rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
+
+/* --- 범용 페이지 네비게이션(길어질 수 있는 목록/표를 스크롤 대신 "다음"으로 나눠 보기) --- */
+.pager-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.pager-navbtn {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  flex-shrink: 0;
+}
+.pager-navbtn:disabled { opacity: 0.35; color: var(--muted); }
+.pager-count { font-size: 0.78rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
 .clause-reader__doc {
   background: var(--card-bg);
   border: 1px solid var(--border);
@@ -965,6 +989,21 @@ button { cursor: pointer; font-family: inherit; }
 
 .coverage-list__label { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
 
+/* 사고 화면(서류체크/실수방지/약관형광펜)에서 그 사고가 어느 여행과 연결됐는지 보여주는 배지 */
+.trip-context-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.trip-context-badge strong { font-weight: 800; }
+
 .policy-card__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
 .policy-card__head strong { color: var(--heading); }
 .muted { color: var(--muted); font-size: 0.88rem; }
@@ -985,6 +1024,8 @@ button { cursor: pointer; font-family: inherit; }
 
 .badge { font-size: 0.72rem; padding: 3px 10px; border-radius: 999px; font-weight: 700; }
 .badge--warn { background: var(--yellow-soft); color: #a06a1f; }
+.badge--ok { background: var(--mint-soft); color: #2f7c60; }
+.badge--danger { background: #fbdcd2; color: #b8502f; }
 
 .alert { border-left: 5px solid var(--border); border-radius: var(--radius-sm); }
 .alert--ok { border-left-color: var(--mint); background: var(--mint-soft); }
@@ -1177,8 +1218,10 @@ button { cursor: pointer; font-family: inherit; }
 /* --- 보험사 선택 그리드 (앱스토어 아이콘 + 통일된 프레임) --- */
 .insurer-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  /* 화면 폭에 맞춰 한 줄에 들어가는 개수가 자동으로 늘어난다 — 좁은 화면에서도 타일이
+     작아질 뿐 세로로 쌓이는 줄 수는 줄어서 스크롤이 덜 필요하다. */
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
   width: 100%;
 }
 .insurer-card {
@@ -1186,11 +1229,11 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   background: var(--card-bg);
   border: 2px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 10px 4px 12px;
+  padding: 6px 3px 7px;
   font-family: inherit;
   box-shadow: 0 4px 12px rgba(var(--shadow-tint), 0.08);
 }
@@ -1223,7 +1266,7 @@ button { cursor: pointer; font-family: inherit; }
   justify-content: center;
   overflow: hidden;
   background: var(--card-bg);
-  padding: 16%;
+  padding: 12%;
 }
 .insurer-card__logo img {
   width: 100%;
@@ -1233,7 +1276,7 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: 20%;
   box-shadow: 0 0 0 1px var(--border);
 }
-.insurer-card__name { font-size: 0.7rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.3; }
+.insurer-card__name { font-size: 0.62rem; font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; }
 
 /* --- 날짜/시간 선택 (휠 피커 바텀시트) --- */
 .field-block { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
@@ -1318,14 +1361,22 @@ button { cursor: pointer; font-family: inherit; }
 .sheet__confirm { margin-top: 18px; }
 
 @media (min-width: 600px) {
-  .app-main { max-width: 720px; padding: 0 24px 60px; }
+  .app-main { max-width: 720px; padding: 0 24px 40px; }
   .home__title { font-size: 1.8rem; }
-  .step__title { font-size: 1.7rem; }
-  .step__icon.icon3d { width: 172px !important; height: 172px !important; }
+  .step__title { font-size: 1.4rem; }
+  .step__icon.icon3d { width: 108px !important; height: 108px !important; }
 }
 
-/* BackgroundDecor는 항상 마운트되어 있지만 태블릿/모바일에서는 보여줄 필요가 없어 기본은 숨김 */
+/* BackgroundDecor는 항상 마운트되어 있지만 데스크톱(900px 이상)에서만 보여준다 — 모바일/
+   태블릿은 화면을 꽉 채우는 구조라 아이콘이 겹쳐 보이면 오히려 알아보기 어려워진다. */
 .bg-decor { display: none; }
+
+@keyframes icon-fall {
+  0%   { transform: translateY(-20vh); opacity: 0; }
+  6%   { opacity: 0.82; }
+  90%  { opacity: 0.82; }
+  100% { transform: translateY(125vh); opacity: 0; }
+}
 
 /* 넓은 데스크톱에서는 모바일 폭 그대로 두되, 화면 한쪽에 붙지 않도록 카드처럼 감싸서
    "앱 창"처럼 보이게 한다. 사이트 크기(뷰포트 폭)에 따라 자동으로 이 프레임이 붙었다 떨어졌다 한다. */
@@ -1348,12 +1399,8 @@ button { cursor: pointer; font-family: inherit; }
       linear-gradient(180deg, #0b1220 0%, #101a2c 45%, #0a0e18 100%);
   }
 
-  /* 카드 바깥 빈 여백 장식 — 실제 3D 아이콘이 차선(lane) 시스템으로 떨어진다. 어느 차선에서
-     하나가 내려가는 동안은 바로 옆 차선을 비워둬서(반개 크기만큼 옆자리를 막음) 서로 겹치지
-     않게 하고, 다 내려가 화면 밖으로 사라진 뒤 잠깐(2개분 정도) 더 쉬었다가 그 차선을 다시
-     쓸 수 있게 한다 — 이 스케줄링은 BackgroundDecor.tsx의 JS 타이머가 담당하고, 여기 CSS는
-     한 번의 낙하 애니메이션만 그린다. 가운데(카드 자리)도 차선에 포함되지만, 카드가 z-index로
-     항상 위에 있어서 그 구간을 지날 때는 카드 뒤로 지나가는 것처럼 보인다. */
+  /* 카드 바깥 빈 여백 장식 — 실제 3D 아이콘이 차선(lane) 시스템으로 떨어진다. 데스크톱에서만
+     보여준다(위 .bg-decor 기본값은 숨김). */
   .bg-decor {
     display: block;
     position: fixed;
@@ -1374,26 +1421,20 @@ button { cursor: pointer; font-family: inherit; }
     animation-fill-mode: forwards;
   }
   :root[data-theme="dark"] .bg-decor__icon {
-    /* 밤 버전 — 색은 유지하되 살짝 밝기만 낮추고 파란빛 글로우를 더해 잘 보이게 한다 */
     filter: brightness(0.82) saturate(1.05) drop-shadow(0 0 12px rgba(111, 162, 255, 0.3));
   }
 
-  @keyframes icon-fall {
-    0%   { transform: translateY(-20vh); opacity: 0; }
-    6%   { opacity: 0.82; }
-    90%  { opacity: 0.82; }
-    100% { transform: translateY(125vh); opacity: 0; }
-  }
-
   /* 화면(라우트)이 바뀌어도 카드 크기가 흔들리지 않도록 고정 — 내용이 넘치면 .app-main 내부에서만 스크롤.
-     세로로 길게 늘어지지 않는 적당한 비율의 네모로, 화면 안에 스크롤 없이 들어가게 한다.
-     위아래로 배경 아이콘(96px) 반개 크기(48px)씩 더 늘려서 700 -> 796. */
+     위아래 여백(body의 40px 패딩)이 뷰포트 높이와 무관하게 항상 똑같이 유지되도록 상한선(796px)
+     없이 계산한다 — 상한선이 있으면 뷰포트가 커질수록 여백만 계속 벌어져 버렸다. */
   .app-shell {
-    height: min(796px, calc(100vh - 80px));
+    height: calc(100vh - 80px);
     min-height: 0;
     width: 760px;
     flex: none;
-    background: var(--card-bg);
+    background: var(--card-bg-translucent);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
     border-radius: 32px;
     box-shadow: 0 24px 60px rgba(var(--shadow-tint), 0.22), 0 2px 8px rgba(var(--shadow-tint), 0.1);
     overflow: hidden;
@@ -1403,15 +1444,15 @@ button { cursor: pointer; font-family: inherit; }
   .app-main { max-width: 100%; height: 100%; padding: 0 20px 40px; overflow-y: auto; }
 
   /* 홈 화면은 콘텐츠가 목록형이라 카드를 2열로 넉넉하게 배치한다 (프레임 크기는 모든 페이지에서 동일) */
-  .home__hero { padding: 34px 30px 52px; }
-  .home__title { font-size: 2rem; }
-  .home__subtitle { font-size: 0.95rem; max-width: 460px; }
-  .home__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  .home__quick-grid { gap: 18px; margin-top: 44px; }
-  .home-card { padding: 24px 26px; }
+  .home__hero { padding: 18px 24px 26px; }
+  .home__title { font-size: 1.5rem; }
+  .home__subtitle { font-size: 0.88rem; max-width: 460px; }
+  .home__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .home__quick-grid { gap: 14px; margin-top: 24px; }
+  .home-card { padding: 16px 18px; }
 }
 
 @media (max-width: 380px) {
-  .step__title { font-size: 1.25rem; }
-  .step__icon.icon3d { width: 116px !important; height: 116px !important; }
+  .step__title { font-size: 1.05rem; }
+  .step__icon.icon3d { width: 68px !important; height: 68px !important; }
 }
