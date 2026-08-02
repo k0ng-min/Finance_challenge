@@ -39,7 +39,6 @@ services:
   - type: web
     name: travel-insurance-web
     runtime: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
