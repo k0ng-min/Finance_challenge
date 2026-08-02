@@ -1,0 +1,53 @@
+# Render Blueprint — 백엔드(FastAPI)와 프론트엔드(정적 사이트)를 한 번에 배포한다.
+# Render 대시보드에서 "New +" → "Blueprint" → 이 저장소 선택 → 배포하면 아래 두 서비스가 만들어진다.
+#
+# 서로의 주소(FRONTEND_BASE_URL / VITE_API_BASE)는 배포가 끝나 실제 URL이 정해진 뒤에
+# 직접 채워 넣어야 한다(아래 두 값은 일부러 비워뒀다 = sync: false, 대시보드에서 입력).
+# 순서: 1) 블루프린트로 두 서비스 최초 배포 → 2) 각자 URL 확인
+# (예: travel-insurance-api.onrender.com / travel-insurance-web.onrender.com)
+# → 3) 아래 표의 값을 상대 서비스 URL로 채워 넣고 → 4) 두 서비스 모두 재배포(Manual Deploy).
+#
+# GEMINI_API_KEY, KAKAO_*, GOOGLE_* 도 비밀값이라 커밋하지 않는다 — Render 대시보드의
+# travel-insurance-api 서비스 Environment 탭에서 직접 입력한다. 비워두면 그 기능만 꺼진 채
+# (카카오/구글 로그인 비활성, 게스트 모드로만 동작) 나머지는 정상 동작한다.
+
+services:
+  - type: web
+    name: travel-insurance-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # 프론트엔드 배포 URL로 채운다. 예: https://travel-insurance-web.onrender.com
+      - key: FRONTEND_BASE_URL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: KAKAO_REST_API_KEY
+        sync: false
+      - key: KAKAO_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+  - type: web
+    name: travel-insurance-web
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      # 백엔드 배포 URL로 채운다. 예: https://travel-insurance-api.onrender.com
+      - key: VITE_API_BASE
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

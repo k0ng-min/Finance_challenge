@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:8000";
+// 배포 환경에서는 Vite 빌드 시점에 VITE_API_BASE 환경변수로 실제 백엔드 주소를 주입한다
+// (Render 등 호스팅 대시보드에서 설정). 로컬 개발 중에는 값이 없으므로 localhost로 fallback.
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 const LS_TOKEN = "travel_ai_token";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
