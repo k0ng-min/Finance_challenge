@@ -21,3 +21,5 @@ __all__ = [
     "AnalysisRun", "AnalysisFinding", "FindingEvidenceLink", "ValidationRule",
     "ValidationResult", "EvalLog",
 ]
+
+from app.models.external import ExternalPolicy, ExternalCoverage, OverlapRule  # noqa: F401
