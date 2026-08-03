@@ -13,9 +13,13 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.database import Base, SessionLocal, engine
 from app.models.external import OverlapRule
 from app.models.kb import Clause, Coverage, CoverageStd, Insurer, PolicyVersion, Product
+
+# 다른 seed_*.py와 동일한 관례: 이 스크립트를 처음 돌리는 환경(테이블이 아직 없는 운영 DB 등)에서도
+# 재현 가능하도록 모듈 로드 시 누락된 테이블을 만든다. 이미 있는 테이블은 건드리지 않는다.
+Base.metadata.create_all(bind=engine)
 
 #: 각 규칙의 근거 조항은 (보험사명 조각, 조항 제목 조각)으로 찾는다.
 RULE_SPECS: list[dict] = [
@@ -72,14 +76,14 @@ RULE_SPECS: list[dict] = [
         "coverage_std_code": "PASSPORT_LOSS",
         "scope": "전체",
         "relation": "DUPLICATE_PRORATA",
-        # 삼성화재 여권분실 특약의 조항(clause_id=98)은 실제로 이 규칙과 정확히 일치하는
-        # 비례분담 문구("다른 계약이... 비율에 따라 보험금을 지급합니다")를 담고 있지만,
-        # 그 article_no가 "제1조(보상하는 손해)"뿐이라 삼성화재의 다른 8개 특약(항공기납치 등,
-        # clause_id 72부터 시작)과 글자 그대로 동일하다 — article_no만으로는 clause_id
-        # 오름차순 조회가 항상 더 앞선(무관한) 특약을 집어와 근거를 잘못 붙이게 된다.
-        # 현대해상은 여권분실 특약 article_no에 "[여권분실]" 접두어를 붙여 놓아 고유하게
-        # 조회되므로(clause_id=253) 이쪽으로 바꾼다.
-        "clause_lookup": ("현대해상", "여권분실"),
+        # 삼성화재 여권분실 특약의 조항(clause_id=98)은 이 규칙의 note와 글자 그대로 일치하는
+        # 비례분담 문구("다른 계약이... 비율에 따라 보험금을 지급합니다")를 담고 있다. 다만
+        # article_no가 "제1조(보상하는 손해)"뿐이라 삼성화재의 다른 8개 특약(항공기납치 등,
+        # clause_id 72부터 시작)과 글자 그대로 동일하다 — article_no만 보면 clause_id
+        # 오름차순 조회가 더 앞선(무관한) 특약을 집어올 수 있다. 그래서 _find_clause에
+        # coverage_std_id 필터를 추가해 PASSPORT_LOSS 담보에 실제로 연결된 조항(98)만
+        # 골라내도록 했다(아래 _find_clause 참조).
+        "clause_lookup": ("삼성화재", "보상하는 손해"),
         "note": "보험금을 지급할 다른 계약이 있으면 비율에 따라 나눠 지급한다.",
     },
     {
@@ -94,15 +98,28 @@ RULE_SPECS: list[dict] = [
 ]
 
 
-def _find_clause(db: Session, insurer_frag: str, article_frag: str) -> Clause | None:
-    """보험사명·조항 제목 조각으로 근거 조항을 찾는다. 여러 개면 가장 앞선 것을 쓴다."""
+def _find_clause(
+    db: Session, insurer_frag: str, article_frag: str, coverage_std_id: int
+) -> Clause | None:
+    """보험사명·조항 제목 조각 + 표준담보로 근거 조항을 찾는다.
+
+    article_no만으로는 서로 다른 특약이 똑같은 제목("제1조(보상하는 손해)")을 재사용하는
+    경우가 있다(예: 삼성화재의 여권분실·항공기납치 특약). coverage_std_id로 좁혀야 이럴 때
+    엉뚱한 담보의 조항이 clause_id 순서상 먼저 걸려 잘못 붙는 것을 막을 수 있다.
+    면책 조항(clause_type="면책")은 보장 내용 자체를 설명하지 않으므로 후보에서 제외한다
+    — 같은 article_frag가 "보장정의"와 "면책" 조항 한 쌍에 동시에 걸리는 경우가 있어,
+    이 필터가 없으면 어느 쪽이 먼저 걸릴지 clause_id 우연에 좌우된다.
+    """
     return (
         db.query(Clause)
         .join(PolicyVersion, PolicyVersion.policy_version_id == Clause.policy_version_id)
         .join(Product, Product.product_id == PolicyVersion.product_id)
         .join(Insurer, Insurer.insurer_id == Product.insurer_id)
+        .join(Coverage, Coverage.coverage_id == Clause.coverage_id)
         .filter(Insurer.name.like(f"%{insurer_frag}%"))
         .filter(Clause.article_no.like(f"%{article_frag}%"))
+        .filter(Coverage.coverage_std_id == coverage_std_id)
+        .filter(Clause.clause_type != "면책")
         .order_by(Clause.clause_id)
         .first()
     )
@@ -130,7 +147,7 @@ def seed_overlap_rules(db: Session, *, strict: bool = True) -> int:
 
         clause = None
         if spec["relation"] != "UNKNOWN":
-            clause = _find_clause(db, *spec["clause_lookup"])
+            clause = _find_clause(db, *spec["clause_lookup"], coverage_std_id=std.coverage_std_id)
             if clause is None:
                 missing.append(
                     f"근거 조항 없음: {spec['coverage_std_code']} / {spec['clause_lookup']}"
