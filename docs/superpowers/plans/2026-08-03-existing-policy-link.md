@@ -1389,30 +1389,91 @@ class OverlapReportOut(BaseModel):
 
 - [ ] **Step 2: 실패하는 테스트 작성**
 
+라우터를 실제로 호출해 검증한다. `TestClient`를 쓰면 게스트 차단 같은 권한 로직이 자동 테스트로 남는다(`httpx`가 이미 requirements에 있어 추가 설치가 필요 없다).
+
 `backend/tests/test_external_policies_api.py`:
 
 ```python
-from app.services.external_policy.registry import get_provider, list_available_providers
+"""라우터를 실제로 호출해 검증한다 — registry 단위 테스트만으로는 권한 로직이 안 잡힌다."""
+import pytest
+from fastapi.testclient import TestClient
+
+from app.database import get_db
+from app.main import app
+from app.models.user import AppUser
 
 
-def test_사용가능한_수집방식에_codef는_빠져있다():
-    payload = [{"name": p.name, "requires_login": p.requires_login}
-               for p in list_available_providers()]
-    names = [p["name"] for p in payload]
+@pytest.fixture
+def client(db_session):
+    """앱의 DB 의존성을 테스트 세션으로 바꿔 끼운다 — 운영 DB를 건드리지 않기 위해."""
+    db_session.add(AppUser(user_id=1, nickname="테스트", auth_provider="guest"))
+    db_session.commit()
+
+    app.dependency_overrides[get_db] = lambda: db_session
+    yield TestClient(app)
+    app.dependency_overrides.clear()
+
+
+def test_사용가능한_수집방식에_codef는_빠져있다(client):
+    res = client.get("/users/1/external-policies/providers")
+    assert res.status_code == 200
+    names = [p["name"] for p in res.json()]
     assert "manual" in names
+    assert "mock" in names
     assert "codef" not in names
 
 
-def test_게스트가_로그인필요_provider를_쓰면_막아야_한다():
-    """라우터가 이 플래그를 보고 401을 낸다 — 플래그 자체가 계약이다."""
-    assert get_provider("mock").requires_login is True
-    assert get_provider("manual").requires_login is False
+def test_수동입력_실손은_세대까지_저장된다(client):
+    res = client.post("/users/1/external-policies/link", json={
+        "provider": "manual",
+        "items": [{"kind": "MEDICAL_INDEMNITY", "insurer_name_raw": "삼성화재", "enrolled_ym": "2019-05"}],
+    })
+    assert res.status_code == 200
+    body = res.json()
+    assert len(body) == 1
+    assert body[0]["indemnity_gen"] == 3
+    assert body[0]["source"] == "manual"
+
+    listed = client.get("/users/1/external-policies").json()
+    assert len(listed) == 1
+
+
+def test_게스트는_로그인필요_provider를_쓸_수_없다(client):
+    """mock은 requires_login=True다. 토큰 없이 부르면 401이어야 한다."""
+    res = client.post("/users/1/external-policies/link", json={"provider": "mock", "items": []})
+    assert res.status_code == 401
+
+
+def test_알수없는_보험종류는_400으로_거부한다(client):
+    res = client.post("/users/1/external-policies/link", json={
+        "provider": "manual", "items": [{"kind": "NOT_A_KIND"}],
+    })
+    assert res.status_code == 400
+
+
+def test_등록한_기존보험을_삭제할_수_있다(client):
+    created = client.post("/users/1/external-policies/link", json={
+        "provider": "manual", "items": [{"kind": "ACCIDENT"}],
+    }).json()
+    policy_id = created[0]["external_policy_id"]
+
+    assert client.delete(f"/users/1/external-policies/{policy_id}").status_code == 200
+    assert client.get("/users/1/external-policies").json() == []
+
+
+def test_여행자보험이_없으면_진단은_빈_결과다(client):
+    res = client.get("/users/1/coverage-overlap")
+    assert res.status_code == 200
+    body = res.json()
+    assert body == {"duplicates": [], "gaps": [], "fixed_ok": [], "unknown": []}
 ```
 
-- [ ] **Step 3: 테스트 실행**
+- [ ] **Step 3: 테스트 실패 확인**
 
 Run: `cd backend && .venv\Scripts\python.exe -m pytest tests/test_external_policies_api.py -v`
-Expected: PASS (2 passed) — Task 4에서 만든 registry로 이미 통과한다. 라우터가 이 계약을 지키는지는 Step 5 수동 확인으로 검증한다.
+Expected: FAIL — 라우터가 아직 없어 `/providers`가 404를 돌려준다.
+
+Step 4에서 라우터를 만든 뒤 다시 돌려 전부 통과시킨다.
 
 - [ ] **Step 4: 라우터 작성**
 
@@ -1582,7 +1643,10 @@ app.include_router(external_policies.router)
 app.include_router(external_policies.overlap_router)
 ```
 
-- [ ] **Step 5: 서버를 띄워 실제로 확인**
+- [ ] **Step 5: 테스트 통과 확인 후 서버로 실제 확인**
+
+Run: `cd backend && .venv\Scripts\python.exe -m pytest tests/test_external_policies_api.py -v`
+Expected: PASS (6 passed)
 
 Run: `cd backend && .venv\Scripts\python.exe -m uvicorn app.main:app --port 8000`
 
