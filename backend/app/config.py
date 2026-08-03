@@ -28,3 +28,9 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # 구조화 추출처럼 깊은 추론이 필요 없는 작업엔 무료 한도가 훨씬 넉넉한(일 ~1,000회) 경량 모델을 기본값으로 쓴다.
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 GEMINI_ENABLED = bool(GEMINI_API_KEY)
+
+# 기존보험 수집에 쓸 방식. codef는 주민등록번호 처리 요건을 갖춘 뒤에만 켠다.
+EXTERNAL_POLICY_PROVIDERS = [
+    p.strip() for p in os.getenv("EXTERNAL_POLICY_PROVIDERS", "manual,mock").split(",")
+    if p.strip()
+]
