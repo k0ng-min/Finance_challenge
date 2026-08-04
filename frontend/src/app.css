@@ -1310,9 +1310,10 @@ button { cursor: pointer; font-family: inherit; }
 /* --- 보험사 선택 그리드 (앱스토어 아이콘 + 통일된 프레임) --- */
 .insurer-grid {
   display: grid;
-  /* 화면 폭에 맞춰 한 줄에 들어가는 개수가 자동으로 늘어난다 — 좁은 화면에서도 타일이
-     작아질 뿐 세로로 쌓이는 줄 수는 줄어서 스크롤이 덜 필요하다. */
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  /* 3열 고정 — 보험사가 6개라 3×2로 딱 떨어진다. auto-fill로 두면 컨테이너 폭에 따라
+     5+1, 4+2처럼 마지막 줄만 덩그러니 남는 배치가 나와서 균형이 깨진다.
+     minmax(0, 1fr)이라 좁은 화면에서는 타일이 작아지며 3열을 유지한다. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
 }
@@ -1628,7 +1629,7 @@ button { cursor: pointer; font-family: inherit; }
   .loading-screen__title { font-size: 1.18rem; }
   .loading-screen__msg { font-size: 0.92rem; }
 
-  .insurer-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; }
+  .insurer-grid { gap: 12px; }
   .insurer-card { padding: 10px 6px 12px; gap: 7px; }
   .insurer-card__name { font-size: 0.74rem; }
 }
@@ -1704,3 +1705,55 @@ button { cursor: pointer; font-family: inherit; }
   margin: 10px 0 0;
 }
 .premium-basis a { color: var(--primary-dark); font-weight: 700; }
+
+/* --- 기존보험 연결 & 중복·공백 진단 --- */
+
+/* 화면 안에서 성격이 다른 덩어리를 나눈다. 위 구분선이 "여기서부터 다른 이야기"를 알려준다. */
+.ext-section { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--border); }
+.ext-section__title { font-size: 1.05rem; color: var(--heading); margin: 0 0 6px; }
+/* 무엇을 기준으로 낸 결과인지 — 제목과 같은 줄에 붙이면 길어져서 아래 줄로 뺀다. */
+.ext-section__basis { display: block; font-size: 0.85rem; font-weight: 400; color: var(--muted); margin: 0 0 16px; }
+
+.ext-card { display: flex; align-items: center; gap: 12px; }
+.ext-card__body { min-width: 0; flex: 1; }
+.ext-card__kind { font-weight: 800; color: var(--heading); }
+.ext-card__meta { font-size: 0.85rem; color: var(--muted); margin-top: 3px; }
+
+.ext-actions { display: flex; gap: 8px; margin-top: 18px; }
+
+/* 진단 결과 묶음. 색으로 성격을 구분한다 — 필요/겹침/괜찮음/확인불가. */
+.overlap-group { margin-bottom: 20px; }
+.overlap-group__title { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; color: var(--heading); margin: 0 0 10px; }
+.overlap-group__count { font-size: 0.78rem; font-weight: 700; color: var(--muted); background: var(--cream); border-radius: 999px; padding: 2px 9px; }
+
+.overlap-card { border-left: 4px solid var(--border); }
+.overlap-card--gap { border-left-color: var(--orange); }
+.overlap-card--dup { border-left-color: var(--yellow); }
+.overlap-card--ok { border-left-color: var(--mint); }
+.overlap-card--unknown { border-left-color: var(--border); }
+
+.overlap-card__head { font-weight: 800; color: var(--heading); }
+.overlap-card__scope { font-weight: 400; font-size: 0.85rem; color: var(--muted); }
+.overlap-card__note { font-size: 0.9rem; line-height: 1.6; margin: 7px 0 0; }
+
+/* 약관 원문 인용 — 우리가 쓴 문장이 아니라 원문 그대로임을 시각적으로 구분한다. */
+.overlap-quote {
+  margin: 12px 0 0;
+  padding: 10px 13px;
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.overlap-quote__source { display: block; margin-top: 6px; font-size: 0.76rem; color: var(--muted); }
+.overlap-nobasis { font-size: 0.82rem; color: var(--muted); margin: 8px 0 0; }
+
+/* 확인불가는 건수가 많아 화면을 뒤덮는다. 접어두되 개수는 항상 보이게 해서
+   "근거를 못 찾은 게 이만큼 있다"는 사실 자체는 숨기지 않는다. */
+.overlap-unknown > summary { cursor: pointer; list-style: none; }
+.overlap-unknown > summary::-webkit-details-marker { display: none; }
+.overlap-unknown > summary .overlap-group__title { margin-bottom: 0; }
+.overlap-unknown > summary .overlap-group__title::after { content: "▾"; color: var(--muted); font-size: 0.8rem; }
+.overlap-unknown[open] > summary .overlap-group__title::after { content: "▴"; }
+.overlap-unknown[open] > summary .overlap-group__title { margin-bottom: 10px; }

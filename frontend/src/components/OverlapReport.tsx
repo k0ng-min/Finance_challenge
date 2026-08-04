@@ -2,23 +2,40 @@ import type { OverlapFindingOut, OverlapReportOut } from "../api";
 
 /** 진단 결과 표시. 근거 조항 원문을 그대로 붙이고, 근거가 없으면 "확인불가"라고 밝힌다. */
 
-function Finding({ f }: { f: OverlapFindingOut }) {
+type Tone = "gap" | "dup" | "ok" | "unknown";
+
+function Finding({ f, tone }: { f: OverlapFindingOut; tone: Tone }) {
   return (
-    <div className="card" style={{ marginBottom: 10 }}>
-      <strong>{f.coverage_std_name}</strong>
-      {f.scope !== "전체" && <span className="muted"> · {f.scope}</span>}
-      {f.note && <p style={{ margin: "6px 0 0", fontSize: "0.9rem" }}>{f.note}</p>}
+    <div className={`card overlap-card overlap-card--${tone}`}>
+      <div className="overlap-card__head">
+        {f.coverage_std_name}
+        {f.scope !== "전체" && <span className="overlap-card__scope"> · {f.scope}</span>}
+      </div>
+      {f.note && <p className="overlap-card__note">{f.note}</p>}
       {f.clause_quote ? (
-        <blockquote style={{ margin: "10px 0 0", padding: "8px 12px", borderLeft: "3px solid var(--accent, #888)", fontSize: "0.82rem" }}>
+        <blockquote className="overlap-quote">
           {f.clause_quote}
-          <div className="muted" style={{ marginTop: 4 }}>— {f.clause_article_no}</div>
+          <cite className="overlap-quote__source">— {f.clause_article_no}</cite>
         </blockquote>
       ) : (
-        <p className="muted" style={{ margin: "8px 0 0", fontSize: "0.82rem" }}>
-          약관 근거를 찾지 못해 확인불가입니다.
-        </p>
+        <p className="overlap-nobasis">약관 근거를 찾지 못해 확인불가입니다.</p>
       )}
     </div>
+  );
+}
+
+function Group({ title, items, tone }: { title: string; items: OverlapFindingOut[]; tone: Tone }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="overlap-group">
+      <h3 className="overlap-group__title">
+        {title}
+        <span className="overlap-group__count">{items.length}</span>
+      </h3>
+      {items.map((f) => (
+        <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} tone={tone} />
+      ))}
+    </section>
   );
 }
 
@@ -33,29 +50,24 @@ export function OverlapReportView({ report }: { report: OverlapReportOut }) {
 
   return (
     <>
-      {report.gaps.length > 0 && (
-        <section>
-          <h3>기존보험으로 커버되지 않아요</h3>
-          {report.gaps.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
-        </section>
-      )}
-      {report.duplicates.length > 0 && (
-        <section>
-          <h3>겹쳐요 — 두 개 들어도 더 받지 못합니다</h3>
-          {report.duplicates.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
-        </section>
-      )}
-      {report.fixed_ok.length > 0 && (
-        <section>
-          <h3>겹치지만 각각 다 받아요</h3>
-          {report.fixed_ok.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
-        </section>
-      )}
+      <Group title="기존보험으로 커버되지 않아요" items={report.gaps} tone="gap" />
+      <Group title="겹쳐요 — 두 개 들어도 더 받지 못합니다" items={report.duplicates} tone="dup" />
+      <Group title="겹치지만 각각 다 받아요" items={report.fixed_ok} tone="ok" />
+
+      {/* 확인불가는 건수가 많아 화면을 뒤덮는다. 접어두되 개수는 항상 보이게 해서
+          "근거를 못 찾은 게 이만큼 있다"는 사실 자체는 숨기지 않는다. */}
       {report.unknown.length > 0 && (
-        <section>
-          <h3>확인불가</h3>
-          {report.unknown.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
-        </section>
+        <details className="overlap-unknown overlap-group">
+          <summary>
+            <h3 className="overlap-group__title">
+              확인불가
+              <span className="overlap-group__count">{report.unknown.length}</span>
+            </h3>
+          </summary>
+          {report.unknown.map((f) => (
+            <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} tone="unknown" />
+          ))}
+        </details>
       )}
     </>
   );

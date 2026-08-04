@@ -43,32 +43,36 @@ export function ExternalPolicyPicker({
 
   return (
     <>
-      <p className="muted" style={{ fontSize: "0.85rem" }}>
+      <p className="page-desc">
         이미 들고 계신 보험을 골라주세요. 겹치는 담보와 비는 담보를 약관 근거와 함께 알려드려요.
       </p>
+
       {/* 이 프로젝트에는 .chip 클래스가 없다 — PremiumCalc.tsx의 보험사 토글칩과 같은
           .calc-chips / .premium-chip(--on) 조합을 재사용한다. */}
-      <div className="calc-chips">
-        {(Object.keys(KIND_LABELS) as ExternalPolicyKind[]).map((kind) => {
-          const on = value.some((v) => v.kind === kind);
-          return (
-            <button
-              key={kind}
-              type="button"
-              className={`premium-chip${on ? " premium-chip--on" : ""}`}
-              onClick={() => toggle(kind)}
-            >
-              {KIND_LABELS[kind]}
-            </button>
-          );
-        })}
+      <div className="field-block">
+        <span className="field-block__label">어떤 보험이 있나요? (여러 개 고를 수 있어요)</span>
+        <div className="calc-chips">
+          {(Object.keys(KIND_LABELS) as ExternalPolicyKind[]).map((kind) => {
+            const on = value.some((v) => v.kind === kind);
+            return (
+              <button
+                key={kind}
+                type="button"
+                className={`premium-chip${on ? " premium-chip--on" : ""}`}
+                onClick={() => toggle(kind)}
+              >
+                {KIND_LABELS[kind]}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 실손만 가입시기를 묻는다 — 실손은 2009년 표준화 이후 보장구조가 보험사별로 같아서
           가입시기 하나로 세대(1~4세대)가 정해지고, 세대가 보장구조를 결정한다. */}
       {indemnity && (
-        <label style={{ marginTop: 16, display: "block" }}>
-          실손 가입시기 (모르면 비워두세요)
+        <label className="field-block">
+          <span className="field-block__label">실손 가입시기 (모르면 비워두세요)</span>
           <input
             type="month"
             value={indemnity.enrolled_ym ?? ""}
@@ -77,10 +81,10 @@ export function ExternalPolicyPicker({
         </label>
       )}
 
-      <label style={{ marginTop: 16, display: "block" }}>
-        보험사 (모르면 비워두세요)
+      <div className="field-block">
+        <span className="field-block__label">보험사 (모르면 비워두세요)</span>
         <InsurerPicker value={insurer} onChange={setInsurer} />
-      </label>
+      </div>
     </>
   );
 }

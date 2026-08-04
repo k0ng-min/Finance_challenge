@@ -330,25 +330,25 @@ export function MyPolicies() {
         />
       ))}
 
-      <section style={{ marginTop: 28 }}>
-        <h2 style={{ fontSize: "1.05rem" }}>기존에 들고 계신 보험</h2>
+      <section className="ext-section">
+        <h2 className="ext-section__title">기존에 들고 계신 보험</h2>
         <p className="page-desc">
           실손·상해·일상생활배상책임 같은 기존보험을 등록하면, 이번 여행자보험과 겹치는 담보와
           비는 담보를 약관 원문 근거와 함께 알려드려요.
         </p>
 
         {external.map((e) => (
-          <div className="card" key={e.external_policy_id} style={{ marginBottom: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <strong>{KIND_LABELS[e.kind]}</strong>
-              <button type="button" className="history-card__delete" title="삭제"
-                onClick={() => handleDeleteExternal(e.external_policy_id)}>🗑</button>
+          <div className="card ext-card" key={e.external_policy_id}>
+            <div className="ext-card__body">
+              <div className="ext-card__kind">{KIND_LABELS[e.kind]}</div>
+              <div className="ext-card__meta">
+                {e.insurer_name_raw ?? "보험사 미상"}
+                {e.indemnity_gen ? ` · ${e.indemnity_gen}세대 실손` : ""}
+                {e.enrolled_ym ? ` · ${e.enrolled_ym} 가입` : ""}
+              </div>
             </div>
-            <div className="muted" style={{ fontSize: "0.85rem" }}>
-              {e.insurer_name_raw ?? "보험사 미상"}
-              {e.indemnity_gen ? ` · ${e.indemnity_gen}세대 실손` : ""}
-              {e.enrolled_ym ? ` · ${e.enrolled_ym} 가입` : ""}
-            </div>
+            <button type="button" className="history-card__delete" title="삭제"
+              onClick={() => handleDeleteExternal(e.external_policy_id)}>🗑</button>
           </div>
         ))}
 
@@ -356,10 +356,11 @@ export function MyPolicies() {
           <div className="card">
             <ExternalPolicyPicker value={picked} onChange={setPicked} />
             {error && <div className="error-box">{error}</div>}
-            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <div className="ext-actions">
               <button type="button" className="btn-primary" disabled={picked.length === 0 || loading}
                 onClick={handleLinkExternal}>등록</button>
-              <button type="button" onClick={() => { setPicking(false); setPicked([]); }}>취소</button>
+              <button type="button" className="btn-secondary"
+                onClick={() => { setPicking(false); setPicked([]); setError(null); }}>취소</button>
             </div>
           </div>
         ) : (
@@ -367,19 +368,19 @@ export function MyPolicies() {
             기존보험 등록하기
           </button>
         )}
-
-        {overlap && external.length > 0 && basisPolicy && (
-          <div style={{ marginTop: 24 }}>
-            <h2 style={{ fontSize: "1.05rem" }}>
-              중복·공백 진단
-              <span className="muted" style={{ fontWeight: 400, fontSize: "0.85rem" }}>
-                {" "}— {shortInsurerName(basisPolicy.matched_insurer_code, basisPolicy.matched_insurer_name ?? basisPolicy.insurer_name_raw)} 여행자보험 기준
-              </span>
-            </h2>
-            <OverlapReportView report={overlap} />
-          </div>
-        )}
       </section>
+
+      {/* 진단은 등록 폼과 성격이 다른 결과물이라 섹션을 따로 세운다 — 등록 카드 안에 넣으면
+          "등록하는 중"과 "진단 결과"가 한 덩어리로 읽힌다. */}
+      {overlap && external.length > 0 && basisPolicy && (
+        <section className="ext-section">
+          <h2 className="ext-section__title">중복·공백 진단</h2>
+          <span className="ext-section__basis">
+            {shortInsurerName(basisPolicy.matched_insurer_code, basisPolicy.matched_insurer_name ?? basisPolicy.insurer_name_raw)} 여행자보험 기준
+          </span>
+          <OverlapReportView report={overlap} />
+        </section>
+      )}
 
       <ConfirmDialog
         open={confirmDeleteId !== null}
