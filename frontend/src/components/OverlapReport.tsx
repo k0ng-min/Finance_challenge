@@ -36,25 +36,25 @@ export function OverlapReportView({ report }: { report: OverlapReportOut }) {
       {report.gaps.length > 0 && (
         <section>
           <h3>기존보험으로 커버되지 않아요</h3>
-          {report.gaps.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}`} f={f} />)}
+          {report.gaps.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
         </section>
       )}
       {report.duplicates.length > 0 && (
         <section>
           <h3>겹쳐요 — 두 개 들어도 더 받지 못합니다</h3>
-          {report.duplicates.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}`} f={f} />)}
+          {report.duplicates.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
         </section>
       )}
       {report.fixed_ok.length > 0 && (
         <section>
           <h3>겹치지만 각각 다 받아요</h3>
-          {report.fixed_ok.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}`} f={f} />)}
+          {report.fixed_ok.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
         </section>
       )}
       {report.unknown.length > 0 && (
         <section>
           <h3>확인불가</h3>
-          {report.unknown.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}`} f={f} />)}
+          {report.unknown.map((f) => <Finding key={`${f.coverage_std_code}-${f.scope}-${f.external_kind}`} f={f} />)}
         </section>
       )}
     </>
