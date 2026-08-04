@@ -3,6 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.analysis import AnalysisFinding, AnalysisRun, FindingEvidenceLink, ValidationResult
+from app.models.external import ExternalCoverage, ExternalPolicy
 from app.models.question import UserQuestionLog
 from app.models.user import AppUser, Evidence, Incident, Trip, UserPolicy, UserCoverage
 
@@ -58,6 +59,20 @@ def wipe_user_data(db: Session, user_id: int):
     if policy_ids:
         db.query(UserCoverage).filter(UserCoverage.user_policy_id.in_(policy_ids)).delete(synchronize_session=False)
         db.query(UserPolicy).filter(UserPolicy.user_policy_id.in_(policy_ids)).delete(synchronize_session=False)
+    # 기존보험(이번 여행자보험이 아니라 사용자가 밖에서 이미 든 보험)도 같이 지운다.
+    # user_id는 AUTOINCREMENT가 아니라 탈퇴 후 rowid가 재사용될 수 있어, 여기서 안 지우면
+    # 다음에 그 user_id를 받는 신규 사용자가 탈퇴자의 기존보험 정보를 그대로 물려받는다.
+    ext_ids = [
+        p.external_policy_id
+        for p in db.query(ExternalPolicy).filter(ExternalPolicy.user_id == user_id).all()
+    ]
+    if ext_ids:
+        db.query(ExternalCoverage).filter(
+            ExternalCoverage.external_policy_id.in_(ext_ids)
+        ).delete(synchronize_session=False)
+        db.query(ExternalPolicy).filter(
+            ExternalPolicy.external_policy_id.in_(ext_ids)
+        ).delete(synchronize_session=False)
 
 
 def delete_user_cascade(db: Session, user: AppUser):

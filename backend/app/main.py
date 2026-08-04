@@ -66,6 +66,9 @@ _add_missing_columns("incident_type", {
 _add_missing_columns("question_bank", {
     "applies_to_l1": "ALTER TABLE question_bank ADD COLUMN applies_to_l1 VARCHAR",
 })
+_add_missing_columns("overlap_rule", {
+    "anchor_phrase": "ALTER TABLE overlap_rule ADD COLUMN anchor_phrase VARCHAR",
+})
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 

@@ -39,12 +39,31 @@ class OverlapReport:
     unknown: list[OverlapFinding] = field(default_factory=list)
 
 
-def _quote(clause: Clause | None) -> str | None:
-    """조항 원문 앞부분을 인용용으로 자른다. 자르기만 하므로 결과는 항상 원문의 부분 문자열이다."""
+def _quote(clause: Clause | None, anchor_phrase: str | None = None) -> str | None:
+    """조항 원문을 인용용으로 자른다. 자르기만 하므로 결과는 항상 원문의 부분 문자열이고
+    말줄임표는 붙이지 않는다.
+
+    note가 근거로 삼는 문구(anchor_phrase)가 조항 뒷부분에 있으면, 앞에서부터 무조건
+    자르는 방식은 그 문구를 통째로 잘라버려 "인용은 있는데 근거는 없는" 상태가 된다.
+    anchor_phrase가 주어지면 그 문구를 포함하는 창(window)을 대신 잘라낸다.
+    """
     if clause is None or not clause.text:
         return None
     text = clause.text.strip()
-    return text[:_QUOTE_LIMIT] if len(text) > _QUOTE_LIMIT else text
+    if len(text) <= _QUOTE_LIMIT:
+        return text
+
+    if anchor_phrase:
+        idx = text.find(anchor_phrase)
+        if idx != -1:
+            anchor_len = len(anchor_phrase)
+            # anchor가 창 안에서 가운데쯤 오도록 시작점을 잡되, 텍스트 경계를 넘지 않게 보정한다.
+            start = max(0, idx - (_QUOTE_LIMIT - anchor_len) // 2)
+            end = min(len(text), start + _QUOTE_LIMIT)
+            start = max(0, end - _QUOTE_LIMIT)
+            return text[start:end]
+
+    return text[:_QUOTE_LIMIT]
 
 
 def diagnose(
@@ -59,6 +78,10 @@ def diagnose(
         return report
 
     kinds = {p.kind for p in external_policies}
+    # 'ANY'는 "어떤 기존보험을 갖고 있든" 매칭되는 규칙용 센티널이다(예: 여권분실·항공기납치 —
+    # 기존보험 종류와 무관하게 다른 계약과의 비례분담·중복 규정이 적용된다). 사용자가 실제로
+    # 고른 종류만으로 필터하면 이런 규칙이 "그 외"를 명시적으로 고른 사람에게만 보이게 된다.
+    lookup_kinds = kinds | {"ANY"}
 
     stds = {
         s.coverage_std_id: s
@@ -68,7 +91,7 @@ def diagnose(
     }
     rules = (
         db.query(OverlapRule)
-        .filter(OverlapRule.external_kind.in_(kinds))
+        .filter(OverlapRule.external_kind.in_(lookup_kinds))
         .filter(OverlapRule.coverage_std_id.in_(target_coverage_std_ids))
         .all()
     )
@@ -96,7 +119,7 @@ def diagnose(
             note=rule.note,
             clause_id=rule.clause_id,
             clause_article_no=clause.article_no if clause else None,
-            clause_quote=_quote(clause),
+            clause_quote=_quote(clause, rule.anchor_phrase),
         )
         if rule.relation in ("DUPLICATE_PRORATA", "PARTIAL"):
             report.duplicates.append(finding)

@@ -73,6 +73,10 @@ class OverlapRule(Base):
     # UNKNOWN이 아니면 반드시 있어야 한다(seed_overlap_rules.py가 검증한다).
     clause_id = Column(Integer, ForeignKey("clause.clause_id"), nullable=True)
     note = Column(Text)
+    # note가 근거로 삼는 조항 원문 속 핵심 문구. clause.text가 _QUOTE_LIMIT보다 길 때
+    # _quote()가 이 문구를 포함하는 창(window)을 잘라내는 데 쓴다 — 없으면 이 문구가 조항
+    # 뒷부분에 있을 경우 인용문에서 잘려나가 "형식만 근거, 실질은 없는" 상태가 될 수 있다.
+    anchor_phrase = Column(String, nullable=True)
 
     coverage_std = relationship("CoverageStd")
     clause = relationship("Clause")
