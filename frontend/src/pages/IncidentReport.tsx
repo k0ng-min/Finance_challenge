@@ -156,8 +156,10 @@ export function IncidentReport() {
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
+      // 결과값을 쓰지 않고 에러도 버리므로 await할 이유가 없다. 사고 등록은 이미 끝났고,
+      // 이 저장을 기다리느라 화면 전환이 늦어지면 "흐름을 막지 않는다"는 의도와 어긋난다.
       if (picked.length > 0) {
-        await api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
+        api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
       }
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {

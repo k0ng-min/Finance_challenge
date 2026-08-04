@@ -96,10 +96,11 @@ export function TripPrep() {
       });
       setResult(res);
       setTripId(res.trip_id);
-      // 기존보험을 골랐으면 같이 저장한다. 여행 생성은 이미 끝났으므로 이 저장이 실패해도
-      // 흐름을 막지 않는다 — 기존보험은 나중에 내 보험 화면에서 다시 등록할 수 있다.
+      // 기존보험을 골랐으면 같이 저장한다. 여행 생성은 이미 끝났고 결과값도 쓰지 않으므로
+      // await하지 않는다 — 기다리면 화면 전환이 이 저장 왕복만큼 늦어져 "흐름을 막지 않는다"는
+      // 의도와 어긋난다. 실패해도 기존보험은 나중에 내 보험 화면에서 다시 등록할 수 있다.
       if (picked.length > 0) {
-        await api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
+        api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
       }
     } catch (err) {
       setError(String(err));
