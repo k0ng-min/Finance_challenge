@@ -282,7 +282,7 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--home-pad) clamp(12px, 2.4svh, 20px);
+  padding: var(--home-pad, 14px) clamp(12px, 2.4svh, 20px);
   box-shadow: 0 4px 16px rgba(var(--shadow-tint), 0.08);
   text-align: left;
   font-family: inherit;
@@ -291,15 +291,16 @@ body {
   /* 카드 두 장이 남는 높이를 똑같이 나눠 갖되, 상한(--home-h-card)을 넘겨 늘어나진 않는다. */
   flex: 1 1 0;
   min-height: 0;
-  max-height: var(--home-h-card);
+  max-height: var(--home-h-card, none);
 }
-/* --home-icon-card는 .home에만 정의돼 있다. 내 보험 화면처럼 .home 밖에서 .home-card를 쓰면
-   변수를 못 찾아 width가 auto가 되고 PNG가 원본 크기로 튀어나온다 — 폴백을 반드시 둔다. */
-.home-card .icon3d { width: var(--home-icon-card, 44px) !important; height: var(--home-icon-card, 44px) !important; }
+/* --home-* 변수는 .home에만 정의돼 있다. 내 보험 화면처럼 .home 밖에서 .home-card를 쓰면
+   var()가 무효가 되면서 선언 전체가 날아간다 — padding이 0이 돼 아이콘이 카드를 넘치고,
+   아이콘은 width:auto가 돼 PNG 원본 크기로 튀어나왔다. 전부 폴백을 둔다. */
+.home-card .icon3d { width: var(--home-icon-card, 40px) !important; height: var(--home-icon-card, 40px) !important; }
 .home-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(var(--shadow-tint), 0.16); }
 .home-card__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.home-card__text strong { font-size: var(--home-card-title); color: var(--heading); }
-.home-card__text span { font-size: var(--home-card-desc); color: var(--muted); }
+.home-card__text strong { font-size: var(--home-card-title, 1.02rem); color: var(--heading); }
+.home-card__text span { font-size: var(--home-card-desc, 0.82rem); color: var(--muted); }
 .home-card__arrow { font-size: clamp(1.1rem, 2.4svh, 1.6rem); color: var(--primary); font-weight: 700; }
 
 /* 보조 메뉴 — 아이콘 + 라벨만, 설명 없이 컴팩트하게 */
@@ -1318,6 +1319,10 @@ button { cursor: pointer; font-family: inherit; }
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
+  /* 폭 제한이 없으면 넓은 화면에서 타일이 300px 넘게 벌어져 로고만 덩그러니 작아 보인다.
+     타일을 140px 안팎으로 묶고 가운데 정렬해서 어느 폭에서나 같은 비율로 보이게 한다. */
+  max-width: 440px;
+  margin-inline: auto;
 }
 .insurer-card {
   position: relative;
@@ -1355,7 +1360,7 @@ button { cursor: pointer; font-family: inherit; }
 .insurer-card__logo {
   width: 100%;
   /* 타일 폭에 100%로 따라가면 3열에서 타일이 넓어질 때 로고만 거대해진다 — 상한을 둔다. */
-  max-width: 76px;
+  max-width: 84px;
   margin-inline: auto;
   aspect-ratio: 1;
   border-radius: 24%;
@@ -1578,7 +1583,9 @@ button { cursor: pointer; font-family: inherit; }
     padding-top: 0;
     padding-bottom: clamp(10px, 2cqh, 26px);
   }
-  .home-card { gap: clamp(12px, 2.2cqh, 22px); padding: var(--home-pad) clamp(16px, 2.8cqh, 26px); }
+  /* 이 규칙은 위 기본 정의보다 나중에 나와 같은 우선순위에서 이긴다 — 여기에도 폴백이 없으면
+     .home 밖(내 보험 화면)에서 padding이 통째로 0이 돼 아이콘이 카드를 넘친다. */
+  .home-card { gap: clamp(12px, 2.2cqh, 22px); padding: var(--home-pad, 16px) clamp(16px, 2.8cqh, 26px); }
   .home-card__arrow { font-size: clamp(1.3rem, 2.8cqh, 1.9rem); }
   .home-quick { gap: clamp(4px, 0.9cqh, 10px); }
   .home__subtitle { max-width: 46ch; }
