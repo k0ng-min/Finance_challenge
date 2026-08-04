@@ -1,0 +1,86 @@
+import { useState } from "react";
+import type { ExternalPolicyKind } from "../api";
+import { InsurerPicker } from "./InsurerPicker";
+
+/** 기존보험 선택 UI. 내 보험·여행 준비·사고 접수 세 화면이 같이 쓴다. */
+
+export const KIND_LABELS: Record<ExternalPolicyKind, string> = {
+  MEDICAL_INDEMNITY: "실손의료비(실비)",
+  ACCIDENT: "상해보험",
+  DAILY_LIABILITY: "일상생활배상책임",
+  DRIVER: "운전자보험",
+  OTHER: "그 외",
+};
+
+export interface PickedPolicy {
+  kind: ExternalPolicyKind;
+  insurer_name_raw?: string | null;
+  enrolled_ym?: string | null;
+}
+
+export function ExternalPolicyPicker({
+  value, onChange,
+}: {
+  value: PickedPolicy[];
+  onChange: (next: PickedPolicy[]) => void;
+}) {
+  const [insurer, setInsurer] = useState("");
+
+  function toggle(kind: ExternalPolicyKind) {
+    const exists = value.find((v) => v.kind === kind);
+    if (exists) {
+      onChange(value.filter((v) => v.kind !== kind));
+    } else {
+      onChange([...value, { kind, insurer_name_raw: insurer || null, enrolled_ym: null }]);
+    }
+  }
+
+  function setYm(kind: ExternalPolicyKind, ym: string) {
+    onChange(value.map((v) => (v.kind === kind ? { ...v, enrolled_ym: ym || null } : v)));
+  }
+
+  const indemnity = value.find((v) => v.kind === "MEDICAL_INDEMNITY");
+
+  return (
+    <>
+      <p className="muted" style={{ fontSize: "0.85rem" }}>
+        이미 들고 계신 보험을 골라주세요. 겹치는 담보와 비는 담보를 약관 근거와 함께 알려드려요.
+      </p>
+      {/* 이 프로젝트에는 .chip 클래스가 없다 — PremiumCalc.tsx의 보험사 토글칩과 같은
+          .calc-chips / .premium-chip(--on) 조합을 재사용한다. */}
+      <div className="calc-chips">
+        {(Object.keys(KIND_LABELS) as ExternalPolicyKind[]).map((kind) => {
+          const on = value.some((v) => v.kind === kind);
+          return (
+            <button
+              key={kind}
+              type="button"
+              className={`premium-chip${on ? " premium-chip--on" : ""}`}
+              onClick={() => toggle(kind)}
+            >
+              {KIND_LABELS[kind]}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 실손만 가입시기를 묻는다 — 실손은 2009년 표준화 이후 보장구조가 보험사별로 같아서
+          가입시기 하나로 세대(1~4세대)가 정해지고, 세대가 보장구조를 결정한다. */}
+      {indemnity && (
+        <label style={{ marginTop: 16, display: "block" }}>
+          실손 가입시기 (모르면 비워두세요)
+          <input
+            type="month"
+            value={indemnity.enrolled_ym ?? ""}
+            onChange={(e) => setYm("MEDICAL_INDEMNITY", e.target.value)}
+          />
+        </label>
+      )}
+
+      <label style={{ marginTop: 16, display: "block" }}>
+        보험사 (모르면 비워두세요)
+        <InsurerPicker value={insurer} onChange={setInsurer} />
+      </label>
+    </>
+  );
+}

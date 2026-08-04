@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, type UserPolicyOut } from "../api";
+import { api, type UserPolicyOut, type ExternalPolicyOut, type OverlapReportOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
@@ -8,6 +8,8 @@ import { Icon3D } from "../components/Icon3D";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { DateTimeField } from "../components/DateTimeField";
+import { ExternalPolicyPicker, KIND_LABELS, type PickedPolicy } from "../components/ExternalPolicyPicker";
+import { OverlapReportView } from "../components/OverlapReport";
 import { INSURERS, shortInsurerName } from "../data/insurers";
 import { motion } from "framer-motion";
 import { usePager, PagerNav } from "../components/Pager";
@@ -93,11 +95,19 @@ export function MyPolicies() {
   // 담보 표가 길어서 카드마다 다 펼쳐두면 화면이 너무 길어진다 — 기본은 접어두고
   // 보험 카드를 누르면 그 카드만 펼쳐서 담보 표를 보여준다.
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [external, setExternal] = useState<ExternalPolicyOut[]>([]);
+  const [picking, setPicking] = useState(false);
+  const [picked, setPicked] = useState<PickedPolicy[]>([]);
+  const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
 
   async function refresh() {
     if (!userId || !isLoggedIn) return;
     const list = await api.listPolicies(userId);
     setPolicies(list);
+    setExternal(await api.listExternalPolicies(userId));
+    if (list.length > 0) {
+      setOverlap(await api.getCoverageOverlap(userId, { userPolicyId: list[0].user_policy_id }));
+    }
   }
 
   useEffect(() => {
@@ -148,6 +158,28 @@ export function MyPolicies() {
     if (!userId) return;
     await api.deletePolicy(userId, policyId);
     setConfirmDeleteId(null);
+    await refresh();
+  }
+
+  async function handleLinkExternal() {
+    if (!userId || picked.length === 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await api.linkExternalPolicies(userId, { provider: "manual", items: picked });
+      setPicked([]);
+      setPicking(false);
+      await refresh();
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeleteExternal(id: number) {
+    if (!userId) return;
+    await api.deleteExternalPolicy(userId, id);
     await refresh();
   }
 
@@ -272,6 +304,52 @@ export function MyPolicies() {
           onDelete={() => setConfirmDeleteId(p.user_policy_id)}
         />
       ))}
+
+      <section style={{ marginTop: 28 }}>
+        <h2 style={{ fontSize: "1.05rem" }}>기존에 들고 계신 보험</h2>
+        <p className="page-desc">
+          실손·상해·일상생활배상책임 같은 기존보험을 등록하면, 이번 여행자보험과 겹치는 담보와
+          비는 담보를 약관 원문 근거와 함께 알려드려요.
+        </p>
+
+        {external.map((e) => (
+          <div className="card" key={e.external_policy_id} style={{ marginBottom: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <strong>{KIND_LABELS[e.kind]}</strong>
+              <button type="button" className="history-card__delete" title="삭제"
+                onClick={() => handleDeleteExternal(e.external_policy_id)}>🗑</button>
+            </div>
+            <div className="muted" style={{ fontSize: "0.85rem" }}>
+              {e.insurer_name_raw ?? "보험사 미상"}
+              {e.indemnity_gen ? ` · ${e.indemnity_gen}세대 실손` : ""}
+              {e.enrolled_ym ? ` · ${e.enrolled_ym} 가입` : ""}
+            </div>
+          </div>
+        ))}
+
+        {picking ? (
+          <div className="card">
+            <ExternalPolicyPicker value={picked} onChange={setPicked} />
+            {error && <div className="error-box">{error}</div>}
+            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+              <button type="button" className="btn-primary" disabled={picked.length === 0 || loading}
+                onClick={handleLinkExternal}>등록</button>
+              <button type="button" onClick={() => { setPicking(false); setPicked([]); }}>취소</button>
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="btn-primary" onClick={() => setPicking(true)}>
+            기존보험 등록하기
+          </button>
+        )}
+
+        {overlap && external.length > 0 && (
+          <div style={{ marginTop: 24 }}>
+            <h2 style={{ fontSize: "1.05rem" }}>중복·공백 진단</h2>
+            <OverlapReportView report={overlap} />
+          </div>
+        )}
+      </section>
 
       <ConfirmDialog
         open={confirmDeleteId !== null}

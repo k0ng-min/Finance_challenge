@@ -281,6 +281,44 @@ export interface IncidentSummaryOut {
   linked_insurer_name: string | null;
 }
 
+export type ExternalPolicyKind =
+  | "MEDICAL_INDEMNITY" | "ACCIDENT" | "DAILY_LIABILITY" | "DRIVER" | "OTHER";
+
+export interface ExternalPolicyOut {
+  external_policy_id: number;
+  source: string;
+  kind: ExternalPolicyKind;
+  insurer_name_raw: string | null;
+  product_name_raw: string | null;
+  enrolled_ym: string | null;
+  indemnity_gen: number | null;
+  coverages: { external_coverage_id: number; raw_name: string | null; subscribed_amount: string | null; amount_source: string }[];
+}
+
+export interface ProviderOut {
+  name: string;
+  requires_login: boolean;
+}
+
+export interface OverlapFindingOut {
+  coverage_std_code: string;
+  coverage_std_name: string;
+  external_kind: string;
+  scope: string;
+  relation: "NO_OVERLAP" | "DUPLICATE_PRORATA" | "DUPLICATE_FIXED" | "PARTIAL" | "UNKNOWN";
+  note: string | null;
+  clause_id: number | null;
+  clause_article_no: string | null;
+  clause_quote: string | null;
+}
+
+export interface OverlapReportOut {
+  duplicates: OverlapFindingOut[];
+  gaps: OverlapFindingOut[];
+  fixed_ok: OverlapFindingOut[];
+  unknown: OverlapFindingOut[];
+}
+
 export const api = {
   createUser: (nickname: string) =>
     request<UserOut>("/users", { method: "POST", body: JSON.stringify({ nickname }) }),
@@ -409,4 +447,29 @@ export const api = {
     request<AuthUserOut>("/auth/sex", { method: "PATCH", body: JSON.stringify({ sex }) }),
 
   deleteAccount: () => request<{ status: string }>("/auth/me", { method: "DELETE" }),
+
+  listProviders: (userId: number) =>
+    request<ProviderOut[]>(`/users/${userId}/external-policies/providers`),
+
+  listExternalPolicies: (userId: number) =>
+    request<ExternalPolicyOut[]>(`/users/${userId}/external-policies`),
+
+  linkExternalPolicies: (
+    userId: number,
+    body: { provider: string; items: { kind: string; insurer_name_raw?: string | null; enrolled_ym?: string | null }[] },
+  ) =>
+    request<ExternalPolicyOut[]>(`/users/${userId}/external-policies/link`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  deleteExternalPolicy: (userId: number, id: number) =>
+    request<{ status: string }>(`/users/${userId}/external-policies/${id}`, { method: "DELETE" }),
+
+  getCoverageOverlap: (userId: number, params: { tripId?: number; userPolicyId?: number }) => {
+    const q = new URLSearchParams();
+    if (params.tripId) q.set("trip_id", String(params.tripId));
+    if (params.userPolicyId) q.set("user_policy_id", String(params.userPolicyId));
+    return request<OverlapReportOut>(`/users/${userId}/coverage-overlap?${q.toString()}`);
+  },
 };
