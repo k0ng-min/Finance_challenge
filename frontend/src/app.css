@@ -293,7 +293,9 @@ body {
   min-height: 0;
   max-height: var(--home-h-card);
 }
-.home-card .icon3d { width: var(--home-icon-card) !important; height: var(--home-icon-card) !important; }
+/* --home-icon-card는 .home에만 정의돼 있다. 내 보험 화면처럼 .home 밖에서 .home-card를 쓰면
+   변수를 못 찾아 width가 auto가 되고 PNG가 원본 크기로 튀어나온다 — 폴백을 반드시 둔다. */
+.home-card .icon3d { width: var(--home-icon-card, 44px) !important; height: var(--home-icon-card, 44px) !important; }
 .home-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(var(--shadow-tint), 0.16); }
 .home-card__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .home-card__text strong { font-size: var(--home-card-title); color: var(--heading); }
@@ -1352,6 +1354,9 @@ button { cursor: pointer; font-family: inherit; }
    아이콘 아트워크 자체를 제외한 모든 면적의 색을 카드 톤으로 통일한다 (별도의 흰 박스가 보이지 않도록 테두리 없음) */
 .insurer-card__logo {
   width: 100%;
+  /* 타일 폭에 100%로 따라가면 3열에서 타일이 넓어질 때 로고만 거대해진다 — 상한을 둔다. */
+  max-width: 76px;
+  margin-inline: auto;
   aspect-ratio: 1;
   border-radius: 24%;
   display: flex;
