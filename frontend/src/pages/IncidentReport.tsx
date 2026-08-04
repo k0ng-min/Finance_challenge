@@ -11,6 +11,7 @@ import { DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { PickerField } from "../components/PickerField";
+import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { INSURERS } from "../data/insurers";
 import { COUNTRIES } from "../data/countries";
 
@@ -39,6 +40,7 @@ export function IncidentReport() {
   const resumeIncidentId = resultOfParam ? Number(resultOfParam) : null;
   const [phase, setPhase] = useState<"intro" | "questions" | "result">("intro");
   const [introStep, setIntroStep] = useState(0);
+  const [picked, setPicked] = useState<PickedPolicy[]>([]);
   const [freeText, setFreeText] = useState("");
   const [occurredAt, setOccurredAt] = useState("");
   const [loading, setLoading] = useState(false);
@@ -154,6 +156,9 @@ export function IncidentReport() {
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
+      if (picked.length > 0) {
+        await api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
+      }
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
       setError(String(err));
@@ -308,6 +313,13 @@ export function IncidentReport() {
         </>
       ),
       canNext: isLoggedIn ? (policies.length === 0 || selectedPolicyId !== null) : !!insurerCode,
+    },
+    {
+      icon: "umbrella",
+      eyebrow: "선택 · 기존보험",
+      title: "이미 들고 계신\n보험이 있나요?",
+      content: <ExternalPolicyPicker value={picked} onChange={setPicked} />,
+      canNext: true,
     },
     {
       icon: "chat-bubble",

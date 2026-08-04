@@ -8,6 +8,7 @@ import { InsurerRankingFlow } from "../components/InsurerRankingFlow";
 import { DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { PickerField } from "../components/PickerField";
+import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { COUNTRIES } from "../data/countries";
 
 /** "YYYY-MM-DD"에 하루를 더한 문자열을 준다 — 종료일이 시작일 다음 날부터 고를 수 있게 하는 데 쓴다. */
@@ -23,6 +24,8 @@ const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "�
 
 export function TripPrep() {
   const { userId, setTripId, age: profileAge, updateAge, sex: profileSex, updateSex } = useApp();
+  // 기존보험은 선택 항목이다 — 건너뛰어도 여행 준비는 끝까지 진행된다.
+  const [picked, setPicked] = useState<PickedPolicy[]>([]);
   const [searchParams] = useSearchParams();
   const resumeTripId = Number(searchParams.get("resultOf")) || null;
   const [step, setStep] = useState(0);
@@ -93,6 +96,11 @@ export function TripPrep() {
       });
       setResult(res);
       setTripId(res.trip_id);
+      // 기존보험을 골랐으면 같이 저장한다. 여행 생성은 이미 끝났으므로 이 저장이 실패해도
+      // 흐름을 막지 않는다 — 기존보험은 나중에 내 보험 화면에서 다시 등록할 수 있다.
+      if (picked.length > 0) {
+        await api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
+      }
     } catch (err) {
       setError(String(err));
     } finally {
@@ -310,8 +318,15 @@ export function TripPrep() {
       canNext: !!tier,
     },
     {
+      icon: "umbrella",
+      eyebrow: "STEP 6 · 기존보험",
+      title: "이미 들고 계신\n보험이 있나요?",
+      content: <ExternalPolicyPicker value={picked} onChange={setPicked} />,
+      canNext: true,  // 선택 항목이라 아무것도 안 골라도 넘어간다
+    },
+    {
       icon: "tick",
-      eyebrow: "STEP 6 · 확인",
+      eyebrow: "STEP 7 · 확인",
       title: "이대로 분석해\n드릴까요?",
       subtitle: "6개 보험사의 실제 약관 근거와 함께 맞춤 보장을 비교해 드려요.",
       content: (
