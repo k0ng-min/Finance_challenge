@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut } from "../api";
+import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut, type OverlapReportOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { PageHero } from "./PageHero";
 import { InsurerIncidentClauses } from "./InsurerIncidentClauses";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
+import { OverlapReportView } from "./OverlapReport";
 
 type Phase = "tier" | "ranking" | "detail";
 
 export function InsurerRankingFlow({
-  result, initialTier,
+  result, initialTier, hasExternalPolicies, externalPoliciesReady,
 }: {
   result: RecommendationOut;
   /** 여행 준비 스텝에서 이미 보장유형을 골라온 경우 — 여기서 다시 고르지 않고 바로 순위로 간다. */
   initialTier?: string | null;
+  /** 이번 여행 준비에서 기존보험을 하나라도 골랐는지. 안 골랐으면 진단을 아예 조회하지
+   * 않는다(빈 결과만 오므로). */
+  hasExternalPolicies?: boolean;
+  /** 기존보험 저장(linkExternalPolicies)의 완료를 기다리는 Promise. 저장이 fire-and-forget이라
+   * 진단을 저장 직후 곧바로 조회하면 경합이 날 수 있어, 조회 전에 이 Promise를 먼저 기다린다. */
+  externalPoliciesReady?: Promise<unknown>;
 }) {
   const navigate = useNavigate();
   const { userId, isLoggedIn, age, sex } = useApp();
@@ -29,6 +36,7 @@ export function InsurerRankingFlow({
   const [selected, setSelected] = useState<InsurerRankOut | null>(null);
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
 
   useEffect(() => {
     api.getInsurerTiers().then(setTiers).catch(() => {});
@@ -98,6 +106,21 @@ export function InsurerRankingFlow({
       setRegistering(false);
     }
   }
+
+  // 이 여행에 실제로 보험을 등록한 뒤에만 진단을 조회한다 — coverage-overlap API는
+  // trip.user_policy_id(방금 등록한 보험)로 검토 대상 담보를 정하는데, 등록 전에는 그게
+  // 비어 있어 어차피 빈 결과만 온다. 기존보험을 하나도 안 골랐으면 호출 자체를 건너뛴다.
+  // 기존보험 저장이 fire-and-forget이라 저장 완료를 기다렸다가(externalPoliciesReady) 조회한다.
+  useEffect(() => {
+    if (!registered || !hasExternalPolicies || !userId) return;
+    let cancelled = false;
+    Promise.resolve(externalPoliciesReady)
+      .then(() => api.getCoverageOverlap(userId, { tripId: result.trip_id }))
+      .then((r) => { if (!cancelled) setOverlap(r); })
+      .catch(() => { if (!cancelled) setOverlap(null); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [registered, hasExternalPolicies, userId]);
 
   if (phase === "tier") {
     if (loading) {
@@ -266,6 +289,12 @@ export function InsurerRankingFlow({
             내 보험 보관함에서 확인하기
           </button>
         </div>
+      )}
+      {registered && overlap && (
+        <section style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: "1.05rem" }}>기존보험과 겹치거나 비는 담보</h2>
+          <OverlapReportView report={overlap} />
+        </section>
       )}
     </div>
   );

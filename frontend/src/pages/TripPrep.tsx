@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, type RecommendationOut, type InsurerTierOut, type IncidentTypeOut } from "../api";
 import { useApp } from "../context/AppContext";
@@ -48,6 +48,11 @@ export function TripPrep() {
   // 단, 계정의 "내 여행 기록"에서 특정 여행을 선택해 들어온 경우(?resultOf=)에는 그 결과를 바로 보여준다.
   const [result, setResult] = useState<RecommendationOut | null>(null);
   const [resuming, setResuming] = useState(!!resumeTripId);
+  // 기존보험 저장(linkExternalPolicies)은 fire-and-forget이라 언제 끝나는지 알 수 없다.
+  // InsurerRankingFlow가 이 여행에 실제 보험을 등록한 뒤 진단을 조회할 때, 이 Promise를
+  // 먼저 기다리게 해서 "아직 저장 안 된 기존보험" 때문에 진단이 비어 보이는 경합을 막는다.
+  const externalLinkReadyRef = useRef<Promise<unknown>>(Promise.resolve());
+  const [hasPickedExternal, setHasPickedExternal] = useState(false);
 
   useEffect(() => {
     if (!resumeTripId) return;
@@ -99,8 +104,15 @@ export function TripPrep() {
       // 기존보험을 골랐으면 같이 저장한다. 여행 생성은 이미 끝났고 결과값도 쓰지 않으므로
       // await하지 않는다 — 기다리면 화면 전환이 이 저장 왕복만큼 늦어져 "흐름을 막지 않는다"는
       // 의도와 어긋난다. 실패해도 기존보험은 나중에 내 보험 화면에서 다시 등록할 수 있다.
+      // Promise는 남겨둔다 — InsurerRankingFlow가 보험사를 등록한 뒤 중복·공백 진단을
+      // 조회하기 전에 이 저장이 끝났는지 기다리는 데 쓴다.
       if (picked.length > 0) {
-        api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
+        externalLinkReadyRef.current = api
+          .linkExternalPolicies(userId, { provider: "manual", items: picked })
+          .catch(() => {});
+        setHasPickedExternal(true);
+      } else {
+        setHasPickedExternal(false);
       }
     } catch (err) {
       setError(String(err));
@@ -138,7 +150,12 @@ export function TripPrep() {
     return (
       <div className="page">
         <TopBar title="맞춤 보험 순위" />
-        <InsurerRankingFlow result={result} initialTier={tier} />
+        <InsurerRankingFlow
+          result={result}
+          initialTier={tier}
+          hasExternalPolicies={hasPickedExternal}
+          externalPoliciesReady={externalLinkReadyRef.current}
+        />
       </div>
     );
   }

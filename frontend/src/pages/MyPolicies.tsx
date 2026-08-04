@@ -105,15 +105,40 @@ export function MyPolicies() {
     const list = await api.listPolicies(userId);
     setPolicies(list);
     setExternal(await api.listExternalPolicies(userId));
-    if (list.length > 0) {
-      setOverlap(await api.getCoverageOverlap(userId, { userPolicyId: list[0].user_policy_id }));
-    }
   }
 
   useEffect(() => {
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, isLoggedIn]);
+
+  // 진단 기준 보험: 사용자가 카드를 펼쳤으면 그 보험 기준으로, 아니면 가장 최근에 등록한
+  // 보험 기준으로 본다. list_policies에는 ORDER BY가 없어 목록 순서가 등록 순서를
+  // 보장하지 않으므로, 여기서 user_policy_id가 가장 큰(가장 나중에 등록된) 보험을 직접 고른다
+  // — 예전에는 항상 list[0](가장 먼저 등록한 보험) 기준으로 진단해서, 이번 여행용으로 새
+  // 보험을 등록해도 옛 보험 기준 결과가 나오는 문제가 있었다.
+  const basisPolicy =
+    policies.length === 0
+      ? null
+      : (expandedId != null && policies.find((p) => p.user_policy_id === expandedId)) ||
+        policies.reduce((latest, p) => (p.user_policy_id > latest.user_policy_id ? p : latest), policies[0]);
+
+  useEffect(() => {
+    if (!userId || !basisPolicy) {
+      // 보험이 하나도 없으면(전부 삭제 등) 낡은 진단 결과가 화면에 남지 않게 한다.
+      setOverlap(null);
+      return;
+    }
+    let cancelled = false;
+    api.getCoverageOverlap(userId, { userPolicyId: basisPolicy.user_policy_id })
+      .then((r) => { if (!cancelled) setOverlap(r); })
+      .catch(() => { if (!cancelled) setOverlap(null); });
+    return () => { cancelled = true; };
+    // external도 의존성에 넣는다 — 기존보험을 새로 등록/삭제해도(user_policy는 그대로여도)
+    // 진단 대상이 바뀌므로 다시 조회해야 한다. refresh()가 매번 새 배열을 만들어 넘기므로
+    // 참조 비교로 충분히 재실행된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, basisPolicy?.user_policy_id, external]);
 
   // 프로필에 저장된 나이를 자동으로 채워준다 — 이미 다른 화면에서 한 번 입력했다면 여기서도 다시 안 물어봄.
   useEffect(() => {
@@ -343,9 +368,14 @@ export function MyPolicies() {
           </button>
         )}
 
-        {overlap && external.length > 0 && (
+        {overlap && external.length > 0 && basisPolicy && (
           <div style={{ marginTop: 24 }}>
-            <h2 style={{ fontSize: "1.05rem" }}>중복·공백 진단</h2>
+            <h2 style={{ fontSize: "1.05rem" }}>
+              중복·공백 진단
+              <span className="muted" style={{ fontWeight: 400, fontSize: "0.85rem" }}>
+                {" "}— {shortInsurerName(basisPolicy.matched_insurer_code, basisPolicy.matched_insurer_name ?? basisPolicy.insurer_name_raw)} 여행자보험 기준
+              </span>
+            </h2>
             <OverlapReportView report={overlap} />
           </div>
         )}

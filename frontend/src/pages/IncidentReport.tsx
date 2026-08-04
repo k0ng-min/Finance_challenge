@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut } from "../api";
+import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut, type OverlapReportOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { shortInsurerName } from "../data/insurers";
 import { TopBar } from "../components/TopBar";
@@ -12,6 +12,7 @@ import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { PickerField } from "../components/PickerField";
 import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
+import { OverlapReportView } from "../components/OverlapReport";
 import { INSURERS } from "../data/insurers";
 import { COUNTRIES } from "../data/countries";
 
@@ -62,6 +63,13 @@ export function IncidentReport() {
   // 연결할 여행이 없을 때 여기서 여행도 같이 등록한다 — 사고만 덩그러니 남지 않게.
   const [newTripStart, setNewTripStart] = useState("");
   const [newTripEnd, setNewTripEnd] = useState("");
+  // 이번 접수에서 기존보험을 골랐을 때만 중복·공백 진단을 시도한다(안 골랐으면 빈 결과만
+  // 온다). linkExternalPolicies는 fire-and-forget이라 저장이 실제로 끝났는지 알 수 없는데,
+  // 진단은 그 저장이 끝난 뒤 DB에서 다시 읽어야 의미가 있다 — 그래서 그 Promise를 들고
+  // 있다가 진단 조회 직전에 기다린다(핸들러 자체는 여전히 안 기다리고 화면을 바로 넘긴다).
+  const [hasPickedExternal, setHasPickedExternal] = useState(false);
+  const externalLinkReadyRef = useRef<Promise<unknown>>(Promise.resolve());
+  const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
 
   // 한 번 입력한 나이·성별은 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
   useEffect(() => {
@@ -91,6 +99,19 @@ export function IncidentReport() {
   }, [userId]);
 
   const selectedTrip = trips.find((t) => t.trip_id === selectedTripId) ?? null;
+
+  // 결과 화면에 진입했고, 이번에 기존보험을 골랐을 때만 중복·공백 진단을 조회한다.
+  // (기존보험 저장을 기다렸다가 조회 — 위 externalLinkReadyRef 주석 참고.)
+  useEffect(() => {
+    if (phase !== "result" || !analysis || !userId || !hasPickedExternal || !analysis.trip_id) return;
+    let cancelled = false;
+    externalLinkReadyRef.current
+      .then(() => api.getCoverageOverlap(userId, { tripId: analysis.trip_id! }))
+      .then((r) => { if (!cancelled) setOverlap(r); })
+      .catch(() => { if (!cancelled) setOverlap(null); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, analysis?.incident_id, hasPickedExternal, userId]);
 
   // ?resultOf=<id>로 명시적으로 지정된 경우에만 과거 사고 접수 결과를 불러온다.
   // (context의 incidentId를 그대로 fallback으로 쓰면, 로그인 상태에서 이전에 접수한
@@ -156,10 +177,18 @@ export function IncidentReport() {
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
-      // 결과값을 쓰지 않고 에러도 버리므로 await할 이유가 없다. 사고 등록은 이미 끝났고,
-      // 이 저장을 기다리느라 화면 전환이 늦어지면 "흐름을 막지 않는다"는 의도와 어긋난다.
+      // 결과값을 쓰지 않고 에러도 버리므로 화면 전환 자체는 이 저장을 기다리지 않는다 —
+      // 사고 등록은 이미 끝났고, 여기서 기다리면 "흐름을 막지 않는다"는 의도와 어긋난다.
+      // 다만 진단(overlap) 조회는 이 저장이 끝난 뒤에만 의미가 있으므로, Promise를 남겨뒀다가
+      // 결과 화면에 진입할 때 그 Promise를 기다린 뒤에 조회한다(아래 useEffect 참고).
       if (picked.length > 0) {
-        api.linkExternalPolicies(userId, { provider: "manual", items: picked }).catch(() => {});
+        externalLinkReadyRef.current = api
+          .linkExternalPolicies(userId, { provider: "manual", items: picked })
+          .catch(() => {});
+        setHasPickedExternal(true);
+      } else {
+        setHasPickedExternal(false);
+        setOverlap(null);
       }
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
@@ -204,6 +233,12 @@ export function IncidentReport() {
             <p className="muted">등록된 보험 중 이번 사고와 관련된 담보를 찾지 못했습니다.</p>
           )}
           <ResultTabs groups={groups} incidentId={analysis.incident_id} />
+          {overlap && (
+            <section style={{ marginTop: 24 }}>
+              <h2 style={{ fontSize: "1.05rem" }}>기존보험과 겹치거나 비는 담보</h2>
+              <OverlapReportView report={overlap} />
+            </section>
+          )}
           <a
             className="price-link"
             href="https://www.fss.or.kr/fss/job/fncCnflCase/list.do?menuNo=201195"
