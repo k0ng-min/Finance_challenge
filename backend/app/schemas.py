@@ -321,3 +321,64 @@ class InsurerRankOut(BaseModel):
 class InsurerRankingOut(BaseModel):
     tier_code: str
     ranking: list[InsurerRankOut]
+
+
+class ExternalPolicyLinkItem(BaseModel):
+    kind: str
+    insurer_name_raw: Optional[str] = None
+    product_name_raw: Optional[str] = None
+    enrolled_ym: Optional[str] = None
+
+
+class ExternalPolicyLinkRequest(BaseModel):
+    """등록 진입점은 수집 방식과 무관하게 하나다 — 수동입력도 provider='manual'로 들어온다."""
+    provider: str = "manual"
+    items: list[ExternalPolicyLinkItem] = []
+
+
+class ExternalCoverageOut(BaseModel):
+    external_coverage_id: int
+    raw_name: Optional[str] = None
+    subscribed_amount: Optional[str] = None
+    amount_source: str
+
+    class Config:
+        from_attributes = True
+
+
+class ExternalPolicyOut(BaseModel):
+    external_policy_id: int
+    source: str
+    kind: str
+    insurer_name_raw: Optional[str] = None
+    product_name_raw: Optional[str] = None
+    enrolled_ym: Optional[str] = None
+    indemnity_gen: Optional[int] = None
+    coverages: list[ExternalCoverageOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ProviderOut(BaseModel):
+    name: str
+    requires_login: bool
+
+
+class OverlapFindingOut(BaseModel):
+    coverage_std_code: str
+    coverage_std_name: str
+    external_kind: str
+    scope: str
+    relation: str
+    note: Optional[str] = None
+    clause_id: Optional[int] = None
+    clause_article_no: Optional[str] = None
+    clause_quote: Optional[str] = None
+
+
+class OverlapReportOut(BaseModel):
+    duplicates: list[OverlapFindingOut] = []
+    gaps: list[OverlapFindingOut] = []
+    fixed_ok: list[OverlapFindingOut] = []
+    unknown: list[OverlapFindingOut] = []
