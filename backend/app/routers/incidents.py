@@ -46,7 +46,7 @@ def _modifiers_dict(incident: Incident) -> dict:
     return json.loads(incident.modifiers) if incident.modifiers else {}
 
 
-_RECLASSIFY_CONFIDENCE_THRESHOLD = 0.75
+_RECLASSIFY_CONFIDENCE_THRESHOLD = incident_classify.DEFAULT_L2_AUTO_THRESHOLD
 
 
 def _classify_incident(
@@ -67,13 +67,19 @@ def _classify_incident(
     if existing_type_id is not None and (existing_confidence or 0.0) >= _RECLASSIFY_CONFIDENCE_THRESHOLD:
         return existing_type_id, existing_confidence, modifiers
     if existing_type_id is None:
-        l1_code, _l1_conf, _reason = incident_classify.classify_l1(free_text or "")
+        l1_code, l1_confidence, _reason = incident_classify.classify_l1(free_text or "")
         modifiers.update(incident_classify.extract_modifiers(free_text or ""))
     else:
         l1_code = _l1_code_for_type(db, existing_type_id)
+        l1_confidence = existing_confidence or 0.0
 
     if not l1_code:
         return None, None, modifiers
+
+    root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
+    if existing_type_id is None and l1_confidence < incident_classify.DEFAULT_L1_AUTO_THRESHOLD:
+        # L1 신뢰도도 낮으면 L2 호출로 추측을 확대하지 않고, L1 루트에서 질문을 생성한다.
+        return (root.type_id if root else None), l1_confidence, modifiers
 
     answers = {name: str(f.value) for name, f in merged.items() if f.value is not None}
     answers.update({k: str(v) for k, v in modifiers.items() if v})
@@ -81,12 +87,10 @@ def _classify_incident(
     result = incident_classify.classify_l2(db, l1_code, free_text or "", answers)
     if result.l2_code:
         return result.type_id, result.confidence, modifiers
-    if result.new_type_suggested:
-        new_type = incident_classify.create_reviewable_type(db, l1_code, result.new_type_suggested["name"])
-        return new_type.type_id, result.confidence, modifiers
-
-    root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
-    return (root.type_id if root else None), result.confidence, modifiers
+    # 신규 유형 제안도 검수 전에는 사고에 자동 할당하지 않는다. L1 루트에서 질문으로 보강한다.
+    # 보류 상태의 raw confidence가 높아도 '확정된 L2 confidence'가 아니므로 0으로 저장한다.
+    # 그렇지 않으면 다음 답변에서 조기 반환되어 영원히 재분류되지 않는 문제가 생긴다.
+    return (root.type_id if root else None), 0.0, modifiers
 
 
 def _serialize_structured(merged: dict[str, ExtractedField]) -> dict:

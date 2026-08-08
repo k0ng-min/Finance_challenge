@@ -6,14 +6,14 @@ claim_review.py의 담보 판단이 예전엔 키워드 휴리스틱(item_relate
 그 확정을 이 모듈이 담당한다.
 
 절대 규칙(다른 nlu_gemini.py 프롬프트들과 동일한 원칙):
-1. L1은 8개 중에서만 고른다(근거 부족하면 SPC로 보낸다 — 조용히 버리지 않는다).
+1. L1은 8개 중에서만 고른다(근거 부족하면 SPC 루트에서 추가 질문한다).
 2. L2는 해당 L1의 기존 후보 목록 중에서 고르되, 원문에 그 표현이 그대로 없어도 상식적으로
    충분히 그 범주라고 추론되면 골라도 된다("추상적으로 들어갈 수 있는 범위"). 하지만 근거가
    거의 없는데 억지로 끼워맞추면 안 되고, 그럴 땐 new_type_name으로 새 유형을 제안하게 한다
    (SPC_OTHER catch-all 원칙을 8개 L1 전체로 일반화한 것 — incident_type.needs_review=True로
    저장돼 사람이 나중에 검수한다).
-3. Gemini가 비활성화(GEMINI_ENABLED=False)이거나 호출 실패면 예외를 삼키지 않고 상위에서
-   처리하도록 값을 보수적으로 반환한다(L1은 SPC/confidence 0 — 질문에 전부 의존).
+3. Gemini가 비활성화되거나 호출에 실패하거나 신뢰 임계값에 못 미치면 L2를 추측하지 않는다.
+   L1 루트에 보류(abstain)해 후속 질문으로 정보를 보강한다.
 """
 from __future__ import annotations
 
@@ -27,6 +27,11 @@ from app import config
 from app.models.kb import IncidentType
 
 logger = logging.getLogger(__name__)
+
+# confidence는 정확도 확률이 아니라 자동 분류/추가 질문을 가르는 라우팅 신호다.
+# 운영 기본값은 gold dataset 임계값 sweep으로 교체할 수 있도록 함수 인자로 노출한다.
+DEFAULT_L1_AUTO_THRESHOLD = 0.65
+DEFAULT_L2_AUTO_THRESHOLD = 0.70
 
 L1_DESCRIPTIONS: dict[str, str] = {
     "INJ": "상해 — 사고로 인한 신체 부상(골절·열상·화상·사망·후유장해 등). 급격하고 우연한 외부 사고가 원인.",
@@ -69,6 +74,7 @@ class L2ClassifyResult:
     confidence: float
     reason: str
     new_type_suggested: dict | None = None  # {"name": str, "reason": str} — l2_code가 None일 때만
+    abstained: bool = False
 
 
 _L1_PROMPT = """당신은 여행자보험 사고 접수를 돕는 사고유형 분류기입니다.
@@ -110,9 +116,8 @@ _L2_PROMPT = """당신은 여행자보험 사고 접수를 돕는 사고유형 �
    맞는다고 판단되면 l2_code는 null로 두고, new_type_name(간단한 한글 유형명)과
    new_type_reason(왜 기존 후보로 안 되는지)을 채우세요. 이 경우가 아니면 new_type_name은
    비워두세요.
-3. 아직 정보가 부족해서(예: 추가 정보가 비어 있음) 후보들 사이 구분이 안 되면, 그래도 가장
-   그럴듯한 후보를 confidence를 낮게(0.4 이하) 줘서 고르세요. null보다는 낮은 확신의 선택이
-   낫습니다 — 위쪽 라우터가 confidence로 추가 질문 여부를 판단합니다.
+3. 아직 정보가 부족해서 후보들 사이 구분이 안 되면 l2_code를 null로 두세요. 억지로 하나를
+   고르지 마세요. new_type_name은 기존 후보 어디에도 속하지 않을 때만 사용합니다.
 4. confidence는 0.0~1.0. reason은 한 문장.
 
 사고 설명과 후보 목록:
@@ -192,8 +197,13 @@ def classify_l1(free_text: str) -> tuple[str, float, str]:
 
 def classify_l2(
     db: Session, l1_code: str, free_text: str, answers: dict[str, str] | None = None,
+    *, auto_threshold: float = DEFAULT_L2_AUTO_THRESHOLD,
 ) -> L2ClassifyResult:
-    """L1이 확정된 뒤, 그 L1의 L2 후보 중 하나를 고르거나 새 유형을 제안한다."""
+    """L1이 정해진 뒤 L2를 분류한다.
+
+    confidence는 보정된 확률이 아니라 라우팅 신호다. 임계값 미만, 비활성화, API 오류,
+    불완전 응답은 모두 L1 루트에 abstain한다. 이 함수는 근거 없는 L2를 반환하지 않는다.
+    """
     root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
     candidates = (
         db.query(IncidentType)
@@ -202,12 +212,17 @@ def classify_l2(
         if root else []
     )
     if not candidates:
-        return L2ClassifyResult(type_id=root.type_id if root else None, l2_code=l1_code, confidence=0.0, reason="L2 후보 없음(L1 루트로 처리)")
+        return L2ClassifyResult(
+            type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
+            reason="L2 후보 없음(L1 루트에서 추가 정보 확인)", abstained=True,
+        )
 
     if not config.GEMINI_ENABLED or not (free_text or "").strip():
-        # 근거가 없으면 첫 후보를 낮은 확신으로 잠정 선택 — 라우터가 질문으로 보완한다.
-        first = candidates[0]
-        return L2ClassifyResult(type_id=first.type_id, l2_code=first.l2_code, confidence=0.0, reason="근거 부족(자유서술 없음 또는 Gemini 미설정)")
+        return L2ClassifyResult(
+            type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
+            reason="근거 부족(자유서술 없음 또는 Gemini 미설정) — 추가 정보 필요",
+            abstained=True,
+        )
 
     l2_list = "\n".join(f"- {c.l2_code}: {c.name}" for c in candidates)
     answers_text = "\n".join(f"- {k}: {v}" for k, v in (answers or {}).items() if v) or "(아직 없음)"
@@ -221,23 +236,38 @@ def classify_l2(
         result = _generate_json(client, prompt, _L2ClassifySchema)
     except Exception:
         logger.exception("classify_l2 실패, L1 루트로 폴백")
-        first = candidates[0]
-        return L2ClassifyResult(type_id=first.type_id, l2_code=first.l2_code, confidence=0.0, reason="분류 실패(API 오류)")
+        return L2ClassifyResult(
+            type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
+            reason="분류 실패(API 오류) — L1 루트에서 추가 정보 필요", abstained=True,
+        )
 
     valid_codes = {c.l2_code: c for c in candidates}
     if result.l2_code and result.l2_code in valid_codes:
         chosen = valid_codes[result.l2_code]
-        return L2ClassifyResult(type_id=chosen.type_id, l2_code=chosen.l2_code, confidence=round(result.confidence, 2), reason=result.reason)
+        confidence = round(max(0.0, min(1.0, result.confidence)), 2)
+        if confidence < auto_threshold:
+            return L2ClassifyResult(
+                type_id=root.type_id if root else None, l2_code=None, confidence=confidence,
+                reason=f"신뢰 신호 {confidence:.2f}가 자동 분류 임계값 {auto_threshold:.2f} 미만 — 추가 정보 필요",
+                abstained=True,
+            )
+        return L2ClassifyResult(
+            type_id=chosen.type_id, l2_code=chosen.l2_code, confidence=confidence,
+            reason=result.reason, abstained=False,
+        )
 
     if result.new_type_name:
         return L2ClassifyResult(
-            type_id=None, l2_code=None, confidence=round(result.confidence, 2), reason=result.reason,
+            type_id=root.type_id if root else None, l2_code=None,
+            confidence=round(max(0.0, min(1.0, result.confidence)), 2), reason=result.reason,
             new_type_suggested={"name": result.new_type_name, "reason": result.new_type_reason or ""},
+            abstained=True,
         )
 
-    # 모델이 후보도 못 고르고 새 유형 제안도 안 했으면(스키마 위반 등) 첫 후보로 안전하게 폴백.
-    first = candidates[0]
-    return L2ClassifyResult(type_id=first.type_id, l2_code=first.l2_code, confidence=0.0, reason="모델 응답 불충분 — 잠정 폴백")
+    return L2ClassifyResult(
+        type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
+        reason="모델 응답 불충분 — L1 루트에서 추가 정보 필요", abstained=True,
+    )
 
 
 def extract_modifiers(free_text: str) -> dict:

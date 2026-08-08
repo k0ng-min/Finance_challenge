@@ -1,0 +1,160 @@
+{"id":"INJ-001","text":"여행 중 교통사고로 사망했습니다.","gold_l1":"INJ","gold_l2":"INJ_DEATH_DISABILITY","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-002","text":"낙상 사고 뒤 영구적인 후유장해 진단을 받았습니다.","gold_l1":"INJ","gold_l2":"INJ_DEATH_DISABILITY","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-003","text":"스키 충돌 후 다리를 더 이상 정상적으로 쓰기 어렵다는 장해 판정이 나왔습니다.","gold_l1":"INJ","gold_l2":"INJ_DEATH_DISABILITY","difficulty":"hard","expected_abstain":false}
+{"id":"INJ-004","text":"관광버스 사고로 가족이 숨졌습니다.","gold_l1":"INJ","gold_l2":"INJ_DEATH_DISABILITY","difficulty":"hard","expected_abstain":false}
+{"id":"INJ-005","text":"외부 사고 이후 장해지급률 진단서를 발급받았습니다.","gold_l1":"INJ","gold_l2":"INJ_DEATH_DISABILITY","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-006","text":"프랑스 여행 중 넘어져 현지 병원에서 골절 수술을 받았습니다.","gold_l1":"INJ","gold_l2":"INJ_OVERSEAS_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-007","text":"태국에서 칼에 손을 베어 현지 응급실에서 봉합했습니다.","gold_l1":"INJ","gold_l2":"INJ_OVERSEAS_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-008","text":"출국한 뒤 계단에서 굴러 숙소 근처 클리닉에서 치료비를 냈습니다.","gold_l1":"INJ","gold_l2":"INJ_OVERSEAS_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"INJ-009","text":"해외에서 화상을 입어 입원 치료 중입니다.","gold_l1":"INJ","gold_l2":"INJ_OVERSEAS_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-010","text":"여행지 자전거 사고로 현지에서 엑스레이와 깁스를 했습니다.","gold_l1":"INJ","gold_l2":"INJ_OVERSEAS_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"INJ-011","text":"미국 여행 중 발목을 접질러 현지 병원 외래진료를 받았습니다.","gold_l1":"INJ","gold_l2":"INJ_OVERSEAS_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-012","text":"해외에서 다친 뒤 귀국하여 국내 병원에서 치료받았습니다.","gold_l1":"INJ","gold_l2":"INJ_DOMESTIC_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-013","text":"여행지에서 넘어진 상처가 계속 아파 한국에 돌아온 후 수술했습니다.","gold_l1":"INJ","gold_l2":"INJ_DOMESTIC_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"INJ-014","text":"해외 사고 후 귀국해서 국내 정형외과에 입원했습니다.","gold_l1":"INJ","gold_l2":"INJ_DOMESTIC_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-015","text":"현지에서는 응급처치만 받고 돌아와 한국 병원에서 골절 치료를 이어갔습니다.","gold_l1":"INJ","gold_l2":"INJ_DOMESTIC_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"INJ-016","text":"귀국 후 여행 중 입은 화상에 대한 통원 치료를 받았습니다.","gold_l1":"INJ","gold_l2":"INJ_DOMESTIC_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"INJ-017","text":"여행 중 다쳤는데 치료 장소와 정도는 아직 모르겠습니다.","gold_l1":"INJ","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"INJ-018","text":"사고로 몸을 다친 것 같지만 진단과 치료 여부를 확인하지 못했습니다.","gold_l1":"INJ","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"INJ-019","text":"동행인이 외부 사고를 당했다는 연락만 받았습니다.","gold_l1":"INJ","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"INJ-020","text":"여행 중 부상이 있었고 자세한 결과는 나중에 알려드리겠습니다.","gold_l1":"INJ","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"ILL-001","text":"여행 중 질병으로 사망했습니다.","gold_l1":"ILL","gold_l2":"ILL_DEATH_DISABILITY","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-002","text":"암으로 고도후유장해 진단을 받았습니다.","gold_l1":"ILL","gold_l2":"ILL_DEATH_DISABILITY","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-003","text":"외부 사고 없이 병이 악화되어 가족이 숨졌습니다.","gold_l1":"ILL","gold_l2":"ILL_DEATH_DISABILITY","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-004","text":"질환 때문에 일상생활을 거의 할 수 없다는 영구 장해 판정이 나왔습니다.","gold_l1":"ILL","gold_l2":"ILL_DEATH_DISABILITY","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-005","text":"일본 여행 중 장염으로 현지 병원에서 치료받았습니다.","gold_l1":"ILL","gold_l2":"ILL_OVERSEAS_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-006","text":"해외에서 폐렴 증상이 생겨 현지 병원에 입원했습니다.","gold_l1":"ILL","gold_l2":"ILL_OVERSEAS_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-007","text":"출국 후 갑자기 고열과 복통이 생겨 숙소 근처 의사를 만났습니다.","gold_l1":"ILL","gold_l2":"ILL_OVERSEAS_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-008","text":"여행지에서 지병이 악화되어 현지 응급실 비용을 냈습니다.","gold_l1":"ILL","gold_l2":"ILL_OVERSEAS_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-009","text":"여행 중 생긴 질병을 귀국 후 국내 병원에서 치료했습니다.","gold_l1":"ILL","gold_l2":"ILL_DOMESTIC_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-010","text":"해외에서 감기 증상이 시작돼 한국에 돌아와 진료받았습니다.","gold_l1":"ILL","gold_l2":"ILL_DOMESTIC_TREATMENT","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-011","text":"현지에서는 버티다가 귀국 다음 날 내과에 입원했습니다.","gold_l1":"ILL","gold_l2":"ILL_DOMESTIC_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-012","text":"여행 중 시작된 복통으로 돌아온 뒤 국내에서 수술했습니다.","gold_l1":"ILL","gold_l2":"ILL_DOMESTIC_TREATMENT","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-013","text":"여행 중 코로나19 확진으로 격리되었습니다.","gold_l1":"ILL","gold_l2":"ILL_INFECTIOUS","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-014","text":"해외에서 법정감염병 진단을 받았습니다.","gold_l1":"ILL","gold_l2":"ILL_INFECTIOUS","difficulty":"easy","expected_abstain":false}
+{"id":"ILL-015","text":"현지 보건당국의 명령으로 감염 검사 후 호텔에 격리됐습니다.","gold_l1":"ILL","gold_l2":"ILL_INFECTIOUS","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-016","text":"동남아 여행 후 뎅기열 확진을 받아 치료 중입니다.","gold_l1":"ILL","gold_l2":"ILL_INFECTIOUS","difficulty":"hard","expected_abstain":false}
+{"id":"ILL-017","text":"여행 중 몸이 아팠는데 병명과 치료 장소는 모릅니다.","gold_l1":"ILL","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"ILL-018","text":"갑자기 컨디션이 나빠졌지만 진단을 아직 받지 않았습니다.","gold_l1":"ILL","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"ILL-019","text":"질병 관련 문제가 생겼다는 것 외에는 확인된 정보가 없습니다.","gold_l1":"ILL","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"ILL-020","text":"열이 났지만 감염병인지 일반 질환인지 아직 불분명합니다.","gold_l1":"ILL","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"PROP-001","text":"관광지에서 소매치기가 휴대폰을 훔쳐갔습니다.","gold_l1":"PROP","gold_l2":"PROP_THEFT","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-002","text":"호텔 객실에 침입한 도둑이 카메라를 가져갔습니다.","gold_l1":"PROP","gold_l2":"PROP_THEFT","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-003","text":"가방 지퍼가 열려 있었고 지갑이 사라져 현지 경찰에 도난 신고했습니다.","gold_l1":"PROP","gold_l2":"PROP_THEFT","difficulty":"hard","expected_abstain":false}
+{"id":"PROP-004","text":"여행 중 카메라를 떨어뜨려 렌즈가 깨졌습니다.","gold_l1":"PROP","gold_l2":"PROP_DAMAGE","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-005","text":"캐리어 바퀴가 충격으로 파손되었습니다.","gold_l1":"PROP","gold_l2":"PROP_DAMAGE","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-006","text":"파도에 휴대폰이 젖어 전원이 켜지지 않습니다.","gold_l1":"PROP","gold_l2":"PROP_DAMAGE","difficulty":"hard","expected_abstain":false}
+{"id":"PROP-007","text":"여행 중 이어폰을 어디에 두었는지 몰라 분실했습니다.","gold_l1":"PROP","gold_l2":"PROP_LOSS","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-008","text":"택시에 가방을 두고 내려 찾지 못했습니다.","gold_l1":"PROP","gold_l2":"PROP_LOSS","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-009","text":"도난 정황 없이 관광 후 시계를 잃어버린 사실을 알았습니다.","gold_l1":"PROP","gold_l2":"PROP_LOSS","difficulty":"hard","expected_abstain":false}
+{"id":"PROP-010","text":"여행 중 현금이 든 봉투를 잃어버렸습니다.","gold_l1":"PROP","gold_l2":"PROP_CASH_SECURITIES","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-011","text":"지갑에서 여행자수표가 사라졌습니다.","gold_l1":"PROP","gold_l2":"PROP_CASH_SECURITIES","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-012","text":"가방 안에 보관한 유가증권을 찾을 수 없습니다.","gold_l1":"PROP","gold_l2":"PROP_CASH_SECURITIES","difficulty":"hard","expected_abstain":false}
+{"id":"PROP-013","text":"해외 여행 중 여권을 분실했습니다.","gold_l1":"PROP","gold_l2":"PROP_PASSPORT_LOSS","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-014","text":"소매치기로 여권을 도난당해 재발급받았습니다.","gold_l1":"PROP","gold_l2":"PROP_PASSPORT_LOSS","difficulty":"easy","expected_abstain":false}
+{"id":"PROP-015","text":"출국 서류가 든 파우치를 잃어 임시여권을 발급받았습니다.","gold_l1":"PROP","gold_l2":"PROP_PASSPORT_LOSS","difficulty":"hard","expected_abstain":false}
+{"id":"PROP-016","text":"여행 중 휴대품이 없어졌는데 도난인지 단순 분실인지 모릅니다.","gold_l1":"PROP","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"PROP-017","text":"가방에 문제가 생겼지만 잃어버린 건지 파손된 건지 확인하지 못했습니다.","gold_l1":"PROP","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"PROP-018","text":"소지품 피해가 있다는 신고만 접수되었습니다.","gold_l1":"PROP","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"PROP-019","text":"여행 물건과 관련된 사고인데 어떤 물건인지 모릅니다.","gold_l1":"PROP","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"PROP-020","text":"짐이 보이지 않지만 항공사 수하물인지 개인 휴대품인지 불명확합니다.","gold_l1":"PROP","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"LIA-001","text":"여행 중 실수로 다른 사람을 밀어 다치게 했습니다.","gold_l1":"LIA","gold_l2":"LIA_PERSONAL","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-002","text":"자전거를 타다 보행자와 충돌해 상대가 치료받았습니다.","gold_l1":"LIA","gold_l2":"LIA_PERSONAL","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-003","text":"아이와 부딪힌 뒤 상대 부모가 치료비 배상을 요구합니다.","gold_l1":"LIA","gold_l2":"LIA_PERSONAL","difficulty":"hard","expected_abstain":false}
+{"id":"LIA-004","text":"스키장에서 제 과실로 다른 이용자가 골절됐습니다.","gold_l1":"LIA","gold_l2":"LIA_PERSONAL","difficulty":"hard","expected_abstain":false}
+{"id":"LIA-005","text":"제 실수로 제3자가 다쳐 손해배상 청구를 받았습니다.","gold_l1":"LIA","gold_l2":"LIA_PERSONAL","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-006","text":"여행 중 타인의 카메라를 떨어뜨려 깨뜨렸습니다.","gold_l1":"LIA","gold_l2":"LIA_PROPERTY","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-007","text":"렌터카로 주차된 다른 사람의 자전거를 파손했습니다.","gold_l1":"LIA","gold_l2":"LIA_PROPERTY","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-008","text":"매장에서 진열 상품을 넘어뜨려 변상 요청을 받았습니다.","gold_l1":"LIA","gold_l2":"LIA_PROPERTY","difficulty":"hard","expected_abstain":false}
+{"id":"LIA-009","text":"제 아이가 식당의 장식품을 깨서 배상해야 합니다.","gold_l1":"LIA","gold_l2":"LIA_PROPERTY","difficulty":"hard","expected_abstain":false}
+{"id":"LIA-010","text":"타인의 물건에 손해를 입혀 배상 청구를 받았습니다.","gold_l1":"LIA","gold_l2":"LIA_PROPERTY","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-011","text":"호텔 객실의 TV를 실수로 파손했습니다.","gold_l1":"LIA","gold_l2":"LIA_LODGING","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-012","text":"숙소 욕조 물을 넘쳐 객실 바닥이 손상되었습니다.","gold_l1":"LIA","gold_l2":"LIA_LODGING","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-013","text":"에어비앤비에서 화재경보기를 망가뜨려 호스트가 수리비를 요구합니다.","gold_l1":"LIA","gold_l2":"LIA_LODGING","difficulty":"hard","expected_abstain":false}
+{"id":"LIA-014","text":"빌린 숙소 가구에 큰 흠집을 내 배상 요청을 받았습니다.","gold_l1":"LIA","gold_l2":"LIA_LODGING","difficulty":"hard","expected_abstain":false}
+{"id":"LIA-015","text":"호텔 비품을 파손해 객실 손해를 변상했습니다.","gold_l1":"LIA","gold_l2":"LIA_LODGING","difficulty":"easy","expected_abstain":false}
+{"id":"LIA-016","text":"여행 중 제 실수로 누군가 피해를 봤지만 사람인지 물건인지 모릅니다.","gold_l1":"LIA","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"LIA-017","text":"상대방이 배상을 요구하고 있으나 피해 내용이 접수되지 않았습니다.","gold_l1":"LIA","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"LIA-018","text":"타인에게 손해를 끼쳤다는 사실만 알고 있습니다.","gold_l1":"LIA","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"LIA-019","text":"숙소 근처에서 사고가 났지만 객실 피해인지 대인 피해인지 불명확합니다.","gold_l1":"LIA","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"LIA-020","text":"제 과실 가능성이 있으나 배상 대상과 손해 규모를 모릅니다.","gold_l1":"LIA","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"TRV-001","text":"항공편이 8시간 지연되었습니다.","gold_l1":"TRV","gold_l2":"TRV_FLIGHT_DELAY","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-002","text":"태풍으로 예약한 비행기가 결항됐습니다.","gold_l1":"TRV","gold_l2":"TRV_FLIGHT_DELAY","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-003","text":"출발 안내판 시간이 계속 미뤄져 공항에서 밤을 보냈습니다.","gold_l1":"TRV","gold_l2":"TRV_FLIGHT_DELAY","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-004","text":"항공사 사정으로 다음 날 대체편을 탔습니다.","gold_l1":"TRV","gold_l2":"TRV_FLIGHT_DELAY","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-005","text":"위탁수하물이 늦게 도착해 이틀 뒤 받았습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_DELAY","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-006","text":"항공 수하물이 도착하지 않아 생필품을 샀고 다음 날 배송받았습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_DELAY","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-007","text":"목적지 컨베이어에 짐이 없었지만 항공사가 추적 후 호텔로 보내줬습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_DELAY","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-008","text":"캐리어가 다른 공항으로 가서 사흘 동안 사용하지 못했습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_DELAY","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-009","text":"항공사가 위탁수하물을 최종 분실 처리했습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_LOSS","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-010","text":"비행 후 캐리어를 끝내 찾지 못해 수하물 분실 확인서를 받았습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_LOSS","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-011","text":"항공사 추적 기간이 끝났지만 짐의 위치를 확인하지 못했습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_LOSS","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-012","text":"위탁한 골프백이 돌아오지 않아 항공사가 영구 미도착 판정을 했습니다.","gold_l1":"TRV","gold_l2":"TRV_BAGGAGE_LOSS","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-013","text":"탑승한 항공기가 무장범에게 납치되었습니다.","gold_l1":"TRV","gold_l2":"TRV_HIJACK","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-014","text":"비행 중 항공기 피랍 사건이 발생했습니다.","gold_l1":"TRV","gold_l2":"TRV_HIJACK","difficulty":"easy","expected_abstain":false}
+{"id":"TRV-015","text":"무장 세력이 기내를 장악해 승객들이 장시간 억류됐습니다.","gold_l1":"TRV","gold_l2":"TRV_HIJACK","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-016","text":"우리 비행편이 불법 점거되어 예정지로 가지 못했습니다.","gold_l1":"TRV","gold_l2":"TRV_HIJACK","difficulty":"hard","expected_abstain":false}
+{"id":"TRV-017","text":"항공편에 문제가 생겼는데 지연인지 결항인지 확인되지 않았습니다.","gold_l1":"TRV","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"TRV-018","text":"수하물이 아직 없지만 늦는 것인지 영구 분실인지 모릅니다.","gold_l1":"TRV","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"TRV-019","text":"공항에서 운송 관련 사고가 있었다는 것만 접수되었습니다.","gold_l1":"TRV","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"TRV-020","text":"비행 일정과 짐 모두 문제가 있다는 연락만 받았습니다.","gold_l1":"TRV","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"CHG-001","text":"출발 전에 질병으로 여행을 취소했습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-002","text":"가족 장례로 예약한 여행을 떠나지 못했습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-003","text":"여행 시작 전 태풍 때문에 전체 일정을 취소했습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-004","text":"출국하지 못해 미리 결제한 숙박과 투어를 모두 철회했습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-005","text":"공항에 가기 전 사고가 나서 예약 일정을 포기했습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-006","text":"출발 전 여행 계약을 취소하고 위약금을 냈습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-007","text":"여정이 시작되기 전에 동행인의 입원으로 예약을 없앴습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-008","text":"여행을 개시하지 못하고 항공과 호텔을 취소했습니다.","gold_l1":"CHG","gold_l2":"CHG_CANCELLATION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-009","text":"여행 도중 가족 사고로 일정을 중단하고 조기 귀국했습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-010","text":"현지에서 아파 남은 여행을 포기하고 한국으로 돌아왔습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-011","text":"일정을 절반만 진행한 뒤 급히 귀국편을 새로 샀습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-012","text":"이미 출국한 상태에서 천재지변으로 여행을 끝냈습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-013","text":"여행 중단으로 남은 숙박 일정을 사용하지 못했습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-014","text":"목적지 도착 후 긴급 연락을 받고 예정보다 일찍 돌아왔습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-015","text":"여행을 시작했지만 사고로 중도 귀국했습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"easy","expected_abstain":false}
+{"id":"CHG-016","text":"현지 체류 중 일정 수행이 불가능해 남은 여정을 포기했습니다.","gold_l1":"CHG","gold_l2":"CHG_INTERRUPTION","difficulty":"hard","expected_abstain":false}
+{"id":"CHG-017","text":"여행 계획이 바뀌었지만 출발 전인지 여행 중인지 모릅니다.","gold_l1":"CHG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"CHG-018","text":"일정을 취소했다는 말만 있고 여행 시작 여부가 확인되지 않았습니다.","gold_l1":"CHG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"CHG-019","text":"여행을 계속하지 못했지만 구체적인 시점과 사유가 없습니다.","gold_l1":"CHG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"CHG-020","text":"예약 변경과 조기 귀국 중 어떤 상황인지 불명확합니다.","gold_l1":"CHG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"EMG-001","text":"등산 중 조난되어 구조대가 수색하고 구조했습니다.","gold_l1":"EMG","gold_l2":"EMG_RESCUE","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-002","text":"바다에서 실종되어 해경 수색을 받았습니다.","gold_l1":"EMG","gold_l2":"EMG_RESCUE","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-003","text":"산길에서 연락이 끊겨 현지 구조 인력이 밤새 찾았습니다.","gold_l1":"EMG","gold_l2":"EMG_RESCUE","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-004","text":"오지에서 길을 잃어 헬기 구조를 받았습니다.","gold_l1":"EMG","gold_l2":"EMG_RESCUE","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-005","text":"부상 후 구급차로 현지 병원에 긴급 이송되었습니다.","gold_l1":"EMG","gold_l2":"EMG_MEDICAL_TRANSPORT","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-006","text":"섬에서 사고가 나 의료 헬기로 본토 병원에 옮겨졌습니다.","gold_l1":"EMG","gold_l2":"EMG_MEDICAL_TRANSPORT","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-007","text":"치료 가능한 시설이 없어 다른 도시 병원으로 환자를 운송했습니다.","gold_l1":"EMG","gold_l2":"EMG_MEDICAL_TRANSPORT","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-008","text":"위급한 상태라 전용기와 의료진을 이용해 이송했습니다.","gold_l1":"EMG","gold_l2":"EMG_MEDICAL_TRANSPORT","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-009","text":"해외에서 사망해 유해를 국내로 송환했습니다.","gold_l1":"EMG","gold_l2":"EMG_REPATRIATION","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-010","text":"현지 장례 후 고인의 유골을 한국으로 운송했습니다.","gold_l1":"EMG","gold_l2":"EMG_REPATRIATION","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-011","text":"여행지에서 숨진 가족을 본국으로 모시는 비용이 발생했습니다.","gold_l1":"EMG","gold_l2":"EMG_REPATRIATION","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-012","text":"사망자의 시신 운구를 위해 국제 운송을 진행했습니다.","gold_l1":"EMG","gold_l2":"EMG_REPATRIATION","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-013","text":"해외 장기 입원으로 가족 한 명이 현지 병원에 방문했습니다.","gold_l1":"EMG","gold_l2":"EMG_FAMILY_VISIT","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-014","text":"위중한 환자를 돌보기 위해 가족의 항공료가 발생했습니다.","gold_l1":"EMG","gold_l2":"EMG_FAMILY_VISIT","difficulty":"easy","expected_abstain":false}
+{"id":"EMG-015","text":"혼자 여행하던 중 입원해 보호자가 한국에서 현지로 왔습니다.","gold_l1":"EMG","gold_l2":"EMG_FAMILY_VISIT","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-016","text":"장기간 치료 때문에 친족이 간병 목적으로 방문했습니다.","gold_l1":"EMG","gold_l2":"EMG_FAMILY_VISIT","difficulty":"hard","expected_abstain":false}
+{"id":"EMG-017","text":"긴급 지원이 필요하다는 연락만 있고 구조인지 이송인지 모릅니다.","gold_l1":"EMG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"EMG-018","text":"여행 중 위급한 일이 있었으나 제공된 지원 서비스가 불명확합니다.","gold_l1":"EMG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"EMG-019","text":"환자와 가족을 위한 긴급 비용이 생겼지만 상세 내역이 없습니다.","gold_l1":"EMG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"EMG-020","text":"현지 기관의 도움을 받았다는 사실만 확인됐습니다.","gold_l1":"EMG","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"SPC-001","text":"여행지에서 테러 공격으로 피해를 입었습니다.","gold_l1":"SPC","gold_l2":"SPC_WAR_TERROR","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-002","text":"전쟁 발발로 숙소와 소지품이 파손되었습니다.","gold_l1":"SPC","gold_l2":"SPC_WAR_TERROR","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-003","text":"무장 단체의 폭발 사건 때문에 여행 중 피해가 생겼습니다.","gold_l1":"SPC","gold_l2":"SPC_WAR_TERROR","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-004","text":"현지 내전과 교전으로 이동하지 못했습니다.","gold_l1":"SPC","gold_l2":"SPC_WAR_TERROR","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-005","text":"여행 중 지진으로 피해를 입었습니다.","gold_l1":"SPC","gold_l2":"SPC_NATURAL_DISASTER","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-006","text":"태풍과 홍수로 숙소가 침수되었습니다.","gold_l1":"SPC","gold_l2":"SPC_NATURAL_DISASTER","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-007","text":"화산 분화로 대피 명령을 받았습니다.","gold_l1":"SPC","gold_l2":"SPC_NATURAL_DISASTER","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-008","text":"산사태가 발생해 여행지 시설이 무너졌습니다.","gold_l1":"SPC","gold_l2":"SPC_NATURAL_DISASTER","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-009","text":"여행 중 입원해 집에 남은 반려견 돌봄 비용이 들었습니다.","gold_l1":"SPC","gold_l2":"SPC_PET_CARE","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-010","text":"귀국이 늦어져 반려동물 위탁 연장비를 냈습니다.","gold_l1":"SPC","gold_l2":"SPC_PET_CARE","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-011","text":"예정보다 오래 해외에 머물러 펫시터를 추가 고용했습니다.","gold_l1":"SPC","gold_l2":"SPC_PET_CARE","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-012","text":"여행 사고로 돌아오지 못해 고양이 호텔 비용이 늘었습니다.","gold_l1":"SPC","gold_l2":"SPC_PET_CARE","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-013","text":"기존 사고유형에 해당하지 않는 기타 여행 사고입니다.","gold_l1":"SPC","gold_l2":"SPC_OTHER","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-014","text":"여행 중 통신 서비스 장애로 별도 피해가 발생했습니다.","gold_l1":"SPC","gold_l2":"SPC_OTHER","difficulty":"easy","expected_abstain":false}
+{"id":"SPC-015","text":"분류표 어디에도 맞지 않는 특수한 요청으로 담당자 검토가 필요합니다.","gold_l1":"SPC","gold_l2":"SPC_OTHER","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-016","text":"여행 중 예상하지 못한 기타 서비스 피해를 신고합니다.","gold_l1":"SPC","gold_l2":"SPC_OTHER","difficulty":"hard","expected_abstain":false}
+{"id":"SPC-017","text":"여행 중 특수한 일이 생겼지만 전쟁이나 재난 여부를 모릅니다.","gold_l1":"SPC","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"SPC-018","text":"기타 사고라는 것 외에는 구체적인 설명이 없습니다.","gold_l1":"SPC","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"SPC-019","text":"일반 사고유형에 맞지 않는 것 같지만 상세 내용이 접수되지 않았습니다.","gold_l1":"SPC","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}
+{"id":"SPC-020","text":"여행 중 문제가 있었다는 짧은 신고만 남았습니다.","gold_l1":"SPC","gold_l2":null,"difficulty":"ambiguous","expected_abstain":true}

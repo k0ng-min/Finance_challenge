@@ -1,0 +1,28 @@
+{
+  "evaluation_version": "incident-eval-v1",
+  "generated_at": "2026-08-08T09:42:57.820409+00:00",
+  "status": "dataset_validated_no_live_predictions",
+  "model": "gemini-3.5-flash-lite",
+  "prompt_sha256": "0ceb7ad9fd2c80ad6ffd782abac95bd816aa050bab8e65db2ce9e2d4cf77a603",
+  "dataset": {
+    "sample_count": 160,
+    "l1_counts": {
+      "CHG": 20,
+      "EMG": 20,
+      "ILL": 20,
+      "INJ": 20,
+      "LIA": 20,
+      "PROP": 20,
+      "SPC": 20,
+      "TRV": 20
+    },
+    "difficulty_counts": {
+      "ambiguous": 34,
+      "easy": 70,
+      "hard": 56
+    },
+    "expected_abstain_count": 34
+  },
+  "metrics": null,
+  "note": "Gemini API 예측을 실행하지 않은 구조 검증 결과이며 모델 성능 수치가 아닙니다."
+}
