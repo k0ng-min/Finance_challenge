@@ -782,6 +782,10 @@ button { cursor: pointer; font-family: inherit; }
 }
 .rank-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
 
+/* 카드의 금액이 "내 여행일수로 환산한 견적"이 아니라 7일 표준조건 공시값임을 밝히는 줄
+   (dongchan 브랜치의 보험료 공시 7일 기준 안내). 순위 목록 바로 위에 둔다. */
+.rank-premium-note { margin: -2px 0 12px; font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
+
 .rank-card__head { display: flex; align-items: center; gap: 11px; }
 .rank-badge {
   width: 30px;
@@ -812,10 +816,21 @@ button { cursor: pointer; font-family: inherit; }
 }
 .rank-card__basis { font-size: 0.68rem; color: var(--muted); }
 /* 보험료는 이 화면에서 가장 먼저 눈에 들어와야 하는 값이라 크게 둔다. */
-.rank-card__price { display: flex; align-items: baseline; gap: 1px; flex-shrink: 0; }
+.rank-card__price { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.rank-card__price-main { display: flex; align-items: baseline; gap: 1px; }
 .rank-card__price b { font-size: 1.08rem; font-weight: 800; color: var(--heading); letter-spacing: -0.02em; }
 .rank-card__price i { font-size: 0.76rem; font-style: normal; color: var(--muted); font-weight: 700; }
-.rank-card__price em { font-size: 0.72rem; font-style: normal; font-weight: 700; color: var(--muted); }
+/* 공시 기준 기간. 금액을 "내 여행 견적"으로 오해하지 않도록 숫자 바로 밑에 붙인다. */
+.rank-card__price small { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+.rank-card__price em {
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+  max-width: 120px;
+  line-height: 1.35;
+}
 
 .rank-gauges {
   display: grid;

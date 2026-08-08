@@ -213,14 +213,20 @@ export function InsurerRankingFlow({
                   <strong>{r.insurer_name}</strong>
                   <span className="rank-card__basis">{r.comparison_basis}</span>
                 </div>
+                {/* 이 금액은 여행일수로 환산한 견적이 아니라 비교공시 원문값이다. 숫자만 크게
+                    두면 "내가 낼 돈"으로 읽히므로 기준 기간을 바로 아래에 붙여 둔다. */}
                 <span className="rank-card__price">
-                  {r.premium_total != null ? (
+                  {r.published_premium != null ? (
                     <>
-                      <b>{r.premium_total.toLocaleString()}</b>
-                      <i>원</i>
+                      <span className="rank-card__price-main">
+                        <b>{r.published_premium.toLocaleString()}</b>
+                        <i>원</i>
+                      </span>
+                      <small>{r.premium_period_days ?? 7}일 표준조건</small>
                     </>
                   ) : (
-                    <em>가입연령 밖</em>
+                    // 왜 금액이 없는지는 서버가 문구로 알려준다(가입연령 밖 등). 조용히 빼지 않는다.
+                    <em>{r.premium_note ?? "공시값 없음"}</em>
                   )}
                 </span>
                 <span className="rank-card__arrow">›</span>
