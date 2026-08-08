@@ -60,7 +60,7 @@
 
 * { box-sizing: border-box; min-width: 0; }
 
-html, body { overflow-x: hidden; max-width: 100%; }
+html, body { overflow-x: hidden; overflow-y: auto; max-width: 100%; min-height: 100%; }
 
 /* 스크롤이 생기는 곳(페이지 전체, 카드 내부 등) 어디서나 기본 굵은 회색 스크롤바 대신
    앱 톤에 맞는 얇고 둥근 스크롤바를 쓴다. */
@@ -115,16 +115,33 @@ body {
   transition: background-color 0.25s, color 0.25s;
 }
 
-.app-shell { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
 
 .app-main {
-  flex: 1;
+  flex: 1 1 auto;
   width: 100%;
   max-width: 640px;
   margin: 0 auto;
   padding: 0 18px 40px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+
+.page {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .page h1 { font-size: 1.3rem; margin-bottom: 4px; color: var(--heading); }
@@ -214,16 +231,12 @@ body {
 
   display: flex;
   flex-direction: column;
-  /* 남는 높이를 나눠 갖는 순서:
-     1) 카드·타일 같은 "칸"은 각자 max-height까지만 커진다 — 더 늘리면 안이 허옇게 비어 보인다.
-     2) 칸 사이 간격(--home-gap)도 프레임 높이에 따라 함께 벌어진다.
-     3) 그러고도 남는 높이는 히어로(아이콘+인사말)가 흡수한다 — 여긴 상자가 아니라 여백이라
-        늘어나도 늘어져 보이지 않고, 내용이 가운데 정렬이라 자연스럽게 숨 쉬는 공간이 된다.
-     space-between으로 균등 분배하면 상단바 바로 아래에 큰 빈칸이 생겨서 쓰지 않는다. */
   justify-content: flex-start;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
+  width: 100%;
   padding-top: 4px;
+  padding-bottom: clamp(8px, 2svh, 18px);
   gap: var(--home-gap);
 }
 .home__topbar { display: flex; align-items: center; padding: 8px 2px 0; flex: none; }
@@ -250,8 +263,7 @@ body {
   text-align: center;
   gap: calc(var(--home-gap) * 0.5);
   padding: 0 6px;
-  /* 기본 크기는 내용만큼(auto), 칸들이 자리를 잡고 남는 높이는 전부 여기로 온다(위 3번). */
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
 }
 .home__hero .icon3d { width: var(--home-icon-hero) !important; height: var(--home-icon-hero) !important; }
@@ -269,10 +281,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--home-gap);
-  /* 칸 높이는 상한값으로 고정한다(늘어나지 않음). 화면이 아주 작을 때만 줄어들 수 있게
-     shrink는 열어둔다. */
-  flex: 0 1 auto;
-  height: calc(var(--home-h-card) * 2 + var(--home-gap));
+  flex: 0 0 auto;
+  height: auto;
   min-height: 0;
 }
 .home-card {
@@ -288,10 +298,9 @@ body {
   font-family: inherit;
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s;
-  /* 카드 두 장이 남는 높이를 똑같이 나눠 갖되, 상한(--home-h-card)을 넘겨 늘어나진 않는다. */
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: 0;
-  max-height: var(--home-h-card, none);
+  max-height: none;
 }
 /* --home-* 변수는 .home에만 정의돼 있다. 내 보험 화면처럼 .home 밖에서 .home-card를 쓰면
    var()가 무효가 되면서 선언 전체가 날아간다 — padding이 0이 돼 아이콘이 카드를 넘치고,
@@ -300,16 +309,16 @@ body {
 .home-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(var(--shadow-tint), 0.16); }
 .home-card__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .home-card__text strong { font-size: var(--home-card-title, 1.02rem); color: var(--heading); }
-.home-card__text span { font-size: var(--home-card-desc, 0.82rem); color: var(--muted); }
+.home-card__text span { font-size: var(--home-card-desc, 0.82rem); color: var(--muted); overflow-wrap: anywhere; }
 .home-card__arrow { font-size: clamp(1.1rem, 2.4svh, 1.6rem); color: var(--primary); font-weight: 700; }
 
 /* 보조 메뉴 — 아이콘 + 라벨만, 설명 없이 컴팩트하게 */
 .home__quick-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--home-gap);
-  flex: 0 1 auto;
-  height: var(--home-h-quick);
+  flex: 0 0 auto;
+  height: auto;
   min-height: 0;
 }
 /* margin-top:auto를 쓰지 않는다 — 남는 높이를 전부 푸터 위 한 군데에 몰아버려서
@@ -331,17 +340,18 @@ body {
   min-height: 0;
 }
 .home-quick .icon3d { width: var(--home-icon-quick) !important; height: var(--home-icon-quick) !important; }
-.home-quick__label { font-size: var(--home-quick-label); font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; }
+.home-quick__label { font-size: var(--home-quick-label); font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; overflow-wrap: anywhere; }
 
 /* --- 스텝 위저드 (세로 중앙 정렬) --- */
 .step {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   padding: 10px 4px 12px;
-  min-height: min(480px, calc(100svh - 140px));
+  min-height: auto;
+  width: 100%;
 }
 .step__icon-wrap { position: relative; margin-bottom: 6px; }
 .step__eyebrow {
@@ -1487,9 +1497,9 @@ button { cursor: pointer; font-family: inherit; }
   body {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 100vh;
-    padding: 40px 20px;
+    padding: 40px 20px 40px;
     /* 아이콘이 떨어지는 배경에 은은한 그라데이션 — 위쪽에 부드러운 빛 웅덩이 하나 +
        완만한 3단 세로 그라데이션만 쓴다(너무 화려하지 않게, 밴딩도 안 생기게). */
     background:
@@ -1531,8 +1541,7 @@ button { cursor: pointer; font-family: inherit; }
      위아래 여백(body의 40px 패딩)이 뷰포트 높이와 무관하게 항상 똑같이 유지되도록 상한선(796px)
      없이 계산한다 — 상한선이 있으면 뷰포트가 커질수록 여백만 계속 벌어져 버렸다. */
   .app-shell {
-    height: calc(100vh - 80px);
-    min-height: 0;
+    min-height: calc(100vh - 80px);
     width: 760px;
     flex: none;
     background: var(--card-bg-translucent);
@@ -1544,7 +1553,7 @@ button { cursor: pointer; font-family: inherit; }
     position: relative;
     z-index: 1;
   }
-  .app-main { max-width: 100%; height: 100%; padding: 0 20px 40px; overflow-y: auto; }
+  .app-main { max-width: 100%; height: 100%; padding: 0 20px 40px; overflow-y: auto; overflow-x: hidden; min-height: 0; }
 
   /* 홈은 프레임 안에 정확히 들어맞으므로 스크롤을 아예 없앤다. 아래 패딩도 뺀다 —
      남는 높이는 밴드들이 나눠 가지므로 바닥에 따로 여백을 둘 이유가 없다.
@@ -1558,9 +1567,8 @@ button { cursor: pointer; font-family: inherit; }
      오버레이가 없지만 다른 화면에는 있으므로, 셸 전체에 걸면 안 된다. */
   .app-shell--home .app-main {
     padding-bottom: 0;
-    overflow: hidden;
-    container-type: size;
-    container-name: shell;
+    overflow-y: visible;
+    overflow-x: hidden;
   }
 
   /* 홈의 유동 기준을 뷰포트(svh) → 프레임 높이(cqh)로 갈아끼운다. 값만 바뀌고
