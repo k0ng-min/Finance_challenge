@@ -136,26 +136,30 @@ class InsurerCoverageOut(BaseModel):
 
 
 class InsurerPremiumOut(BaseModel):
-    """나이·성별 하나에 대한 보험사별 예시 보험료 한 줄."""
+    """나이·성별 하나에 대한 보험사별 7일 표준조건 비교공시 보험료."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None
-    premium: int              # 비교공시 기준 보험료(1건)
-    premium_total: int        # 여행일수를 곱한 총액
+    published_premium: int    # 비교공시 원문 값. 여행일수로 환산하지 않는다.
     age_range: Optional[str] = None
 
 
 class PremiumPointOut(BaseModel):
     age: int
-    premium: int
+    published_premium: int
 
 
 class InsurerPremiumCurveOut(BaseModel):
-    """한 보험사의 나이별 보험료 곡선."""
+    """한 보험사의 나이별 7일 표준조건 비교공시 보험료 곡선."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None
     sex: str
+    premium_period_days: int = 7
+    basis: Optional[str] = None
+    source: Optional[str] = None
+    source_url: Optional[str] = None
+    collected_at: Optional[dt.date] = None
     points: list[PremiumPointOut]
 
 
@@ -167,7 +171,7 @@ class PremiumComparisonOut(BaseModel):
     source: Optional[str] = None
     source_url: Optional[str] = None
     collected_at: Optional[dt.date] = None
-    days: int = 1
+    premium_period_days: int = 7
     items: list[InsurerPremiumOut]
     unavailable_insurers: list[str] = []
 
@@ -311,10 +315,13 @@ class InsurerRankOut(BaseModel):
     reasons: list[str]
     tags: list[str] = []
     official_url: Optional[str] = None
-    # 나이·성별을 함께 받은 경우에만 채워진다(보험다모아 비교공시 기준 예시 보험료).
-    premium: Optional[int] = None            # 비교공시에서 받아온 기준 보험료(1건)
-    premium_total: Optional[int] = None      # 여행일수를 곱한 총액 — 화면에는 이 값을 보여준다
-    premium_days: Optional[int] = None       # 총액 계산에 쓴 여행일수
+    # 나이·성별을 함께 받은 경우에만 채워진다. 여행일수로 환산하지 않은 공시 원문 값이다.
+    published_premium: Optional[int] = None
+    premium_period_days: Optional[int] = None
+    premium_basis: Optional[str] = None
+    premium_source: Optional[str] = None
+    premium_source_url: Optional[str] = None
+    premium_collected_at: Optional[dt.date] = None
     premium_note: Optional[str] = None
 
 
