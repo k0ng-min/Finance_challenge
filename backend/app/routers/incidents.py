@@ -49,6 +49,23 @@ def _modifiers_dict(incident: Incident) -> dict:
 _RECLASSIFY_CONFIDENCE_THRESHOLD = incident_classify.DEFAULT_L2_AUTO_THRESHOLD
 
 
+def _build_reclassification_text(
+    free_text: str, merged: dict[str, ExtractedField], modifiers: dict,
+) -> str:
+    """최초 서술과 후속 답변을 L1 재분류용 단일 입력으로 만든다."""
+    parts = [f"최초 사고 설명:\n{(free_text or '').strip() or '(없음)'}"]
+    details = [
+        f"{name}: {field.value}"
+        for name, field in sorted(merged.items())
+        if field.value is not None
+    ]
+    details.extend(
+        f"{name}: {value}" for name, value in sorted(modifiers.items()) if value
+    )
+    parts.append("추가 확인 정보:\n" + ("\n".join(details) if details else "(없음)"))
+    return "\n\n".join(parts)
+
+
 def _classify_incident(
     db: Session, free_text: str, merged: dict[str, ExtractedField],
     existing_type_id: int | None = None, existing_modifiers: dict | None = None,
@@ -57,18 +74,29 @@ def _classify_incident(
     """사고를 incident_type(L1→L2)으로 분류한다.
 
     existing_type_id가 없으면(=최초 접수) L1을 새로 분류하고 modifiers도 처음 추출한다.
-    있으면(=답변 라운드 재분류) 이미 정해진 L1은 그대로 두고 L2만, 지금까지 쌓인 답변으로
-    다시 판단한다 — L1을 매번 다시 물어보면 결과가 흔들려서 재현성이 떨어진다.
+    확정된 L2가 있으면 L1을 유지한다. 다만 낮은 confidence로 L1 루트에 보류된 사고는 최초
+    서술과 후속 답변을 합쳐 L1부터 다시 평가한다. 그래야 잘못 잡힌 L1 안에서 L2만 고르는
+    고착을 막을 수 있다.
 
     이미 충분히 확신 있게 분류돼 있으면(existing_confidence 높음) 매 답변마다 다시 Gemini를
     부르지 않는다 — 무료 API 쿼터를 아끼기 위함이자, 이미 답이 정해진 걸 매번 다시 물어서
     결과가 흔들리는 걸 막기 위함이다."""
     modifiers = dict(existing_modifiers or {})
-    if existing_type_id is not None and (existing_confidence or 0.0) >= _RECLASSIFY_CONFIDENCE_THRESHOLD:
+    existing_type = db.get(IncidentType, existing_type_id) if existing_type_id is not None else None
+    existing_is_root = existing_type is not None and existing_type.parent_id is None
+    if (
+        existing_type is not None
+        and not existing_is_root
+        and (existing_confidence or 0.0) >= _RECLASSIFY_CONFIDENCE_THRESHOLD
+    ):
         return existing_type_id, existing_confidence, modifiers
     if existing_type_id is None:
         l1_code, l1_confidence, _reason = incident_classify.classify_l1(free_text or "")
         modifiers.update(incident_classify.extract_modifiers(free_text or ""))
+    elif existing_is_root and (existing_confidence or 0.0) < incident_classify.DEFAULT_L1_AUTO_THRESHOLD:
+        augmented_text = _build_reclassification_text(free_text, merged, modifiers)
+        l1_code, l1_confidence, _reason = incident_classify.classify_l1(augmented_text)
+        modifiers.update(incident_classify.extract_modifiers(augmented_text))
     else:
         l1_code = _l1_code_for_type(db, existing_type_id)
         l1_confidence = existing_confidence or 0.0
@@ -77,7 +105,7 @@ def _classify_incident(
         return None, None, modifiers
 
     root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
-    if existing_type_id is None and l1_confidence < incident_classify.DEFAULT_L1_AUTO_THRESHOLD:
+    if l1_confidence < incident_classify.DEFAULT_L1_AUTO_THRESHOLD:
         # L1 신뢰도도 낮으면 L2 호출로 추측을 확대하지 않고, L1 루트에서 질문을 생성한다.
         return (root.type_id if root else None), l1_confidence, modifiers
 

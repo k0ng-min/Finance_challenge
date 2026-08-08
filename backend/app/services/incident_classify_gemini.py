@@ -29,9 +29,9 @@ from app.models.kb import IncidentType
 logger = logging.getLogger(__name__)
 
 # confidence는 정확도 확률이 아니라 자동 분류/추가 질문을 가르는 라우팅 신호다.
-# 운영 기본값은 gold dataset 임계값 sweep으로 교체할 수 있도록 함수 인자로 노출한다.
-DEFAULT_L1_AUTO_THRESHOLD = 0.65
-DEFAULT_L2_AUTO_THRESHOLD = 0.70
+# incident-eval-v2 calibration 80건의 2차원 grid search로 선택하고 held-out 80건으로 검증했다.
+DEFAULT_L1_AUTO_THRESHOLD = 0.40
+DEFAULT_L2_AUTO_THRESHOLD = 0.80
 
 L1_DESCRIPTIONS: dict[str, str] = {
     "INJ": "상해 — 사고로 인한 신체 부상(골절·열상·화상·사망·후유장해 등). 급격하고 우연한 외부 사고가 원인.",
@@ -174,8 +174,12 @@ def _generate_json(client, prompt: str, schema: type[BaseModel]) -> BaseModel:
     return schema.model_validate(_json.loads(response.text))
 
 
-def classify_l1(free_text: str) -> tuple[str, float, str]:
-    """자유서술 → (l1_code, confidence, reason). 실패/미설정 시 ("SPC", 0.0, ...)."""
+def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, float, str]:
+    """자유서술 → (l1_code, confidence, reason).
+
+    운영에서는 API 실패를 안전하게 abstain한다. 정량평가는 실패 응답이 예측으로 섞이면 안 되므로
+    ``raise_on_error=True``로 원래 예외를 받아 재시도하거나 평가를 중단할 수 있다.
+    """
     text = (free_text or "").strip()
     if not text or not config.GEMINI_ENABLED:
         return "SPC", 0.0, "분류 근거 없음(자유서술 없음 또는 Gemini 미설정)"
@@ -187,6 +191,8 @@ def classify_l1(free_text: str) -> tuple[str, float, str]:
             client, _L1_PROMPT.format(l1_list=l1_list, free_text=text), _L1ClassifySchema
         )
     except Exception:
+        if raise_on_error:
+            raise
         logger.exception("classify_l1 실패, SPC로 폴백")
         return "SPC", 0.0, "분류 실패(API 오류)"
 
@@ -197,7 +203,7 @@ def classify_l1(free_text: str) -> tuple[str, float, str]:
 
 def classify_l2(
     db: Session, l1_code: str, free_text: str, answers: dict[str, str] | None = None,
-    *, auto_threshold: float = DEFAULT_L2_AUTO_THRESHOLD,
+    *, auto_threshold: float = DEFAULT_L2_AUTO_THRESHOLD, raise_on_error: bool = False,
 ) -> L2ClassifyResult:
     """L1이 정해진 뒤 L2를 분류한다.
 
@@ -235,6 +241,8 @@ def classify_l2(
         )
         result = _generate_json(client, prompt, _L2ClassifySchema)
     except Exception:
+        if raise_on_error:
+            raise
         logger.exception("classify_l2 실패, L1 루트로 폴백")
         return L2ClassifyResult(
             type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
@@ -311,7 +319,10 @@ def explain_docs_for_incident(doc_names: list[str], incident_context: dict) -> s
 
 
 def create_reviewable_type(db: Session, l1_code: str, name: str) -> IncidentType:
-    """classify_l2가 new_type_suggested를 반환했을 때 실제로 L2 행을 만든다.
+    """관리자 검수·오프라인 시드 작업에서만 reviewable L2 행을 만든다.
+
+    런타임 사고 분류에서는 자동 호출하지 말아야 한다. 모델 제안은 L1 루트에 abstain한 뒤
+    별도 관리자 검수 절차를 거쳐야 하며, 현재 incidents router는 이 함수를 호출하지 않는다.
 
     l2_code는 사람이 검수하며 다시 이름 붙일 것을 전제로 임시 생성한다(l1_code + 일련번호).
     같은 이름이 이미 있으면(이전에 같은 사고유형이 여러 번 발견됐으면) 재사용한다.

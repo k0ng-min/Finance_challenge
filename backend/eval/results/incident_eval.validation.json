@@ -1,9 +1,10 @@
 {
-  "evaluation_version": "incident-eval-v1",
-  "generated_at": "2026-08-08T09:42:57.820409+00:00",
+  "evaluation_version": "incident-eval-v2",
+  "generated_at": "2026-08-08T13:53:33.664145+00:00",
   "status": "dataset_validated_no_live_predictions",
   "model": "gemini-3.5-flash-lite",
   "prompt_sha256": "0ceb7ad9fd2c80ad6ffd782abac95bd816aa050bab8e65db2ce9e2d4cf77a603",
+  "dataset_sha256": "ee7170551c905f690df02eef2196838e9407dd4213c3eb3267be81a86830e1bb",
   "dataset": {
     "sample_count": 160,
     "l1_counts": {
@@ -21,7 +22,34 @@
       "easy": 70,
       "hard": 56
     },
-    "expected_abstain_count": 34
+    "split_counts": {
+      "calibration": 80,
+      "evaluation": 80
+    },
+    "split_l1_counts": {
+      "calibration": {
+        "CHG": 10,
+        "EMG": 10,
+        "ILL": 10,
+        "INJ": 10,
+        "LIA": 10,
+        "PROP": 10,
+        "SPC": 10,
+        "TRV": 10
+      },
+      "evaluation": {
+        "CHG": 10,
+        "EMG": 10,
+        "ILL": 10,
+        "INJ": 10,
+        "LIA": 10,
+        "PROP": 10,
+        "SPC": 10,
+        "TRV": 10
+      }
+    },
+    "expected_l1_abstain_count": 8,
+    "expected_l2_abstain_count": 34
   },
   "metrics": null,
   "note": "Gemini API 예측을 실행하지 않은 구조 검증 결과이며 모델 성능 수치가 아닙니다."

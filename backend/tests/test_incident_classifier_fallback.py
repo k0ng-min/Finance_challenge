@@ -1,9 +1,12 @@
+import pytest
+
 from app import config
 from app.models.kb import IncidentType
 from app.models.question import QuestionBank
 from app.routers.incidents import _classify_incident
 from app.services.claim_review import pending_questions
 from app.services import incident_classify_gemini as classifier
+from app.services.nlu import ExtractedField
 
 TAXONOMY = [
     ("INJ", "상해", [
@@ -68,6 +71,21 @@ def test_api_error_abstains_to_l1_root(db_session, monkeypatch):
     assert result.abstained is True
     assert result.type_id == root.type_id
     assert result.l2_code is None
+
+
+def test_evaluation_mode_propagates_api_error(db_session, monkeypatch):
+    _seed_taxonomy(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", True)
+    monkeypatch.setattr(classifier, "_get_client", lambda: object())
+    monkeypatch.setattr(
+        classifier, "_generate_json",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("quota")),
+    )
+
+    with pytest.raises(RuntimeError, match="quota"):
+        classifier.classify_l2(
+            db_session, "TRV", "수하물이 오지 않았어요", raise_on_error=True,
+        )
 
 
 def test_low_confidence_l2_abstains(db_session, monkeypatch):
@@ -145,6 +163,49 @@ def test_low_l1_confidence_skips_l2_and_keeps_root(db_session, monkeypatch):
     db_session.commit()
     questions = pending_questions(db_session, "INJ", {}, {})
     assert [q.question_text for q in questions] == ["어디에서 치료받았나요?"]
+
+
+def test_low_confidence_l1_can_change_after_followup(db_session, monkeypatch):
+    _seed_taxonomy(db_session)
+    l1_inputs = []
+    l1_predictions = iter([
+        ("INJ", 0.30, "최초 설명만으로 불명확"),
+        ("PROP", 0.95, "후속 답변에 휴대품 도난이 명확"),
+    ])
+
+    def _classify_l1(text):
+        l1_inputs.append(text)
+        return next(l1_predictions)
+
+    monkeypatch.setattr(classifier, "classify_l1", _classify_l1)
+    monkeypatch.setattr(classifier, "extract_modifiers", lambda _text: {})
+
+    initial_type_id, initial_confidence, _ = _classify_incident(
+        db_session, "여행 중 문제가 생겼어요", {},
+    )
+    assert initial_type_id == db_session.query(IncidentType).filter_by(l2_code="INJ").one().type_id
+    assert initial_confidence == 0.30
+
+    theft = db_session.query(IncidentType).filter_by(l2_code="PROP_THEFT").one()
+
+    def _classify_l2(_db, l1_code, _free_text, answers):
+        assert l1_code == "PROP"
+        assert answers["item_damage_type"] == "도난"
+        return classifier.L2ClassifyResult(
+            type_id=theft.type_id, l2_code=theft.l2_code,
+            confidence=0.93, reason="도난 확인", abstained=False,
+        )
+
+    monkeypatch.setattr(classifier, "classify_l2", _classify_l2)
+    merged = {"item_damage_type": ExtractedField("도난", 0.99, "소매치기")}
+    final_type_id, final_confidence, _ = _classify_incident(
+        db_session, "여행 중 문제가 생겼어요", merged,
+        existing_type_id=initial_type_id, existing_confidence=initial_confidence,
+    )
+
+    assert "item_damage_type: 도난" in l1_inputs[1]
+    assert final_type_id == theft.type_id
+    assert final_confidence == 0.93
 
 
 def test_new_type_suggestion_is_not_auto_created_or_marked_confident(db_session, monkeypatch):
