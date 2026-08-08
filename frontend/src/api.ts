@@ -196,11 +196,13 @@ export interface InsurerRankOut {
   reasons: string[];
   tags: string[];
   official_url: string | null;
-  /** 나이·성별을 함께 넘긴 경우에만 채워진다. 가입연령 밖이면 null이고 사유가 premium_note에 온다. */
-  premium: number | null;
-  /** 여행일수를 곱한 총액 — 화면에는 이 값을 보여준다. */
-  premium_total: number | null;
-  premium_days: number | null;
+  /** 나이·성별을 함께 넘긴 경우의 보험다모아 공시 원문 값. 여행일수로 환산하지 않는다. */
+  published_premium: number | null;
+  premium_period_days: number | null;
+  premium_basis: string | null;
+  premium_source: string | null;
+  premium_source_url: string | null;
+  premium_collected_at: string | null;
   premium_note: string | null;
 }
 
@@ -213,8 +215,7 @@ export interface InsurerPremiumOut {
   insurer_code: string;
   insurer_name: string;
   product_name: string | null;
-  premium: number;
-  premium_total: number;
+  published_premium: number;
   age_range: string | null;
 }
 
@@ -225,7 +226,7 @@ export interface PremiumComparisonOut {
   source: string | null;
   source_url: string | null;
   collected_at: string | null;
-  days: number;
+  premium_period_days: number;
   items: InsurerPremiumOut[];
   /** 해당 나이가 가입연령 밖이라 비교공시에 나오지 않는 보험사 */
   unavailable_insurers: string[];
@@ -358,8 +359,8 @@ export const api = {
 
   getIncidentTypes: () => request<IncidentTypeOut[]>("/incidents/types"),
 
-  getPremiumComparison: (age: number, sex: string, days: number, order: "asc" | "desc") =>
-    request<PremiumComparisonOut>(`/insurers/premiums?age=${age}&sex=${sex}&days=${days}&order=${order}`),
+  getPremiumComparison: (age: number, sex: string, order: "asc" | "desc") =>
+    request<PremiumComparisonOut>(`/insurers/premiums?age=${age}&sex=${sex}&order=${order}`),
 
   getInsurerCoverages: (insurerCode: string) =>
     request<InsurerCoverageOut[]>(`/insurers/${insurerCode}/coverages`),
