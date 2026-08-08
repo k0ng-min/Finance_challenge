@@ -29,6 +29,7 @@ def run(path: Path = DEFAULT_PATH) -> None:
     payload = json.loads(path.read_text(encoding="utf-8"))
     records = payload["records"]
     collected_at = date.fromisoformat(payload["collected_at"])
+    period_days = int(payload.get("premium_period_days", 7))
     basis = payload["premium_basis"]
     source = payload["source"]
     source_url = payload["source_url"]
@@ -58,6 +59,7 @@ def run(path: Path = DEFAULT_PATH) -> None:
             else:
                 updated += 1
             row.premium = rec["premium"]
+            row.period_days = period_days
             row.product_name = rec.get("product_name")
             row.source_product_code = rec.get("prdt_cd")
             row.age_range = rec.get("age_range")

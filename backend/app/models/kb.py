@@ -247,7 +247,8 @@ class InsurerPremium(Base):
     insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=False)
     sex = Column(String, nullable=False)          # M/F
     age = Column(Integer, nullable=False)         # 보험나이(만)
-    premium = Column(Integer, nullable=False)     # 원
+    premium = Column(Integer, nullable=False)     # 보험다모아 7일 표준조건 비교공시 보험료(원)
+    period_days = Column(Integer, nullable=False, default=7)  # 공시값의 기준 보험기간
     product_name = Column(String)                 # 비교공시상 상품명
     source_product_code = Column(String)          # 보험다모아 상품코드
     age_range = Column(String)                    # 해당 상품의 가입연령 표기(예: "19~79")

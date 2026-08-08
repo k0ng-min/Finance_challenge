@@ -1871,9 +1871,10 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 
-/* --- 보험료 계산기 --- */
+/* --- 7일 표준조건 보험료 비교공시 --- */
 .calc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.calc-grid--single { grid-template-columns: minmax(0, 1fr); }
 .calc-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-top: 16px; }
 .calc-seg { display: flex; gap: 6px; }
 .premium-chip {
@@ -1928,6 +1929,8 @@ button { cursor: pointer; font-family: inherit; }
   white-space: nowrap;
 }
 .premium-row__cost { font-size: 1rem; font-weight: 800; color: var(--heading); flex-shrink: 0; }
+.premium-row__amount { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+.premium-row__amount small { margin-top: 2px; font-size: 0.62rem; font-weight: 700; color: var(--muted); }
 .premium-row:first-child .premium-row__cost { color: var(--primary-dark); }
 .premium-basis {
   font-size: 0.74rem;
@@ -1936,6 +1939,7 @@ button { cursor: pointer; font-family: inherit; }
   margin: 10px 0 0;
 }
 .premium-basis a { color: var(--primary-dark); font-weight: 700; }
+.premium-basis strong { color: var(--heading); }
 
 /* --- 기존보험 연결 & 중복·공백 진단 --- */
 

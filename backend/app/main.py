@@ -69,6 +69,9 @@ _add_missing_columns("question_bank", {
 _add_missing_columns("overlap_rule", {
     "anchor_phrase": "ALTER TABLE overlap_rule ADD COLUMN anchor_phrase VARCHAR",
 })
+_add_missing_columns("insurer_premium", {
+    "period_days": "ALTER TABLE insurer_premium ADD COLUMN period_days INTEGER DEFAULT 7 NOT NULL",
+})
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 

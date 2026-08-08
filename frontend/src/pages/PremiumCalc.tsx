@@ -16,7 +16,7 @@ const INSURERS = [
 ];
 
 /**
- * 보험료 계산기 — 보험사를 골라 나이·성별·여행일수를 넣으면 총 보험료를 비교해 준다.
+ * 보험료 비교공시 — 보험사를 골라 나이·성별에 따른 7일 표준조건 공시값을 비교한다.
  *
  * 숫자는 약관에서 뽑은 값이 아니라 보험다모아 비교공시에서 수집한 값이라, 산출 전제와
  * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
@@ -28,7 +28,6 @@ export function PremiumCalc() {
   const [selected, setSelected] = useState<string[]>([]);
   const [age, setAge] = useState<number>(profileAge ?? 30);
   const [sex, setSex] = useState<"M" | "F">(profileSex === "F" ? "F" : "M");
-  const [days, setDays] = useState<number>(7);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [data, setData] = useState<PremiumComparisonOut | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +42,7 @@ export function PremiumCalc() {
     setLoading(true);
     setError(null);
     api
-      .getPremiumComparison(age, sex, days, order)
+      .getPremiumComparison(age, sex, order)
       .then((res) => {
         if (!cancelled) setData(res);
       })
@@ -59,7 +58,7 @@ export function PremiumCalc() {
     return () => {
       cancelled = true;
     };
-  }, [age, sex, days, order]);
+  }, [age, sex, order]);
 
   function toggle(code: string) {
     setSelected((prev) =>
@@ -79,12 +78,12 @@ export function PremiumCalc() {
 
   return (
     <div className="page">
-      <TopBar title="보험료 계산기" />
+      <TopBar title="비교공시 보험료" />
       <PageHero
         icon="wallet"
         eyebrow="PREMIUM"
-        title={"얼마나 나올지\n먼저 계산해봐요"}
-        subtitle="보험사를 골라 나이·성별·여행일수를 넣으면 총 보험료를 비교해 드려요."
+        title={"7일 표준조건\n보험료를 비교해요"}
+        subtitle="보험다모아에 공시된 동일 기준의 보험료를 보험사별로 비교해 드려요."
       />
 
       <div className="card">
@@ -102,7 +101,7 @@ export function PremiumCalc() {
           ))}
         </div>
 
-        <div className="calc-grid">
+        <div className="calc-grid calc-grid--single">
           <label>
             나이 (만)
             <input
@@ -111,16 +110,6 @@ export function PremiumCalc() {
               max={80}
               value={age}
               onChange={(e) => setAge(Number(e.target.value))}
-            />
-          </label>
-          <label>
-            여행일수
-            <input
-              type="number"
-              min={1}
-              max={180}
-              value={days}
-              onChange={(e) => setDays(Math.max(1, Number(e.target.value)))}
             />
           </label>
         </div>
@@ -157,7 +146,7 @@ export function PremiumCalc() {
         </div>
       </div>
 
-      {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>계산하는 중...</p>}
+      {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>공시 자료를 불러오는 중...</p>}
       {!loading && error && <div className="error-box">{error}</div>}
 
       {!loading && !error && selected.length === 0 && (
@@ -183,7 +172,10 @@ export function PremiumCalc() {
                   {item.insurer_name}
                   {item.product_name && <em>{item.product_name}</em>}
                 </span>
-                <span className="premium-row__cost">{item.premium_total.toLocaleString()}원</span>
+                <span className="premium-row__amount">
+                  <span className="premium-row__cost">{item.published_premium.toLocaleString()}원</span>
+                  <small>{data.premium_period_days}일 기준</small>
+                </span>
               </motion.li>
             ))}
           </ul>
@@ -196,12 +188,14 @@ export function PremiumCalc() {
           )}
 
           <p className="premium-basis">
+            <strong>{data.premium_period_days}일 표준조건 비교공시 보험료입니다.</strong>
+            <br />
             {data.basis}
             <br />
-            {days}일 기준 총액으로 계산했어요. 실제 보험료는 여행지·담보 구성에 따라 달라져요.{" "}
+            실제 가입 보험료는 여행기간, 담보구성, 가입금액 등 계약조건에 따라 달라질 수 있습니다.{" "}
             {data.source_url && (
               <a href={data.source_url} target="_blank" rel="noreferrer">
-                {data.source} ({data.collected_at} 수집) →
+                {data.source} ({data.collected_at} 수집)에서 실제 가입조건 보험료 확인 →
               </a>
             )}
           </p>
