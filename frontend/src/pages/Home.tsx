@@ -15,7 +15,7 @@ const MAIN_CARDS = [
 const QUICK_ITEMS = [
   { to: "/policies", icon: "umbrella", title: "내 보험" },
   { to: "/checklist", icon: "file-text", title: "청구 전 점검" },
-  { to: "/premium", icon: "wallet", title: "보험료 계산기" },
+  { to: "/premium", icon: "wallet", title: "보험료 비교공시" },
   { to: "/highlights", icon: "notebook", title: "약관 형광펜" },
 ];
 
