@@ -189,9 +189,12 @@ export function InsurerRankingFlow({
           target="_blank"
           rel="noreferrer"
         >
-          💳 여행 일수·목적지까지 반영한 실시간 견적은 보험다모아(공식 보험 비교 사이트)에서 바로
-          확인할 수 있어요 →
+          💳 여행기간·담보구성 등 실제 가입조건 보험료는 보험다모아에서 확인할 수 있어요 →
         </a>
+        <p className="rank-premium-note">
+          카드의 금액은 보험다모아 {ranking[0]?.premium_period_days ?? 7}일 표준조건 비교공시값이며,
+          선택한 여행일수로 환산한 견적이 아닙니다.
+        </p>
         <div className="rank-list">
           {ranking.map((r, i) => (
             <motion.button
@@ -210,8 +213,11 @@ export function InsurerRankingFlow({
                   <strong>{r.insurer_name}</strong>
                   <span className="rank-card__meta">
                     <span className="rank-card__score">적합도 {r.score}점</span>
-                    {r.premium_total != null ? (
-                      <span className="rank-card__premium">{r.premium_total.toLocaleString()}원</span>
+                    {r.published_premium != null ? (
+                      <span className="rank-card__premium">
+                        <span>{r.published_premium.toLocaleString()}원</span>
+                        <small>{r.premium_period_days ?? 7}일 표준조건</small>
+                      </span>
                     ) : (
                       <span className="rank-card__premium rank-card__premium--none">가입연령 밖</span>
                     )}
