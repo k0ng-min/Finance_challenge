@@ -182,7 +182,9 @@ uvicorn app.main:app --port 8000
 
 API 문서: `http://localhost:8000/docs`
 
-앱을 처음 띄우면 `main.py`가 스키마 마이그레이션(누락된 컬럼 추가)을 자동으로 실행합니다. DB를 완전히 새로 만들고 싶다면(`backend/data/app.db` 삭제 후) `backend/app/seed_*.py`를 아래 순서로 실행하세요 — 단, 이 경우 조항 원문 확보를 위해 `data/raw_pdfs/`에 각사 약관 PDF가 있어야 합니다(아래 "약관 원문" 참고).
+앱을 처음 띄우면 `main.py`가 스키마 마이그레이션(누락된 컬럼 추가)과 함께, 서류 사진 확인이 인용할 약관 근거(`doc_requirement`)가 비어 있으면 자동으로 채웁니다 — 클론한 뒤 따로 실행할 명령은 없습니다. 약관이 아직 적재되지 않은 DB에서는 조용히 건너뛰고 앱은 정상 기동합니다.
+
+DB를 완전히 새로 만들고 싶다면(`backend/data/app.db` 삭제 후) `backend/app/seed_*.py`를 아래 순서로 실행하세요 — 단, 이 경우 조항 원문 확보를 위해 `data/raw_pdfs/`에 각사 약관 PDF가 있어야 합니다(아래 "약관 원문" 참고).
 
 ```bash
 python -m app.seed_samsung && python -m app.seed_hyundai && python -m app.seed_meritz \
@@ -192,11 +194,12 @@ python -m app.seed_samsung && python -m app.seed_hyundai && python -m app.seed_m
 # 이후 backend/app/seed_*_inj_deep.py, seed_*_full_chunk*.py, seed_*_terms_docs.py를
 # 보험사별로 순서대로 실행하면 이번에 확장한 딥다이브 데이터까지 재구성됩니다.
 
-# 마지막으로 중복 판정 규칙을 시드합니다(약관 조항이 모두 적재된 뒤에 실행해야 합니다).
-python -m app.seed_overlap_rules
+# 마지막으로 근거를 조회해 붙이는 시드 둘을 실행합니다(약관 조항이 모두 적재된 뒤라야 합니다).
+python -m app.seed_overlap_rules      # 중복 판정 규칙
+python -m app.seed_doc_requirements   # 서류별 약관 요건(앱 기동 시 자동 실행되므로 보통 생략 가능)
 ```
 
-`seed_overlap_rules`는 규칙마다 근거 조항을 DB에서 조회해 연결합니다. 근거를 못 찾거나 근거 문구가 실제 조항 원문에 없으면 **예외를 던지고 롤백**하므로, 성공했다면 모든 판정에 근거가 붙어 있다는 뜻입니다.
+`seed_overlap_rules`와 `seed_doc_requirements`는 행마다 근거 조항을 DB에서 조회해 연결합니다. 근거를 못 찾거나 근거 문구가 실제 조항 원문에 없으면 **예외를 던지고 롤백**하므로, 성공했다면 모든 판정·요건에 근거가 붙어 있다는 뜻입니다.
 
 ### 1-1. 보험료 데이터 갱신 (선택)
 
@@ -271,6 +274,8 @@ backend/
       clause_spans_gemini.py       약관 형광펜 관련도 계산
       validation.py                결정적 누락·모순 검증
       coverage_overlap.py          기존보험 대비 중복·공백 진단(조회 시점 계산)
+      doc_verify.py                서류 사진 판독 결과 → 체크리스트 상태 규칙(LLM 없음)
+      doc_verify_gemini.py         서류 사진 번역·요건 대조(Gemini vision, 이미지 미저장)
       deletion.py                  탈퇴·게스트승격 시 사용자 데이터 일괄 삭제
       external_policy/             기존보험 수집 Provider
         base.py                      DTO + 추상 인터페이스
@@ -279,6 +284,7 @@ backend/
         registry.py                  환경변수로 활성 Provider 선택
     seed_*.py               6개사 약관 데이터 시딩 스크립트
     seed_overlap_rules.py   중복 판정 규칙 시드(규칙마다 근거 조항을 조회해 물림)
+    seed_doc_requirements.py 서류별 약관 요건 시드(앱 기동 시 비어 있으면 자동 실행)
     crawl_premiums.py       보험다모아 나이·성별별 보험료 수집
     seed_premiums.py        수집한 보험료를 insurer_premium 테이블에 적재
   tests/                   pytest(진단 근거 검증, 세대 판정 경계값, API 권한 등 56건)
@@ -289,6 +295,8 @@ backend/
 frontend/   React + TypeScript + Vite
   src/components/ExternalPolicyPicker.tsx  기존보험 선택 UI(3개 화면 공용)
   src/components/OverlapReport.tsx         진단 결과 표시(근거 원문 인용)
+  src/components/DocPhotoCheck.tsx         서류 사진 확인 UI(약관 요건/일반 항목 분리 표시)
+  src/components/FrameScrollbar.tsx        프레임 안쪽 스크롤 막대(둥근 모서리와 겹치지 않게)
 docs/       규정 준수 문서(약관 원문 출처 등록대장 등)
   superpowers/specs/   기능 설계 문서
   superpowers/plans/   구현 계획 문서
@@ -309,6 +317,17 @@ data/raw_pdfs/  원본 약관 PDF (gitignore, 로컬 전용 — 아래 "약관 �
 - 조항 수치 조건(ClauseTerm) 별도 표시 — 지급한도·자기부담금 등을 배지로 분리 노출
 - 활동 기반 면책 우선 판단 — 사고 상황의 수식자(예: 스쿠버다이빙)가 면책 조항과 실제로 일치하면 과도하게 낙관적인 안내를 하지 않음
 - 사고 내용과 조항·필요서류를 연결한 Gemini 상황별 설명 자동 표시
+- **서류 사진 확인**(`청구 전 점검 > 서류 체크`) — 해외에서 받은 서류는 당사자도 맞는 건지 알기
+  어렵습니다. 사진을 올리면 번역해서 무슨 내용인지 알려주고, 요건이 실제로 담겨 있는지 대조합니다.
+  결과는 **「약관이 요구하는 것」(조항 원문 인용)** 과 **「일반적으로 확인하는 것」(약관 근거 아님을
+  명시)** 두 칸으로 나눠 보여줍니다 — 약관 요건은 `doc_requirement`에 근거 조항을 물려 시드하며
+  (예: 제7조 ②항 *"사고증명서는 …국외의 의료관련법에서 정한 의료기관에서 발급한 것이어야 합니다"*),
+  금액·진료일자처럼 약관에 없는 항목은 근거가 없으므로 상태를 바꾸지 않습니다.
+  사진이 흐리거나 잘려 **판독 불가**면 "미보유"로 단정하지 않고 상태를 그대로 둔 채 다시 찍어달라고
+  안내합니다. 사진은 물론 번역문도 저장하지 않고(진단서는 민감정보), 남기는 것은 체크리스트 상태와
+  "약관 요건 N개 중 M개 확인" 수준의 요약뿐입니다. 사진 없이 직접 상태를 고르는 기존 방식도 그대로
+  쓸 수 있으며, Gemini 키가 없으면 이 기능만 정직하게 막습니다(규칙기반 폴백이 불가능한 기능이라
+  흉내내지 않습니다).
 - 모든 결과는 실제 약관 조항 근거가 없으면 자동으로 "확인불가" 처리
 - 인증/보안 — 카카오·구글 로그인, 회원가입 동의, 로그인 계정 간 데이터 접근 차단(IDOR 방지), 요청 빈도 제한, 보안 HTTP 헤더, CORS 제한
 - **사고유형 기반 보험사 비교** — 여행 준비 단계에서 고른 "걱정되는 사고유형"이 보험사 순위(지급한도가

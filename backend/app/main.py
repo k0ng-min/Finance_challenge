@@ -73,6 +73,39 @@ _add_missing_columns("insurer_premium", {
     "period_days": "ALTER TABLE insurer_premium ADD COLUMN period_days INTEGER DEFAULT 7 NOT NULL",
 })
 
+def _ensure_doc_requirements():
+    """서류 사진 확인이 인용할 약관 근거(doc_requirement)가 비어 있으면 채운다.
+
+    저장소를 클론한 사람이 시드 스크립트를 따로 기억하지 않아도 기능이 온전히 돌게 하려는
+    것이다. 위 컬럼 마이그레이션과 같은 자리에 두는 이유도 같다 — 기동 한 번으로 스키마와
+    데이터가 모두 맞춰진다.
+
+    약관이 아직 적재되지 않은 DB에서는 근거 조항을 못 찾아 시드가 예외를 던지는데, 그건
+    이 상황에서 정상이므로 앱을 죽이지 않고 넘어간다. 그 경우 서류 사진 확인은 "약관에
+    정해진 형식 요건 없음"으로 동작하며, 근거 없는 판정을 내리지는 않는다.
+    """
+    from app.database import SessionLocal
+    from app.models.kb import Clause, DocRequirement
+
+    db = SessionLocal()
+    try:
+        if db.query(DocRequirement).first() is not None:
+            return
+        if db.query(Clause).first() is None:
+            return  # 약관 KB가 없는 빈 DB. 시드할 근거 자체가 없다.
+        from app.seed_doc_requirements import seed
+        count = seed(db)
+        db.commit()
+        print(f"[startup] doc_requirement {count}건 시드 완료")
+    except Exception as exc:  # noqa: BLE001 — 어떤 이유든 앱 기동을 막지 않는다
+        db.rollback()
+        print(f"[startup] doc_requirement 시드를 건너뜁니다: {exc}")
+    finally:
+        db.close()
+
+
+_ensure_doc_requirements()
+
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 
 # 요청 빈도 제한 — FastAPI 생태계 표준 라이브러리(slowapi). @limiter.limit(...) 데코레이터가
