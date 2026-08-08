@@ -188,11 +188,31 @@ export interface InsurerTierOut {
   description: string;
 }
 
+export interface RankingEvidenceOut {
+  kind: string;
+  source_id: number;
+  coverage_name: string;
+  description: string;
+  page_ref: string | null;
+}
+
+export interface RankingDimensionOut {
+  code: string;
+  label: string;
+  /** 보험사 사이 상대 단계 1~5. 근거가 부족하면 0. */
+  level: number;
+  status: string;
+  summary: string;
+  evidence_count: number;
+  evidence: RankingEvidenceOut[];
+}
+
 export interface InsurerRankOut {
   rank: number;
   insurer_code: string;
   insurer_name: string;
-  score: number;
+  comparison_basis: string;
+  dimensions: RankingDimensionOut[];
   reasons: string[];
   tags: string[];
   official_url: string | null;

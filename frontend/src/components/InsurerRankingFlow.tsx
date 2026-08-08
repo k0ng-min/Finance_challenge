@@ -209,7 +209,7 @@ export function InsurerRankingFlow({
                 <div className="rank-card__toprow">
                   <strong>{r.insurer_name}</strong>
                   <span className="rank-card__meta">
-                    <span className="rank-card__score">적합도 {r.score}점</span>
+                    <span className="rank-card__basis">{r.comparison_basis}</span>
                     {r.premium_total != null ? (
                       <span className="rank-card__premium">{r.premium_total.toLocaleString()}원</span>
                     ) : (
@@ -224,6 +224,22 @@ export function InsurerRankingFlow({
                     ))}
                   </div>
                 )}
+                <div className="rank-card__dimensions">
+                  {r.dimensions.map((dimension) => (
+                    <div className="rank-dimension" key={dimension.code} title={dimension.summary}>
+                      <span>{dimension.label}</span>
+                      {dimension.level > 0 ? (
+                        <span className="rank-dimension__dots" aria-label={`${dimension.status}, 5단계 중 ${dimension.level}단계`}>
+                          {Array.from({ length: 5 }, (_, index) => (
+                            <i key={index} className={index < dimension.level ? "is-active" : ""} />
+                          ))}
+                        </span>
+                      ) : (
+                        <em>근거 부족</em>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
               <span className="rank-card__arrow">›</span>
             </motion.button>
