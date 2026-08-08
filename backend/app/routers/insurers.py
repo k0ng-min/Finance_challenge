@@ -15,6 +15,7 @@ from app.services.insurer_ranking import list_tiers, rank_insurers
 router = APIRouter(prefix="/insurers", tags=["insurers"])
 
 _RELEVANCE_ORDER = {"직접": 0, "조건부": 1, "면책": 2}
+PUBLISHED_PREMIUM_PERIOD_DAYS = 7
 
 
 def _latest_policy_version(db: Session, insurer_code: str) -> tuple[Insurer, PolicyVersion | None]:
@@ -39,12 +40,21 @@ def get_ranking_tiers():
 
 
 @router.get("/premiums", response_model=PremiumComparisonOut)
-def get_premium_comparison(age: int, sex: str, days: int = 1, order: str = "asc", db: Session = Depends(get_db)):
-    """해당 나이·성별의 6개사 예시 보험료를 낮은 순으로 비교해서 돌려준다.
+def get_premium_comparison(
+    age: int,
+    sex: str,
+    days: int | None = None,
+    order: str = "asc",
+    db: Session = Depends(get_db),
+):
+    """해당 나이·성별의 6개사 7일 표준조건 비교공시 보험료를 돌려준다.
 
     이 숫자는 약관에서 뽑은 값이 아니라 보험다모아 비교공시에서 수집한 값이므로,
     산출 전제(basis)와 출처·수집일을 항상 같이 내려보낸다. 화면에서 숫자만 떼어
     보여주지 않기 위한 것이다.
+
+    days는 구버전 클라이언트 호환을 위해 받지만 계산에는 사용하지 않는다. 7일 공시값만
+    확보한 상태에서 여행일수에 비례한다고 가정하면 근거 없는 보험료를 만들게 되기 때문이다.
 
     해당 나이가 가입연령 범위 밖이라 비교공시에 아예 나오지 않는 보험사는
     unavailable_insurers로 따로 알려준다 — 조용히 빠뜨리면 "그 보험사는 더 싼가?"
@@ -53,8 +63,7 @@ def get_premium_comparison(age: int, sex: str, days: int = 1, order: str = "asc"
     if sex not in ("M", "F"):
         raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
 
-    if days < 1:
-        days = 1
+    _ = days
     direction = InsurerPremium.premium.desc() if order == "desc" else InsurerPremium.premium.asc()
     rows = (
         db.query(InsurerPremium)
@@ -77,12 +86,12 @@ def get_premium_comparison(age: int, sex: str, days: int = 1, order: str = "asc"
         age=age, sex=sex,
         basis=first.basis, source=first.source, source_url=first.source_url,
         collected_at=first.collected_at,
-        days=days,
+        premium_period_days=first.period_days or PUBLISHED_PREMIUM_PERIOD_DAYS,
         items=[
             InsurerPremiumOut(
                 insurer_code=r.insurer.code, insurer_name=r.insurer.name,
-                product_name=r.product_name, premium=r.premium,
-                premium_total=r.premium * days, age_range=r.age_range,
+                product_name=r.product_name, published_premium=r.premium,
+                age_range=r.age_range,
             )
             for r in rows
         ],
@@ -113,8 +122,60 @@ def get_insurer_premium_curve(insurer_code: str, sex: str, db: Session = Depends
     return InsurerPremiumCurveOut(
         insurer_code=insurer.code, insurer_name=insurer.name,
         product_name=rows[0].product_name, sex=sex,
-        points=[PremiumPointOut(age=r.age, premium=r.premium) for r in rows],
+        premium_period_days=rows[0].period_days or PUBLISHED_PREMIUM_PERIOD_DAYS,
+        basis=rows[0].basis, source=rows[0].source, source_url=rows[0].source_url,
+        collected_at=rows[0].collected_at,
+        points=[PremiumPointOut(age=r.age, published_premium=r.premium) for r in rows],
     )
+
+
+def _attach_published_premiums(
+    db: Session,
+    ranking: list[dict],
+    age: int | None,
+    sex: str | None,
+) -> None:
+    """랭킹에 7일 공시 원문 값과 근거 메타데이터만 붙인다.
+
+    trip_days는 의도적으로 받지 않는다. 공시값을 일할 계산할 근거가 없고, 보험료는
+    랭킹 점수에도 섞지 않는다.
+    """
+    if age is None or not sex:
+        return
+    normalized_sex = sex.upper()
+    if normalized_sex not in ("M", "F"):
+        return
+
+    rows = (
+        db.query(InsurerPremium)
+        .filter(InsurerPremium.age == age, InsurerPremium.sex == normalized_sex)
+        .all()
+    )
+    by_id = {r.insurer_id: r for r in rows}
+    code_to_row = {
+        insurer.code: by_id[insurer.insurer_id]
+        for insurer in db.query(Insurer).all()
+        if insurer.insurer_id in by_id
+    }
+
+    for item in ranking:
+        row = code_to_row.get(item["insurer_code"])
+        if row:
+            item["published_premium"] = row.premium
+            item["premium_period_days"] = row.period_days or PUBLISHED_PREMIUM_PERIOD_DAYS
+            item["premium_basis"] = row.basis
+            item["premium_source"] = row.source
+            item["premium_source_url"] = row.source_url
+            item["premium_collected_at"] = row.collected_at
+            item["premium_note"] = None
+        else:
+            item["published_premium"] = None
+            item["premium_period_days"] = PUBLISHED_PREMIUM_PERIOD_DAYS
+            item["premium_basis"] = None
+            item["premium_source"] = None
+            item["premium_source_url"] = None
+            item["premium_collected_at"] = None
+            item["premium_note"] = "이 나이·성별은 가입연령 범위 밖이에요"
 
 
 @router.get("/{insurer_code}/coverages", response_model=list[InsurerCoverageOut])
@@ -228,34 +289,8 @@ def get_insurer_ranking(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # 나이·성별을 함께 받았으면 순위 카드에 바로 보여줄 예시 보험료를 붙인다. 순위·점수 자체는
-    # 건드리지 않는다 — 보험료는 약관 근거가 아니라 외부 비교공시 값이므로 순위 산정에 섞지 않는다.
-    if age is not None and sex:
-        sex = sex.upper()
-        if sex in ("M", "F"):
-            rows = (
-                db.query(InsurerPremium)
-                .filter(InsurerPremium.age == age, InsurerPremium.sex == sex)
-                .all()
-            )
-            by_id = {r.insurer_id: r for r in rows}
-            code_to_row = {}
-            for insurer in db.query(Insurer).all():
-                row = by_id.get(insurer.insurer_id)
-                if row:
-                    code_to_row[insurer.code] = row
-            days = trip_days if trip_days and trip_days > 0 else 1
-            for item in ranking:
-                row = code_to_row.get(item["insurer_code"])
-                if row:
-                    item["premium"] = row.premium
-                    item["premium_days"] = days
-                    item["premium_total"] = row.premium * days
-                    item["premium_note"] = row.basis
-                else:
-                    item["premium"] = None
-                    item["premium_total"] = None
-                    item["premium_days"] = days
-                    item["premium_note"] = "이 나이·성별은 가입연령 범위 밖이에요"
+    # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,
+    # 보험료는 외부 비교공시 값이므로 순위 산정에도 섞지 않는다.
+    _attach_published_premiums(db, ranking, age, sex)
 
     return InsurerRankingOut(tier_code=tier, ranking=ranking)
