@@ -874,21 +874,87 @@ button { cursor: pointer; font-family: inherit; }
   .rank-gauges { grid-template-columns: 1fr; gap: 9px; }
 }
 
-/* --- 서류 사진 확인 --- */
-.doc-photo-btn {
-  display: block;
-  width: 100%;
-  margin-top: 6px;
-  padding: 5px 8px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  font-family: inherit;
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-  border: none;
-  border-radius: 999px;
+/* --- 서류 사진 확인 ---
+   상태 선택이 이 칸의 주인공이고 사진은 보조 수단이다. 예전엔 상태 선택과 같은 크기의
+   알약을 한 줄 더 깔아서, 행마다 반복되며 정작 골라야 할 상태보다 더 눈에 띄었다.
+   같은 줄의 작은 원형 아이콘 하나로 줄인다. */
+.doc-photo-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 4px;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--muted);
 }
-.doc-photo-btn:disabled { opacity: 0.6; }
+.doc-photo-hint__icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  margin-top: 1px;
+}
+
+.doc-status-cell { display: flex; align-items: center; gap: 6px; }
+.doc-status-cell .picker-field { flex: 1; min-width: 0; }
+
+.doc-photo-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  /* 회색으로 두면 비활성처럼 보인다 — 휴대폰에는 hover가 없어서 끝까지 회색으로 남는다. */
+  color: var(--primary);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+@media (hover: hover) {
+  .doc-photo-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+}
+.doc-photo-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.doc-photo-btn:disabled { opacity: 0.7; }
+.doc-photo-btn.is-busy { border-color: var(--primary); }
+.doc-photo-btn__spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  animation: doc-photo-spin 0.7s linear infinite;
+}
+@keyframes doc-photo-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .doc-photo-btn__spin { animation-duration: 2.4s; }
+}
+
+/* 휴대폰에서 "찍기 / 고르기"를 묻는 선택지. */
+.doc-photo-choice { display: flex; flex-direction: column; gap: 9px; }
+.doc-photo-choice button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 15px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--primary);
+  font-family: inherit;
+  text-align: left;
+}
+.doc-photo-choice button:active { border-color: var(--primary); background: var(--primary-soft); }
+.doc-photo-choice span { display: flex; flex-direction: column; gap: 2px; }
+.doc-photo-choice strong { font-size: 0.9rem; color: var(--heading); }
+.doc-photo-choice em { font-size: 0.74rem; font-style: normal; color: var(--muted); }
 
 .doc-verify__message {
   margin: 0 0 10px;
