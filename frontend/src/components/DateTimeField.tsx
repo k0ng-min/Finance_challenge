@@ -62,12 +62,15 @@ function WheelCol({ items, index, onIndex }: WheelColProps) {
 
 interface Parsed { y: number; m: number; d: number; h: number; min: number }
 
-function parseValue(value: string, mode: "date" | "datetime"): Parsed {
+type FieldMode = "date" | "datetime" | "month";
+
+function parseValue(value: string, mode: FieldMode): Parsed {
   const now = new Date();
   if (!value) {
     return { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate(), h: now.getHours(), min: now.getMinutes() };
   }
   const [datePart, timePart] = value.split("T");
+  // month 모드의 값은 "YYYY-MM"이라 일(d)이 없다 — 1일로 채워 같은 Parsed 구조를 쓴다.
   const [y, m, d] = datePart.split("-").map(Number);
   let h = now.getHours();
   let min = now.getMinutes();
@@ -76,12 +79,13 @@ function parseValue(value: string, mode: "date" | "datetime"): Parsed {
     h = hh;
     min = mm;
   }
-  return { y, m, d, h, min };
+  return { y, m, d: Number.isFinite(d) ? d : 1, h, min };
 }
 
-function formatDisplay(value: string, mode: "date" | "datetime") {
+function formatDisplay(value: string, mode: FieldMode) {
   if (!value) return null;
   const { y, m, d, h, min } = parseValue(value, mode);
+  if (mode === "month") return `${y}년 ${m}월`;
   const wd = "일월화수목금토"[new Date(y, m - 1, d).getDay()];
   const datePart = `${y}년 ${m}월 ${d}일 (${wd})`;
   return mode === "date" ? datePart : `${datePart} ${pad2(h)}:${pad2(min)}`;
@@ -91,12 +95,17 @@ interface DateTimeFieldProps {
   label: string;
   value: string;
   onChange: (v: string) => void;
-  mode?: "date" | "datetime";
+  /** month는 연·월만 고르고 "YYYY-MM"을 돌려준다(실손 가입시기처럼 일자가 의미 없는 값). */
+  mode?: FieldMode;
   placeholder?: string;
   /** 이 날짜(포함) 이전은 고를 수 없다. YYYY-MM-DD. */
   minDate?: string;
   /** 이 날짜(포함) 이후는 고를 수 없다. YYYY-MM-DD. */
   maxDate?: string;
+  /** 고른 값을 지울 수 있게 한다(선택 입력 필드용). */
+  clearable?: boolean;
+  /** 트리거 버튼에 쓸 아이콘. 기본은 달력. */
+  icon?: string;
 }
 
 /**
@@ -105,6 +114,7 @@ interface DateTimeFieldProps {
  */
 export function DateTimeField({
   label, value, onChange, mode = "date", placeholder = "선택해주세요", minDate, maxDate,
+  clearable = false, icon = "📅",
 }: DateTimeFieldProps) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Parsed>(() => parseValue(value, mode));
@@ -142,6 +152,11 @@ export function DateTimeField({
   const minutes = Array.from({ length: 60 }, (_, i) => i);
 
   function confirm() {
+    if (mode === "month") {
+      onChange(`${draft.y}-${pad2(draft.m)}`);
+      setOpen(false);
+      return;
+    }
     const datePart = `${draft.y}-${pad2(draft.m)}-${pad2(dClamped)}`;
     onChange(mode === "date" ? datePart : `${datePart}T${pad2(draft.h)}:${pad2(draft.min)}`);
     setOpen(false);
@@ -154,7 +169,22 @@ export function DateTimeField({
       <span className="field-block__label">{label}</span>
       <button type="button" className="field-trigger" onClick={openSheet}>
         <span className={display ? "" : "field-trigger__placeholder"}>{display ?? placeholder}</span>
-        <span className="field-trigger__icon">📅</span>
+        {clearable && display ? (
+          <span
+            role="button"
+            tabIndex={0}
+            className="field-trigger__clear"
+            aria-label={`${label} 지우기`}
+            onClick={(e) => { e.stopPropagation(); onChange(""); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); onChange(""); }
+            }}
+          >
+            ×
+          </span>
+        ) : (
+          <span className="field-trigger__icon">{icon}</span>
+        )}
       </button>
 
       {open && (
@@ -163,7 +193,9 @@ export function DateTimeField({
             <div className="sheet__handle" />
             <div className="sheet__title">{label}</div>
             <div className="sheet__value">
-              {draft.y}년 {draft.m}월 {dClamped}일{mode === "datetime" ? ` ${pad2(draft.h)}:${pad2(draft.min)}` : ""}
+              {mode === "month"
+                ? `${draft.y}년 ${draft.m}월`
+                : `${draft.y}년 ${draft.m}월 ${dClamped}일${mode === "datetime" ? ` ${pad2(draft.h)}:${pad2(draft.min)}` : ""}`}
             </div>
             <div className="wheel-row">
               <div className="wheel-highlight" />
@@ -177,11 +209,13 @@ export function DateTimeField({
                 index={Math.max(0, months.indexOf(draft.m))}
                 onIndex={(i) => setDraft((p) => clampToRange({ ...p, m: months[i] }))}
               />
-              <WheelCol
-                items={days.map((dd) => `${dd}일`)}
-                index={Math.max(0, days.indexOf(dClamped))}
-                onIndex={(i) => setDraft((p) => clampToRange({ ...p, d: days[i] }))}
-              />
+              {mode !== "month" && (
+                <WheelCol
+                  items={days.map((dd) => `${dd}일`)}
+                  index={Math.max(0, days.indexOf(dClamped))}
+                  onIndex={(i) => setDraft((p) => clampToRange({ ...p, d: days[i] }))}
+                />
+              )}
               {mode === "datetime" && (
                 <>
                   <WheelCol

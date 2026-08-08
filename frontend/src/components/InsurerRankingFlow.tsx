@@ -204,44 +204,50 @@ export function InsurerRankingFlow({
               transition={{ delay: i * 0.04 }}
               whileTap={{ scale: 0.98 }}
             >
-              <span className={`rank-badge${r.rank <= 3 ? " rank-badge--top" : ""}`}>{r.rank}</span>
-              <div className="rank-card__text">
-                <div className="rank-card__toprow">
+              <div className="rank-card__head">
+                <span className={`rank-badge${r.rank === 1 ? " rank-badge--first" : ""}`}>{r.rank}</span>
+                <div className="rank-card__name">
                   <strong>{r.insurer_name}</strong>
-                  <span className="rank-card__meta">
-                    <span className="rank-card__basis">{r.comparison_basis}</span>
-                    {r.premium_total != null ? (
-                      <span className="rank-card__premium">{r.premium_total.toLocaleString()}원</span>
-                    ) : (
-                      <span className="rank-card__premium rank-card__premium--none">가입연령 밖</span>
-                    )}
-                  </span>
+                  <span className="rank-card__basis">{r.comparison_basis}</span>
                 </div>
-                {r.tags.length > 0 && (
-                  <div className="rank-card__tags">
-                    {r.tags.map((t) => (
-                      <span className="rank-tag" key={t}>{t}</span>
-                    ))}
-                  </div>
-                )}
-                <div className="rank-card__dimensions">
-                  {r.dimensions.map((dimension) => (
-                    <div className="rank-dimension" key={dimension.code} title={dimension.summary}>
-                      <span>{dimension.label}</span>
-                      {dimension.level > 0 ? (
-                        <span className="rank-dimension__dots" aria-label={`${dimension.status}, 5단계 중 ${dimension.level}단계`}>
-                          {Array.from({ length: 5 }, (_, index) => (
-                            <i key={index} className={index < dimension.level ? "is-active" : ""} />
-                          ))}
-                        </span>
-                      ) : (
-                        <em>근거 부족</em>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <span className="rank-card__price">
+                  {r.premium_total != null ? (
+                    <>
+                      <b>{r.premium_total.toLocaleString()}</b>
+                      <i>원</i>
+                    </>
+                  ) : (
+                    <em>가입연령 밖</em>
+                  )}
+                </span>
+                <span className="rank-card__arrow">›</span>
               </div>
-              <span className="rank-card__arrow">›</span>
+
+              {/* 네 축 모두 "채워질수록 유리"하게 계산된 값이라, 같은 방향의 게이지로 나란히 읽힌다. */}
+              <div className="rank-gauges">
+                {r.dimensions.map((dimension) => (
+                  <div
+                    className={`rank-gauge rank-gauge--${dimension.code}`}
+                    key={dimension.code}
+                    title={dimension.summary}
+                  >
+                    <span className="rank-gauge__label">{dimension.label}</span>
+                    {dimension.level > 0 ? (
+                      <span
+                        className="rank-gauge__bar"
+                        role="img"
+                        aria-label={`${dimension.label}: ${dimension.status} (5단계 중 ${dimension.level}단계)`}
+                      >
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <i key={index} className={index < dimension.level ? "is-on" : ""} />
+                        ))}
+                      </span>
+                    ) : (
+                      <span className="rank-gauge__none">아직 근거가 없어요</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </motion.button>
           ))}
         </div>

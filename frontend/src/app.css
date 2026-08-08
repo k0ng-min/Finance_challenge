@@ -36,6 +36,12 @@
   --font-display: "Jua", "Pretendard", sans-serif;
   --font-body: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
 
+  /* 순위 카드 4개 평가축 게이지 색(명도를 맞춰 굵기가 같아 보이게 고른 값) */
+  --gauge-blue: #4b84ec;
+  --gauge-green: #3fb894;
+  --gauge-amber: #eaa53c;
+  --gauge-coral: #ee7d5c;
+
   color-scheme: light;
 }
 
@@ -54,6 +60,12 @@
   --text: #ccd5e6;
   --muted: #8b96b0;
   --shadow-tint: 0, 0, 0;
+
+  /* 어두운 배경에서는 같은 색이 가라앉아 보여서 채도·명도를 올려 잡는다. */
+  --gauge-blue: #6fa2ff;
+  --gauge-green: #4fd3a8;
+  --gauge-amber: #f5bb55;
+  --gauge-coral: #ff9370;
 
   color-scheme: dark;
 }
@@ -734,21 +746,31 @@ button { cursor: pointer; font-family: inherit; }
 
 /* --- 보험사 순위 리스트 --- */
 .rank-list { display: flex; flex-direction: column; gap: 10px; }
+/* --- 보험사 순위 카드 ---
+   네 개 평가축이 이 카드의 주인공이다. 축마다 색을 달리해서 카드를 세로로 훑을 때
+   같은 축끼리 눈으로 이어지게 하고, 나머지 요소(배지·상품명·보험료)는 조용히 둔다. */
 .rank-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  position: relative;
+  display: block;
+  width: 100%;
   background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 15px 17px 14px;
   text-align: left;
   font-family: inherit;
   box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.07);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
+@media (hover: hover) {
+  .rank-card:hover { border-color: var(--primary); box-shadow: var(--shadow-soft); transform: translateY(-2px); }
+}
+.rank-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+
+.rank-card__head { display: flex; align-items: center; gap: 11px; }
 .rank-badge {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--cream-deep);
   color: var(--muted);
@@ -756,80 +778,104 @@ button { cursor: pointer; font-family: inherit; }
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   flex-shrink: 0;
 }
-.rank-badge--top { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
-.rank-card__text { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-.rank-card__toprow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rank-card__text strong { font-size: 0.96rem; color: var(--heading); }
-.rank-card__meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.rank-card__basis {
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-  padding: 2px 9px;
-  border-radius: 999px;
-  flex-shrink: 0;
+/* 1위만 확실히 다르게 — 2·3위까지 같이 강조하면 "상위권"이 뭉개져 순위가 안 읽힌다. */
+.rank-badge--first {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(var(--shadow-tint), 0.3);
 }
-/* 보험료는 이 화면에서 가장 먼저 눈에 들어와야 하는 값이라 점수보다 확실히 크게 둔다. */
-.rank-card__premium {
-  font-size: 1.02rem;
-  font-weight: 800;
+.rank-card__name { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.rank-card__name strong {
+  font-size: 0.97rem;
   color: var(--heading);
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
-}
-.rank-card__premium--none { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
-.rank-card__reason {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.45;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.rank-card__tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
-.rank-tag {
-  font-size: 0.66rem;
-  font-weight: 700;
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-  padding: 3px 8px;
-  border-radius: 999px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.rank-card__dimensions {
+.rank-card__basis { font-size: 0.68rem; color: var(--muted); }
+/* 보험료는 이 화면에서 가장 먼저 눈에 들어와야 하는 값이라 크게 둔다. */
+.rank-card__price { display: flex; align-items: baseline; gap: 1px; flex-shrink: 0; }
+.rank-card__price b { font-size: 1.08rem; font-weight: 800; color: var(--heading); letter-spacing: -0.02em; }
+.rank-card__price i { font-size: 0.76rem; font-style: normal; color: var(--muted); font-weight: 700; }
+.rank-card__price em { font-size: 0.72rem; font-style: normal; font-weight: 700; color: var(--muted); }
+
+.rank-gauges {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px 12px;
-  margin-top: 8px;
+  gap: 11px 14px;
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px dashed var(--border);
 }
-.rank-dimension {
+.rank-gauge { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rank-gauge__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-gauge__bar { display: flex; gap: 3px; }
+.rank-gauge__bar i {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  transition: background 0.2s ease;
+}
+.rank-gauge__bar i.is-on { background: var(--gauge, var(--primary)); }
+.rank-gauge__none { font-size: 0.65rem; color: var(--muted); line-height: 1.6; }
+
+/* 게이지는 팔레트의 장식용 색(--tan 등)을 그대로 쓰지 않고 따로 둔다 — 장식용은 배경에
+   얹으라고 만든 톤이라 7px 막대로 쓰면 축마다 굵기가 달라 보인다. 네 색의 명도를
+   비슷하게 맞춰야 "어느 축이 더 찼나"만 눈에 들어온다. */
+.rank-gauge--coverage_fit { --gauge: var(--gauge-blue); }
+.rank-gauge--condition_clarity { --gauge: var(--gauge-green); }
+.rank-gauge--claim_simplicity { --gauge: var(--gauge-amber); }
+.rank-gauge--restrictions { --gauge: var(--gauge-coral); }
+
+.rank-card__arrow { font-size: 1.15rem; color: var(--primary); font-weight: 700; opacity: 0.5; flex-shrink: 0; }
+@media (max-width: 380px) {
+  .rank-gauges { grid-template-columns: 1fr; gap: 9px; }
+}
+
+/* --- 실손 가입시기 ---
+   세대(1~4)를 가르는 유일한 입력이라 다른 선택지와 붙여두지 않고 한 칸 띄워 따로 세운다.
+   "모르면 비워도 된다"를 같이 적어 빈칸으로 두는 것도 정상 선택지임을 알린다. */
+.indemnity-when {
+  margin-top: 4px;
+  padding: 13px 14px 12px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--cream);
+}
+.indemnity-when .field-block { margin-bottom: 0; }
+.indemnity-when__hint {
+  margin: 9px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.indemnity-when__hint strong { color: var(--text); font-weight: 700; }
+.field-trigger__clear {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cream-deep);
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
-.rank-dimension em {
-  color: var(--muted);
-  font-size: 0.65rem;
-  font-style: normal;
-}
-.rank-dimension__dots { display: inline-flex; gap: 2px; }
-.rank-dimension__dots i {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--border);
-}
-.rank-dimension__dots i.is-active { background: var(--primary); }
-.rank-card__arrow { font-size: 1.3rem; color: var(--primary); font-weight: 700; flex-shrink: 0; }
+.field-trigger__clear:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* --- 페이지 히어로 (리스트/리뷰형 페이지 상단 배너) --- */
 .hero {
