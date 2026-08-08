@@ -1,8 +1,8 @@
 """
-보험사 순위 "설명" 전용 Gemini 호출.
+보험사 상대 순위 "설명" 전용 Gemini 호출(현재 랭킹 경로에서는 사용하지 않음).
 
-중요: 이 파일은 순위나 점수를 절대 정하지 않는다. insurer_ranking.py가 규칙으로 이미
-확정한 순위·점수를 그대로 받아서, 그 근거(신호)와 실제 약관 원문을 Gemini에게 주고
+중요: 이 파일은 순위를 절대 정하지 않는다. insurer_ranking.py가 근거로 이미
+확정한 상대 순위를 그대로 받아서, 그 근거(신호)와 실제 약관 원문을 Gemini에게 주고
 "왜 이 순위인지"를 사람이 읽기 좋은 문장으로 다듬어달라고만 요청한다.
 
 검증: Gemini 응답에 6개 보험사 코드가 정확히 한 번씩만 있는지 확인하고, 하나라도
@@ -59,13 +59,13 @@ class _ExplainSchema(BaseModel):
 
 _EXPLAIN_PROMPT = """당신은 여행자보험 6개 보험사를 실제 약관 원문 근거로 비교 설명하는 분석가입니다.
 
-아래는 "{tier_label}"({tier_description}) 기준으로 이미 코드로 확정된 순위와 그 근거 신호입니다.
-당신의 역할은 **순위나 점수를 바꾸는 것이 아니라**, 각 보험사별로 주어진 신호와 실제 약관
+아래는 "{tier_label}"({tier_description}) 기준으로 이미 코드로 확정된 상대 순위와 그 근거 신호입니다.
+당신의 역할은 **순위를 바꾸는 것이 아니라**, 각 보험사별로 주어진 신호와 실제 약관
 원문을 근거로 왜 이 순위가 나왔는지 자연스러운 문장 2~3개로 다시 써주는 것입니다.
 {trip_context}
 
 절대 규칙:
-1. 순위·점수는 이미 정해져 있습니다. 절대 다른 순서를 암시하지 마세요.
+1. 상대 순위는 이미 정해져 있습니다. 절대 다른 순서를 암시하지 마세요.
 2. 아래 제공된 신호와 실제 약관 원문 안에서만 근거를 찾으세요. 원문에 없는 내용을 추측하거나
    지어내지 마세요.
 3. 6개 보험사를 반드시 모두 포함하세요. 하나도 빠뜨리면 안 됩니다.
@@ -102,7 +102,7 @@ def explain_ranking(
     trip_context: dict | None,
     ranking: list[dict],
 ) -> list[dict] | None:
-    """ranking(이미 확정된 순위/점수)을 그대로 두고 reasons만 자연어로 다듬는다.
+    """ranking(이미 확정된 상대 순위)을 그대로 두고 reasons만 자연어로 다듬는다.
     실패/검증탈락 시 None을 반환해 호출부가 규칙 기반 reasons를 그대로 쓰게 한다."""
     if not config.GEMINI_ENABLED:
         return None
@@ -113,7 +113,7 @@ def explain_ranking(
         return None
 
     signal_blocks = "\n\n".join(
-        f"[{r['insurer_code']}] {r['insurer_name']} ({r['rank']}위, 점수 {r['score']})\n"
+        f"[{r['insurer_code']}] {r['insurer_name']} ({r['rank']}위, {r['comparison_basis']})\n"
         f"신호: {' / '.join(r['reasons'])}\n"
         f"실제 약관 원문:\n" + "\n".join(data.get(r["insurer_code"], {}).get("clauses", []))
         for r in ranking

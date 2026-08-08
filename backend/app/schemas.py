@@ -303,11 +303,30 @@ class InsurerTierOut(BaseModel):
     description: str
 
 
+class RankingEvidenceOut(BaseModel):
+    kind: str
+    source_id: int
+    coverage_name: str
+    description: str
+    page_ref: Optional[str] = None
+
+
+class RankingDimensionOut(BaseModel):
+    code: str
+    label: str
+    level: int  # 보험사 사이 상대 단계 1~5, 근거 부족은 0
+    status: str
+    summary: str
+    evidence_count: int
+    evidence: list[RankingEvidenceOut] = []
+
+
 class InsurerRankOut(BaseModel):
     rank: int
     insurer_code: str
     insurer_name: str
-    score: float
+    comparison_basis: str
+    dimensions: list[RankingDimensionOut]
     reasons: list[str]
     tags: list[str] = []
     official_url: Optional[str] = None
