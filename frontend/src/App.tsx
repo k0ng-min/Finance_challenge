@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Home } from "./pages/Home";
 import { TripPrep } from "./pages/TripPrep";
@@ -12,12 +13,14 @@ import { OAuthCallback } from "./pages/OAuthCallback";
 import { NotFound } from "./pages/NotFound";
 import { LoadingState } from "./components/LoadingState";
 import { BackgroundDecor } from "./components/BackgroundDecor";
+import { FrameScrollbar } from "./components/FrameScrollbar";
 import { useApp } from "./context/AppContext";
 
 function App() {
   const { loading } = useApp();
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const mainRef = useRef<HTMLElement>(null);
 
   if (loading) {
     return (
@@ -35,7 +38,7 @@ function App() {
     <>
       <BackgroundDecor />
       <div className={`app-shell${isHome ? " app-shell--home" : ""}`}>
-        <main className="app-main">
+        <main className="app-main" ref={mainRef}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/trip" element={<TripPrep />} />
@@ -53,6 +56,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
+        <FrameScrollbar targetRef={mainRef} />
       </div>
     </>
   );

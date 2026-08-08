@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, type RecommendationOut, type InsurerTierOut, type IncidentTypeOut } from "../api";
+import { api, type RecommendationOut, type InsurerTierOut, type IncidentTypeOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
@@ -115,7 +115,7 @@ export function TripPrep() {
         setHasPickedExternal(false);
       }
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }

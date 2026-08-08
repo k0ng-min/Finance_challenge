@@ -76,11 +76,26 @@ html, body { overflow-x: hidden; max-width: 100%; }
 
 /* 스크롤이 생기는 곳(페이지 전체, 카드 내부 등) 어디서나 기본 굵은 회색 스크롤바 대신
    앱 톤에 맞는 얇고 둥근 스크롤바를 쓴다. */
+/* 스크롤 막대는 스크롤 영역의 '테두리 끝'에 그려진다. 이 앱의 스크롤 상자들은 모서리가
+   둥글어서(.app-frame 32px, .modal-card 28px) 막대가 그 곡선 위에 얹히면 위아래 끝이
+   잘려 튀어나온 것처럼 보였다. 막대 폭 안쪽에 투명 테두리를 둬서 실제로 보이는 두께를
+   4px로 줄이고 가장자리에서 띄운다 — 곡선과 겹치는 면적이 사라진다. */
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* 칩이 가로로 넘치는 줄(탭·보험사 칩 등)은 막대를 감춘다 — 손가락·트랙패드로 밀어서
+   보는 줄이라 막대가 늘 떠 있으면 칸 아래에 회색 선 하나가 상시로 남는다. */
+.tabs, .calc-chips { scrollbar-width: none; }
+.tabs::-webkit-scrollbar, .calc-chips::-webkit-scrollbar { display: none; }
 
 /* 앱 전체에서 마우스로 드래그해도 텍스트가 선택되지 않게 한다 — 직접 입력하는
    input·textarea만 예외로 선택 가능하게 둔다. */
@@ -842,6 +857,106 @@ button { cursor: pointer; font-family: inherit; }
 .rank-card__arrow { font-size: 1.15rem; color: var(--primary); font-weight: 700; opacity: 0.5; flex-shrink: 0; }
 @media (max-width: 380px) {
   .rank-gauges { grid-template-columns: 1fr; gap: 9px; }
+}
+
+/* --- 서류 사진 확인 --- */
+.doc-photo-btn {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border: none;
+  border-radius: 999px;
+}
+.doc-photo-btn:disabled { opacity: 0.6; }
+
+.doc-verify__message {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--heading);
+}
+/* 상태를 바꾸지 않고 사용자에게 되돌린 경우(판독 실패 등)는 확정된 결과처럼 보이면 안 된다. */
+.doc-verify__message--hold { color: var(--orange-dark); }
+.doc-verify__meta { margin: 0 0 12px; font-size: 0.74rem; color: var(--muted); }
+.doc-verify__block { margin-bottom: 16px; }
+.doc-verify__block h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--heading);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+/* 약관 근거가 없는 칸임을 라벨로 못 박는다 — 두 칸을 시각적으로만 나누면 스크린샷 한 장에서
+   구분이 사라진다. */
+.doc-verify__nobasis {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--cream-deep);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.doc-verify__translation {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.doc-verify__privacy {
+  margin: 14px 0 0;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+.doc-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.doc-check-list li { display: flex; gap: 9px; align-items: flex-start; }
+.doc-check-list__mark {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  margin-top: 1px;
+}
+.doc-check-list .is-found .doc-check-list__mark { background: var(--mint-soft); color: #2f8f74; }
+.doc-check-list .is-missing .doc-check-list__mark { background: var(--orange-soft); color: var(--orange-dark); }
+.doc-check-list strong { font-size: 0.8rem; color: var(--heading); }
+.doc-check-list__state { font-size: 0.72rem; color: var(--muted); margin-left: 6px; }
+.doc-check-list__quote,
+.doc-check-list__clause {
+  margin: 3px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.doc-check-list__clause em { font-style: normal; font-weight: 700; margin-right: 5px; color: var(--text); }
+
+/* 단계 안에서 "왜 이걸 묻는지 / 건너뛰어도 되는지"를 알려주는 한두 줄. 카드로 감싸면
+   입력만큼 무거워 보여서 배경 없이 글로만 둔다. */
+.step-note {
+  margin: 10px 2px 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--muted);
 }
 
 /* --- 실손 가입시기 ---
@@ -1617,7 +1732,38 @@ button { cursor: pointer; font-family: inherit; }
     position: relative;
     z-index: 1;
   }
-  .app-main { max-width: 100%; height: 100%; padding: 0 20px 40px; overflow-y: auto; }
+  /* 네이티브 막대는 감춘다 — 대신 FrameScrollbar가 프레임 높이의 2/3만 쓰는 막대를
+     가운데에 그린다(둥근 모서리와 겹치지 않게). 스크롤 동작 자체는 그대로다. */
+  .app-main {
+    max-width: 100%;
+    height: 100%;
+    padding: 0 20px 40px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .app-main::-webkit-scrollbar { width: 0; height: 0; }
+
+  .frame-scrollbar {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    transform: translateY(-50%);
+    height: 66.666%;
+    width: 6px;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .frame-scrollbar__thumb {
+    width: 100%;
+    border-radius: 999px;
+    background: var(--border);
+    pointer-events: auto;
+    cursor: grab;
+    transition: background 0.18s ease;
+    will-change: transform;
+  }
+  .frame-scrollbar__thumb:hover { background: var(--muted); }
+  .frame-scrollbar__thumb:active { cursor: grabbing; background: var(--muted); }
 
   /* 홈은 프레임 안에 정확히 들어맞으므로 스크롤을 아예 없앤다. 아래 패딩도 뺀다 —
      남는 높이는 밴드들이 나눠 가지므로 바닥에 따로 여백을 둘 이유가 없다.

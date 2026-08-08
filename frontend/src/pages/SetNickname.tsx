@@ -4,7 +4,7 @@ import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { TermsConsent, EMPTY_CONSENT, allRequiredAgreed } from "../components/TermsConsent";
 import { useApp } from "../context/AppContext";
-import { api } from "../api";
+import { api, userMessage } from "../api";
 
 /** 카카오/구글로 처음 가입했을 때 딱 한 번, 제공자 프로필 이름 대신 원하는 닉네임을 정하고
  * (소셜 로그인 화면엔 없는) 필수 약관·개인정보 동의를 받는다. */
@@ -33,7 +33,7 @@ export function SetNickname() {
       });
       navigate("/");
     } catch (err) {
-      setError(String(err).replace(/^Error:\s*API \d+:\s*/, ""));
+      setError(userMessage(err, "저장하지 못했어요. 다시 시도해 주세요."));
     } finally {
       setLoading(false);
     }

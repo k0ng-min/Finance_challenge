@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type ChecklistOut } from "../api";
+import { api, ApiError, type ChecklistOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
@@ -11,6 +11,7 @@ import { LoadingScreen } from "../components/LoadingScreen";
 import { PickerField } from "../components/PickerField";
 import { TripContextBadge } from "../components/TripContextBadge";
 import { usePager, PagerNav } from "../components/Pager";
+import { DocPhotoCheck } from "../components/DocPhotoCheck";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
@@ -35,7 +36,15 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
       setChecklist(res);
       setActiveTarget(null);
     } catch (err) {
-      setError(String(err));
+      // 브라우저에 남아 있던 사고 id가 서버에서 사라진 경우(게스트 기록 정리 등)는
+      // 오류가 아니라 "아직 접수한 사고가 없는 상태"다. 안내 화면으로 되돌린다.
+      if (err instanceof ApiError && err.status === 404) {
+        setActiveIncidentId(null);
+        setChecklist(null);
+        setError(null);
+      } else {
+        setError(userMessage(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -53,7 +62,7 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
       const res = await api.submitEvidence(activeIncidentId, [{ required_doc_std_id: docId, status }]);
       setChecklist(res);
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setSaving(false);
     }
@@ -159,6 +168,13 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
                         onChange={(status) => updateStatus(it.required_doc_std_id, status)}
                         modalTitle="서류 상태"
                         options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+                      />
+                      {/* 사진은 거들기다 — 위 선택은 그대로 두고, 외국어라 이게 맞는 서류인지
+                          모르겠을 때만 쓰면 된다. */}
+                      <DocPhotoCheck
+                        incidentId={activeIncidentId}
+                        docStdId={it.required_doc_std_id}
+                        onChecklist={setChecklist}
                       />
                     </td>
                   </tr>

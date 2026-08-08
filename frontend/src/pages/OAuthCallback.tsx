@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { LoadingState } from "../components/LoadingState";
 import { ErrorState } from "../components/ErrorState";
 import { useApp } from "../context/AppContext";
+import { userMessage } from "../api";
 
 /** 카카오/구글이 인가 코드를 들고 돌려보내는 콜백 페이지. 코드를 백엔드로 넘겨 로그인을 마무리한다. */
 export function OAuthCallback({ provider }: { provider: "kakao" | "google" }) {
@@ -35,14 +36,7 @@ export function OAuthCallback({ provider }: { provider: "kakao" | "google" }) {
     const login = provider === "kakao" ? loginWithKakao : loginWithGoogle;
     login(code, intent)
       .then((isNewUser) => navigate(isNewUser ? "/account/nickname" : "/"))
-      .catch((err) => {
-        const raw = String(err).replace(/^Error:\s*API \d+:\s*/, "");
-        try {
-          setError(JSON.parse(raw).detail ?? raw);
-        } catch {
-          setError(raw);
-        }
-      });
+      .catch((err) => setError(userMessage(err, "로그인을 마치지 못했어요. 다시 시도해 주세요.")));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

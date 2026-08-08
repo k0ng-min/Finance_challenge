@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { api, type UserPolicyOut, type ExternalPolicyOut, type OverlapReportOut } from "../api";
+import { api, type UserPolicyOut, type ExternalPolicyOut, type OverlapReportOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
@@ -173,7 +173,7 @@ export function MyPolicies() {
       resetForm();
       setMode("list");
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
@@ -196,7 +196,7 @@ export function MyPolicies() {
       setPicking(false);
       await refresh();
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }

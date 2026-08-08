@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type ValidationResultOut } from "../api";
+import { api, ApiError, type ValidationResultOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
@@ -35,7 +35,15 @@ export function MistakeCheck({ embedded = false }: { embedded?: boolean } = {}) 
         setResults([...byCode.values()]);
         setIncident(inc);
       })
-      .catch((err) => setError(String(err)))
+      .catch((err) => {
+        // 저장된 사고 id가 서버에 없으면(게스트 기록 정리 등) 오류가 아니라 안내 화면으로.
+        if (err instanceof ApiError && err.status === 404) {
+          setActiveIncidentId(null);
+          setError(null);
+        } else {
+          setError(userMessage(err));
+        }
+      })
       .finally(() => setLoading(false));
   }, [activeIncidentId]);
 

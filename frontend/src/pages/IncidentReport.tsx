@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut, type OverlapReportOut } from "../api";
+import { useSearchParams } from "react-router-dom";
+import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut, type OverlapReportOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { shortInsurerName } from "../data/insurers";
 import { TopBar } from "../components/TopBar";
@@ -35,7 +35,6 @@ function addDays(dateStr: string, days: number): string {
 
 export function IncidentReport() {
   const { userId, isLoggedIn, setIncidentId, age: profileAge, updateAge, sex: profileSex, updateSex } = useApp();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resultOfParam = searchParams.get("resultOf");
   const resumeIncidentId = resultOfParam ? Number(resultOfParam) : null;
@@ -165,8 +164,10 @@ export function IncidentReport() {
       const res = await api.createIncident({
         user_id: userId,
         trip_id: selectedTripId,
-        user_policy_id: isLoggedIn ? selectedPolicyId : null,
-        insurer_code: isLoggedIn ? null : insurerCode || null,
+        // 등록된 보험을 골랐으면 그걸 쓰고, 없으면(비로그인이거나 등록 전이거나) 고른
+        // 보험사 코드로 검토한다 — 백엔드는 user_policy_id가 없을 때 insurer_code를 본다.
+        user_policy_id: selectedPolicyId,
+        insurer_code: selectedPolicyId ? null : insurerCode || null,
         free_text: freeText,
         occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
         country: trips.length === 0 ? destination || null : null,
@@ -192,7 +193,7 @@ export function IncidentReport() {
       }
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
@@ -208,7 +209,7 @@ export function IncidentReport() {
       setAnswerText("");
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
@@ -315,12 +316,21 @@ export function IncidentReport() {
                 />
               </label>
             ) : (
-              <div className="card" style={{ marginBottom: 14 }}>
-                <p className="muted" style={{ marginTop: 0 }}>등록된 보험이 없어요. 먼저 등록하면 어느 보험으로 청구할지 고를 수 있어요.</p>
-                <button type="button" className="btn-secondary" onClick={() => navigate("/policies?mode=add")}>
-                  내 보험 등록하러 가기
-                </button>
-              </div>
+              // 등록된 보험이 없어도 여기서 흐름을 끊지 않는다. 예전에는 "내 보험 등록하러
+              // 가기"로 내보내서 사고 접수가 통째로 중단됐다. 보험사만 고르면 그 회사 약관으로
+              // 대조할 수 있고(백엔드는 insurer_code만으로도 검토한다), 그마저 건너뛰어도 된다.
+              <>
+                <label style={{ marginBottom: 8 }}>어느 보험사로 청구하시나요?</label>
+                <InsurerPicker
+                  value={INSURERS.find((i) => i.code === insurerCode)?.name ?? ""}
+                  onChange={(name) => setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "")}
+                />
+                <p className="step-note">
+                  아직 등록한 보험이 없네요. 보험사만 골라두면 그 회사 약관으로 맞춰 볼게요.
+                  <br />
+                  지금 모르겠으면 그냥 넘어가도 괜찮아요.
+                </p>
+              </>
             )
           ) : (
             <>
@@ -349,7 +359,9 @@ export function IncidentReport() {
           )}
         </>
       ),
-      canNext: isLoggedIn ? (policies.length === 0 || selectedPolicyId !== null) : !!insurerCode,
+      // 등록된 보험이 있으면 그중 하나를 골라야 하고, 없으면 보험사 선택은 선택사항이다
+      // (사고 상황부터 적고 나중에 보험을 붙여도 되게 둔다).
+      canNext: policies.length > 0 ? selectedPolicyId !== null : (isLoggedIn ? true : !!insurerCode),
     },
     {
       icon: "umbrella",

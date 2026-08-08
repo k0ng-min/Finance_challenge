@@ -206,6 +206,33 @@ class CoverageDocMap(Base):
     clause = relationship("Clause")
 
 
+class DocRequirement(Base):
+    """서류 하나가 갖춰야 하는 요건 중, 약관 조항에 실제로 적혀 있는 것만 담는다.
+
+    예: 제7조 ②항 "사고증명서는 …국외의 의료관련법에서 정한 의료기관에서 발급한 것이어야
+    합니다" → 진료비계산서·입원치료확인서 등에 '의료기관 발급' 요건이 붙는다.
+
+    anchor_phrase는 반드시 clause.text의 부분 문자열이어야 한다(ClauseTerm.raw_text와 같은
+    규칙). 시드에서 대조 검증하고, 어긋나면 넣지 않는다 — 화면에서 이 문구를 "약관이 요구하는
+    것"이라고 인용하기 때문에, 원문에 없는 말이 인용되면 근거 없는 단정이 된다.
+
+    금액·진료일자처럼 약관에 없는 실무 점검 항목은 여기 넣지 않는다. 그건 근거가 없으므로
+    services/doc_verify.py의 상수로 따로 두고 화면에서도 칸을 나눠 보여준다.
+    """
+
+    __tablename__ = "doc_requirement"
+
+    requirement_id = Column(Integer, primary_key=True)
+    required_doc_std_id = Column(Integer, ForeignKey("required_doc_std.required_doc_std_id"), nullable=False)
+    code = Column(String, nullable=False)        # ISSUER_MEDICAL 등
+    label = Column(String, nullable=False)       # 화면에 쓰는 짧은 말
+    anchor_phrase = Column(Text, nullable=False)  # 반드시 clause.text의 부분 문자열
+    clause_id = Column(Integer, ForeignKey("clause.clause_id"), nullable=False)
+
+    required_doc_std = relationship("RequiredDocStd")
+    clause = relationship("Clause")
+
+
 class InsurerPremium(Base):
     """보험다모아에서 수집한 나이·성별별 예시 보험료.
 

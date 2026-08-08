@@ -280,6 +280,34 @@ class ChecklistOut(BaseModel):
     incident_country: Optional[str] = None
 
 
+class DocCheckOut(BaseModel):
+    """서류 요건 하나의 확인 결과.
+
+    clause_* 가 채워진 항목만 '약관이 요구하는 것'이다. 비어 있으면 약관 근거가 없는
+    실무 점검 항목이며, 화면에서도 칸을 나눠 그렇게 밝힌다."""
+    code: str
+    label: str
+    found: bool
+    quote: Optional[str] = None          # 서류에서 근거가 된 문구
+    clause_article_no: Optional[str] = None
+    clause_text: Optional[str] = None    # 조항 원문 중 근거가 된 부분
+
+
+class DocVerifyOut(BaseModel):
+    """사진 확인 결과. 이 응답에만 번역문이 담기고 서버에는 남지 않는다."""
+    required_doc_std_id: int
+    doc_name: str
+    readable: bool
+    detected_doc_type: Optional[str] = None
+    language: Optional[str] = None
+    translation: Optional[str] = None
+    message: str
+    applied_status: Optional[str] = None  # 체크리스트에 실제로 반영한 상태(없으면 그대로 둠)
+    grounded: list[DocCheckOut] = []
+    practical: list[DocCheckOut] = []
+    checklist: ChecklistOut
+
+
 class IncidentTypeOut(BaseModel):
     type_id: int
     l1_code: str

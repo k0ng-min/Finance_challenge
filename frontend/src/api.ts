@@ -14,9 +14,111 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
+    throw new ApiError(res.status, body);
   }
   return res.json();
+}
+
+/** 파일 업로드용. JSON 헤더를 붙이지 않는 것만 request와 다르다. */
+async function requestForm<T>(path: string, body: FormData): Promise<T> {
+  const token = localStorage.getItem(LS_TOKEN);
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body,
+  });
+  if (!res.ok) throw new ApiError(res.status, await res.text());
+  return res.json();
+}
+
+export interface DocCheckOut {
+  code: string;
+  label: string;
+  found: boolean;
+  quote: string | null;
+  /** 채워져 있으면 약관 근거가 있는 요건이다. */
+  clause_article_no: string | null;
+  clause_text: string | null;
+}
+
+export interface DocVerifyOut {
+  required_doc_std_id: number;
+  doc_name: string;
+  readable: boolean;
+  detected_doc_type: string | null;
+  language: string | null;
+  translation: string | null;
+  message: string;
+  applied_status: string | null;
+  grounded: DocCheckOut[];
+  practical: DocCheckOut[];
+  checklist: ChecklistOut;
+}
+
+/**
+ * 서버가 돌려준 에러. 화면에는 절대 이 객체의 raw 본문을 그대로 쓰지 말고
+ * userMessage(사람이 읽는 한 줄)만 보여준다 — 예전에는 페이지마다 String(err)를 그대로
+ * 렌더링해서 `Error: API 404: {"detail":"..."}` 가 사용자에게 노출됐다.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  /** 서버가 준 detail 문구(있으면). 개발자용이며 그대로 노출해도 되는 말인지는 별개다. */
+  readonly detail: string | null;
+
+  constructor(status: number, body: string) {
+    super(`API ${status}: ${body}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = parseDetail(body);
+  }
+}
+
+function parseDetail(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body);
+    const detail = parsed?.detail;
+    if (typeof detail === "string") return detail;
+    // FastAPI 검증 오류는 detail이 배열이라 사람이 읽을 문장이 아니다 — 버린다.
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+const STATUS_MESSAGES: Record<number, string> = {
+  401: "로그인이 풀렸어요. 다시 로그인해 주세요.",
+  403: "이 정보를 볼 권한이 없어요.",
+  404: "찾는 정보가 없어요. 없어졌거나 아직 만들어지지 않았을 수 있어요.",
+  409: "이미 처리된 요청이에요.",
+  413: "파일이 너무 커요. 조금 더 작은 파일로 다시 시도해 주세요.",
+  422: "입력한 내용을 다시 확인해 주세요.",
+  429: "요청이 너무 잦아요. 잠시 뒤에 다시 시도해 주세요.",
+};
+
+/**
+ * 어떤 예외든 화면에 그대로 띄울 수 있는 한 문장으로 바꾼다.
+ *
+ * 서버 detail은 우리가 직접 쓴 한국어 안내문일 때만 쓴다. 문장부호 없이 영문·중괄호가
+ * 섞인 값(스택트레이스, 검증 오류 등)은 사용자에게 의미가 없으므로 상태코드 기반 문구로
+ * 대체한다.
+ */
+export function userMessage(err: unknown, fallback = "잠시 문제가 생겼어요. 다시 시도해 주세요."): string {
+  if (err instanceof ApiError) {
+    if (err.detail && isHumanReadable(err.detail)) return err.detail;
+    return STATUS_MESSAGES[err.status] ?? (err.status >= 500
+      ? "서버가 잠깐 쉬고 있어요. 잠시 뒤에 다시 시도해 주세요."
+      : fallback);
+  }
+  // fetch 자체가 실패한 경우(네트워크 끊김, 서버 미기동 등)
+  if (err instanceof TypeError) return "서버에 연결하지 못했어요. 인터넷 연결을 확인해 주세요.";
+  return fallback;
+}
+
+/** 한글이 들어 있고 JSON 조각처럼 보이지 않으면 우리가 쓴 안내문으로 본다. */
+function isHumanReadable(text: string): boolean {
+  if (text.length > 120) return false;
+  if (/[{}[\]<>]/.test(text)) return false;
+  return /[가-힣]/.test(text);
 }
 
 export interface HighlightSpanOut {
@@ -373,6 +475,14 @@ export const api = {
     }),
 
   getChecklist: (incidentId: number) => request<ChecklistOut>(`/incidents/${incidentId}/checklist`),
+
+  /** 서류 사진을 올려 번역·요건 대조를 받는다. 사진은 서버에 저장되지 않는다. */
+  verifyDocumentPhoto: (incidentId: number, docStdId: number, file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    // Content-Type을 직접 지정하면 boundary가 빠져 서버가 파싱하지 못한다 — 브라우저가 붙이게 둔다.
+    return requestForm<DocVerifyOut>(`/incidents/${incidentId}/documents/${docStdId}/verify`, form);
+  },
 
   getInsurerTiers: () => request<InsurerTierOut[]>("/insurers/ranking-tiers"),
 

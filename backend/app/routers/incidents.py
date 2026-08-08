@@ -2,13 +2,14 @@ import json
 from dataclasses import fields as dc_fields
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
+from app import config
 from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident, Evidence, Trip, UserPolicy
-from app.models.kb import RequiredDocStd, Insurer, IncidentType
+from app.models.kb import RequiredDocStd, Insurer, IncidentType, DocRequirement
 from app.models.analysis import AnalysisRun, ValidationRule, ValidationResult
 from app.models.question import QuestionBank, UserQuestionLog
 from app.routers.auth import get_current_user_optional, verify_owner
@@ -16,10 +17,12 @@ from app.routers.policies import create_policy_for_user
 from app.schemas import (
     IncidentCreate, IncidentAnalysisOut, PendingQuestionOut, AnswerIn,
     ChecklistOut, ChecklistItemOut, EvidenceIn, ClauseOut, ClauseTermOut, ValidationResultOut,
-    IncidentTypeOut,
+    IncidentTypeOut, DocVerifyOut, DocCheckOut,
 )
 from app.services.nlu import get_nlu_engine, ExtractedField, IncidentDraft, classify_item_damage_type
 from app.services import incident_classify_gemini as incident_classify
+from app.services import doc_verify_gemini
+from app.services.doc_verify import decide_status
 from app.services.claim_review import (
     merge_incident_fields, generate_claim_findings, pending_questions, iter_relevant_user_coverages,
 )
@@ -511,6 +514,110 @@ def submit_evidence(
     db.commit()
 
     return get_checklist(incident_id, db, current)
+
+
+# 업로드 상한. 휴대폰 사진 한 장이면 충분하고, 큰 파일을 메모리에 통째로 올리지 않기 위해 둔다.
+_MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+_ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"}
+
+
+@router.post("/{incident_id}/documents/{required_doc_std_id}/verify", response_model=DocVerifyOut)
+@limiter.limit("10/minute")
+async def verify_document_photo(
+    request: Request,
+    incident_id: int,
+    required_doc_std_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """서류 사진을 읽어 번역하고, 약관에 적힌 요건과 대조한다.
+
+    사진은 저장하지 않는다 — 메모리에서 Gemini로 보내고 응답 뒤 참조를 버린다. 번역문도
+    DB에 남기지 않고 이 응답으로만 돌려준다(진단서는 민감정보). 남기는 건 체크리스트 상태와
+    "약관 요건 N개 중 M개 확인" 수준의 요약뿐이다.
+    """
+    incident = db.get(Incident, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="사고 정보를 찾을 수 없습니다.")
+    verify_owner(incident.user_id, current)
+
+    doc = db.get(RequiredDocStd, required_doc_std_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="서류 정보를 찾을 수 없습니다.")
+
+    if not config.GEMINI_ENABLED:
+        raise HTTPException(status_code=503, detail="지금은 사진 확인을 쓸 수 없어요. 서류 상태를 직접 골라주세요.")
+
+    if file.content_type not in _ALLOWED_MIME:
+        raise HTTPException(status_code=400, detail="사진(JPG·PNG) 또는 PDF만 올릴 수 있어요.")
+
+    image_bytes = await file.read(_MAX_UPLOAD_BYTES + 1)
+    if len(image_bytes) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="파일이 너무 커요. 8MB 이하로 올려주세요.")
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="파일을 읽지 못했어요. 다시 올려주세요.")
+
+    requirements = (
+        db.query(DocRequirement)
+        .filter(DocRequirement.required_doc_std_id == required_doc_std_id)
+        .all()
+    )
+    verified = doc_verify_gemini.verify_document(
+        image_bytes=image_bytes,
+        mime_type=file.content_type,
+        doc_code=doc.doc_code,
+        doc_name=doc.doc_name,
+        grounded_requirements=[(r.code, r.label) for r in requirements],
+    )
+    del image_bytes  # 저장하지 않는다는 약속을 코드에서도 분명히 해둔다.
+
+    if verified is None:
+        raise HTTPException(status_code=503, detail="사진을 확인하지 못했어요. 잠시 뒤에 다시 시도해 주세요.")
+
+    decision = decide_status(verified)
+
+    # 판독 실패면 상태를 건드리지 않는다(흐린 사진을 '서류 없음'으로 단정하지 않기 위함).
+    if decision.status:
+        existing = (
+            db.query(Evidence)
+            .filter(Evidence.incident_id == incident_id, Evidence.required_doc_std_id == required_doc_std_id)
+            .first()
+        )
+        if existing:
+            existing.status = decision.status
+            existing.memo = decision.summary
+        else:
+            db.add(Evidence(
+                incident_id=incident_id, required_doc_std_id=required_doc_std_id,
+                status=decision.status, memo=decision.summary,
+            ))
+        db.commit()
+
+    by_code = {r.code: r for r in requirements}
+    return DocVerifyOut(
+        required_doc_std_id=required_doc_std_id,
+        doc_name=doc.doc_name,
+        readable=verified.readable,
+        detected_doc_type=verified.detected_doc_type,
+        language=verified.language,
+        translation=verified.translation,
+        message=decision.message,
+        applied_status=decision.status,
+        grounded=[
+            DocCheckOut(
+                code=c.code, label=c.label, found=c.found, quote=c.quote,
+                clause_article_no=(by_code[c.code].clause.article_no if c.code in by_code else None),
+                clause_text=(by_code[c.code].anchor_phrase if c.code in by_code else None),
+            )
+            for c in verified.grounded
+        ],
+        practical=[
+            DocCheckOut(code=c.code, label=c.label, found=c.found, quote=c.quote)
+            for c in verified.practical
+        ],
+        checklist=get_checklist(incident_id, db, current),
+    )
 
 
 @router.delete("/{incident_id}")
