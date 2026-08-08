@@ -12,8 +12,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * 위치를 비추고 드래그를 받는 표시기일 뿐이다.
  */
 
-/** 막대가 차지하는 세로 비율. 위아래로 1/6씩 비워 곡선을 피한다. */
-const TRACK_RATIO = 2 / 3;
+/** 막대가 차지하는 세로 비율. 위아래로 1/16씩 비워 둥근 모서리를 피한다. */
+const TRACK_RATIO = 7 / 8;
 const MIN_THUMB = 36;
 
 export function FrameScrollbar({ targetRef }: { targetRef: React.RefObject<HTMLElement | null> }) {

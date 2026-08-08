@@ -1732,7 +1732,7 @@ button { cursor: pointer; font-family: inherit; }
     position: relative;
     z-index: 1;
   }
-  /* 네이티브 막대는 감춘다 — 대신 FrameScrollbar가 프레임 높이의 2/3만 쓰는 막대를
+  /* 네이티브 막대는 감춘다 — 대신 FrameScrollbar가 프레임 높이의 7/8만 쓰는 막대를
      가운데에 그린다(둥근 모서리와 겹치지 않게). 스크롤 동작 자체는 그대로다. */
   .app-main {
     max-width: 100%;
@@ -1748,7 +1748,7 @@ button { cursor: pointer; font-family: inherit; }
     top: 50%;
     right: 7px;
     transform: translateY(-50%);
-    height: 66.666%;
+    height: 87.5%;
     width: 6px;
     pointer-events: none;
     z-index: 3;
