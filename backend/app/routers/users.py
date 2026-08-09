@@ -1,12 +1,14 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import AppUser, Trip, Incident
+from app.limiter import limiter
 from app.routers.auth import get_current_user_optional, verify_owner
+from app.services.auth import issue_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,9 +20,9 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     user_id: int
     nickname: str
-
-    class Config:
-        from_attributes = True
+    # 게스트도 이 토큰으로 본인을 증명한다. 예전에는 토큰 없이 user_id만으로 조회가 돼서,
+    # 순차 정수인 user_id를 훑으면 남의 여행·보험·사고를 전부 볼 수 있었다.
+    token: str
 
 
 class TripSummaryOut(BaseModel):
@@ -43,13 +45,19 @@ class IncidentSummaryOut(BaseModel):
 
 
 @router.post("", response_model=UserOut)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    """개인정보 최소수집 원칙(ne.md 14)에 따라 닉네임만 받는다."""
+@limiter.limit("30/hour")
+def create_user(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
+    """개인정보 최소수집 원칙에 따라 닉네임만 받는다.
+
+    세션 토큰을 함께 발급한다 — 게스트도 본인 데이터를 다시 꺼내려면 소유권을 증명해야
+    하기 때문이다. 계정을 무제한으로 찍어내지 못하도록 생성 자체에도 한도를 둔다.
+    """
     user = AppUser(nickname=payload.nickname)
+    token = issue_session(user)
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return UserOut(user_id=user.user_id, nickname=user.nickname, token=token)
 
 
 @router.get("/{user_id}/trips", response_model=list[TripSummaryOut])

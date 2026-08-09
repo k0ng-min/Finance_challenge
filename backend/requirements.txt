@@ -1,9 +1,10 @@
-fastapi==0.115.0
+fastapi==0.115.14
 uvicorn[standard]==0.30.6
 sqlalchemy==2.0.35
 pydantic==2.13.4
 pdfplumber==0.11.4
-python-multipart==0.0.9
+# 0.0.18 미만은 조작된 multipart로 CPU를 고갈시킬 수 있다(파일 업로드 경로에 직접 노출).
+python-multipart==0.0.20
 httpx==0.28.1
 python-dotenv==1.0.1
 google-genai==2.15.0

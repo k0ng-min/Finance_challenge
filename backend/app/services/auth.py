@@ -4,6 +4,7 @@
 passlib 없이 bcrypt 패키지를 직접 쓴다. bcrypt는 해시 자체에 salt를 담고 있어 별도 salt
 컬럼이 필요 없지만, 기존 DB 스키마(password_salt 컬럼)와의 호환을 위해 튜플 반환 형태는
 유지한다.)"""
+import hashlib
 import re
 import secrets
 from datetime import datetime, timedelta
@@ -37,6 +38,32 @@ def verify_password(password: str, digest: str, salt: str) -> bool:
 
 def generate_session_token() -> str:
     return secrets.token_urlsafe(32)
+
+
+def issue_session(user) -> str:
+    """새 세션을 발급한다. DB에는 해시만 남기고, 원문은 이 반환값으로만 나간다.
+
+    호출부는 반드시 이 반환값을 응답에 담아야 한다 — user.session_token을 그대로 쓰면
+    해시가 클라이언트로 나가서 로그인이 성립하지 않는다.
+    """
+    token = generate_session_token()
+    user.session_token = hash_session_token(token)
+    user.session_expires_at = session_expiry()
+    return token
+
+
+def hash_session_token(token: str) -> str:
+    """세션 토큰은 DB에 원문으로 두지 않는다.
+
+    비밀번호는 bcrypt로 해싱해 두면서 토큰만 평문으로 두면, DB가 유출됐을 때 비밀번호는
+    못 풀어도 살아있는 세션은 전부 그대로 탈취된다. 토큰은 원문을 클라이언트만 갖고,
+    서버는 조회용 해시만 보관한다.
+
+    여기서는 bcrypt가 아니라 SHA-256을 쓴다. 토큰은 이미 secrets.token_urlsafe(32)로 만든
+    256비트 난수라 사전 공격 대상이 아니고(느린 해시가 막아주는 위협이 없다), 매 요청마다
+    토큰으로 사용자를 '조회'해야 해서 bcrypt처럼 느리면 인증이 병목이 된다.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
 def is_valid_email(email: str) -> bool:

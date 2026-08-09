@@ -8,7 +8,7 @@ from app import config
 from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident
-from app.services.auth import generate_session_token, session_expiry
+from app.services.auth import hash_session_token, issue_session, session_expiry
 from app.services.deletion import delete_user_cascade, wipe_user_data
 from app.services.oauth import exchange_kakao_code, exchange_google_code
 
@@ -89,8 +89,7 @@ def _login_or_upgrade(db: Session, *, id_column, provider_id: str, email: str | 
     "로그인" 버튼을 눌렀는데 모르는 사이에 회원가입이 되어버리는 걸 막기 위함."""
     existing = db.query(AppUser).filter(id_column == provider_id).first()
     if existing:
-        existing.session_token = generate_session_token()
-        existing.session_expires_at = session_expiry()
+        existing.raw_session_token = issue_session(existing)
         db.commit()
         return existing, False
 
@@ -119,8 +118,7 @@ def _login_or_upgrade(db: Session, *, id_column, provider_id: str, email: str | 
     else:
         user.google_id = provider_id
     user.auth_provider = provider
-    user.session_token = generate_session_token()
-    user.session_expires_at = session_expiry()
+    user.raw_session_token = issue_session(user)
     db.commit()
     db.refresh(user)
     return user, True
@@ -133,13 +131,17 @@ def get_current_user(
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     token = authorization.split(" ", 1)[1].strip()
-    user = db.query(AppUser).filter(AppUser.session_token == token).first()
+    # DB에는 해시만 있으므로 들어온 토큰을 같은 방식으로 해싱해 대조한다.
+    user = db.query(AppUser).filter(AppUser.session_token == hash_session_token(token)).first()
     if not user:
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
     if user.session_expires_at and user.session_expires_at < datetime.utcnow():
         user.session_token = None
         db.commit()
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
+    # DB에는 해시만 있어서 응답에 담을 원문이 없다. 방금 검증한 원문을 실어 보내 응답
+    # 빌더들이 그대로 돌려줄 수 있게 한다(새 토큰을 발급하는 게 아니라 있던 것을 되돌려줌).
+    user.raw_session_token = token
     return user
 
 
@@ -155,16 +157,25 @@ def get_current_user_optional(
 
 
 def verify_owner(owner_user_id: int, current: AppUser | None) -> None:
-    """로그인 계정(이메일/카카오/구글)이 남의 user_id/trip_id/incident_id를 URL에 넣어
-    다른 사람의 여행·보험·사고 데이터에 접근하는 걸 막는다. 게스트(토큰 없음)는 원래도
-    로그인 없이 자기 user_id만 들고 쓰는 구조라 여기서는 기존처럼 그대로 신뢰한다 —
-    로그인 계정에 한해서는 절대 서로의 데이터를 볼 수 없게 하는 게 핵심이다."""
-    if current is not None and current.user_id != owner_user_id:
+    """URL의 user_id가 요청자 본인인지 확인한다.
+
+    예전에는 토큰이 있을 때만 검사했다. "게스트는 로그인 없이 자기 user_id만 들고 쓰는
+    구조"라는 전제였는데, 그 전제를 서버가 확인할 방법이 없다는 게 문제였다 — 토큰을 빼고
+    user_id만 바꿔 부르면 남의 여행·보험·사고가 그대로 나왔고, user_id가 순차 정수라
+    1부터 훑으면 전수 수집이 가능했다.
+
+    지금은 게스트도 계정 생성 시 세션 토큰을 받으므로(POST /users), 익명 접근을 허용할
+    이유가 없다. 로그인 여부와 무관하게 항상 토큰으로 본인을 증명해야 한다.
+    """
+    if current is None:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    if current.user_id != owner_user_id:
         raise HTTPException(status_code=403, detail="본인 데이터만 확인할 수 있어요.")
 
 
 @router.post("/signup", response_model=AuthUserOut)
-def signup(payload: SignupIn):
+@limiter.limit("10/hour")
+def signup(request: Request, payload: SignupIn):
     """이메일/비밀번호 가입은 더 이상 지원하지 않는다 — 카카오·구글로만 가입할 수 있다
     (비밀번호를 우리 서버에 저장하지 않는 편이 유출 위험이 적다). 엔드포인트 자체는 남겨서
     옛 프론트/클라이언트가 호출해도 무슨 상황인지 알 수 있는 메시지를 준다."""
@@ -172,7 +183,8 @@ def signup(payload: SignupIn):
 
 
 @router.post("/login", response_model=AuthUserOut)
-def login(payload: LoginIn):
+@limiter.limit("10/minute")
+def login(request: Request, payload: LoginIn):
     raise HTTPException(status_code=403, detail="이메일 로그인은 지원하지 않아요. 카카오 또는 구글로 로그인해주세요.")
 
 
@@ -198,15 +210,17 @@ def logout(user: AppUser = Depends(get_current_user), db: Session = Depends(get_
 
 
 @router.get("/me", response_model=AuthUserOut)
-def me(user: AppUser = Depends(get_current_user)):
+@limiter.limit("60/minute")
+def me(request: Request, user: AppUser = Depends(get_current_user)):
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
+        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
     )
 
 
 @router.delete("/me")
-def delete_account(user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
+@limiter.limit("5/hour")
+def delete_account(request: Request, user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """회원 탈퇴 — 이 계정과 계정이 만든 모든 여행·사고·보험 기록을 되돌릴 수 없이 삭제한다."""
     delete_user_cascade(db, user)
     db.commit()
@@ -238,7 +252,7 @@ async def kakao_login(request: Request, payload: OAuthIn, db: Session = Depends(
     )
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex, is_new_user=is_new,
+        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex, is_new_user=is_new,
     )
 
 
@@ -254,7 +268,7 @@ async def google_login(request: Request, payload: OAuthIn, db: Session = Depends
     )
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex, is_new_user=is_new,
+        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex, is_new_user=is_new,
     )
 
 
@@ -269,7 +283,7 @@ def update_nickname(payload: NicknameIn, user: AppUser = Depends(get_current_use
     db.commit()
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
+        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
     )
 
 
@@ -282,7 +296,7 @@ def update_sex(payload: SexIn, user: AppUser = Depends(get_current_user), db: Se
     db.commit()
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
+        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
     )
 
 
@@ -294,5 +308,5 @@ def update_age(payload: AgeIn, user: AppUser = Depends(get_current_user), db: Se
     db.commit()
     return AuthUserOut(
         user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.session_token, age=user.age, sex=user.sex,
+        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
     )

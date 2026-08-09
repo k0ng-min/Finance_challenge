@@ -1,16 +1,27 @@
 """라우터를 실제로 호출해 검증한다 — registry 단위 테스트만으로는 권한 로직이 안 잡힌다."""
+from datetime import datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.database import get_db
 from app.main import app
 from app.models.user import AppUser
+from app.services.auth import hash_session_token
+
+
+# 소유권 검사가 토큰을 요구하므로(익명 접근 차단) 테스트도 본인 토큰을 들고 부른다.
+AUTH = {"Authorization": "Bearer test-token"}
 
 
 @pytest.fixture
 def client(db_session):
     """앱의 DB 의존성을 테스트 세션으로 바꿔 끼운다 — 운영 DB를 건드리지 않기 위해."""
-    db_session.add(AppUser(user_id=1, nickname="테스트", auth_provider="guest"))
+    db_session.add(AppUser(
+        user_id=1, nickname="테스트", auth_provider="guest",
+        session_token=hash_session_token("test-token"),
+        session_expires_at=datetime.utcnow() + timedelta(days=1),
+    ))
     db_session.commit()
 
     app.dependency_overrides[get_db] = lambda: db_session
@@ -28,7 +39,7 @@ def test_사용가능한_수집방식에_codef는_빠져있다(client):
 
 
 def test_수동입력_실손은_세대까지_저장된다(client):
-    res = client.post("/users/1/external-policies/link", json={
+    res = client.post("/users/1/external-policies/link", headers=AUTH, json={
         "provider": "manual",
         "items": [{"kind": "MEDICAL_INDEMNITY", "insurer_name_raw": "삼성화재", "enrolled_ym": "2019-05"}],
     })
@@ -38,7 +49,7 @@ def test_수동입력_실손은_세대까지_저장된다(client):
     assert body[0]["indemnity_gen"] == 3
     assert body[0]["source"] == "manual"
 
-    listed = client.get("/users/1/external-policies").json()
+    listed = client.get("/users/1/external-policies", headers=AUTH).json()
     assert len(listed) == 1
 
 
@@ -49,24 +60,24 @@ def test_게스트는_로그인필요_provider를_쓸_수_없다(client):
 
 
 def test_알수없는_보험종류는_400으로_거부한다(client):
-    res = client.post("/users/1/external-policies/link", json={
+    res = client.post("/users/1/external-policies/link", headers=AUTH, json={
         "provider": "manual", "items": [{"kind": "NOT_A_KIND"}],
     })
     assert res.status_code == 400
 
 
 def test_등록한_기존보험을_삭제할_수_있다(client):
-    created = client.post("/users/1/external-policies/link", json={
+    created = client.post("/users/1/external-policies/link", headers=AUTH, json={
         "provider": "manual", "items": [{"kind": "ACCIDENT"}],
     }).json()
     policy_id = created[0]["external_policy_id"]
 
-    assert client.delete(f"/users/1/external-policies/{policy_id}").status_code == 200
-    assert client.get("/users/1/external-policies").json() == []
+    assert client.delete(f"/users/1/external-policies/{policy_id}", headers=AUTH).status_code == 200
+    assert client.get("/users/1/external-policies", headers=AUTH).json() == []
 
 
 def test_여행자보험이_없으면_진단은_빈_결과다(client):
-    res = client.get("/users/1/coverage-overlap")
+    res = client.get("/users/1/coverage-overlap", headers=AUTH)
     assert res.status_code == 200
     body = res.json()
     assert body == {"duplicates": [], "gaps": [], "fixed_ok": [], "unknown": []}

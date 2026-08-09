@@ -55,12 +55,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function bootstrapGuest() {
     const existing = Number(localStorage.getItem(LS_USER));
-    if (existing) {
+    // 예전에 만든 게스트는 토큰이 없다. 서버가 이제 소유권 증명을 요구하므로(익명 접근
+    // 차단) 토큰이 없으면 자기 데이터를 못 꺼낸다 — 계정을 새로 만들어 토큰을 받는다.
+    if (existing && localStorage.getItem(LS_TOKEN)) {
       setUserId(existing);
       return;
     }
     const u = await api.createUser("guest");
     localStorage.setItem(LS_USER, String(u.user_id));
+    localStorage.setItem(LS_TOKEN, u.token);
     setUserId(u.user_id);
   }
 

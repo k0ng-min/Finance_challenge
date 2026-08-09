@@ -180,6 +180,8 @@ export interface RecommendationOut {
 export interface UserOut {
   user_id: number;
   nickname: string;
+  /** 게스트도 이 토큰으로 본인을 증명한다(익명 접근은 서버에서 막혀 있다). */
+  token: string;
 }
 
 export interface UserCoverageOut {

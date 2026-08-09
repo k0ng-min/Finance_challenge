@@ -57,9 +57,14 @@ def assert_findings_are_grounded(findings, where: str):
 
 
 def create_user(client, nickname="e2e"):
+    """게스트 계정을 만들고 (user_id, 인증 헤더)를 돌려준다.
+
+    게스트도 토큰으로 본인을 증명해야 자기 데이터를 꺼낼 수 있다(익명 접근은 막혀 있다).
+    """
     res = client.post("/users", json={"nickname": nickname})
     assert res.status_code == 200, res.text
-    return res.json()["user_id"]
+    body = res.json()
+    return body["user_id"], {"Authorization": f"Bearer {body['token']}"}
 
 
 def login(db, user_id: int, token: str = "e2e-token") -> dict:
@@ -79,7 +84,7 @@ def login(db, user_id: int, token: str = "e2e-token") -> dict:
 # ---------------------------------------------------------------- Golden Path A
 def test_가입_전_여정이_근거와_함께_끝까지_이어진다(client):
     """여행 생성 → 가입 전 추천 → 보험사 비교까지, 각 단계 결과가 다음 단계로 이어지는지."""
-    user_id = create_user(client, "가입전")
+    user_id, auth = create_user(client, "가입전")
 
     trip = client.post("/trips", json={
         "user_id": user_id, "destination": "일본",
@@ -87,7 +92,7 @@ def test_가입_전_여정이_근거와_함께_끝까지_이어진다(client):
         "purpose": "관광", "activities": ["관광"],
         "companion_type": "혼자", "rental_car": False,
         "coverage_priority": ["PROP"],
-    })
+    }, headers=auth)
     assert trip.status_code == 200, trip.text
     body = trip.json()
 
@@ -182,8 +187,7 @@ def fixed_classifier(monkeypatch, kb_session):
 
 def test_사고_후_여정이_담보와_서류까지_이어진다(client, kb_session, fixed_classifier):
     """보험 등록 → 사고 접수 → 담보 검토 → 필요서류 → 근거 조항."""
-    user_id = create_user(client, "사고후")
-    auth = login(kb_session, user_id)
+    user_id, auth = create_user(client, "사고후")
 
     trip = client.post("/trips", json={
         "user_id": user_id, "destination": "일본",
@@ -231,7 +235,7 @@ def test_사고_후_여정이_담보와_서류까지_이어진다(client, kb_ses
 def test_근거_없는_단정은_확인불가로만_나온다(client, kb_session, fixed_classifier):
     """등록한 보험이 없으면 담보를 찾을 수 없다. 그때 '청구검토후보'라고 우기지 않고
     확인불가로 내려가는지 — 근거 없는 결과 금지 원칙의 반대 방향 검증이다."""
-    user_id = create_user(client, "근거없음")
+    user_id, auth = create_user(client, "근거없음")
 
     incident = client.post("/incidents", json={
         "user_id": user_id,
@@ -244,7 +248,7 @@ def test_근거_없는_단정은_확인불가로만_나온다(client, kb_session
         "new_trip_destination": "일본",
         "new_trip_start_date": "2026-09-01",
         "new_trip_end_date": "2026-09-05",
-    })
+    }, headers=auth)
     assert incident.status_code == 200, incident.text
     findings = incident.json()["findings"]
 
