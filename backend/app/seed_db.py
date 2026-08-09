@@ -27,6 +27,7 @@ def run():
             sale_start=None, collected_at=dt.date(2026, 7, 29),
             version_label="idbins_수집본", effective_date=None,
             source_url="https://www.idbins.com/pcweb/bizxpress/pdc/tl/__etc/해외여행.pdf",
+            file_hash="2050e5ce0ae6ec928cd94d9e51165657b52b6e2b71a0ee16b1f93b0698cf175a",
         )
         if insurer is None:
             print("이미 시드됨 (DB). 스킵합니다.")

@@ -31,6 +31,7 @@ from app.models.kb import (
     PolicyVersion,
     Product,
 )
+from app.services.kb_provenance import ranking_eligible_insurer_codes
 
 
 _L1_CODES = {"INJ", "ILL", "PROP", "LIA", "TRV", "CHG", "EMG", "SPC"}

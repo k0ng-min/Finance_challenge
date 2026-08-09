@@ -56,7 +56,7 @@ def run():
             effective_date=dt.date(2024, 4, 1),
             approval_no=None,
             source_url="https://www.samsungfire.com/publication/pdf/50002_0_20240401_file1.pdf",
-            file_hash=None,
+            file_hash="0ca4c127c566bc3a61d41ddb459d7134e8d5b931b06a99bceff6b48f92db7bb0",
         )
         db.add(pv)
         db.flush()

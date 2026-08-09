@@ -34,6 +34,7 @@ def run():
             sale_start=dt.date(2024, 11, 1), collected_at=dt.date(2026, 7, 29),
             version_label="20241101", effective_date=dt.date(2024, 11, 1),
             source_url="https://static.kakaoinsure.com/notilus/files/20241101_해외여행보험 약관.pdf",
+            file_hash="d9e33fa75a75ec284cb35f4880ae6735693fcf0081bb601867ddc21001742cfb",
         )
         if insurer is None:
             print("이미 시드됨 (KAKAOPAY). 스킵합니다.")

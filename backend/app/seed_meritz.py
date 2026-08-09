@@ -32,6 +32,7 @@ def run():
             sale_start=None, collected_at=dt.date(2026, 7, 29),
             version_label="udirect_수집본", effective_date=None,
             source_url="https://ud.udirect.co.kr/travel/meritz/files/overseas.pdf",
+            file_hash="6dbd0749379312a7400354b05c501ddb221aded066dca6155217c72b5b5a22a0",
         )
         if insurer is None:
             print("이미 시드됨 (MERITZ). 스킵합니다.")

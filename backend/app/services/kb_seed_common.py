@@ -64,7 +64,8 @@ def seed_common_doc_std(db):
 
 def seed_insurer_core(db, *, name, code, official_url,
                        product_name, product_code, channel, sale_start, collected_at,
-                       version_label, effective_date, source_url) -> tuple[Insurer, Product, PolicyVersion]:
+                       version_label, effective_date, source_url,
+                       file_hash=None) -> tuple[Insurer, Product, PolicyVersion]:
     insurer = db.query(Insurer).filter_by(code=code).first()
     if insurer:
         return None, None, None  # 이미 시드됨 (호출부에서 스킵 처리)
@@ -83,7 +84,7 @@ def seed_insurer_core(db, *, name, code, official_url,
 
     pv = PolicyVersion(
         product_id=product.product_id, version_label=version_label,
-        effective_date=effective_date, approval_no=None, source_url=source_url, file_hash=None,
+        effective_date=effective_date, approval_no=None, source_url=source_url, file_hash=file_hash,
     )
     db.add(pv)
     db.flush()

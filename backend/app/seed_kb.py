@@ -33,6 +33,7 @@ def run():
             sale_start=dt.date(2020, 4, 1), collected_at=dt.date(2026, 7, 29),
             version_label="15332_202004", effective_date=dt.date(2020, 4, 1),
             source_url="https://direct.kbinsure.co.kr/dwlddoc/lifeshop_1KBoverseasestravel(15332)_policy_202004.pdf",
+            file_hash="05be224f1faa8835a18dc4e7546baf80c84ce83089db7038e7ab75ac86e29a40",
         )
         if insurer is None:
             print("이미 시드됨 (KB). 스킵합니다.")

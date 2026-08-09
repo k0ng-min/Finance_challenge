@@ -8,6 +8,7 @@ from sqlalchemy import text
 from app import config
 from app.database import Base, engine
 from app.limiter import limiter
+from app.services.kb_provenance import synchronize_policy_fingerprints
 from app import models  # noqa: F401  (모델 등록을 위해 import)
 from app.routers import users, trips, policies, incidents, insurers, auth, clauses, external_policies
 

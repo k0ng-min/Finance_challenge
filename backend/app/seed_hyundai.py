@@ -29,6 +29,7 @@ def run():
             sale_start=dt.date(2025, 6, 30), collected_at=dt.date(2026, 7, 29),
             version_label="CM8403_20250630", effective_date=dt.date(2025, 6, 30),
             source_url="https://direct.hi.co.kr/dhNAS/terms/CM8403_20250630.pdf",
+            file_hash="294b8f4e9afd724c6eac94b6c25a0bd948e064b40d3817f6c40b6976035c72ed",
         )
         if insurer is None:
             print("이미 시드됨 (HYUNDAI). 스킵합니다.")
