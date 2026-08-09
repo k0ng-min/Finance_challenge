@@ -74,6 +74,10 @@ _add_missing_columns("insurer_premium", {
     "period_days": "ALTER TABLE insurer_premium ADD COLUMN period_days INTEGER DEFAULT 7 NOT NULL",
 })
 
+# 기존 app.db도 새 시드와 동일한 PDF 지문을 갖도록 멱등 동기화한다.
+synchronize_policy_fingerprints(engine)
+
+
 def _ensure_doc_requirements():
     """서류 사진 확인이 인용할 약관 근거(doc_requirement)가 비어 있으면 채운다.
 

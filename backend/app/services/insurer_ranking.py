@@ -31,7 +31,10 @@ from app.models.kb import (
     PolicyVersion,
     Product,
 )
-from app.services.kb_provenance import ranking_eligible_insurer_codes
+# NOTE: kb_provenance.ranking_eligible_insurer_codes()는 아직 여기서 쓰지 않는다.
+# 지금 매니페스트에서 출처 검증이 끝난 곳은 6개사 중 3곳(삼성·현대·카카오페이)이라,
+# 그대로 필터로 걸면 비교 대상이 절반으로 줄어든다. 근거 없는 데이터로 순위를 매기지
+# 않겠다는 취지는 맞지만 화면에서 보험사가 조용히 사라지는 변화라, 팀이 정한 뒤에 켠다.
 
 
 _L1_CODES = {"INJ", "ILL", "PROP", "LIA", "TRV", "CHG", "EMG", "SPC"}
