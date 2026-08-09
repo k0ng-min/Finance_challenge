@@ -233,6 +233,32 @@ class DocRequirement(Base):
     clause = relationship("Clause")
 
 
+class TravelAlert(Base):
+    """외교부 국가·지역별 여행경보.
+
+    약관에서 뽑은 값이 아니라 외부 기관 자료다(InsurerPremium과 같은 성격). 그래서 행마다
+    출처·수집일을 함께 저장하고, 보험사 순위 점수에는 넣지 않는다 — 근거의 출처가 다른
+    값을 같은 저울에 올리지 않는다.
+
+    경보 단계 자체는 보상 여부의 근거가 아니다. 단계가 높을 때 "그 보험사 약관에 전쟁·내란
+    면책 조항이 있다"는 사실을 조항 원문과 함께 알리는 데까지만 쓴다.
+    """
+
+    __tablename__ = "travel_alert"
+
+    alert_id = Column(Integer, primary_key=True)
+    country_name = Column(String, nullable=False, index=True)  # 한글 국가명(앱의 국가 목록과 맞춤)
+    country_en = Column(String)
+    iso_code = Column(String)                 # ISO 2자리
+    level = Column(Integer, nullable=False)   # 1 여행유의 / 2 여행자제 / 3 출국권고 / 4 여행금지
+    region_type = Column(String)              # 전 지역 / 일부 지역
+    note = Column(Text)                       # 경보 내용(일부 지역만 해당하는 경우 등)
+    issued_on = Column(String)                # 외교부 작성일
+    source = Column(String)
+    source_url = Column(String)
+    collected_at = Column(Date)
+
+
 class InsurerPremium(Base):
     """보험다모아에서 수집한 나이·성별별 예시 보험료.
 

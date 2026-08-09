@@ -874,6 +874,36 @@ button { cursor: pointer; font-family: inherit; }
   .rank-gauges { grid-template-columns: 1fr; gap: 9px; }
 }
 
+/* --- 여행경보 배지 ---
+   외교부가 발령한 자료라 우리가 계산한 위험도와 출처가 다르다. 출처·발령일을 같이 적어
+   어디서 온 값인지 드러낸다. 보상 여부는 여기서 말하지 않는다(제한조건 카드가 조항
+   원문과 함께 따로 한다). */
+.travel-alert {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+.travel-alert__level { font-weight: 800; }
+.travel-alert__label { font-weight: 700; }
+.travel-alert__region {
+  font-size: 0.68rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.travel-alert__source { margin-left: auto; font-size: 0.68rem; opacity: 0.85; }
+.travel-alert__source a { color: inherit; text-decoration: underline; }
+
+.travel-alert--info { background: var(--primary-soft); color: var(--primary-dark); }
+.travel-alert--warn { background: var(--yellow-soft); color: #96631a; }
+.travel-alert--danger { background: var(--orange-soft); color: var(--orange-dark); font-weight: 700; }
+
 /* --- 서류 사진 확인 ---
    상태 선택이 이 칸의 주인공이고 사진은 보조 수단이다. 예전엔 상태 선택과 같은 크기의
    알약을 한 줄 더 깔아서, 행마다 반복되며 정작 골라야 할 상태보다 더 눈에 띄었다.

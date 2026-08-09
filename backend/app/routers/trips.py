@@ -10,6 +10,7 @@ from app.models.analysis import AnalysisRun
 from app.routers.auth import get_current_user_optional, verify_owner
 from app.schemas import TripCreate, TripUpdate, TripDetailOut, RecommendationOut
 from app.services.rules import build_risk_profile, generate_pre_trip_findings
+from app.services.travel_alert import build_alert_findings, find_alert
 from app.services.finding_persistence import persist_findings, load_findings_out
 from app.services.deletion import delete_trip_cascade, wipe_user_data
 
@@ -46,6 +47,15 @@ def create_trip_and_recommend(
     # coverage_priority는 build_risk_profile()이 만드는 값이 아니라 사용자가 직접 고른 값이라,
     # 위험도 판단과는 분리해서 별도로 risk_profile에 얹는다(보험사 순위 매길 때 그대로 재사용).
     risk_profile["coverage_priority"] = payload.coverage_priority
+    # 목적지 여행경보. 지금까지 risk_level은 활동과 여행일수만 봤기 때문에, 시리아에 가든
+    # 일본에 가든 "관광"이면 똑같이 낮음이 나왔다. 경보는 외교부 자료라 약관 근거와 출처가
+    # 다르므로, 같은 risk_level에 섞지 않고 별도 항목으로 둔다(보험사 순위 점수에도 넣지 않는다).
+    alert = find_alert(db, payload.destination)
+    risk_profile["travel_alert"] = {
+        "level": alert.level, "label": alert.label, "region_type": alert.region_type,
+        "note": alert.note, "issued_on": alert.issued_on,
+        "source": alert.source, "source_url": alert.source_url,
+    } if alert else None
 
     trip = Trip(
         user_id=payload.user_id,
@@ -63,6 +73,9 @@ def create_trip_and_recommend(
     db.flush()
 
     finding_specs = generate_pre_trip_findings(db, risk_profile)
+    # 경보가 높은 지역이면 그 보험사 약관의 전쟁·내란 면책 조항을 원문과 함께 덧붙인다.
+    # 경보 자체를 보상 판정 근거로 쓰지는 않는다(services/travel_alert.py 참고).
+    finding_specs += build_alert_findings(db, payload.destination)
 
     run = AnalysisRun(
         user_id=payload.user_id,

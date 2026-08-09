@@ -114,7 +114,34 @@ def _ensure_doc_requirements():
         db.close()
 
 
+def _ensure_travel_alerts():
+    """여행경보 스냅샷이 있으면 비어 있는 테이블에 채운다.
+
+    doc_requirement와 같은 이유로 기동 시에 둔다 — 클론한 사람이 시드 명령을 따로 기억하지
+    않아도 되게. 스냅샷이 아직 없으면(인증키 미발급) 조용히 넘어가고, 경보 배지와 면책
+    안내만 나타나지 않는다.
+    """
+    from app.database import SessionLocal
+    from app.models.kb import TravelAlert
+
+    db = SessionLocal()
+    try:
+        if db.query(TravelAlert).first() is not None:
+            return
+        from app.seed_travel_alerts import seed
+        count = seed(db)
+        db.commit()
+        if count:
+            print(f"[startup] travel_alert {count}개국 적재 완료")
+    except Exception as exc:  # noqa: BLE001 — 어떤 이유든 앱 기동을 막지 않는다
+        db.rollback()
+        print(f"[startup] 여행경보 적재를 건너뜁니다: {exc}")
+    finally:
+        db.close()
+
+
 _ensure_doc_requirements()
+_ensure_travel_alerts()
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 

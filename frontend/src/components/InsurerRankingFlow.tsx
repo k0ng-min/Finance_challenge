@@ -8,6 +8,7 @@ import { InsurerIncidentClauses } from "./InsurerIncidentClauses";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 import { OverlapReportView } from "./OverlapReport";
+import { TravelAlertBadge } from "./TravelAlertBadge";
 
 type Phase = "tier" | "ranking" | "detail";
 
@@ -303,6 +304,9 @@ export function InsurerRankingFlow({
           {" "}({String(result.risk_profile.trip_days ?? "-")}일)
         </div>
         <div>위험도: <strong>{String(result.risk_profile.risk_level ?? "-")}</strong></div>
+        {/* 여행경보는 외교부 자료다. 위험도(활동·기간으로 계산한 값)와 출처가 다르므로
+            같은 줄에 섞지 않고, 어디서 온 값인지 밝혀서 따로 보여준다. */}
+        <TravelAlertBadge alert={result.risk_profile.travel_alert} />
         {Array.isArray(result.risk_profile.risky_activity_detected) &&
           (result.risk_profile.risky_activity_detected as string[]).length > 0 && (
             <div>감지된 위험활동: {(result.risk_profile.risky_activity_detected as string[]).join(", ")}</div>
