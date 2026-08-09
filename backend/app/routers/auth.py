@@ -167,8 +167,10 @@ def verify_owner(owner_user_id: int, current: AppUser | None) -> None:
     지금은 게스트도 계정 생성 시 세션 토큰을 받으므로(POST /users), 익명 접근을 허용할
     이유가 없다. 로그인 여부와 무관하게 항상 토큰으로 본인을 증명해야 한다.
     """
+    # 게스트도 토큰을 갖고 있으므로, 토큰이 없다는 건 "로그인을 안 했다"가 아니라 브라우저에
+    # 저장된 정보가 사라졌다는 뜻이다. 로그인하라고 하면 게스트는 할 수 있는 게 없다.
     if current is None:
-        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+        raise HTTPException(status_code=401, detail="정보를 확인할 수 없어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.")
     if current.user_id != owner_user_id:
         raise HTTPException(status_code=403, detail="본인 데이터만 확인할 수 있어요.")
 

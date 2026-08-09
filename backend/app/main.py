@@ -1,9 +1,14 @@
+import traceback
+
 import secure
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
+from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import config
 from app.database import Base, engine
@@ -118,7 +123,66 @@ app = FastAPI(title="여행자보험 전 생애주기 AI")
 # 엔드포인트)가 알아서 자기 한도를 체크하므로, 여기서는 그 결과(RateLimitExceeded)를 429
 # 응답으로 바꿔주는 핸들러만 등록하면 된다.
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# 이 미들웨어가 있어야 limiter의 전역 기본 한도가 적용된다. 없으면 @limiter.limit이 붙은
+# 엔드포인트만 보호되고 나머지는 무제한으로 열린다(45개 중 15개만 덮여 있었다).
+app.add_middleware(SlowAPIMiddleware)
+
+
+# --- 오류 응답 문구 ---------------------------------------------------------
+# 기본 핸들러들은 개발자용 문구를 그대로 내보낸다. 실제로 나가던 것들:
+#   429 {"error":"Rate limit exceeded: 10 per 1 minute"}   영어 + 정확한 한도까지 노출
+#   422 {"detail":[{"type":"string_type","loc":[...]}]}     내부 구조 노출
+#   404 {"detail":"Not Found"} / 500 "Internal Server Error"
+# 사용자가 읽을 이유가 없는 말이고, 한도·필드 경로처럼 공격에 참고가 되는 정보도 섞인다.
+# 아래에서 전부 상황을 설명하는 한 문장으로 바꾼다.
+
+_STATUS_MESSAGES = {
+    400: "입력한 내용을 다시 확인해 주세요.",
+    401: "정보를 확인할 수 없어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.",
+    403: "이 정보를 볼 수 있는 권한이 없어요.",
+    404: "찾는 정보가 없어요. 없어졌거나 아직 만들어지지 않았을 수 있어요.",
+    405: "지금은 할 수 없는 요청이에요.",
+    409: "이미 처리된 요청이에요.",
+    413: "파일이 너무 커요. 조금 더 작은 파일로 다시 시도해 주세요.",
+    422: "입력한 내용을 다시 확인해 주세요.",
+    429: "요청이 너무 잦아요. 잠시 뒤에 다시 시도해 주세요.",
+    503: "지금은 이 기능을 쓸 수 없어요. 잠시 뒤에 다시 시도해 주세요.",
+}
+_FALLBACK_MESSAGE = "잠시 문제가 생겼어요. 다시 시도해 주세요."
+
+
+def _is_user_facing(detail) -> bool:
+    """우리가 직접 쓴 한국어 안내문인지. 라이브러리 기본 문구(영어)나 검증 오류 구조체는
+    사용자에게 의미가 없으므로 상태코드 기반 문구로 대체한다."""
+    return isinstance(detail, str) and any("가" <= ch <= "힣" for ch in detail)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request, exc):
+    # 정확한 한도를 알려주면 우회 간격을 맞추기 쉬워진다. 몇 회인지는 밝히지 않는다.
+    return JSONResponse(status_code=429, content={"detail": _STATUS_MESSAGES[429]})
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    detail = exc.detail if _is_user_facing(exc.detail) else _STATUS_MESSAGES.get(
+        exc.status_code, _FALLBACK_MESSAGE
+    )
+    return JSONResponse(status_code=exc.status_code, content={"detail": detail},
+                        headers=getattr(exc, "headers", None))
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    # 어떤 필드가 왜 틀렸는지는 서버 로그에만 남기고, 응답에는 담지 않는다.
+    return JSONResponse(status_code=422, content={"detail": _STATUS_MESSAGES[422]})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request, exc):
+    """예상 못 한 오류. 스택이나 예외 메시지가 사용자에게 나가지 않게 막는다."""
+    traceback.print_exception(type(exc), exc, exc.__traceback__)
+    return JSONResponse(status_code=500, content={"detail": _FALLBACK_MESSAGE})
 
 app.add_middleware(
     CORSMiddleware,

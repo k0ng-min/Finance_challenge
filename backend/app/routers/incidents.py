@@ -222,7 +222,7 @@ def create_incident(
     verify_owner(payload.user_id, current)
     user = db.get(AppUser, payload.user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다. 먼저 /users로 사용자를 생성하세요.")
+        raise HTTPException(status_code=404, detail="사용자 정보를 찾을 수 없어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.")
 
     # 게스트(비로그인)는 "여행 1개 + 거기 이어지는 보험 1개 + 사고 1개"만 들고 간다.
     # 새 사고를 접수하면 앞의 기록은 전부 정리한다 — 단, 이번 요청이 방금 만든 여행을
@@ -552,6 +552,27 @@ def submit_evidence(
 _MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 _ALLOWED_MIME = {"image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"}
 
+# 파일 앞부분의 고정 바이트(매직 넘버)로 실제 형식을 확인한다. Content-Type은 클라이언트가
+# 자기 마음대로 붙이는 값이라, 그것만 믿으면 확장자만 바꾼 임의 파일이 그대로 통과해
+# Gemini로 넘어간다. 여기서 실제 내용과 대조해 한 겹 더 거른다.
+_MAGIC_PREFIXES: tuple[tuple[bytes, str], ...] = (
+    (b"\xff\xd8\xff", "image/jpeg"),
+    (b"\x89PNG\r\n\x1a\n", "image/png"),
+    (b"%PDF-", "application/pdf"),
+)
+
+
+def _looks_like_allowed_file(data: bytes) -> bool:
+    """내용이 우리가 받기로 한 형식 중 하나로 보이는지."""
+    if any(data.startswith(prefix) for prefix, _ in _MAGIC_PREFIXES):
+        return True
+    # WebP: "RIFF....WEBP", HEIC: 4~12바이트 위치에 "ftyp" + 브랜드
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return True
+    if data[4:8] == b"ftyp" and data[8:12] in {b"heic", b"heix", b"hevc", b"mif1", b"msf1"}:
+        return True
+    return False
+
 
 @router.post("/{incident_id}/documents/{required_doc_std_id}/verify", response_model=DocVerifyOut)
 @limiter.limit("10/minute")
@@ -578,9 +599,9 @@ async def verify_document_photo(
     if not doc:
         raise HTTPException(status_code=404, detail="서류 정보를 찾을 수 없습니다.")
 
-    if not config.GEMINI_ENABLED:
-        raise HTTPException(status_code=503, detail="지금은 사진 확인을 쓸 수 없어요. 서류 상태를 직접 골라주세요.")
-
+    # 요청이 형식에 맞는지를 먼저 본다. 기능 가용성(Gemini)을 앞에 두면 기능이 꺼져 있을 때
+    # 잘못된 요청도 전부 503으로 뭉개져, 보내는 쪽은 무엇이 문제인지 알 수 없고 서버는
+    # 형식 검사를 아예 돌리지 않게 된다.
     if file.content_type not in _ALLOWED_MIME:
         raise HTTPException(status_code=400, detail="사진(JPG·PNG) 또는 PDF만 올릴 수 있어요.")
 
@@ -589,6 +610,12 @@ async def verify_document_photo(
         raise HTTPException(status_code=413, detail="파일이 너무 커요. 8MB 이하로 올려주세요.")
     if not image_bytes:
         raise HTTPException(status_code=400, detail="파일을 읽지 못했어요. 다시 올려주세요.")
+    if not _looks_like_allowed_file(image_bytes):
+        # Content-Type은 맞다고 했는데 내용이 다른 경우. 어떤 검사에 걸렸는지는 밝히지 않는다.
+        raise HTTPException(status_code=400, detail="사진(JPG·PNG) 또는 PDF만 올릴 수 있어요.")
+
+    if not config.GEMINI_ENABLED:
+        raise HTTPException(status_code=503, detail="지금은 사진 확인을 쓸 수 없어요. 서류 상태를 직접 골라주세요.")
 
     requirements = (
         db.query(DocRequirement)

@@ -18,7 +18,10 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # --proxy-headers: Render는 리버스 프록시 뒤에서 앱을 돌린다. 이 옵션이 없으면
+    # 모든 요청의 클라이언트 주소가 프록시 IP로 보여서, 요청 빈도 제한이 사용자별로
+    # 나뉘지 않고 전체가 한 버킷에 묶인다(한 명이 한도를 다 쓰면 모두가 막힌다).
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
     envVars:
       # 프론트엔드 배포 URL로 채운다. 예: https://travel-insurance-web.onrender.com
       - key: FRONTEND_BASE_URL
