@@ -311,6 +311,35 @@ class ClauseStandardMap(Base):
     clause = relationship("Clause")
 
 
+class FlightDelayStat(Base):
+    """한국공항공사 항공기 출도착 지연 통계(보험사 상품설계용으로 공개된 자료).
+
+    약관의 지연기준시간(ClauseTerm term_type='지연기준시간')을 체감 가능한 크기와 나란히
+    보여주는 데 쓴다. TravelAlert·InsurerPremium과 같은 성격 — 약관에서 뽑은 값이 아니라
+    외부 기관 자료이므로 출처·수집일을 행마다 저장하고 보상 판정 근거나 순위 점수로 쓰지
+    않는다.
+
+    원본에 총 운항편수가 없어 "지연 발생 확률(%)"은 계산할 수 없다 — delayed_flights·
+    avg_delay_minutes 등 규모만 제공한다(데이터셋 자체의 한계, scope_note 참고).
+    """
+
+    __tablename__ = "flight_delay_stat"
+    __table_args__ = (UniqueConstraint("year", "kind", "direction", name="uq_flight_delay_year_kind_direction"),)
+
+    stat_id = Column(Integer, primary_key=True)
+    year = Column(Integer, nullable=True)  # NULL이면 전체기간 합산(overall) 행
+    kind = Column(String, nullable=False)       # 국내/국제
+    direction = Column(String, nullable=False)  # 출발/도착
+    delayed_flights = Column(Integer, nullable=False)
+    total_delay_minutes = Column(Integer, nullable=False)
+    avg_delay_minutes = Column(Float, nullable=True)
+    passengers_affected = Column(Integer, nullable=True)
+    source = Column(String)
+    source_url = Column(String)
+    scope_note = Column(Text)
+    collected_at = Column(Date)
+
+
 class InsurerPremium(Base):
     """보험다모아에서 수집한 나이·성별별 예시 보험료.
 

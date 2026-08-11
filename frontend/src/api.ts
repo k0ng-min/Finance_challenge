@@ -317,6 +317,23 @@ export interface InsurerStandardComparisonOut {
   items: StandardClauseComparisonOut[];
 }
 
+export interface FlightDelayStatOut {
+  kind: string;
+  direction: string;
+  delayed_flights: number;
+  avg_delay_minutes: number | null;
+  passengers_affected: number | null;
+}
+
+export interface FlightDelayStatsOut {
+  source: string;
+  source_url: string;
+  coverage_period: string;
+  scope_note: string;
+  collected_at: string | null;
+  overall: FlightDelayStatOut[];
+}
+
 export interface InsurerTierOut {
   tier_code: string;
   label: string;
@@ -566,6 +583,8 @@ export const api = {
 
   getInsurerStandardComparison: (insurerCode: string) =>
     request<InsurerStandardComparisonOut>(`/insurers/${insurerCode}/standard-comparison`),
+
+  getFlightDelayStats: () => request<FlightDelayStatsOut>(`/trips/flight-delay-stats`),
 
   getInsurerRanking: (
     tier: string,

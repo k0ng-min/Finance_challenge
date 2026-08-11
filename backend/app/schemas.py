@@ -360,6 +360,30 @@ class InsurerStandardComparisonOut(BaseModel):
     items: list[StandardClauseComparisonOut] = []
 
 
+class FlightDelayStatOut(BaseModel):
+    kind: str        # 국내/국제
+    direction: str    # 출발/도착
+    delayed_flights: int
+    avg_delay_minutes: Optional[float] = None
+    passengers_affected: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class FlightDelayStatsOut(BaseModel):
+    """약관의 지연기준시간을 체감 가능한 크기와 나란히 보여주기 위한 참고 통계.
+
+    총 운항편수가 원본에 없어 '지연 발생 확률(%)'은 계산할 수 없다 — 규모(건수·평균
+    지연시간)만 제공한다. 보상 판정 근거나 순위 점수로 쓰지 않는다."""
+    source: str
+    source_url: str
+    coverage_period: str
+    scope_note: str
+    collected_at: Optional[dt.date] = None
+    overall: list[FlightDelayStatOut]
+
+
 class InsurerIncidentCoverageOut(BaseModel):
     """가입 전, 특정 보험사가 특정 사고유형(L1)을 실제로 어떤 담보·조항으로 보상하는지.
     사용자가 등록한 보험이 없어도(아직 가입 전이므로) 그 보험사의 KB(약관 원문) 자체를

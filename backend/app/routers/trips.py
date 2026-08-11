@@ -8,7 +8,8 @@ from app.limiter import limiter
 from app.models.user import AppUser, Trip, UserPolicy
 from app.models.analysis import AnalysisRun
 from app.routers.auth import get_current_user_optional, verify_owner
-from app.schemas import TripCreate, TripUpdate, TripDetailOut, RecommendationOut
+from app.models.kb import FlightDelayStat
+from app.schemas import TripCreate, TripUpdate, TripDetailOut, RecommendationOut, FlightDelayStatOut, FlightDelayStatsOut
 from app.services.rules import build_risk_profile, generate_pre_trip_findings
 from app.services.travel_alert import build_alert_findings, country_alert
 from app.services.finding_persistence import persist_findings, load_findings_out
@@ -118,6 +119,23 @@ def get_travel_alert(request: Request, country: str, db: Session = Depends(get_d
     """
     alert = country_alert(db, country)
     return {"alert": alert.as_dict() if alert else None}
+
+
+@router.get("/flight-delay-stats", response_model=FlightDelayStatsOut)
+def get_flight_delay_stats(db: Session = Depends(get_db)):
+    """한국공항공사 실제 항공지연 통계(전체기간 합산). 약관의 지연기준시간(예: "4시간
+    이상 지연")을 체감 가능한 크기와 나란히 보여주는 데 쓴다 — 지연 발생 확률이 아니라
+    평균 지연시간·건수 같은 크기 비교까지만 제공한다(FlightDelayStat 모델 docstring 참고)."""
+    rows = db.query(FlightDelayStat).filter(FlightDelayStat.year.is_(None)).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="항공지연 통계가 아직 적재되지 않았습니다.")
+    first = rows[0]
+    return FlightDelayStatsOut(
+        source=first.source, source_url=first.source_url,
+        coverage_period="2017-01 ~ 2025-05", scope_note=first.scope_note,
+        collected_at=first.collected_at,
+        overall=[FlightDelayStatOut.model_validate(r) for r in rows],
+    )
 
 
 @router.get("/{trip_id}", response_model=RecommendationOut)
