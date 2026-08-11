@@ -322,6 +322,44 @@ class IncidentTypeOut(BaseModel):
     name: str
 
 
+class StandardClauseOut(BaseModel):
+    standard_clause_id: int
+    article_no: str
+    title: str
+    text: str
+    amended_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class StandardClauseComparisonOut(BaseModel):
+    """표준약관 조문 하나에 대한 특정 보험사의 대조 결과 한 칸.
+
+    relation이 MISSING_IN_INSURER면 insurer_clause*는 전부 None이다 — 대응 조항이
+    없다는 사실 자체가 결과이므로, 억지로 다른 조항을 끌어와 채우지 않는다."""
+    standard_clause_id: int
+    article_no: str
+    title: str
+    standard_text: str
+    anchor_phrase_standard: str
+    relation: str  # SAME/BROADER/NARROWER/MISSING_IN_INSURER
+    insurer_clause_id: Optional[int] = None
+    insurer_article_no: Optional[str] = None
+    insurer_text: Optional[str] = None
+    anchor_phrase_insurer: Optional[str] = None
+    note: Optional[str] = None
+
+
+class InsurerStandardComparisonOut(BaseModel):
+    insurer_code: str
+    insurer_name: str
+    standard_name: str
+    source_url: str
+    amended_at: Optional[str] = None
+    items: list[StandardClauseComparisonOut] = []
+
+
 class InsurerIncidentCoverageOut(BaseModel):
     """가입 전, 특정 보험사가 특정 사고유형(L1)을 실제로 어떤 담보·조항으로 보상하는지.
     사용자가 등록한 보험이 없어도(아직 가입 전이므로) 그 보험사의 KB(약관 원문) 자체를

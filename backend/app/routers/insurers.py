@@ -4,11 +4,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import (
-    Clause, ClauseIncidentMap, Coverage, IncidentType, Insurer, InsurerPremium, PolicyVersion, Product,
+    Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerPremium,
+    PolicyVersion, Product, StandardClause,
 )
 from app.schemas import (
-    ClauseOut, ClauseTermOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerTierOut, InsurerRankingOut,
-    InsurerPremiumCurveOut, InsurerPremiumOut, PremiumComparisonOut, PremiumPointOut,
+    ClauseOut, ClauseTermOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerStandardComparisonOut,
+    InsurerTierOut, InsurerRankingOut, InsurerPremiumCurveOut, InsurerPremiumOut, PremiumComparisonOut,
+    PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
 from app.services.insurer_ranking import list_tiers, rank_insurers
 
@@ -259,6 +261,77 @@ def get_insurer_coverages_for_incident_type(insurer_code: str, type_id: int, db:
 
     result.sort(key=lambda r: _RELEVANCE_ORDER.get(r.relevance, 9))
     return result
+
+
+@router.get("/standard-clauses", response_model=list[StandardClauseOut])
+def get_standard_clauses(standard_name: str = "해외여행 실손의료보험", db: Session = Depends(get_db)):
+    """금융감독원 표준약관 조문 목록(원문). 정렬은 조 번호 오름차순."""
+    rows = (
+        db.query(StandardClause)
+        .filter(StandardClause.standard_name == standard_name)
+        .order_by(StandardClause.standard_clause_id.asc())
+        .all()
+    )
+    return [StandardClauseOut.model_validate(r) for r in rows]
+
+
+@router.get("/{insurer_code}/standard-comparison", response_model=InsurerStandardComparisonOut)
+def get_insurer_standard_comparison(
+    insurer_code: str, standard_name: str = "해외여행 실손의료보험", db: Session = Depends(get_db)
+):
+    """이 보험사 약관을 표준약관과 조문 단위로 대조한 결과.
+
+    대응 조항을 못 찾아 clause_standard_map 행 자체가 없는 표준 조문은 목록에서
+    조용히 빠진다 — 근거 없이 '표준과 같다'고 단정하지 않기 위함이다. 매핑 커버리지는
+    docs/compliance/source_register.md에 별도로 기록한다(README "한계" 참고)."""
+    insurer = db.query(Insurer).filter(Insurer.code == insurer_code.upper()).first()
+    if not insurer:
+        raise HTTPException(status_code=404, detail="보험사를 찾을 수 없습니다.")
+
+    standard_clauses = (
+        db.query(StandardClause)
+        .filter(StandardClause.standard_name == standard_name)
+        .order_by(StandardClause.standard_clause_id.asc())
+        .all()
+    )
+    if not standard_clauses:
+        raise HTTPException(status_code=404, detail="해당 표준약관 조문을 찾을 수 없습니다.")
+
+    maps = (
+        db.query(ClauseStandardMap)
+        .filter(
+            ClauseStandardMap.insurer_id == insurer.insurer_id,
+            ClauseStandardMap.standard_clause_id.in_([s.standard_clause_id for s in standard_clauses]),
+        )
+        .all()
+    )
+    map_by_standard = {m.standard_clause_id: m for m in maps}
+
+    items: list[StandardClauseComparisonOut] = []
+    for s in standard_clauses:
+        m = map_by_standard.get(s.standard_clause_id)
+        if not m:
+            continue
+        items.append(StandardClauseComparisonOut(
+            standard_clause_id=s.standard_clause_id,
+            article_no=s.article_no,
+            title=s.title,
+            standard_text=s.text,
+            anchor_phrase_standard=m.anchor_phrase_standard,
+            relation=m.relation,
+            insurer_clause_id=m.clause.clause_id if m.clause else None,
+            insurer_article_no=m.clause.article_no if m.clause else None,
+            insurer_text=m.clause.text if m.clause else None,
+            anchor_phrase_insurer=m.anchor_phrase_insurer,
+            note=m.note,
+        ))
+
+    first_standard = standard_clauses[0]
+    return InsurerStandardComparisonOut(
+        insurer_code=insurer.code, insurer_name=insurer.name, standard_name=standard_name,
+        source_url=first_standard.source_url, amended_at=first_standard.amended_at,
+        items=items,
+    )
 
 
 @router.get("/ranking", response_model=InsurerRankingOut)

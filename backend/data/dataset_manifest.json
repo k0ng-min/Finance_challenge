@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_version": "travel-kb-2026.08.08-audit1",
-  "frozen_at": "2026-08-08T10:00:00+00:00",
-  "kb_content_sha256": "f18cac67ba2b205b27d7aea3242e7c6b05cf1e4fe71fb37c149a51d48632bdb7",
+  "frozen_at": "2026-08-11T17:31:54+00:00",
+  "kb_content_sha256": "29a7f60d162a2f4d8de854fe96efc3e99ea6ae6ce9b6576fded3e58ec5613c43",
   "fingerprint_scope": [
     "insurer",
     "product",
@@ -15,7 +15,9 @@
     "clause_term",
     "required_doc_std",
     "coverage_doc_map",
-    "overlap_rule"
+    "overlap_rule",
+    "standard_clause",
+    "clause_standard_map"
   ],
   "verified_at": "2026-08-08",
   "sources": [

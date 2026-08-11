@@ -298,11 +298,14 @@ backend/
     seed_*.py               6개사 약관 데이터 시딩 스크립트
     seed_overlap_rules.py   중복 판정 규칙 시드(규칙마다 근거 조항을 조회해 물림)
     seed_doc_requirements.py 서류별 약관 요건 시드(앱 기동 시 비어 있으면 자동 실행)
+    seed_standard_clauses.py     금감원 표준약관(해외여행 실손의료보험) 조문 시드
+    seed_clause_standard_map.py  보험사 조항 ↔ 표준약관 조항 대조 판정 시드(근거 조항 조회해 물림)
     crawl_premiums.py       보험다모아 나이·성별별 보험료 수집
     seed_premiums.py        수집한 보험료를 insurer_premium 테이블에 적재
-  tests/                   pytest(진단 근거 검증, 세대 판정 경계값, API 권한 등 56건)
+  tests/                   pytest(진단 근거 검증, 세대 판정 경계값, API 권한 등)
   data/app.db              SQLite DB(정제된 데이터 포함, 저장소에 커밋됨)
   data/premiums.json       수집한 보험료 원본(출처·전제·수집일 포함)
+  data/standard_terms/     금감원 표준약관 원문(HWP, 정부 공개 행정규칙이라 커밋 가능)
   PDF_EXTRACTION_PLAYBOOK.md      조항 추출 원칙 문서
   CLAUSE_TERM_DOC_PLAYBOOK.md     수치·서류 구조화 원칙 문서
 frontend/   React + TypeScript + Vite
@@ -310,6 +313,7 @@ frontend/   React + TypeScript + Vite
   src/components/OverlapReport.tsx         진단 결과 표시(근거 원문 인용)
   src/components/DocPhotoCheck.tsx         서류 사진 확인 UI(약관 요건/일반 항목 분리 표시)
   src/components/FrameScrollbar.tsx        프레임 안쪽 스크롤 막대(둥근 모서리와 겹치지 않게)
+  src/components/StandardTermsComparison.tsx  표준약관 대조 표시(보험사 상세화면 탭)
 docs/       규정 준수 문서(약관 원문 출처 등록대장 등)
   superpowers/specs/   기능 설계 문서
   superpowers/plans/   구현 계획 문서
@@ -387,6 +391,21 @@ data/raw_pdfs/  원본 약관 PDF (gitignore, 로컬 전용 — 아래 "약관 �
   "보상되지 않습니다"가 아니라 "이 약관에 전쟁·내란 면책 조항이 있으니 원문을 확인하고 보험사에
   직접 물어보라"까지만 하며, 이 문구는 테스트로 고정돼 있습니다. 보험사 순위 점수에도 넣지
   않습니다(약관 근거가 아닌 외부 자료라 보험료와 같은 취급).
+
+- **표준약관 대조 — 6개사 약관을 금융감독원 법정 표준약관과 조문 단위로 대조** — 지금까지
+  비교는 전부 보험사 간 대조였습니다. 조항 문장을 규제 기준선(보험업감독업무시행세칙
+  [별표15] 표준약관)과 대조하는 서비스는 시중에 없습니다. 금감원 자체 게시물에서 원문(HWP)을
+  받아(2차 유통사 아님, 재배포 문제없어 저장소에 커밋), 해외여행 실손의료보험 표준약관
+  제1~9조(보장·면책·청구 핵심 조문)를 적재하고 보험사 상세화면에 "표준약관과 비교" 탭으로
+  보여줍니다. 판정은 `overlap_rule`과 같은 원칙 — 코드가 아니라 `clause_standard_map`
+  행 데이터로 두고, 표준·보험사 양쪽 원문에 실제로 있는 문구(anchor_phrase)를 못 찾으면
+  시드가 예외를 던지고 롤백합니다. 현재 표준 9개 조문 × 6개사 중 근거를 확보한 9칸만
+  채워져 있고(제3조 6개사, 제4조 3개사), 나머지는 근거 없이 "표준과 같다"고 단정하지 않고
+  비워 둡니다(`docs/compliance/source_register.md` 매핑 커버리지 참고).
+
+  참고: 이 표준약관은 **해외여행 실손의료보험** 전용이라, 기존보험 연결 기능의 "확인불가"
+  3건(사용자가 이미 가진 **일반(국내) 실손의료보험**의 보장범위 관련)과는 별개 문서다 —
+  일반 실손의료보험 표준약관을 확보하면 그 갭은 별도로 좁힐 수 있다.
 
 미구현/알려진 한계:
 - 담보별 가입금액(상품요약서 기준 숫자)은 아직 반영되지 않음 — 약관에 명시된 조건·한도까지만 반영됨.

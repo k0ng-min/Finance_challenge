@@ -286,6 +286,37 @@ export interface InsurerIncidentCoverageOut {
   clauses: ClauseOut[];
 }
 
+export interface StandardClauseOut {
+  standard_clause_id: number;
+  article_no: string;
+  title: string;
+  text: string;
+  amended_at: string | null;
+}
+
+export interface StandardClauseComparisonOut {
+  standard_clause_id: number;
+  article_no: string;
+  title: string;
+  standard_text: string;
+  anchor_phrase_standard: string;
+  relation: "SAME" | "BROADER" | "NARROWER" | "MISSING_IN_INSURER";
+  insurer_clause_id: number | null;
+  insurer_article_no: string | null;
+  insurer_text: string | null;
+  anchor_phrase_insurer: string | null;
+  note: string | null;
+}
+
+export interface InsurerStandardComparisonOut {
+  insurer_code: string;
+  insurer_name: string;
+  standard_name: string;
+  source_url: string;
+  amended_at: string | null;
+  items: StandardClauseComparisonOut[];
+}
+
 export interface InsurerTierOut {
   tier_code: string;
   label: string;
@@ -532,6 +563,9 @@ export const api = {
 
   getInsurerIncidentCoverages: (insurerCode: string, typeId: number) =>
     request<InsurerIncidentCoverageOut[]>(`/insurers/${insurerCode}/incident-types/${typeId}/coverages`),
+
+  getInsurerStandardComparison: (insurerCode: string) =>
+    request<InsurerStandardComparisonOut>(`/insurers/${insurerCode}/standard-comparison`),
 
   getInsurerRanking: (
     tier: string,

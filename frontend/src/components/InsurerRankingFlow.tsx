@@ -5,6 +5,7 @@ import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut, 
 import { useApp } from "../context/AppContext";
 import { PageHero } from "./PageHero";
 import { InsurerIncidentClauses } from "./InsurerIncidentClauses";
+import { StandardTermsComparison } from "./StandardTermsComparison";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 import { OverlapReportView } from "./OverlapReport";
@@ -38,6 +39,7 @@ export function InsurerRankingFlow({
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
+  const [detailTab, setDetailTab] = useState<"incidents" | "standard">("incidents");
 
   useEffect(() => {
     api.getInsurerTiers().then(setTiers).catch(() => {});
@@ -312,7 +314,31 @@ export function InsurerRankingFlow({
             <div>감지된 위험활동: {(result.risk_profile.risky_activity_detected as string[]).join(", ")}</div>
           )}
       </div>
-      {selected && <InsurerIncidentClauses insurerCode={selected.insurer_code} typeCodes={selectedTypeCodes} />}
+      {selected && (
+        <>
+          <div className="tabs" style={{ marginBottom: 14 }}>
+            <button
+              type="button"
+              className={`tab${detailTab === "incidents" ? " tab--active" : ""}`}
+              onClick={() => setDetailTab("incidents")}
+            >
+              사고유형별 조항
+            </button>
+            <button
+              type="button"
+              className={`tab${detailTab === "standard" ? " tab--active" : ""}`}
+              onClick={() => setDetailTab("standard")}
+            >
+              표준약관과 비교
+            </button>
+          </div>
+          {detailTab === "incidents" ? (
+            <InsurerIncidentClauses insurerCode={selected.insurer_code} typeCodes={selectedTypeCodes} />
+          ) : (
+            <StandardTermsComparison insurerCode={selected.insurer_code} />
+          )}
+        </>
+      )}
 
       {registered && (
         <div className="card" style={{ marginTop: 16 }}>

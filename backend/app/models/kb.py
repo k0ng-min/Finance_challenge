@@ -259,6 +259,58 @@ class TravelAlert(Base):
     collected_at = Column(Date)
 
 
+class StandardClause(Base):
+    """금융감독원 표준약관(보험업감독업무시행세칙 [별표15])의 조항 원문.
+
+    6개사 Clause와 마찬가지로 원문을 한 글자도 바꾸지 않는다. 이 테이블의 text 자체가
+    "근거"이므로 별도 grounding 검증은 필요 없다(ClauseStandardMap의 anchor_phrase가
+    이 text의 부분 문자열인지만 검증하면 된다).
+    """
+
+    __tablename__ = "standard_clause"
+    __table_args__ = (UniqueConstraint("standard_name", "article_no", name="uq_standard_clause_article"),)
+
+    standard_clause_id = Column(Integer, primary_key=True)
+    standard_name = Column(String, nullable=False)  # "해외여행 실손의료보험"
+    article_no = Column(String, nullable=False)      # "제4조"
+    title = Column(String, nullable=False)            # "보상하지 않는 사항"
+    text = Column(Text, nullable=False)
+    amended_at = Column(String, nullable=True)        # "2026-05-06"
+    source_url = Column(String, nullable=False)
+    downloaded_at = Column(Date, nullable=True)
+    sha256 = Column(String, nullable=True)
+
+    insurer_maps = relationship("ClauseStandardMap", back_populates="standard_clause")
+
+
+class ClauseStandardMap(Base):
+    """보험사 조항 ↔ 표준약관 조항 대응. overlap_rule과 같은 원칙 — 판정을 코드가 아니라
+    행 데이터로 두고, 앵커 문구가 원문에 없으면 시드가 예외를 던지고 롤백한다.
+
+    relation:
+      SAME                — 표준과 실질적으로 같은 내용
+      BROADER             — 이 회사가 표준보다 넓게 보상
+      NARROWER             — 이 회사가 표준보다 좁게 보상(표준에 없는 면책·조건 추가 등)
+      MISSING_IN_INSURER   — 표준엔 있는데 이 회사 약관에 대응 조항이 없음
+                             (이 경우 clause_id/anchor_phrase_insurer는 반드시 NULL)
+    """
+
+    __tablename__ = "clause_standard_map"
+
+    map_id = Column(Integer, primary_key=True)
+    standard_clause_id = Column(Integer, ForeignKey("standard_clause.standard_clause_id"), nullable=False)
+    insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=False)
+    clause_id = Column(Integer, ForeignKey("clause.clause_id"), nullable=True)
+    relation = Column(String, nullable=False)
+    anchor_phrase_standard = Column(Text, nullable=False)   # standard_clause.text의 부분 문자열
+    anchor_phrase_insurer = Column(Text, nullable=True)     # clause.text의 부분 문자열(clause_id 있을 때만)
+    note = Column(Text, nullable=True)
+
+    standard_clause = relationship("StandardClause", back_populates="insurer_maps")
+    insurer = relationship("Insurer")
+    clause = relationship("Clause")
+
+
 class InsurerPremium(Base):
     """보험다모아에서 수집한 나이·성별별 예시 보험료.
 

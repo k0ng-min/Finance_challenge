@@ -69,6 +69,8 @@ FINGERPRINT_TABLES = (
     "required_doc_std",
     "coverage_doc_map",
     "overlap_rule",
+    "standard_clause",
+    "clause_standard_map",
 )
 
 
@@ -190,6 +192,15 @@ def audit_kb(database: Path | str = DEFAULT_DATABASE, manifest_path: Path | str 
             "doc_map_missing_required_doc": _scalar(connection, "SELECT COUNT(*) FROM coverage_doc_map d LEFT JOIN required_doc_std s ON s.required_doc_std_id=d.required_doc_std_id WHERE s.required_doc_std_id IS NULL"),
             "doc_map_missing_clause": _scalar(connection, "SELECT COUNT(*) FROM coverage_doc_map d LEFT JOIN clause cl ON cl.clause_id=d.clause_id WHERE d.clause_id IS NOT NULL AND cl.clause_id IS NULL"),
             "overlap_rule_missing_clause": _scalar(connection, "SELECT COUNT(*) FROM overlap_rule r LEFT JOIN clause cl ON cl.clause_id=r.clause_id WHERE r.clause_id IS NOT NULL AND cl.clause_id IS NULL"),
+            "standard_map_missing_standard_clause": _scalar(connection, "SELECT COUNT(*) FROM clause_standard_map m LEFT JOIN standard_clause sc ON sc.standard_clause_id=m.standard_clause_id WHERE sc.standard_clause_id IS NULL"),
+            "standard_map_missing_insurer": _scalar(connection, "SELECT COUNT(*) FROM clause_standard_map m LEFT JOIN insurer i ON i.insurer_id=m.insurer_id WHERE i.insurer_id IS NULL"),
+            "standard_map_missing_clause": _scalar(connection, "SELECT COUNT(*) FROM clause_standard_map m LEFT JOIN clause cl ON cl.clause_id=m.clause_id WHERE m.clause_id IS NOT NULL AND cl.clause_id IS NULL"),
+            "standard_map_relation_clause_mismatch": _scalar(
+                connection,
+                """SELECT COUNT(*) FROM clause_standard_map
+                    WHERE (relation = 'MISSING_IN_INSURER' AND (clause_id IS NOT NULL OR anchor_phrase_insurer IS NOT NULL))
+                       OR (relation != 'MISSING_IN_INSURER' AND clause_id IS NULL)""",
+            ),
         }
         checks.append(_check("ranking_evidence_references", sum(evidence_errors.values()), details=evidence_errors))
 
@@ -203,8 +214,30 @@ def audit_kb(database: Path | str = DEFAULT_DATABASE, manifest_path: Path | str 
         ungrounded_terms = [row["term_id"] for row in term_rows if _normalized(row["raw_text"]) not in _normalized(row["text"])]
         anchor_rows = connection.execute("SELECT r.rule_id, r.anchor_phrase, cl.text FROM overlap_rule r JOIN clause cl ON cl.clause_id=r.clause_id WHERE r.anchor_phrase IS NOT NULL AND trim(r.anchor_phrase)<>''").fetchall()
         ungrounded_anchors = [row["rule_id"] for row in anchor_rows if _normalized(row["anchor_phrase"]) not in _normalized(row["text"])]
-        grounding_errors = len(ungrounded_terms) + len(ungrounded_anchors)
-        checks.append(_check("evidence_text_grounding", grounding_errors, details={"term_ids": ungrounded_terms, "overlap_rule_ids": ungrounded_anchors}))
+        standard_anchor_rows = connection.execute(
+            "SELECT m.map_id, m.anchor_phrase_standard, sc.text FROM clause_standard_map m JOIN standard_clause sc ON sc.standard_clause_id=m.standard_clause_id"
+        ).fetchall()
+        ungrounded_standard_anchors = [
+            row["map_id"] for row in standard_anchor_rows
+            if _normalized(row["anchor_phrase_standard"]) not in _normalized(row["text"])
+        ]
+        insurer_anchor_rows = connection.execute(
+            "SELECT m.map_id, m.anchor_phrase_insurer, cl.text FROM clause_standard_map m JOIN clause cl ON cl.clause_id=m.clause_id WHERE m.anchor_phrase_insurer IS NOT NULL"
+        ).fetchall()
+        ungrounded_insurer_anchors = [
+            row["map_id"] for row in insurer_anchor_rows
+            if _normalized(row["anchor_phrase_insurer"]) not in _normalized(row["text"])
+        ]
+        grounding_errors = (
+            len(ungrounded_terms) + len(ungrounded_anchors)
+            + len(ungrounded_standard_anchors) + len(ungrounded_insurer_anchors)
+        )
+        checks.append(_check("evidence_text_grounding", grounding_errors, details={
+            "term_ids": ungrounded_terms,
+            "overlap_rule_ids": ungrounded_anchors,
+            "clause_standard_map_standard_side": ungrounded_standard_anchors,
+            "clause_standard_map_insurer_side": ungrounded_insurer_anchors,
+        }))
 
         sources = manifest.get("sources", [])
         source_codes = {source.get("insurer") for source in sources}
