@@ -325,6 +325,16 @@ export interface FlightDelayStatOut {
   passengers_affected: number | null;
 }
 
+export interface ClauseIncidentLinkOut {
+  type_name: string;
+  relevance: string;
+}
+
+export interface ClauseSearchResultOut {
+  clause: ClauseOut;
+  incident_links: ClauseIncidentLinkOut[];
+}
+
 export interface FlightDelayStatsOut {
   source: string;
   source_url: string;
@@ -619,6 +629,11 @@ export const api = {
   getClausePlainText: (clauseId: number, incidentId?: number | null) =>
     request<{ plain_text: string | null; supported: boolean }>(
       `/clauses/${clauseId}/plain${incidentId ? `?incident_id=${incidentId}` : ""}`
+    ),
+
+  searchClauses: (insurerCode: string, keyword: string) =>
+    request<ClauseSearchResultOut[]>(
+      `/clauses/search?insurer_code=${encodeURIComponent(insurerCode)}&keyword=${encodeURIComponent(keyword)}`
     ),
 
   listTrips: (userId: number) => request<TripSummaryOut[]>(`/users/${userId}/trips`),

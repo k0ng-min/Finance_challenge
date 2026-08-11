@@ -384,6 +384,16 @@ class FlightDelayStatsOut(BaseModel):
     overall: list[FlightDelayStatOut]
 
 
+class ClauseIncidentLinkOut(BaseModel):
+    type_name: str
+    relevance: str  # 직접/조건부/면책
+
+
+class ClauseSearchResultOut(BaseModel):
+    clause: ClauseOut
+    incident_links: list[ClauseIncidentLinkOut] = []
+
+
 class InsurerIncidentCoverageOut(BaseModel):
     """가입 전, 특정 보험사가 특정 사고유형(L1)을 실제로 어떤 담보·조항으로 보상하는지.
     사용자가 등록한 보험이 없어도(아직 가입 전이므로) 그 보험사의 KB(약관 원문) 자체를
