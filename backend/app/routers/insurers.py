@@ -5,12 +5,12 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import (
     Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerPremium,
-    PolicyVersion, Product, StandardClause,
+    NonpaymentRate, PolicyVersion, Product, StandardClause,
 )
 from app.schemas import (
     ClauseOut, ClauseTermOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerStandardComparisonOut,
-    InsurerTierOut, InsurerRankingOut, InsurerPremiumCurveOut, InsurerPremiumOut, PremiumComparisonOut,
-    PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
+    InsurerTierOut, InsurerRankingOut, InsurerPremiumCurveOut, InsurerPremiumOut, NonpaymentRateOut,
+    NonpaymentRatesOut, PremiumComparisonOut, PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
 from app.services.insurer_ranking import list_tiers, rank_insurers
 
@@ -261,6 +261,34 @@ def get_insurer_coverages_for_incident_type(insurer_code: str, type_id: int, db:
 
     result.sort(key=lambda r: _RELEVANCE_ORDER.get(r.relevance, 9))
     return result
+
+
+@router.get("/nonpayment-rates", response_model=NonpaymentRatesOut)
+def get_nonpayment_rates(db: Session = Depends(get_db)):
+    """손해보험협회 공시 — 6개사의 보험금 부지급률·청구이후 해지비율(업계평균과 함께).
+
+    전체 보험종목 기준 공시라 여행자보험만의 수치가 아니다 — "이 보험사가 전반적으로
+    보험금을 얼마나 안 주는 편인가"를 보여주는 참고 지표로만 노출한다."""
+    rows = db.query(NonpaymentRate).order_by(NonpaymentRate.rate_id).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="부지급률 공시 자료가 아직 적재되지 않았습니다.")
+
+    def to_out(r: NonpaymentRate) -> NonpaymentRateOut:
+        return NonpaymentRateOut(
+            insurer_code=r.insurer.code if r.insurer else None,
+            company_name=r.company_name, claim_count=r.claim_count,
+            unpaid_count=r.unpaid_count, unpaid_rate=r.unpaid_rate,
+            post_claim_cancel_rate=r.post_claim_cancel_rate,
+        )
+
+    industry = next((r for r in rows if r.company_name == "업계평균"), None)
+    items = [to_out(r) for r in rows if r.insurer_id is not None]
+    first = rows[0]
+    return NonpaymentRatesOut(
+        source=first.source, source_url=first.source_url, period=first.period,
+        scope_note=first.scope_note, collected_at=first.collected_at,
+        items=items, industry_average=to_out(industry) if industry else None,
+    )
 
 
 @router.get("/standard-clauses", response_model=list[StandardClauseOut])

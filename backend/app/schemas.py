@@ -394,6 +394,30 @@ class ClauseSearchResultOut(BaseModel):
     incident_links: list[ClauseIncidentLinkOut] = []
 
 
+class NonpaymentRateOut(BaseModel):
+    insurer_code: Optional[str] = None
+    company_name: str
+    claim_count: int
+    unpaid_count: int
+    unpaid_rate: float
+    post_claim_cancel_rate: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+
+class NonpaymentRatesOut(BaseModel):
+    """손해보험협회 공시(부지급률 등). 전체 보험종목 기준이라 여행자보험 단독 수치가
+    아니다 — 참고 지표로만 쓰고 보험사 순위 점수에는 넣지 않는다."""
+    source: str
+    source_url: str
+    period: str
+    scope_note: str
+    collected_at: Optional[dt.date] = None
+    items: list[NonpaymentRateOut]
+    industry_average: Optional[NonpaymentRateOut] = None
+
+
 class InsurerIncidentCoverageOut(BaseModel):
     """가입 전, 특정 보험사가 특정 사고유형(L1)을 실제로 어떤 담보·조항으로 보상하는지.
     사용자가 등록한 보험이 없어도(아직 가입 전이므로) 그 보험사의 KB(약관 원문) 자체를

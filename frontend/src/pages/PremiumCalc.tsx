@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { api, type PremiumComparisonOut } from "../api";
+import { api, type PremiumComparisonOut, type NonpaymentRatesOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
@@ -32,10 +32,15 @@ export function PremiumCalc() {
   const [data, setData] = useState<PremiumComparisonOut | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [nonpayment, setNonpayment] = useState<NonpaymentRatesOut | null>(null);
 
   useEffect(() => {
     if (profileAge != null) setAge(profileAge);
   }, [profileAge]);
+
+  useEffect(() => {
+    api.getNonpaymentRates().then(setNonpayment).catch(() => setNonpayment(null));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,6 +205,49 @@ export function PremiumCalc() {
             )}
           </p>
         </>
+      )}
+
+      {selected.length > 0 && nonpayment && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <p className="section-label" style={{ marginBottom: 8 }}>보험금 부지급률(손보협회 공시)</p>
+          <table className="coverage-table">
+            <thead>
+              <tr>
+                <th>보험사</th>
+                <th>부지급률</th>
+                <th>청구이후 해지율</th>
+              </tr>
+            </thead>
+            <tbody>
+              {nonpayment.items
+                .filter((r) => r.insurer_code && selected.includes(r.insurer_code))
+                .map((r) => (
+                  <tr key={r.insurer_code}>
+                    <td>{r.company_name}</td>
+                    <td>{r.unpaid_rate.toFixed(2)}%</td>
+                    <td>{r.post_claim_cancel_rate != null ? `${r.post_claim_cancel_rate.toFixed(2)}%` : "-"}</td>
+                  </tr>
+                ))}
+              {nonpayment.industry_average && (
+                <tr className="muted">
+                  <td>업계평균</td>
+                  <td>{nonpayment.industry_average.unpaid_rate.toFixed(2)}%</td>
+                  <td>
+                    {nonpayment.industry_average.post_claim_cancel_rate != null
+                      ? `${nonpayment.industry_average.post_claim_cancel_rate.toFixed(2)}%`
+                      : "-"}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <p className="premium-basis" style={{ marginTop: 8 }}>
+            {nonpayment.period} 공시 · {nonpayment.scope_note}{" "}
+            <a href={nonpayment.source_url} target="_blank" rel="noreferrer">
+              {nonpayment.source}({nonpayment.collected_at} 수집) 원문 확인 →
+            </a>
+          </p>
+        </div>
       )}
     </div>
   );

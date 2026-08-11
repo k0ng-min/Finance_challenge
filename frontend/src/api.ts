@@ -317,6 +317,25 @@ export interface InsurerStandardComparisonOut {
   items: StandardClauseComparisonOut[];
 }
 
+export interface NonpaymentRateOut {
+  insurer_code: string | null;
+  company_name: string;
+  claim_count: number;
+  unpaid_count: number;
+  unpaid_rate: number;
+  post_claim_cancel_rate: number | null;
+}
+
+export interface NonpaymentRatesOut {
+  source: string;
+  source_url: string;
+  period: string;
+  scope_note: string;
+  collected_at: string | null;
+  items: NonpaymentRateOut[];
+  industry_average: NonpaymentRateOut | null;
+}
+
 export interface FlightDelayStatOut {
   kind: string;
   direction: string;
@@ -595,6 +614,8 @@ export const api = {
     request<InsurerStandardComparisonOut>(`/insurers/${insurerCode}/standard-comparison`),
 
   getFlightDelayStats: () => request<FlightDelayStatsOut>(`/trips/flight-delay-stats`),
+
+  getNonpaymentRates: () => request<NonpaymentRatesOut>(`/insurers/nonpayment-rates`),
 
   getInsurerRanking: (
     tier: string,

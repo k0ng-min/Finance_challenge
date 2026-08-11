@@ -340,6 +340,41 @@ class FlightDelayStat(Base):
     collected_at = Column(Date)
 
 
+class NonpaymentRate(Base):
+    """손해보험협회 공시실(consumer.knia.or.kr) — 보험금 부지급률/청구이후 해지비율.
+
+    TravelAlert·InsurerPremium과 같은 성격의 외부 공시 자료다. **전체 보험종목** 기준
+    공시라 여행자보험만의 부지급률이 아니다 — "이 보험사가 전반적으로 보험금을 얼마나
+    안 주는 편인가"를 보여주는 참고 지표로만 쓴다. 약관 근거가 아니므로 순위 점수에
+    넣지 않는다(InsurerPremium과 동일 원칙).
+
+    insurer_id가 NULL이면 업계평균(company_name='업계평균') 행이거나, 우리 6개사 밖의
+    손보사 행이다 — 조용히 버리지 않고 원본 그대로 저장해 두되(company_name), 화면에는
+    6개사 + 업계평균만 노출한다.
+    """
+
+    __tablename__ = "nonpayment_rate"
+    __table_args__ = (UniqueConstraint("period", "company_name", name="uq_nonpayment_period_company"),)
+
+    rate_id = Column(Integer, primary_key=True)
+    insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=True)
+    company_name = Column(String, nullable=False)  # 공시 원문 회사명(업계평균 포함)
+    period = Column(String, nullable=False)          # "2025년 하반기"
+    claim_count = Column(Integer, nullable=False)
+    paid_count = Column(Integer, nullable=False)
+    unpaid_count = Column(Integer, nullable=False)
+    unpaid_rate = Column(Float, nullable=False)             # 부지급률(%) = 부지급건수/청구건수*100
+    claim_contract_count = Column(Integer, nullable=True)
+    post_claim_cancel_count = Column(Integer, nullable=True)
+    post_claim_cancel_rate = Column(Float, nullable=True)   # 청구이후 해지비율(%)
+    source = Column(String)
+    source_url = Column(String)
+    scope_note = Column(Text)
+    collected_at = Column(Date)
+
+    insurer = relationship("Insurer")
+
+
 class InsurerPremium(Base):
     """보험다모아에서 수집한 나이·성별별 예시 보험료.
 
