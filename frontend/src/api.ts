@@ -444,6 +444,35 @@ export interface OverlapReportOut {
   unknown: OverlapFindingOut[];
 }
 
+/**
+ * 외교부 여행경보. 국가가 아니라 **지역** 단위라 두 가지를 나눠 받는다.
+ *
+ * - `baseline` 그 나라 일반 지역의 단계. 국지적 경보만 있는 나라(일본 등)는 null이다.
+ * - `regions`  지역별 경보. 3단계 이상이면 "이 지역에 가시나요?"를 묻는다.
+ *
+ * 일본의 3단계는 후쿠시마 원전 30km다. 이걸 국가 전체 경보로 표시하면 도쿄 여행자에게
+ * 출국권고가 뜬다.
+ */
+export interface TravelAlertRow {
+  alert_id: number | null;
+  level: number;
+  label: string;
+  region_type: string | null;
+  note: string | null;
+  issued_on: string | null;
+}
+
+export interface TravelAlertOut {
+  country_name: string;
+  baseline: TravelAlertRow | null;
+  baseline_basis: string;
+  regions: TravelAlertRow[];
+  source: string | null;
+  source_url: string | null;
+  /** 사용자가 "여기 간다"고 체크한 지역. 여행 생성 응답에만 실린다. */
+  visiting_regions?: TravelAlertRow[];
+}
+
 export const api = {
   createUser: (nickname: string) =>
     request<UserOut>("/users", { method: "POST", body: JSON.stringify({ nickname }) }),
@@ -452,6 +481,10 @@ export const api = {
     request<RecommendationOut>("/trips", { method: "POST", body: JSON.stringify(payload) }),
 
   getTrip: (tripId: number) => request<RecommendationOut>(`/trips/${tripId}`),
+
+  /** 목적지 여행경보. 자료에 없는 나라면 alert가 null이다(추측하지 않는다). */
+  getTravelAlert: (country: string) =>
+    request<{ alert: TravelAlertOut | null }>(`/trips/travel-alerts/${encodeURIComponent(country)}`),
 
   getTripDetail: (tripId: number) => request<TripDetailOut>(`/trips/${tripId}/detail`),
 

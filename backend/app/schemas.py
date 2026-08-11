@@ -14,6 +14,10 @@ class TripCreate(BaseModel):
     companion_type: Optional[str] = None
     rental_car: bool = False
     coverage_priority: list[str] = []
+    # 목적지에 3·4단계 지역경보가 있을 때, 사용자가 "그 지역에 간다"고 체크한 항목의
+    # travel_alert.alert_id. 체크하지 않으면 빈 목록이고 아무 일도 일어나지 않는다 —
+    # 일본의 3단계는 후쿠시마 원전 30km라, 도쿄 여행자에게 면책 조항을 들이밀지 않는다.
+    visiting_alert_region_ids: list[int] = []
 
 
 class TripUpdate(BaseModel):

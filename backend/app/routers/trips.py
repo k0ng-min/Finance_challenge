@@ -10,7 +10,7 @@ from app.models.analysis import AnalysisRun
 from app.routers.auth import get_current_user_optional, verify_owner
 from app.schemas import TripCreate, TripUpdate, TripDetailOut, RecommendationOut
 from app.services.rules import build_risk_profile, generate_pre_trip_findings
-from app.services.travel_alert import build_alert_findings, find_alert
+from app.services.travel_alert import build_alert_findings, country_alert
 from app.services.finding_persistence import persist_findings, load_findings_out
 from app.services.deletion import delete_trip_cascade, wipe_user_data
 
@@ -50,12 +50,18 @@ def create_trip_and_recommend(
     # 목적지 여행경보. 지금까지 risk_level은 활동과 여행일수만 봤기 때문에, 시리아에 가든
     # 일본에 가든 "관광"이면 똑같이 낮음이 나왔다. 경보는 외교부 자료라 약관 근거와 출처가
     # 다르므로, 같은 risk_level에 섞지 않고 별도 항목으로 둔다(보험사 순위 점수에도 넣지 않는다).
-    alert = find_alert(db, payload.destination)
-    risk_profile["travel_alert"] = {
-        "level": alert.level, "label": alert.label, "region_type": alert.region_type,
-        "note": alert.note, "issued_on": alert.issued_on,
-        "source": alert.source, "source_url": alert.source_url,
-    } if alert else None
+    # 경보는 지역 단위라 '그 나라 일반 지역 단계(baseline)'와 '지역별 경보(regions)'를 나눠
+    # 담는다. 최고 단계를 나라 대표로 쓰면 일본이 3단계(후쿠시마 30km), 필리핀이 4단계
+    # (민다나오 일부)가 되어 도쿄·세부 여행자에게 출국권고가 뜬다.
+    alert = country_alert(db, payload.destination)
+    risk_profile["travel_alert"] = alert.as_dict() if alert else None
+    if alert:
+        # 사용자가 실제로 체크한 지역만 남긴다 — 화면에서 "어느 지역 때문에 이 안내가
+        # 붙었는지"를 되짚을 수 있어야 한다.
+        chosen = set(payload.visiting_alert_region_ids)
+        risk_profile["travel_alert"]["visiting_regions"] = [
+            r.as_dict() for r in alert.alerting_regions() if r.alert_id in chosen
+        ]
 
     trip = Trip(
         user_id=payload.user_id,
@@ -73,9 +79,11 @@ def create_trip_and_recommend(
     db.flush()
 
     finding_specs = generate_pre_trip_findings(db, risk_profile)
-    # 경보가 높은 지역이면 그 보험사 약관의 전쟁·내란 면책 조항을 원문과 함께 덧붙인다.
+    # 경보가 높은 곳으로 가면 그 보험사 약관의 전쟁·내란 면책 조항을 원문과 함께 덧붙인다.
     # 경보 자체를 보상 판정 근거로 쓰지는 않는다(services/travel_alert.py 참고).
-    finding_specs += build_alert_findings(db, payload.destination)
+    finding_specs += build_alert_findings(
+        db, payload.destination, payload.visiting_alert_region_ids,
+    )
 
     run = AnalysisRun(
         user_id=payload.user_id,
@@ -95,6 +103,21 @@ def create_trip_and_recommend(
         risk_profile=risk_profile,
         findings=findings_out,
     )
+
+
+@router.get("/travel-alerts/{country}")
+@limiter.limit("60/minute")
+def get_travel_alert(request: Request, country: str, db: Session = Depends(get_db)):
+    """목적지의 여행경보. 여행 준비 STEP 1에서 나라를 고르는 즉시 조회한다.
+
+    외교부가 공개한 자료라 로그인 없이 볼 수 있게 둔다 — 가입 전 단계라 계정이 없는
+    사용자도 지나가는 화면이다.
+
+    자료에 없는 나라면 `alert: null`. "정보 없음"조차 화면에 띄우지 않는다 — 대부분의
+    안전한 나라가 여기 해당해서 매번 빈 줄이 생긴다.
+    """
+    alert = country_alert(db, country)
+    return {"alert": alert.as_dict() if alert else None}
 
 
 @router.get("/{trip_id}", response_model=RecommendationOut)

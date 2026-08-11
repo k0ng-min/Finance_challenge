@@ -15,6 +15,7 @@
 """
 from __future__ import annotations
 
+import html
 import json
 import os
 import sys
@@ -22,8 +23,13 @@ from datetime import date
 from pathlib import Path
 
 import httpx
+from dotenv import load_dotenv
 
-API_URL = "http://apis.data.go.kr/1262000/TravelAlarmService2/getTravelAlarmList2"
+# 이 스크립트는 앱을 거치지 않고 단독 실행되므로 .env를 직접 읽어야 한다 —
+# 없으면 위 docstring대로 .env에 키를 넣어도 os.getenv가 계속 빈 값을 본다.
+load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+
+API_URL ="http://apis.data.go.kr/1262000/TravelAlarmService2/getTravelAlarmList2"
 SOURCE_NAME = "외교부 국가·지역별 여행경보 (공공데이터포털)"
 SOURCE_URL = "https://www.data.go.kr/data/15076237/openapi.do"
 OUTPUT = Path(__file__).resolve().parents[1] / "data" / "travel_alerts.json"
@@ -63,7 +69,9 @@ def _fetch_page(client: httpx.Client, key: str, page: int) -> tuple[list[dict], 
 def _normalize(raw: dict) -> dict | None:
     """응답 한 건을 우리가 쓰는 모양으로 옮긴다. 단계를 못 읽으면 버린다 —
     단계가 이 데이터의 전부라, 없으면 아무 판단도 할 수 없다."""
-    level = raw.get("alarmLvl") or raw.get("almLvl") or raw.get("level")
+    # 실제 응답은 snake_case다(alarm_lvl, country_nm …). 포털 문서와 표기가 다른 경우가
+    # 있어 camelCase도 같이 본다 — 어느 쪽이 와도 읽히게.
+    level = raw.get("alarm_lvl") or raw.get("alarmLvl") or raw.get("level")
     try:
         level = int(str(level).strip())
     except (TypeError, ValueError):
@@ -71,18 +79,29 @@ def _normalize(raw: dict) -> dict | None:
     if level not in (1, 2, 3, 4):
         return None
 
-    name = (raw.get("countryName") or raw.get("countryNm") or "").strip()
+    name = html.unescape(
+        raw.get("country_nm") or raw.get("countryName") or raw.get("countryNm") or ""
+    ).strip()
     if not name:
+        return None
+
+    def _text(*keys: str) -> str | None:
+        for key in keys:
+            value = raw.get(key)
+            if value and str(value).strip():
+                # 응답에 &middot; &bull; &ccedil; 같은 HTML 엔티티가 섞여 온다. 그대로 두면
+                # 화면에 "로스토프&middot;벨고로드"로 보인다(React가 이스케이프하므로).
+                return html.unescape(str(value)).strip()
         return None
 
     return {
         "country_name": name,
-        "country_en": (raw.get("countryEnName") or raw.get("countryEngNm") or "").strip() or None,
-        "iso_code": (raw.get("isoCode") or raw.get("countryIsoAlp2") or "").strip() or None,
+        "country_en": _text("country_eng_nm", "countryEnName", "countryEngNm"),
+        "iso_code": _text("country_iso_alp2", "isoCode", "countryIsoAlp2"),
         "level": level,
-        "region_type": (raw.get("regionType") or raw.get("dangMapDownloadUrl") and None or "") or None,
-        "note": (raw.get("remark") or raw.get("alarmContent") or "").strip() or None,
-        "issued_on": (raw.get("writngDe") or raw.get("createDate") or "").strip() or None,
+        "region_type": _text("region_ty", "regionType"),
+        "note": _text("remark", "alarmContent"),
+        "issued_on": _text("written_dt", "writngDe", "createDate"),
     }
 
 
@@ -103,20 +122,21 @@ def crawl() -> dict:
                 break
             page += 1
 
-    # 같은 나라가 여러 지역으로 나뉘어 오면 가장 높은 단계를 대표로 쓴다 — 낮은 쪽을
-    # 대표로 삼으면 실제보다 안전해 보이게 된다.
-    by_country: dict[str, dict] = {}
-    for row in collected:
-        prev = by_country.get(row["country_name"])
-        if prev is None or row["level"] > prev["level"]:
-            by_country[row["country_name"]] = row
-
+    # 나라별로 접지 않고 받은 행을 그대로 둔다.
+    #
+    # 처음에는 "같은 나라가 여러 지역으로 나뉘어 오면 가장 높은 단계를 대표로 쓴다"였다.
+    # 실제 데이터를 받아보니 그 규칙으로는 일본이 3단계(후쿠시마 원전 30km), 필리핀이
+    # 4단계(민다나오 일부)가 되어 도쿄·세부 여행자에게 출국권고가 뜬다. 3·4단계 72개국
+    # 중 52개국이 일부 지역 경보라 예외가 아니라 다수다.
+    #
+    # 어느 행이 그 나라의 기본 단계인지는 서비스(services/travel_alert.py)가 판단한다.
+    # 여기서 접어버리면 지역 정보가 사라져서 판단할 재료 자체가 없어진다.
     return {
         "source": SOURCE_NAME,
         "source_url": SOURCE_URL,
         "collected_at": date.today().isoformat(),
         "levels": {"1": "여행유의", "2": "여행자제", "3": "출국권고", "4": "여행금지"},
-        "alerts": sorted(by_country.values(), key=lambda r: (-r["level"], r["country_name"])),
+        "alerts": sorted(collected, key=lambda r: (r["country_name"], -r["level"])),
     }
 
 
@@ -127,9 +147,10 @@ def main() -> None:
     counts: dict[int, int] = {}
     for row in payload["alerts"]:
         counts[row["level"]] = counts.get(row["level"], 0) + 1
-    print(f"여행경보 {len(payload['alerts'])}개국 저장 → {OUTPUT}")
+    countries = {row["country_name"] for row in payload["alerts"]}
+    print(f"여행경보 {len(payload['alerts'])}건 / {len(countries)}개국 저장 → {OUTPUT}")
     for level in sorted(counts, reverse=True):
-        print(f"  {level}단계({payload['levels'][str(level)]}): {counts[level]}개국")
+        print(f"  {level}단계({payload['levels'][str(level)]}): {counts[level]}건")
 
 
 if __name__ == "__main__":
