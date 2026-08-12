@@ -2252,6 +2252,10 @@ button { cursor: pointer; font-family: inherit; }
   pointer-events: none;
   filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
 }
+.pwc__eraser {
+  width: 92px;
+  height: 92px;
+}
 .pwc__pen-svg {
   pointer-events: none;
   filter: drop-shadow(0 4px 6px rgba(53, 104, 201, 0.3));

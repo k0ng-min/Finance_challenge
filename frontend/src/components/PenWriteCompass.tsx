@@ -7,7 +7,9 @@ import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
  * 타임라인(gsap.timeline({repeat:-1}))으로 ① 펜이 "보험형광펜"을 한 글자씩
  * 씀 → ② 다 쓰면 펜이 사라지고 노란 형광펜이 등장해 왼쪽부터 훑으며 노란
  * 하이라이트를 칠함 → ③ 지우개가 오른쪽위→왼쪽아래 대각선을 반복하며
- * (쓱싹쓱싹) 오른쪽으로 이동해 전체를 지움 → 처음(빈 화면)으로 돌아가 반복한다.
+ * (쓱싹쓱싹) 오른쪽으로 이동하는데, 실제로 지워지는 영역은 정해진 시간이
+ * 아니라 지우개의 그 순간 실제 x좌표를 그대로 따라간다(펜이 글자를 쓸 때와
+ * 같은 원리) → 처음(빈 화면)으로 돌아가 반복한다.
  *
  * 글자는 학교안심 민들레홀씨 R(한국교육학술정보원 KERIS, OFL 라이선스) 폰트
  * 파일에서 opentype.js로 직접 뽑아낸 실제 글리프 윤곽선(SVG path,
@@ -24,11 +26,13 @@ import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
  * 직접 좌표를 찍는 프록시 트윈) 하나로 처리해서, 재생/일시정지/속도 조절 같은
  * GSAP 타임라인 제어를 그대로 받는다.
  *
- * 펜·형광펜·지우개는 이 앱의 다른 아이콘과 같은 출처(Fluent Emoji 3D, MIT
- * License, Microsoft)에서 받은 실제 3D 렌더 이미지다(/public/3d/pen.webp,
- * crayon.webp — 지우개(eraser.webp)는 지우개 전용 이모지가 없어 Sketchfab의
- * CC0(퍼블릭 도메인) "Pink Eraser" 3D 모델(by plaggy) 렌더 이미지를 썼다).
- * 되돌리고 싶으면 Home.tsx에서 이 컴포넌트 호출을 원래 Icon3D로 바꾸면 된다. */
+ * 펜·형광펜은 이 앱의 다른 아이콘과 같은 출처(Fluent Emoji 3D, MIT License,
+ * Microsoft)에서 받은 실제 3D 렌더 이미지다(/public/3d/pen.webp,
+ * crayon.webp). 지우개(eraser.webp)는 지우개 전용 이모지가 없어 Sketchfab의
+ * "eraser" 3D 모델(by Mr.Photon/@blender.2009, CC Attribution 4.0 — 다른
+ * 에셋과 달리 저작자 표시가 필요한 라이선스라 여기 남겨둔다) 렌더 이미지를
+ * 썼다. 되돌리고 싶으면 Home.tsx에서 이 컴포넌트 호출을 원래 Icon3D로 바꾸면
+ * 된다. */
 
 const CHAR_DURATION = 1.4;
 const PEN_FADE = 0.12;
@@ -104,7 +108,24 @@ export function PenWriteCompass() {
       tl.to({}, { duration: 1.1 });
 
       // ③ 지우개가 오른쪽위→왼쪽아래 대각선을 반복하며(쓱싹쓱싹) 오른쪽으로
-      // 이동해 전체를 지운다 — 실제로 지워지는 건 textRef의 clip-path.
+      // 이동한다 — 위아래로 움직이는 동안에도 실제로 지워지는 영역(textRef의
+      // clip-path)은 매 프레임 지우개의 "현재 x좌표"에서 직접 계산해서 항상
+      // 지우개가 실제로 지나간 만큼만 지워지게 한다(그냥 정해진 시간에 맞춰
+      // 지워지는 게 아니라, 펜이 글자를 쓸 때와 같은 방식으로 지우개의 실제
+      // 위치를 그대로 clip-path에 반영).
+      // 지우개는 .pwc(넓은 히어로 박스) 기준 %로 움직이지만 실제로 지워야
+      // 할 textRef는 그 안에서 가운데 정렬된 더 좁은 박스라서, 두 %를 그냥
+      // 같은 값으로 쓰면 지우개가 실제로 있는 자리와 지워지는 경계가
+      // 어긋난다 — 화면 실제 좌표(getBoundingClientRect)로 직접 비율을
+      // 계산해서 지우개가 시각적으로 지나간 지점과 정확히 맞춘다.
+      const syncEraseClip = () => {
+        const eraserRect = eraserRef.current!.getBoundingClientRect();
+        const textRect = textRef.current!.getBoundingClientRect();
+        const eraserX = eraserRect.left + eraserRect.width * 0.15;
+        const fraction = textRect.width > 0 ? (eraserX - textRect.left) / textRect.width : 0;
+        const pct = Math.min(100, Math.max(0, fraction * 100));
+        textRef.current!.style.clipPath = `inset(0 0 0 ${pct}%)`;
+      };
       const scrub: gsap.TweenVars[] = [
         { left: "6%", top: "-26%" },
         { left: "-2%", top: "-10%" },
@@ -115,13 +136,13 @@ export function PenWriteCompass() {
         { left: "60%", top: "-26%" },
         { left: "52%", top: "-10%" },
         { left: "90%", top: "-18%" },
+        { left: "98%", top: "-14%" },
       ];
-      tl.to(eraserRef.current, { opacity: 1, ...scrub[0], duration: 0.15 });
-      tl.to(textRef.current, { clipPath: "inset(0 0 0 100%)", duration: 1.6 }, "<");
+      tl.to(eraserRef.current, { opacity: 1, ...scrub[0], duration: 0.15, onUpdate: syncEraseClip });
       scrub.slice(1).forEach((pos) => {
-        tl.to(eraserRef.current, { ...pos, duration: 0.15 });
+        tl.to(eraserRef.current, { ...pos, duration: 0.18, onUpdate: syncEraseClip });
       });
-      tl.to(eraserRef.current, { left: "98%", opacity: 0, duration: 0.2 });
+      tl.to(eraserRef.current, { opacity: 0, duration: 0.2 });
       tl.set(textRef.current, { clipPath: "inset(0 0 0 0%)" });
 
       tl.to({}, { duration: 0.3 });
