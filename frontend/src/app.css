@@ -2250,14 +2250,13 @@ button { cursor: pointer; font-family: inherit; }
   fill: var(--heading);
 }
 
-/* --- 펜·형광펜·지우개: 실제 3D 렌더 이미지 ---
+/* --- 형광펜: 실제 3D 렌더 이미지 ---
    z-index를 안 주면 DOM 순서상 뒤에 오는 pwc__text(그 안의
-   pwc__highlight-bg는 z-index:1)에 가려서 형광펜·지우개가 글자 "뒤로"
-   지나가는 것처럼 보인다 — 항상 글자보다 위에 그려지게 고정한다. */
-.pwc__highlighter,
-.pwc__eraser {
+   pwc__highlight-bg는 z-index:1)에 가려서 형광펜이 글자 "뒤로" 지나가는
+   것처럼 보인다 — 항상 글자보다 위에 그려지게 고정한다. */
+.pwc__highlighter {
   position: absolute;
-  top: -18%;
+  top: 28%;
   width: 58px;
   height: 58px;
   object-fit: contain;
@@ -2265,22 +2264,8 @@ button { cursor: pointer; font-family: inherit; }
   filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
   z-index: 5;
 }
-/* 형광펜은 위에 붕 뜬 채로 지나가지 않고, 실제로 칠해지는 노란 줄
-   (pwc__highlight-bg, top:16%~90%)과 겹치는 높이에서 움직여야 "진짜 칠하는"
-   느낌이 난다. */
-.pwc__highlighter {
-  top: 28%;
-}
-.pwc__eraser {
-  width: 92px;
-  height: 92px;
-}
-.pwc__pen-svg {
-  pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(53, 104, 201, 0.3));
-}
 
 @media (prefers-reduced-motion: reduce) {
   .pwc__char-mask-stroke { stroke-dashoffset: 0; }
-  .pwc__pen-svg, .pwc__highlighter, .pwc__eraser { display: none; }
+  .pwc__highlighter { display: none; }
 }
