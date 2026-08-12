@@ -2239,9 +2239,16 @@ button { cursor: pointer; font-family: inherit; }
 }
 .pwc__char-fill-live {
   fill: var(--heading);
+  /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 글자"가 잠깐 그대로
+     다 보이는 깜빡임을 막는 기본값 — 실제 애니메이션 상태는
+     PenWriteCompass.tsx가 매 루프 시작마다 다시 찍어준다. */
+  clip-path: inset(0 100% 0 0);
 }
 
-/* --- 펜·형광펜·지우개: 실제 3D 렌더 이미지 --- */
+/* --- 펜·형광펜·지우개: 실제 3D 렌더 이미지 ---
+   z-index를 안 주면 DOM 순서상 뒤에 오는 pwc__text(그 안의
+   pwc__highlight-bg는 z-index:1)에 가려서 형광펜·지우개가 글자 "뒤로"
+   지나가는 것처럼 보인다 — 항상 글자보다 위에 그려지게 고정한다. */
 .pwc__highlighter,
 .pwc__eraser {
   position: absolute;
@@ -2251,6 +2258,13 @@ button { cursor: pointer; font-family: inherit; }
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
+  z-index: 5;
+}
+/* 형광펜은 위에 붕 뜬 채로 지나가지 않고, 실제로 칠해지는 노란 줄
+   (pwc__highlight-bg, top:16%~90%)과 겹치는 높이에서 움직여야 "진짜 칠하는"
+   느낌이 난다. */
+.pwc__highlighter {
+  top: 28%;
 }
 .pwc__eraser {
   width: 92px;

@@ -57,14 +57,18 @@ export function PenWriteCompass() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const ctx = gsap.context(() => {
-      gsap.set(fillRefs.current, { clipPath: "inset(0 100% 0 0)" });
-      gsap.set(penRefs.current, { autoAlpha: 0 });
-      gsap.set(highlightBgRef.current, { scaleX: 0, opacity: 0, transformOrigin: "left center" });
-      gsap.set(highlighterRef.current, { left: "-8%", opacity: 0 });
-      gsap.set(eraserRef.current, { left: "-8%", top: "-18%", opacity: 0 });
-      gsap.set(textRef.current, { clipPath: "inset(0 0 0 0%)" });
-
+      // 처음 마운트될 때뿐 아니라 반복(repeat:-1)될 때마다 매번 이 상태로
+      // 되돌아가야 한다 — 타임라인 밖(gsap.set)에 한 번만 넣으면 두 번째
+      // 루프부터는 지난 사이클에 다 써진/드러난 상태 그대로 남아서 "쓰기 전인
+      // 글자도 보이는" 버그가 생긴다. 그래서 타임라인 맨 앞의 tl.set으로 넣어
+      // 매 루프 시작마다 다시 초기화되게 한다.
       const tl = gsap.timeline({ repeat: -1, defaults: { ease: "none" } });
+      tl.set(fillRefs.current, { clipPath: "inset(0 100% 0 0)" });
+      tl.set(penRefs.current, { autoAlpha: 0 });
+      tl.set(highlightBgRef.current, { scaleX: 0, opacity: 0, transformOrigin: "left center" });
+      tl.set(highlighterRef.current, { left: "-8%", opacity: 0 });
+      tl.set(eraserRef.current, { left: "-8%", top: "-18%", opacity: 0 });
+      tl.set(textRef.current, { clipPath: "inset(0 0 0 0%)" });
 
       // ① 한 글자씩 쓴다 — 프록시 트윈의 onUpdate에서 진행률(0~1)을 읽어
       // 실제 폰트 윤곽선 위 좌표(getPointAtLength)를 계산하고, 펜 위치와
@@ -84,9 +88,10 @@ export function PenWriteCompass() {
             onUpdate() {
               const dist = this.progress() * len;
               const p = guide.getPointAtLength(dist);
-              const p2 = guide.getPointAtLength(Math.min(len, dist + 1));
-              const angle = Math.atan2(p2.y - p.y, p2.x - p.x) * (180 / Math.PI);
-              pen.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(${angle + 45})`);
+              // 획 방향을 따라 매 프레임 회전시키면(이전 버전) 펜이 이리저리
+              // 돌아가며 부자연스럽게 흔들려 보인다 — 실제로 손에 쥔 펜처럼
+              // 항상 같은 대각선 각도(오른쪽 위→왼쪽 아래)를 유지한다.
+              pen.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(45)`);
               const xPct = Math.min(100, Math.max(0, (p.x / g.width) * 100));
               fill.style.clipPath = `inset(0 ${100 - xPct}% 0 0)`;
             },
