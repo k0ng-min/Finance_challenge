@@ -2188,14 +2188,12 @@ button { cursor: pointer; font-family: inherit; }
 .pwc__text {
   position: relative;
   display: inline-flex;
-  font-family: "Gaegu", var(--font-display), sans-serif;
-  font-weight: 700;
+  align-items: flex-end;
   font-size: clamp(2.8rem, 9.2svh, 4.4rem);
-  color: var(--heading);
   letter-spacing: 0.01em;
   white-space: nowrap;
   clip-path: inset(0 0 0 0%);
-  animation: pwc-text-erase 7.2s linear infinite;
+  animation: pwc-text-erase 36s linear infinite;
 }
 @keyframes pwc-text-erase {
   0%, 88% { clip-path: inset(0 0 0 0%); }
@@ -2223,7 +2221,7 @@ button { cursor: pointer; font-family: inherit; }
   mix-blend-mode: multiply;
   opacity: 0;
   z-index: 1;
-  animation: pwc-highlight-bg 7.2s ease-in-out infinite;
+  animation: pwc-highlight-bg 36s ease-in-out infinite;
 }
 :root[data-theme="dark"] .pwc__highlight-bg {
   background: #eab308;
@@ -2231,30 +2229,28 @@ button { cursor: pointer; font-family: inherit; }
   opacity: 0;
 }
 
-/* 글자가 통째로 팝업되지 않고, 펜이 그 글자 위를 지나가는 동안 왼쪽부터 실제로
-   "그려지는" 것처럼 clip-path로 드러낸다(펜의 pwc-pen-write 이동 구간과 같은
-   %로 맞춰 둠 — 아래 펜 키프레임과 반드시 같이 고칠 것). */
+/* 글자가 통째로 팝업되지 않고, 펜이 실제 글자 윤곽선(opentype.js로 뽑은 진짜
+   Gaegu 폰트 glyph path, src/generated/penGlyphPaths.ts) 위를 실제로 지나가면서
+   (PenWriteCompass.tsx의 requestAnimationFrame 루프) 꽉 찬 글자 fill을
+   펜이 도달한 x좌표까지만 clip-path로 드러낸다 — 항상 "완전한 글자 모양"만
+   보이므로 ㅂ/ㅁ처럼 안이 뚫린 글자도 속이 빈 테두리로 보이지 않는다. */
 .pwc__char {
   position: relative;
   display: inline-block;
-  clip-path: inset(0 100% 0 0);
-  animation-duration: 7.2s;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
+  height: 1em;
+  overflow: visible;
 }
-.pwc__char--0 { animation-name: pwc-char0; }
-.pwc__char--1 { animation-name: pwc-char1; }
-.pwc__char--2 { animation-name: pwc-char2; }
-.pwc__char--3 { animation-name: pwc-char3; }
-.pwc__char--4 { animation-name: pwc-char4; }
-
-/* 글자 자체는 다 쓰인 뒤로 계속 보이는 상태를 유지한다 — 지우는 연출은 위
-   pwc-text-erase(부모의 clip-path)가 전담하므로 여기서 따로 사라지지 않는다. */
-@keyframes pwc-char0 { 0%,4% { clip-path: inset(0 100% 0 0); } 11%, 100% { clip-path: inset(0 0% 0 0); } }
-@keyframes pwc-char1 { 0%,11.2% { clip-path: inset(0 100% 0 0); } 18%, 100% { clip-path: inset(0 0% 0 0); } }
-@keyframes pwc-char2 { 0%,18.2% { clip-path: inset(0 100% 0 0); } 25%, 100% { clip-path: inset(0 0% 0 0); } }
-@keyframes pwc-char3 { 0%,25.2% { clip-path: inset(0 100% 0 0); } 32%, 100% { clip-path: inset(0 0% 0 0); } }
-@keyframes pwc-char4 { 0%,32.2% { clip-path: inset(0 100% 0 0); } 39%, 100% { clip-path: inset(0 0% 0 0); } }
+/* 화면에는 그리지 않고, 펜이 따라갈 좌표를 getPointAtLength로 구하기 위한
+   기하 전용 path — 렌더는 되어야 좌표 계산이 되므로 display:none 대신
+   투명하게만 처리한다. */
+.pwc__char-guide {
+  fill: none;
+  stroke: none;
+}
+.pwc__char-fill-live {
+  fill: var(--heading);
+  clip-path: inset(0 100% 0 0);
+}
 
 @keyframes pwc-highlight-bg {
   0%, 51% { transform: scaleX(0); opacity: 0; }
@@ -2263,8 +2259,7 @@ button { cursor: pointer; font-family: inherit; }
   100% { opacity: 0; transform: scaleX(0); }
 }
 
-/* --- 펜·형광펜: 실제 3D 렌더 이미지(Fluent Emoji 3D) --- */
-.pwc__pen,
+/* --- 형광펜: 실제 3D 렌더 이미지(Fluent Emoji 3D) --- */
 .pwc__highlighter {
   position: absolute;
   top: -18%;
@@ -2273,30 +2268,19 @@ button { cursor: pointer; font-family: inherit; }
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
+  animation: pwc-highlighter-move 36s ease-in-out infinite;
 }
-.pwc__pen { animation: pwc-pen-write 7.2s linear infinite; }
-.pwc__highlighter { animation: pwc-highlighter-move 7.2s ease-in-out infinite; }
 
-/* 펜이 각 글자의 시작 위치로 왔다가(잠깐 멈춤 없이 바로) 그 글자 폭만큼 오른쪽으로
-   훑고 지나가면서 위 pwc-charN의 clip-path 드러남과 정확히 같은 구간(예: 4%→11%)에
-   걸리게 맞췄다 — 그래서 펜 끝이 지나간 자리만큼만 글자가 보이는 것처럼 읽힌다.
-   글자 사이 이동은 아주 짧게(0.2%) 펜을 살짝 들었다 놓는 느낌만 준다. */
-@keyframes pwc-pen-write {
-  0% { left: -8%; opacity: 0; transform: rotate(-4deg); }
-  3% { opacity: 1; left: -2%; transform: rotate(-4deg); }
-  4% { left: 1%; transform: rotate(2deg); }
-  11% { left: 15%; transform: rotate(-4deg); }
-  11.2% { left: 19%; transform: rotate(2deg); }
-  18% { left: 33%; transform: rotate(-4deg); }
-  18.2% { left: 37%; transform: rotate(2deg); }
-  25% { left: 51%; transform: rotate(-4deg); }
-  25.2% { left: 55%; transform: rotate(2deg); }
-  32% { left: 69%; transform: rotate(-4deg); }
-  32.2% { left: 73%; transform: rotate(2deg); }
-  39% { left: 87%; opacity: 1; transform: rotate(-4deg); }
-  46% { left: 96%; opacity: 0; transform: rotate(10deg); }
-  100% { left: 96%; opacity: 0; }
+/* 펜(pwc__pen-svg)은 이제 각 글자 svg 안의 <image>로, CSS 애니메이션이
+   아니라 PenWriteCompass.tsx의 requestAnimationFrame 루프가
+   getPointAtLength로 실제 획 좌표를 읽어 transform을 직접 찍어준다 —
+   그래서 opacity 전환만 부드럽게 CSS로 처리한다. */
+.pwc__pen-svg {
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(53, 104, 201, 0.3));
+  transition: opacity 0.12s linear;
 }
+
 @keyframes pwc-highlighter-move {
   0%, 50% { left: -8%; opacity: 0; transform: rotate(-8deg); }
   53% { opacity: 1; left: -3%; }
@@ -2318,7 +2302,7 @@ button { cursor: pointer; font-family: inherit; }
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
-  animation: pwc-eraser-scrub 7.2s linear infinite;
+  animation: pwc-eraser-scrub 36s linear infinite;
 }
 @keyframes pwc-eraser-scrub {
   0%, 87% { left: -8%; top: -18%; opacity: 0; transform: rotate(174deg); }
@@ -2337,7 +2321,7 @@ button { cursor: pointer; font-family: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .pwc__text { animation: none; clip-path: inset(0 0 0 0%); }
-  .pwc__char { animation: none; opacity: 1; clip-path: inset(0 0% 0 0); }
+  .pwc__char-fill-live { clip-path: inset(0 0% 0 0); }
   .pwc__highlight-bg { animation: none; transform: scaleX(1); opacity: 1; }
-  .pwc__pen, .pwc__highlighter, .pwc__eraser { display: none; }
+  .pwc__pen-svg, .pwc__highlighter, .pwc__eraser { display: none; }
 }
