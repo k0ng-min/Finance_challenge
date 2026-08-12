@@ -45,13 +45,18 @@ import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
 
 // 자모 덩어리 하나를 그리는 데 걸리는 시간 — 글자마다 덩어리 수가 달라서
 // (보=1, 험/형=3, 광/펜=4) 글자 전체 시간도 자연스럽게 복잡도에 비례한다.
-const GROUP_DURATION = 0.55;
-const PEN_FADE = 0.12;
-const CHAR_GAP = 0.15;
-// mask stroke 굵기 = 그 자모 덩어리 bbox의 짧은 쪽 변 × 이 비율. 너무 얇으면
-// 안이 뚫린 자모(ㅁ/ㅇ/ㅎ)가 속이 빈 테두리로 보이고, 너무 두꺼우면 획이
-// 뭉개진 덩어리로 보인다.
-const MASK_WIDTH_RATIO = 0.55;
+// (원래 0.55 — 천천히 잘 보이게 3배로 늘림)
+const GROUP_DURATION = 0.55 * 3;
+const PEN_FADE = 0.12 * 3;
+const CHAR_GAP = 0.15 * 3;
+// mask stroke 굵기 = bbox 짧은 쪽 변 × 비율. ㅁ/ㅇ/ㅎ처럼 널찍한(정사각形에
+// 가까운) 덩어리는 bbox가 "구멍 크기"를 반영하므로 낮은 비율이 맞지만, ㅣ처럼
+// 가늘고 긴 획은 bbox의 짧은 변 자체가 이미 실제 잉크 굵기라서 낮은 비율을
+// 쓰면 다 못 덮어 속이 비어(테두리만 남아) 보인다 — 그래서 세로:가로 비율이
+// 큰(elongated) 덩어리는 훨씬 높은 비율을 쓴다.
+const MASK_WIDTH_RATIO_COMPACT = 0.55;
+const MASK_WIDTH_RATIO_ELONGATED = 0.95;
+const ELONGATED_ASPECT_THRESHOLD = 2.5;
 // 펜 에셋(pen.webp) 안에서 실제 펜촉이 있는 위치 — 이미지 왼쪽아래 모서리
 // 근처. 이 비율만큼 이미지를 당겨서 촉이 좌표에 정확히 붙게 한다.
 const PEN_W = 760;
@@ -78,7 +83,11 @@ export function PenWriteCompass() {
       group.forEach((el) => {
         if (!el) return;
         const box = el.getBBox();
-        const width = Math.max(1, Math.min(box.width, box.height) * MASK_WIDTH_RATIO);
+        const shortSide = Math.min(box.width, box.height);
+        const longSide = Math.max(box.width, box.height);
+        const aspect = shortSide > 0 ? longSide / shortSide : 1;
+        const ratio = aspect >= ELONGATED_ASPECT_THRESHOLD ? MASK_WIDTH_RATIO_ELONGATED : MASK_WIDTH_RATIO_COMPACT;
+        const width = Math.max(1, shortSide * ratio);
         const len = el.getTotalLength();
         el.style.strokeWidth = String(width);
         el.style.strokeDasharray = String(len);
