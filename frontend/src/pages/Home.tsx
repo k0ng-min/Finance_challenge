@@ -3,8 +3,6 @@ import { motion } from "framer-motion";
 import { Icon3D } from "../components/Icon3D";
 import { FloatingIcon } from "../components/FloatingIcon";
 import { ThemeToggle } from "../components/ThemeToggle";
-import { PenWriteIcon } from "../components/PenWriteIcon";
-import { PenWriteLabel } from "../components/PenWriteLabel";
 import { useApp } from "../context/AppContext";
 
 // 자주 쓰는 핵심 기능만 설명과 함께 크게 보여준다.
@@ -90,12 +88,8 @@ export function Home() {
             transition={{ delay: 0.06 * i + 0.16, duration: 0.3 }}
             whileTap={{ scale: 0.95 }}
           >
-            {c.to === "/highlights" ? <PenWriteIcon size={34} /> : <Icon3D src={c.icon} size={34} />}
-            {c.to === "/highlights" ? (
-              <PenWriteLabel text={c.title} />
-            ) : (
-              <span className="home-quick__label">{c.title}</span>
-            )}
+            <Icon3D src={c.icon} size={34} />
+            <span className="home-quick__label">{c.title}</span>
           </motion.button>
         ))}
       </div>
