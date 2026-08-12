@@ -1,31 +1,28 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import { PEN_CHAR_STROKES } from "../data/penStrokes";
-
-gsap.registerPlugin(DrawSVGPlugin, MotionPathPlugin);
+import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
 
 /** 홈 화면 히어로(나침반 자리)를 대신하는 3단계 애니메이션. 참고한 CodePen
- * (akshsharma1218, "Animated Handwriting with DrawSVG GSAP3")과 같은 라이브러리
- * 구성 — GSAP의 DrawSVGPlugin(획을 stroke-dasharray/dashoffset으로 그려주는
- * 플러그인)과 MotionPathPlugin(요소를 SVG path 위로 움직여주는 플러그인) — 을
- * 그대로 써서 ① 펜이 "보험형광펜"을 한 글자씩, 손으로 쓴 획 순서 그대로
- * (src/data/penStrokes.ts) 실제로 그리듯 씀 → ② 다 쓰면 펜이 사라지고 노란
- * 형광펜이 등장해 왼쪽부터 훑으며 노란 하이라이트를 칠함 → ③ 지우개가
- * 오른쪽위→왼쪽아래 대각선을 반복하며(쓱싹쓱싹) 오른쪽으로 이동해 전체를
- * 지움 → 처음(빈 화면)으로 돌아가 반복한다. 이 전체 시퀀스가 하나의
- * gsap.timeline({repeat:-1})이다(참고 CodePen의 script.js와 같은 패턴 —
- * tl.to(path, {drawSVG:true}) + tl.to(pen, {motionPath:{path, align:path}}, "<")).
+ * (akshsharma1218, "Animated Handwriting with DrawSVG GSAP3")과 같은 GSAP
+ * 타임라인(gsap.timeline({repeat:-1}))으로 ① 펜이 "보험형광펜"을 한 글자씩
+ * 씀 → ② 다 쓰면 펜이 사라지고 노란 형광펜이 등장해 왼쪽부터 훑으며 노란
+ * 하이라이트를 칠함 → ③ 지우개가 오른쪽위→왼쪽아래 대각선을 반복하며
+ * (쓱싹쓱싹) 오른쪽으로 이동해 전체를 지움 → 처음(빈 화면)으로 돌아가 반복한다.
  *
- * 처음엔 폰트 파일(Gaegu)에서 opentype.js로 실제 글리프 윤곽선을 뽑아 썼는데,
- * 그 path는 "글자 안쪽을 지나는 스켈레톤"이 아니라 글자의 바깥+안쪽 테두리
- * (컨투어)라서 (1) 펜이 사람 쓰는 순서가 아니라 테두리를 훑는 궤적으로
- * 움직이고 (2) ㅂ/ㅁ처럼 안이 뚫린 글자가 속이 빈 테두리로 보이는 문제가
- * 있었다. 그래서 실제 자모 획 순서대로 손으로 좌표를 그린 스켈레톤 path로
- * 바꿨다 — 획 두께만큼 stroke를 주면 그 자체가 손글씨 굵기의 잉크가 된다.
- * 한글은 자모 단위 획순 데이터를 제공하는 공개 라이브러리가 없어서(한자의
- * Hanzi Writer 같은 것) src/data/penStrokes.ts에 5글자 분량만 직접 정의했다.
+ * 글자는 학교안심 민들레홀씨 R(한국교육학술정보원 KERIS, OFL 라이선스) 폰트
+ * 파일에서 opentype.js로 직접 뽑아낸 실제 글리프 윤곽선(SVG path,
+ * scripts/extract-glyph-paths.mjs → src/generated/penGlyphPaths.ts)이다 —
+ * CSS로 흉내내거나 손으로 좌표를 그린 게 아니라 진짜 폰트 모양 그대로다.
+ *
+ * 펜은 그 윤곽선(guide path) 위의 실제 좌표를 매 프레임
+ * SVGPathElement.getPointAtLength()로 읽어 이동하고, 동시에 "꽉 찬 글자
+ * 모양"(fill path, 같은 d)을 펜이 도달한 x좌표까지만 clip-path로 드러낸다 —
+ * 펜 위치와 드러나는 잉크가 같은 좌표(p.x)에서 나오므로 항상 정확히 맞물리고,
+ * 폰트 윤곽선을 stroke나 mask로 직접 그리지 않으므로(그러면 ㅂ/ㅁ처럼 안이
+ * 뚫린 글자가 속이 빈 테두리로 보임) 항상 "완전한 글자 모양"만 보인다. 이
+ * 좌표 계산은 GSAP 타임라인 안의 더미 트윈(duration만 쓰고 onUpdate에서
+ * 직접 좌표를 찍는 프록시 트윈) 하나로 처리해서, 재생/일시정지/속도 조절 같은
+ * GSAP 타임라인 제어를 그대로 받는다.
  *
  * 펜·형광펜·지우개는 이 앱의 다른 아이콘과 같은 출처(Fluent Emoji 3D, MIT
  * License, Microsoft)에서 받은 실제 3D 렌더 이미지다(/public/3d/pen.webp,
@@ -33,16 +30,20 @@ gsap.registerPlugin(DrawSVGPlugin, MotionPathPlugin);
  * CC0(퍼블릭 도메인) "Pink Eraser" 3D 모델(by plaggy) 렌더 이미지를 썼다).
  * 되돌리고 싶으면 Home.tsx에서 이 컴포넌트 호출을 원래 Icon3D로 바꾸면 된다. */
 
-const STROKE_DURATION = 0.3;
+const CHAR_DURATION = 1.4;
 const PEN_FADE = 0.12;
 const CHAR_GAP = 0.15;
 // 펜 에셋(pen.webp) 안에서 실제 펜촉이 있는 위치 — 이미지 왼쪽아래 모서리
-// 근처. MotionPathPlugin의 alignOrigin이 이 지점을 path 좌표에 맞춘다.
-const PEN_TIP: [number, number] = [0.1, 0.92];
+// 근처. 이 비율만큼 이미지를 당겨서 촉이 좌표에 정확히 붙게 한다.
+const PEN_W = 760;
+const PEN_H = 760;
+const TIP_FRAC_X = 0.1;
+const TIP_FRAC_Y = 0.92;
 
 export function PenWriteCompass() {
   const rootRef = useRef<HTMLSpanElement>(null);
-  const strokeRefs = useRef<SVGPathElement[][]>(PEN_CHAR_STROKES.map(() => []));
+  const guideRefs = useRef<(SVGPathElement | null)[]>([]);
+  const fillRefs = useRef<(SVGPathElement | null)[]>([]);
   const penRefs = useRef<(SVGImageElement | null)[]>([]);
   const highlightBgRef = useRef<HTMLSpanElement>(null);
   const highlighterRef = useRef<HTMLImageElement>(null);
@@ -52,7 +53,7 @@ export function PenWriteCompass() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const ctx = gsap.context(() => {
-      gsap.set(strokeRefs.current.flat(), { drawSVG: 0 });
+      gsap.set(fillRefs.current, { clipPath: "inset(0 100% 0 0)" });
       gsap.set(penRefs.current, { autoAlpha: 0 });
       gsap.set(highlightBgRef.current, { scaleX: 0, opacity: 0, transformOrigin: "left center" });
       gsap.set(highlighterRef.current, { left: "-8%", opacity: 0 });
@@ -61,29 +62,35 @@ export function PenWriteCompass() {
 
       const tl = gsap.timeline({ repeat: -1, defaults: { ease: "none" } });
 
-      // ① 한 글자씩 실제 획 순서대로 쓴다 — drawSVG로 획을 그리며 동시에
-      // ("<" 포지션 파라미터) MotionPathPlugin이 펜을 그 path 위로 움직인다.
-      PEN_CHAR_STROKES.forEach((_charData, i) => {
+      // ① 한 글자씩 쓴다 — 프록시 트윈의 onUpdate에서 진행률(0~1)을 읽어
+      // 실제 폰트 윤곽선 위 좌표(getPointAtLength)를 계산하고, 펜 위치와
+      // clip-path 드러남을 같은 좌표로 동시에 갱신한다.
+      PEN_GLYPH_PATHS.forEach((g, i) => {
         const pen = penRefs.current[i];
+        const guide = guideRefs.current[i];
+        const fill = fillRefs.current[i];
+        if (!pen || !guide || !fill) return;
+        const len = guide.getTotalLength();
+
         tl.to(pen, { autoAlpha: 1, duration: PEN_FADE });
-        strokeRefs.current[i].forEach((strokeEl) => {
-          tl.to(strokeEl, { drawSVG: true, duration: STROKE_DURATION });
-          tl.to(
-            pen,
-            {
-              motionPath: {
-                path: strokeEl,
-                align: strokeEl,
-                alignOrigin: PEN_TIP,
-                autoRotate: 45,
-              },
-              duration: STROKE_DURATION,
+        tl.to(
+          {},
+          {
+            duration: CHAR_DURATION,
+            onUpdate() {
+              const dist = this.progress() * len;
+              const p = guide.getPointAtLength(dist);
+              const p2 = guide.getPointAtLength(Math.min(len, dist + 1));
+              const angle = Math.atan2(p2.y - p.y, p2.x - p.x) * (180 / Math.PI);
+              pen.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(${angle + 45})`);
+              const xPct = Math.min(100, Math.max(0, (p.x / g.width) * 100));
+              fill.style.clipPath = `inset(0 ${100 - xPct}% 0 0)`;
             },
-            "<",
-          );
-        });
+          },
+        );
+        tl.set(fill, { clipPath: "inset(0 0% 0 0)" });
         tl.to(pen, { autoAlpha: 0, duration: PEN_FADE });
-        if (i < PEN_CHAR_STROKES.length - 1) tl.to({}, { duration: CHAR_GAP });
+        if (i < PEN_GLYPH_PATHS.length - 1) tl.to({}, { duration: CHAR_GAP });
       });
 
       tl.to({}, { duration: 0.7 });
@@ -128,32 +135,42 @@ export function PenWriteCompass() {
       <img className="pwc__highlighter" ref={highlighterRef} src="/3d/crayon.webp" alt="" />
       <img className="pwc__eraser" ref={eraserRef} src="/3d/eraser.webp" alt="" />
       <span className="pwc__text" ref={textRef}>
-        {PEN_CHAR_STROKES.map((g, i) => (
+        {PEN_GLYPH_PATHS.map((g, i) => (
           <svg
             key={g.char}
             className={`pwc__char pwc__char--${i}`}
-            viewBox="0 0 100 100"
-            preserveAspectRatio="xMidYMid meet"
+            viewBox={`${g.x} ${g.y} ${g.width} ${g.height}`}
+            style={{ width: `${g.advanceEm}em` }}
+            preserveAspectRatio="xMinYMax meet"
             overflow="visible"
           >
-            {g.strokes.map((d, j) => (
-              <path
-                key={j}
-                ref={(el) => {
-                  if (el) strokeRefs.current[i][j] = el;
-                }}
-                className="pwc__char-stroke"
-                d={d}
-              />
-            ))}
+            {/* 화면에는 그리지 않고, 펜이 따라갈 좌표를 getPointAtLength로
+                구하기 위한 기하 전용 path. */}
+            <path
+              ref={(el) => {
+                guideRefs.current[i] = el;
+              }}
+              className="pwc__char-guide"
+              d={g.d}
+            />
+            <path
+              ref={(el) => {
+                fillRefs.current[i] = el;
+              }}
+              className="pwc__char-fill-live"
+              d={g.d}
+            />
             <image
               ref={(el) => {
                 penRefs.current[i] = el;
               }}
               href="/3d/pen.webp"
               className="pwc__pen-svg"
-              width={100}
-              height={100}
+              width={PEN_W}
+              height={PEN_H}
+              x={-PEN_W * TIP_FRAC_X}
+              y={-PEN_H * TIP_FRAC_Y}
+              opacity={0}
             />
           </svg>
         ))}

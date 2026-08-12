@@ -2221,23 +2221,24 @@ button { cursor: pointer; font-family: inherit; }
   mix-blend-mode: screen;
 }
 
-/* 손으로 그린 자모 획 순서(스켈레톤 path, src/data/penStrokes.ts) — 이 stroke
-   자체가 잉크라서 ㅂ/ㅁ처럼 안이 뚫린 글자도 실제 손글씨처럼 획만 두껍게
-   채워지고 속이 빈 테두리로 보이지 않는다. GSAP DrawSVGPlugin이
-   stroke-dasharray/dashoffset을 직접 관리한다. */
+/* 글자는 실제 폰트(학교안심 민들레홀씨 R, KERIS, OFL)에서 opentype.js로 뽑은
+   진짜 윤곽선(src/generated/penGlyphPaths.ts)이다. pwc__char-guide는 화면에
+   안 보이는 기하 전용 path(펜이 getPointAtLength로 따라갈 좌표),
+   pwc__char-fill-live가 실제 보이는 "꽉 찬 글자" — 펜이 도달한 x좌표까지만
+   clip-path로 드러난다(PenWriteCompass.tsx). 윤곽선을 stroke로 직접 그리지
+   않으므로 ㅂ/ㅁ처럼 안이 뚫린 글자도 항상 완전한 모양으로 보인다. */
 .pwc__char {
   position: relative;
   display: inline-block;
-  width: 0.92em;
   height: 1em;
   overflow: visible;
 }
-.pwc__char-stroke {
+.pwc__char-guide {
   fill: none;
-  stroke: var(--heading);
-  stroke-width: 7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke: none;
+}
+.pwc__char-fill-live {
+  fill: var(--heading);
 }
 
 /* --- 펜·형광펜·지우개: 실제 3D 렌더 이미지 --- */
@@ -2257,6 +2258,6 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pwc__char-stroke { stroke-dasharray: none; }
+  .pwc__char-fill-live { clip-path: inset(0 0% 0 0); }
   .pwc__pen-svg, .pwc__highlighter, .pwc__eraser { display: none; }
 }
