@@ -2222,27 +2222,32 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 /* 글자는 실제 폰트(학교안심 민들레홀씨 R, KERIS, OFL)에서 opentype.js로 뽑은
-   진짜 윤곽선(src/generated/penGlyphPaths.ts)이다. pwc__char-guide는 화면에
-   안 보이는 기하 전용 path(펜이 getPointAtLength로 따라갈 좌표),
-   pwc__char-fill-live가 실제 보이는 "꽉 찬 글자" — 펜이 도달한 x좌표까지만
-   clip-path로 드러난다(PenWriteCompass.tsx). 윤곽선을 stroke로 직접 그리지
-   않으므로 ㅂ/ㅁ처럼 안이 뚫린 글자도 항상 완전한 모양으로 보인다. */
+   진짜 윤곽선이다(자모 단위 groups, src/generated/penGlyphPaths.ts).
+   pwc__char-mask-stroke는 그 윤곽선을 stroke-dasharray/dashoffset으로 점점
+   그려나가는 획 — 화면에 직접 보이지 않고 <mask>로만 쓰여서, 그 아래 꽉 찬
+   pwc__char-fill-live(진짜 자모 모양)를 획이 지나간 만큼만 드러낸다. 그냥
+   윤곽선을 화면에 직접 그리면 ㅁ/ㅇ처럼 안이 뚫린 자모가 속이 빈 테두리로
+   보이는데, mask를 거치면 항상 "완전한 자모 모양"으로 채워져 보인다
+   (PenWriteCompass.tsx). */
 .pwc__char {
   position: relative;
   display: inline-block;
   height: 1em;
   overflow: visible;
 }
-.pwc__char-guide {
+.pwc__char-mask-stroke {
   fill: none;
-  stroke: none;
+  stroke: #fff;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 자모"가 잠깐 그대로
+     다 보이는 깜빡임을 막는 기본값 — 실제 굵기/길이는
+     PenWriteCompass.tsx가 마운트 시 getBBox/getTotalLength로 계산해 찍는다. */
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
 }
 .pwc__char-fill-live {
   fill: var(--heading);
-  /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 글자"가 잠깐 그대로
-     다 보이는 깜빡임을 막는 기본값 — 실제 애니메이션 상태는
-     PenWriteCompass.tsx가 매 루프 시작마다 다시 찍어준다. */
-  clip-path: inset(0 100% 0 0);
 }
 
 /* --- 펜·형광펜·지우개: 실제 3D 렌더 이미지 ---
@@ -2276,6 +2281,6 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pwc__char-fill-live { clip-path: inset(0 0% 0 0); }
+  .pwc__char-mask-stroke { stroke-dashoffset: 0; }
   .pwc__pen-svg, .pwc__highlighter, .pwc__eraser { display: none; }
 }

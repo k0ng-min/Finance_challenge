@@ -13,24 +13,27 @@ import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
  *
  * 글자는 학교안심 민들레홀씨 R(KERIS, OFL) 폰트에서 opentype.js로 뽑은 실제
  * 글리프 윤곽선이다(scripts/extract-glyph-paths.mjs → src/generated/
- * penGlyphPaths.ts). 처음엔 글자 하나를 통째로 왼쪽→오른쪽 한 번에 훑어
- * 드러냈는데, ㅂ+ㅗ처럼 위아래로 쌓인 자모까지 하나의 가로 "벽"이 글자
- * 전체를 가로지르며 지나가는 것처럼 보였다(실제 손글씨 순서와 무관). 그래서
- * 추출 스크립트가 폰트의 컨투어(잉크 덩어리)들을 겹치는 정도로 자모 단위로
- * 묶고, 그 묶음을 초성→중성→종성(왼쪽→오른쪽, 위→아래) 순서로 정렬해
- * `groups` 배열로 저장해 두면, 여기서는 그 배열 순서 그대로 한 덩어리씩
- * 그린다 — 각 "벽"은 그 자모 자신의 좁은 영역 안에서만 훑고 지나가므로
- * 훨씬 실제로 획을 쓰는 순서처럼 보인다.
+ * penGlyphPaths.ts). 컨투어(잉크 덩어리)를 자모 단위로 묶고 실제 쓰는 순서
+ * (초성→중성→종성)로 정렬해 groups 배열에 담아 뒀다.
  *
- * 각 자모 덩어리 안에서는, 펜이 그 덩어리의 윤곽선(guide path) 위 실제
- * 좌표를 매 프레임 SVGPathElement.getPointAtLength()로 읽어 이동하고,
- * 동시에 "꽉 찬 자모 모양"(fill path, 같은 d)을 펜이 도달한 x좌표까지만
- * clip-path로 드러낸다 — 펜 위치와 드러나는 잉크가 같은 좌표(p.x)에서
- * 나오므로 항상 정확히 맞물리고, 윤곽선을 stroke나 mask로 직접 그리지
- * 않으므로(그러면 ㅁ/ㅇ처럼 안이 뚫린 자모가 속이 빈 테두리로 보임) 항상
- * "완전한 모양"만 보인다. 이 좌표 계산은 GSAP 타임라인 안의 더미 트윈
- * (duration만 쓰고 onUpdate에서 직접 좌표를 찍는 프록시 트윈)으로 처리해서,
- * 재생/일시정지/속도 조절 같은 GSAP 타임라인 제어를 그대로 받는다.
+ * 처음엔 각 자모 덩어리를 clip-path로 왼쪽→오른쪽 훑어 드러냈는데, 그건
+ * "벽이 밀려나며 뒤에서 글자가 나타나는" 것이지 실제로 펜이 획을 그리는
+ * 움직임이 아니다(참고 CodePen이 하는 방식과도 다르다). 그래서 진짜
+ * stroke-dasharray/dashoffset로 윤곽선 자체를 점점 그려나가는 방식으로
+ * 바꿨다 — 단, 그 윤곽선을 화면에 직접 보여주면(예전 시도) ㅁ/ㅇ처럼 안이
+ * 뚫린 자모가 속이 빈 테두리로 보인다. 그래서 그 그려지는 윤곽선을 <mask>로만
+ * 쓰고, 그 아래 꽉 찬 자모 모양(fill)을 그 mask를 통해서만 보여준다 — 획
+ * 굵기만큼 두꺼운 stroke로 그려지는 mask가 지나간 자리만큼만 fill이
+ * "잉크처럼" 드러나므로 안이 뚫린 자모도 속이 빈 테두리로 보이지 않는다.
+ * mask stroke의 굵기는 그 자모 덩어리 자신의 bbox(getBBox)에서 계산해
+ * 자모 크기에 비례하게 잡는다.
+ *
+ * 펜은 그 mask stroke(윤곽선)와 완전히 같은 path 위의 좌표를 매 프레임
+ * SVGPathElement.getPointAtLength()로 읽어 이동한다 — mask의 dashoffset과
+ * 펜 위치가 같은 진행률(progress)에서 동시에 나오므로 펜 끝이 항상 지금
+ * 그려지는 지점에 정확히 붙어 있다. 이 진행률 계산은 GSAP 타임라인 안의
+ * 더미 트윈(duration만 쓰고 onUpdate에서 직접 좌표를 찍는 프록시 트윈)으로
+ * 처리해서, 재생/일시정지/속도 조절 같은 GSAP 타임라인 제어를 그대로 받는다.
  *
  * 펜·형광펜은 이 앱의 다른 아이콘과 같은 출처(Fluent Emoji 3D, MIT License,
  * Microsoft)에서 받은 실제 3D 렌더 이미지다(/public/3d/pen.webp,
@@ -42,9 +45,13 @@ import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
 
 // 자모 덩어리 하나를 그리는 데 걸리는 시간 — 글자마다 덩어리 수가 달라서
 // (보=1, 험/형=3, 광/펜=4) 글자 전체 시간도 자연스럽게 복잡도에 비례한다.
-const GROUP_DURATION = 0.45;
+const GROUP_DURATION = 0.55;
 const PEN_FADE = 0.12;
 const CHAR_GAP = 0.15;
+// mask stroke 굵기 = 그 자모 덩어리 bbox의 짧은 쪽 변 × 이 비율. 너무 얇으면
+// 안이 뚫린 자모(ㅁ/ㅇ/ㅎ)가 속이 빈 테두리로 보이고, 너무 두꺼우면 획이
+// 뭉개진 덩어리로 보인다.
+const MASK_WIDTH_RATIO = 0.55;
 // 펜 에셋(pen.webp) 안에서 실제 펜촉이 있는 위치 — 이미지 왼쪽아래 모서리
 // 근처. 이 비율만큼 이미지를 당겨서 촉이 좌표에 정확히 붙게 한다.
 const PEN_W = 760;
@@ -54,8 +61,7 @@ const TIP_FRAC_Y = 0.92;
 
 export function PenWriteCompass() {
   const rootRef = useRef<HTMLSpanElement>(null);
-  const guideRefs = useRef<(SVGPathElement | null)[][]>(PEN_GLYPH_PATHS.map(() => []));
-  const fillRefs = useRef<(SVGPathElement | null)[][]>(PEN_GLYPH_PATHS.map(() => []));
+  const maskStrokeRefs = useRef<(SVGPathElement | null)[][]>(PEN_GLYPH_PATHS.map(() => []));
   const penRefs = useRef<(SVGImageElement | null)[]>([]);
   const highlightBgRef = useRef<HTMLSpanElement>(null);
   const highlighterRef = useRef<HTMLImageElement>(null);
@@ -64,52 +70,63 @@ export function PenWriteCompass() {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    // 마스크 획 굵기는 자모 덩어리 크기에 비례해야 하므로, 실제 렌더된 후
+    // getBBox로 한 번씩 재서 stroke-width/dasharray/dashoffset 기본값을
+    // 잡아둔다(반응형 폰트 크기 변화와 무관하게 그 svg 내부 좌표 단위 기준).
+    maskStrokeRefs.current.forEach((group) => {
+      group.forEach((el) => {
+        if (!el) return;
+        const box = el.getBBox();
+        const width = Math.max(1, Math.min(box.width, box.height) * MASK_WIDTH_RATIO);
+        const len = el.getTotalLength();
+        el.style.strokeWidth = String(width);
+        el.style.strokeDasharray = String(len);
+        el.style.strokeDashoffset = String(len);
+      });
+    });
+
     const ctx = gsap.context(() => {
       // 처음 마운트될 때뿐 아니라 반복(repeat:-1)될 때마다 매번 이 상태로
       // 되돌아가야 한다 — 타임라인 밖(gsap.set)에 한 번만 넣으면 두 번째
-      // 루프부터는 지난 사이클에 다 써진/드러난 상태 그대로 남아서 "쓰기 전인
+      // 루프부터는 지난 사이클에 다 써진 상태 그대로 남아서 "쓰기 전인
       // 글자도 보이는" 버그가 생긴다. 그래서 타임라인 맨 앞의 tl.set으로 넣어
       // 매 루프 시작마다 다시 초기화되게 한다.
       const tl = gsap.timeline({ repeat: -1, defaults: { ease: "none" } });
-      tl.set(fillRefs.current.flat(), { clipPath: "inset(0 100% 0 0)" });
       tl.set(penRefs.current, { autoAlpha: 0 });
       tl.set(highlightBgRef.current, { scaleX: 0, opacity: 0, transformOrigin: "left center" });
       tl.set(highlighterRef.current, { left: "-8%", opacity: 0 });
       tl.set(eraserRef.current, { left: "-8%", top: "-18%", opacity: 0 });
       tl.set(textRef.current, { clipPath: "inset(0 0 0 0%)" });
 
-      // ① 한 글자씩, 자모 덩어리(groups) 단위로 순서대로 쓴다 — 각 덩어리는
-      // 그 덩어리 자신의 윤곽선 위에서만 펜이 움직이고 clip-path도 그
-      // 덩어리 안에서만 훑으므로, 글자 전체를 가로지르는 "벽"이 아니라
-      // 자모 하나하나가 실제로 쓰이는 순서처럼 보인다.
-      PEN_GLYPH_PATHS.forEach((g, i) => {
+      // ① 한 글자씩, 자모 덩어리(groups) 단위로 순서대로 쓴다 — 각 덩어리의
+      // 실제 윤곽선을 stroke-dasharray/dashoffset으로 점점 그려나가고(mask),
+      // 펜은 같은 path의 같은 진행률 지점을 따라간다.
+      PEN_GLYPH_PATHS.forEach((_g, i) => {
         const pen = penRefs.current[i];
         if (!pen) return;
 
         tl.to(pen, { autoAlpha: 1, duration: PEN_FADE });
-        g.groups.forEach((_groupD, j) => {
-          const guide = guideRefs.current[i][j];
-          const fill = fillRefs.current[i][j];
-          if (!guide || !fill) return;
-          const len = guide.getTotalLength();
+        maskStrokeRefs.current[i].forEach((strokeEl) => {
+          if (!strokeEl) return;
+          const len = strokeEl.getTotalLength();
 
+          tl.set(strokeEl, { strokeDashoffset: len });
           tl.to(
             {},
             {
               duration: GROUP_DURATION,
               onUpdate() {
                 const dist = this.progress() * len;
-                const p = guide.getPointAtLength(dist);
+                const p = strokeEl.getPointAtLength(dist);
                 // 획 방향을 따라 매 프레임 회전시키면 펜이 이리저리 돌아가며
                 // 부자연스럽게 흔들려 보인다 — 실제로 손에 쥔 펜처럼 항상
                 // 같은 대각선 각도(오른쪽 위→왼쪽 아래)를 유지한다.
                 pen.setAttribute("transform", `translate(${p.x} ${p.y}) rotate(45)`);
-                const xPct = Math.min(100, Math.max(0, (p.x / g.width) * 100));
-                fill.style.clipPath = `inset(0 ${100 - xPct}% 0 0)`;
+                strokeEl.style.strokeDashoffset = String(len - dist);
               },
             },
           );
-          tl.set(fill, { clipPath: "inset(0 0% 0 0)" });
         });
         tl.to(pen, { autoAlpha: 0, duration: PEN_FADE });
         if (i < PEN_GLYPH_PATHS.length - 1) tl.to({}, { duration: CHAR_GAP });
@@ -183,22 +200,16 @@ export function PenWriteCompass() {
           >
             {g.groups.map((groupD, j) => (
               <g key={j}>
-                {/* 화면에는 그리지 않고, 펜이 따라갈 좌표를 getPointAtLength로
-                    구하기 위한 기하 전용 path. */}
-                <path
-                  ref={(el) => {
-                    guideRefs.current[i][j] = el;
-                  }}
-                  className="pwc__char-guide"
-                  d={groupD}
-                />
-                <path
-                  ref={(el) => {
-                    fillRefs.current[i][j] = el;
-                  }}
-                  className="pwc__char-fill-live"
-                  d={groupD}
-                />
+                <mask id={`pwc-mask-${i}-${j}`} maskUnits="userSpaceOnUse" x={g.x} y={g.y} width={g.width} height={g.height}>
+                  <path
+                    ref={(el) => {
+                      maskStrokeRefs.current[i][j] = el;
+                    }}
+                    className="pwc__char-mask-stroke"
+                    d={groupD}
+                  />
+                </mask>
+                <path className="pwc__char-fill-live" d={groupD} mask={`url(#pwc-mask-${i}-${j})`} />
               </g>
             ))}
             <image
