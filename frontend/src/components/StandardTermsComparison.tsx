@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type InsurerStandardComparisonOut } from "../api";
 import { LoadingScreen } from "./LoadingScreen";
+import { usePager, PagerNav } from "./Pager";
 
 const RELATION_LABEL: Record<string, string> = {
   SAME: "표준과 동일",
@@ -21,7 +22,7 @@ function highlight(text: string, anchor: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <mark>{text.slice(idx, idx + anchor.length)}</mark>
+      <span className="clause-relevant-mark">{text.slice(idx, idx + anchor.length)}</span>
       {text.slice(idx + anchor.length)}
     </>
   );
@@ -34,6 +35,7 @@ export function StandardTermsComparison({ insurerCode }: { insurerCode: string }
   const [data, setData] = useState<InsurerStandardComparisonOut | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { page, setPage, totalPages, pageItems } = usePager(data?.items ?? [], 2);
 
   useEffect(() => {
     setLoading(true);
@@ -67,7 +69,7 @@ export function StandardTermsComparison({ insurerCode }: { insurerCode: string }
         조문 단위로 대조했어요. 대조는 보상 여부를 판정하는 근거가 아니라 참고 정보입니다 —
         표준과 다르게 쓰여 있는 조문이 보이면 원문을 확인하고 보험사에 직접 물어보세요.
       </p>
-      {data.items.map((item) => (
+      {pageItems.map((item) => (
         <div className="card" key={item.standard_clause_id} style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
             <strong>{item.article_no}({item.title})</strong>
@@ -109,6 +111,7 @@ export function StandardTermsComparison({ insurerCode }: { insurerCode: string }
           )}
         </div>
       ))}
+      <PagerNav page={page} totalPages={totalPages} onChange={setPage} label="쪽" />
     </div>
   );
 }
