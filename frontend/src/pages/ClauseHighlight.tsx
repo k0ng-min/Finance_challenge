@@ -9,6 +9,7 @@ import { IncidentPicker } from "../components/IncidentPicker";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { TripContextBadge } from "../components/TripContextBadge";
 import { RejectionClauseSearch } from "../components/RejectionClauseSearch";
+import { HighlighterPenIntro } from "../components/HighlighterPenIntro";
 
 /** 조항 하나를 그 사고 상황과 대조해서, 직접 관련된 부분만 노란색으로 표시한다.
  * 여러 색으로 나누지 않고 "이 사고와 관련 있는지"만 본다. 관련도 계산은 목록 정렬을 위해
@@ -221,6 +222,7 @@ export function ClauseHighlight() {
     return (
       <div className="page">
         <TopBar title="약관 형광펜" />
+        <HighlighterPenIntro />
         <PageHero
           icon="notebook"
           eyebrow="CLAUSE HIGHLIGHT"

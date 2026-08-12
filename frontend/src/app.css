@@ -2163,3 +2163,165 @@ button { cursor: pointer; font-family: inherit; }
 .overlap-unknown > summary .overlap-group__title::after { content: "▾"; color: var(--muted); font-size: 0.8rem; }
 .overlap-unknown[open] > summary .overlap-group__title::after { content: "▴"; }
 .overlap-unknown[open] > summary .overlap-group__title { margin-bottom: 10px; }
+
+/* ============================================================
+   약관 형광펜 데스크톱 리디자인 (kyeongmin 브랜치, Notion 톤 참고)
+   전부 이 블록 안에서만 동작한다 — 지우면 완전히 이전 화면으로 돌아간다.
+   (docs/superpowers/specs/2026-08-12-highlights-desktop-redesign-design.md)
+   ============================================================ */
+
+/* 이 라우트만 폰프레임(760px)보다 넓게 — 다른 페이지는 기존 .app-shell 규칙 그대로. */
+@media (min-width: 900px) {
+  .app-shell--highlights {
+    width: min(1160px, 92vw);
+  }
+  /* Notion처럼 넓은 여백 위주로 — 떨어지는 배경 아이콘은 이 페이지에서만 끈다(장식이
+     비교·읽기에 집중하는 걸 방해해서). 다른 페이지의 .bg-decor는 그대로 켜져 있다. */
+  .app-shell--highlights ~ .bg-decor,
+  .app-shell--highlights .bg-decor {
+    display: none;
+  }
+  .app-shell--highlights .hero {
+    padding: 40px 44px;
+  }
+  .app-shell--highlights .hero__title {
+    font-size: 2.15rem;
+    line-height: 1.28;
+    letter-spacing: -0.01em;
+  }
+  .app-shell--highlights .hero__subtitle {
+    font-size: 1rem;
+    max-width: 56ch;
+  }
+
+  /* 원문 읽기 화면을 좌우 2단으로 — 왼쪽 원문, 오른쪽 쉬운말 설명(있을 때만 2단이 되고,
+     없으면 자동으로 1단으로 접힌다). 자식들을 그리드 흐름에 맡기면(자동배치) 순서가
+     꼬여서 원문이 오른쪽 칸으로 새는 문제가 있어, 각 자식의 칸을 이름으로 명시한다. */
+  .clause-reader__doc {
+    display: grid;
+    grid-template-columns: 1fr;
+    column-gap: 32px;
+    row-gap: 10px;
+    align-items: start;
+  }
+  .clause-reader__doc:has(.clause-plain) {
+    grid-template-columns: 1fr 1fr;
+  }
+  .clause-reader__doc > .clause-reader__head,
+  .clause-reader__doc > .clause-page {
+    grid-column: 1 / -1;
+  }
+  .clause-reader__doc > .clause-reader__text,
+  .clause-reader__doc > .clause-reader__text--inline {
+    grid-column: 1;
+  }
+  .clause-reader__doc > .clause-plain-toggle,
+  .clause-reader__doc > .clause-plain {
+    grid-column: 2;
+  }
+  /* 쉬운말이 없을 때(1단으로 접힘)는 버튼도 원문과 같은 칸(전체 폭)에 자연스럽게 놓인다. */
+  .clause-reader__doc:not(:has(.clause-plain)) > .clause-plain-toggle {
+    grid-column: 1 / -1;
+  }
+}
+
+/* --- 형광펜 3D 펜 모션 (히어로 장식, HighlighterPenIntro.tsx) --- */
+.pen-intro {
+  display: block;
+  margin: 0 0 16px;
+  perspective: 700px;
+}
+.pen-intro__text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+.pen-intro__target {
+  position: relative;
+  display: inline-block;
+  border-radius: 3px;
+  background-repeat: no-repeat;
+  background-size: 260% 62%;
+  background-position: 160% 78%;
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(250, 204, 21, 0.62) 18%,
+    rgba(250, 204, 21, 0.62) 82%,
+    transparent 100%
+  );
+  animation: pen-sweep-mark 3.6s ease-in-out infinite;
+}
+:root[data-theme="dark"] .pen-intro__target {
+  background-image: linear-gradient(
+    100deg,
+    transparent 0%,
+    rgba(250, 204, 21, 0.4) 18%,
+    rgba(250, 204, 21, 0.4) 82%,
+    transparent 100%
+  );
+}
+@keyframes pen-sweep-mark {
+  0% { background-position: 160% 78%; }
+  40% { background-position: -60% 78%; }
+  88% { background-position: -60% 78%; }
+  100% { background-position: -60% 78%; }
+}
+
+/* 펜 몸체 — div 하나(몸통) + 하나(뾰족한 촉)만으로 만든 입체 펜. 실제 3D 좌표계
+   (perspective+rotateX+rotateZ)를 써서 종이 위로 기울어져 짚는 각도를 낸다. */
+.pen-intro__pen {
+  position: absolute;
+  top: -34px;
+  left: 160%;
+  width: 46px;
+  height: 46px;
+  transform-style: preserve-3d;
+  animation: pen-sweep-move 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes pen-sweep-move {
+  0% { left: 108%; opacity: 0; }
+  6% { opacity: 1; }
+  40% { left: -18%; opacity: 1; }
+  82% { left: -18%; opacity: 1; }
+  88% { opacity: 0; }
+  100% { left: -18%; opacity: 0; }
+}
+.pen-intro__pen-body {
+  position: absolute;
+  bottom: 6px;
+  left: 10px;
+  width: 15px;
+  height: 34px;
+  border-radius: 5px;
+  background: linear-gradient(115deg, #fde047 0%, #facc15 35%, #eab308 70%, #ca8a04 100%);
+  box-shadow:
+    inset -3px 0 4px rgba(0, 0, 0, 0.18),
+    inset 2px 0 3px rgba(255, 255, 255, 0.5),
+    0 10px 14px rgba(120, 90, 10, 0.35);
+  transform: perspective(240px) rotateX(38deg) rotateZ(-32deg);
+  transform-origin: bottom center;
+}
+.pen-intro__pen-tip {
+  position: absolute;
+  bottom: -2px;
+  left: 8px;
+  width: 0;
+  height: 0;
+  border-left: 9.5px solid transparent;
+  border-right: 9.5px solid transparent;
+  border-top: 10px solid #a16207;
+  transform: perspective(240px) rotateX(38deg) rotateZ(-32deg);
+  transform-origin: top center;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25));
+}
+
+/* 모션 최소화 설정을 켠 사용자에게는 반복 애니메이션을 끄고 하이라이트만 고정으로 보여준다. */
+@media (prefers-reduced-motion: reduce) {
+  .pen-intro__target {
+    animation: none;
+    background-position: -60% 78%;
+  }
+  .pen-intro__pen { display: none; }
+}
