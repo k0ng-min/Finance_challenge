@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Icon3D } from "../components/Icon3D";
-import { FloatingIcon } from "../components/FloatingIcon";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { PenWriteCompass } from "../components/PenWriteCompass";
 import { useApp } from "../context/AppContext";
 
 // 자주 쓰는 핵심 기능만 설명과 함께 크게 보여준다.
@@ -44,9 +44,7 @@ export function Home() {
           animate={{ scale: 1, rotate: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 220, damping: 16 }}
         >
-          <FloatingIcon>
-            <Icon3D src="explorer" size={68} />
-          </FloatingIcon>
+          <PenWriteCompass />
         </motion.div>
         <h1 className="home__title">안녕하세요!{"\n"}오늘도 든든하게 떠나볼까요?</h1>
         <p className="home__subtitle">
