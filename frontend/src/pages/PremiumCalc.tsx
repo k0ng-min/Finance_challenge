@@ -179,7 +179,7 @@ export function PremiumCalc() {
                 </span>
                 <span className="premium-row__amount">
                   <span className="premium-row__cost">{item.published_premium.toLocaleString()}원</span>
-                  <small>{data.premium_period_days}일 기준</small>
+                  <small>1일 기준</small>
                 </span>
               </motion.li>
             ))}
