@@ -195,7 +195,7 @@ export function InsurerRankingFlow({
           💳 여행기간·담보구성 등 실제 가입조건 보험료는 보험다모아에서 확인할 수 있어요 →
         </a>
         <p className="rank-premium-note">
-          카드의 금액은 보험다모아 {ranking[0]?.premium_period_days ?? 7}일 표준조건 비교공시값이며,
+          카드의 금액은 보험다모아 {ranking[0]?.premium_period_days ?? 1}일 표준조건 비교공시값이며,
           선택한 여행일수로 환산한 견적이 아닙니다.
         </p>
         <div className="rank-list">
@@ -225,7 +225,7 @@ export function InsurerRankingFlow({
                         <b>{r.published_premium.toLocaleString()}</b>
                         <i>원</i>
                       </span>
-                      <small>{r.premium_period_days ?? 7}일 표준조건</small>
+                      <small>{r.premium_period_days ?? 1}일 표준조건</small>
                     </>
                   ) : (
                     // 왜 금액이 없는지는 서버가 문구로 알려준다(가입연령 밖 등). 조용히 빼지 않는다.

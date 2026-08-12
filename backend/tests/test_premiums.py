@@ -32,7 +32,7 @@ def test_published_premium_is_not_scaled_by_requested_trip_days(db_session):
     ]
 
     assert [r.items[0].published_premium for r in results] == [10_000, 10_000, 10_000]
-    assert [r.premium_period_days for r in results] == [7, 7, 7]
+    assert [r.premium_period_days for r in results] == [1, 1, 1]
     assert all("premium_total" not in r.model_dump() for r in results)
 
 
@@ -44,8 +44,8 @@ def test_ranking_receives_only_published_premium_and_metadata(db_session):
 
     item = ranking[0]
     assert item["published_premium"] == 10_000
-    assert item["premium_period_days"] == 7
-    assert item["premium_basis"] == "보험기간 7일 / 표준보장 담보 기준"
+    assert item["premium_period_days"] == 1
+    assert item["premium_basis"] == "보험기간 1일 / 표준보장 담보 기준"
     assert item["premium_source"] == "보험다모아"
     assert "premium_total" not in item
     assert "premium_days" not in item

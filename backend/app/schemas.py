@@ -140,7 +140,7 @@ class InsurerCoverageOut(BaseModel):
 
 
 class InsurerPremiumOut(BaseModel):
-    """나이·성별 하나에 대한 보험사별 7일 표준조건 비교공시 보험료."""
+    """나이·성별 하나에 대한 보험사별 1일 표준조건 비교공시 보험료."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None
@@ -154,7 +154,7 @@ class PremiumPointOut(BaseModel):
 
 
 class InsurerPremiumCurveOut(BaseModel):
-    """한 보험사의 나이별 7일 표준조건 비교공시 보험료 곡선."""
+    """한 보험사의 나이별 1일 표준조건 비교공시 보험료 곡선."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None

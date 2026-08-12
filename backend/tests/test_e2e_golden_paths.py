@@ -118,7 +118,7 @@ def test_가입_전_여정이_근거와_함께_끝까지_이어진다(client):
                 assert dim["status"] == "근거 부족"
 
         if item["published_premium"] is not None:
-            assert item["premium_period_days"] == 7, "공시 기준 기간이 7일이 아닙니다"
+            assert item["premium_period_days"] == 1, "공시 기준 기간이 1일이 아닙니다"
         else:
             # 값이 없으면 왜 없는지 밝혀야 한다(조용히 빼지 않는다).
             assert item["premium_note"], "보험료가 없는데 사유가 비어 있습니다"

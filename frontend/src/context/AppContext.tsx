@@ -34,6 +34,9 @@ const LS_INCIDENT = "travel_ai_incident_id";
 const LS_TOKEN = "travel_ai_token";
 const LS_NICKNAME = "travel_ai_nickname";
 const LS_EMAIL = "travel_ai_email";
+// 게스트도 서버에서 토큰을 받아 자기 데이터를 꺼내므로, "토큰이 있다 = 로그인했다"가
+// 아니다 — 실제로 로그인한 계정과 자동 생성된 게스트를 구분하는 표시.
+const LS_GUEST = "travel_ai_is_guest";
 // 나이·성별은 게스트도 다시 묻지 않도록 로컬에도 남긴다(로그인 계정은 서버 프로필이 우선).
 const LS_AGE = "travel_ai_age";
 const LS_SEX = "travel_ai_sex";
@@ -64,10 +67,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const u = await api.createUser("guest");
     localStorage.setItem(LS_USER, String(u.user_id));
     localStorage.setItem(LS_TOKEN, u.token);
+    localStorage.setItem(LS_GUEST, "1");
     setUserId(u.user_id);
   }
 
   function applyAuthResult(res: AuthUserOut) {
+    localStorage.removeItem(LS_GUEST);
     localStorage.setItem(LS_TOKEN, res.token);
     localStorage.setItem(LS_USER, String(res.user_id));
     localStorage.setItem(LS_NICKNAME, res.nickname);
@@ -86,15 +91,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (token) {
         try {
           const me = await api.getMe();
+          // 게스트는 토큰이 있어도 "로그인한 사용자"가 아니다 — 로그인한 적이
+          // 없는데 상단에 게스트 닉네임이 로그인 계정처럼 뜨던 원인이 여기였다.
+          // 표시가 없는 예전 세션은 이메일 유무로 판별한다(게스트는 이메일이 없다).
+          const guestFlag = localStorage.getItem(LS_GUEST);
+          const isGuest = guestFlag === "1" || (guestFlag === null && !me.email);
           localStorage.setItem(LS_USER, String(me.user_id));
-          localStorage.setItem(LS_NICKNAME, me.nickname);
-          if (me.email) localStorage.setItem(LS_EMAIL, me.email);
           setUserId(me.user_id);
-          setNickname(me.nickname);
-          setEmail(me.email);
           setAge(me.age);
           setSex(me.sex ?? null);
-          setIsLoggedIn(true);
+          if (isGuest) {
+            // 게스트는 그대로 쓰되(데이터 접근은 토큰으로 계속 된다) 로그인
+            // 상태로는 취급하지 않는다.
+            localStorage.setItem(LS_GUEST, "1");
+            localStorage.removeItem(LS_NICKNAME);
+            localStorage.removeItem(LS_EMAIL);
+            setNickname(null);
+            setEmail(null);
+            setIsLoggedIn(false);
+          } else {
+            localStorage.setItem(LS_NICKNAME, me.nickname);
+            if (me.email) localStorage.setItem(LS_EMAIL, me.email);
+            setNickname(me.nickname);
+            setEmail(me.email);
+            setIsLoggedIn(true);
+          }
           setLoading(false);
           return;
         } catch {
@@ -197,6 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(LS_NICKNAME);
     localStorage.removeItem(LS_EMAIL);
     localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_GUEST);
     clearTripAndIncident();
     setNickname(null);
     setEmail(null);
@@ -218,6 +240,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(LS_NICKNAME);
     localStorage.removeItem(LS_EMAIL);
     localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_GUEST);
     clearTripAndIncident();
     setNickname(null);
     setEmail(null);
