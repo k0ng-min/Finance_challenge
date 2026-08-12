@@ -20,7 +20,6 @@ function App() {
   const { loading } = useApp();
   const location = useLocation();
   const isHome = location.pathname === "/";
-  const isHighlights = location.pathname === "/highlights";
   const mainRef = useRef<HTMLElement>(null);
 
   if (loading) {
@@ -38,7 +37,7 @@ function App() {
   return (
     <>
       <BackgroundDecor />
-      <div className={`app-shell${isHome ? " app-shell--home" : ""}${isHighlights ? " app-shell--highlights" : ""}`}>
+      <div className={`app-shell${isHome ? " app-shell--home" : ""}`}>
         <main className="app-main" ref={mainRef}>
           <Routes>
             <Route path="/" element={<Home />} />
