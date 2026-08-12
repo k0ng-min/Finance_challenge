@@ -2164,11 +2164,13 @@ button { cursor: pointer; font-family: inherit; }
 .overlap-unknown[open] > summary .overlap-group__title::after { content: "▴"; }
 .overlap-unknown[open] > summary .overlap-group__title { margin-bottom: 10px; }
 
+
 /* ============================================================
-   홈 화면 히어로(나침반 자리) — 펜이 "약관형광펜"을 한 글자씩 쓰고,
+   홈 화면 히어로(나침반 자리) — 펜이 "보험형광펜"을 한 글자씩 쓰고,
    다 쓰면 노란 형광펜이 훑고 지나가며 배경을 칠하는 2단계 애니메이션
-   (PenWriteCompass.tsx, 참고: 약관형광펜 Writing.mp4). 이 블록만 지우고
-   호출부를 원래 Icon3D(compass)로 되돌리면 원래대로 복원된다.
+   (PenWriteCompass.tsx, 참고: 약관형광펜 Writing.mp4). 펜·형광펜은 이 앱의 다른
+   아이콘과 같은 출처(Fluent Emoji 3D, MIT)에서 받은 실제 이미지 에셋이다. 이
+   블록만 지우고 호출부를 원래 Icon3D(compass)로 되돌리면 원래대로 복원된다.
    ============================================================ */
 .pwc {
   position: relative;
@@ -2176,40 +2178,52 @@ button { cursor: pointer; font-family: inherit; }
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 320px;
-  height: var(--home-icon-hero, 68px);
-  min-height: 64px;
+  max-width: 560px;
+  min-height: 130px;
+  padding: 10px 0;
 }
 .pwc__text {
   position: relative;
   display: inline-flex;
   font-family: "Gaegu", var(--font-display), sans-serif;
   font-weight: 700;
-  font-size: clamp(1.4rem, 4.6svh, 2.2rem);
+  font-size: clamp(2.8rem, 9.2svh, 4.4rem);
   color: var(--heading);
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
+
+/* 형광펜이 칠한 자리 — 텍스트 뒤가 아니라 위에 그리고 mix-blend-mode:multiply로
+   섞는다. 실제 형광펜이 이미 쓰인 검은 글자 위에 반투명 잉크를 얹었을 때처럼
+   글자가 노란 배경에 "비쳐서" 보이게 하기 위함(불투명 사각형을 글자 뒤에 까는
+   방식보다 훨씬 실제 형광펜에 가깝다). 양끝을 비대칭으로 둥글리고 살짝 기울여
+   손으로 그은 듯한 마감을 낸다. */
 .pwc__highlight-bg {
   position: absolute;
-  left: -5%;
-  right: -5%;
-  top: 14%;
-  bottom: 8%;
-  background: #fde047;
-  border-radius: 4px;
+  left: -3%;
+  right: -3%;
+  top: 18%;
+  bottom: 10%;
+  background: linear-gradient(100deg, #fde047 0%, #fee97a 45%, #fde047 100%);
+  border-radius: 40% 60% 55% 45% / 60% 55% 45% 40%;
   transform-origin: left center;
-  transform: scaleX(0);
-  z-index: -1;
-  animation: pwc-highlight-bg 6.4s linear infinite;
+  transform: scaleX(0) rotate(-0.6deg);
+  mix-blend-mode: multiply;
+  opacity: 0;
+  z-index: 1;
+  animation: pwc-highlight-bg 7.2s ease-in-out infinite;
 }
-:root[data-theme="dark"] .pwc__highlight-bg { background: #ca8a04; }
+:root[data-theme="dark"] .pwc__highlight-bg {
+  background: linear-gradient(100deg, #ca8a04 0%, #eab308 45%, #ca8a04 100%);
+  mix-blend-mode: screen;
+  opacity: 0;
+}
 
 .pwc__char {
   position: relative;
   display: inline-block;
-  animation-duration: 6.4s;
-  animation-timing-function: linear;
+  animation-duration: 7.2s;
+  animation-timing-function: ease-out;
   animation-iteration-count: infinite;
 }
 .pwc__char--0 { animation-name: pwc-char0; }
@@ -2218,104 +2232,56 @@ button { cursor: pointer; font-family: inherit; }
 .pwc__char--3 { animation-name: pwc-char3; }
 .pwc__char--4 { animation-name: pwc-char4; }
 
-@keyframes pwc-char0 { 0%,5% { opacity: 0; transform: scale(0.7); } 7% { opacity: 1; transform: scale(1); } 92% { opacity: 1; transform: scale(1); } 96%,100% { opacity: 0; } }
-@keyframes pwc-char1 { 0%,12% { opacity: 0; transform: scale(0.7); } 14% { opacity: 1; transform: scale(1); } 92% { opacity: 1; transform: scale(1); } 96%,100% { opacity: 0; } }
-@keyframes pwc-char2 { 0%,19% { opacity: 0; transform: scale(0.7); } 21% { opacity: 1; transform: scale(1); } 92% { opacity: 1; transform: scale(1); } 96%,100% { opacity: 0; } }
-@keyframes pwc-char3 { 0%,26% { opacity: 0; transform: scale(0.7); } 28% { opacity: 1; transform: scale(1); } 92% { opacity: 1; transform: scale(1); } 96%,100% { opacity: 0; } }
-@keyframes pwc-char4 { 0%,33% { opacity: 0; transform: scale(0.7); } 35% { opacity: 1; transform: scale(1); } 92% { opacity: 1; transform: scale(1); } 96%,100% { opacity: 0; } }
+@keyframes pwc-char0 { 0%,4% { opacity: 0; transform: translateY(6px) scale(0.75); } 11% { opacity: 1; transform: translateY(0) scale(1); } 92% { opacity: 1; transform: translateY(0) scale(1); } 97%,100% { opacity: 0; } }
+@keyframes pwc-char1 { 0%,11% { opacity: 0; transform: translateY(6px) scale(0.75); } 18% { opacity: 1; transform: translateY(0) scale(1); } 92% { opacity: 1; transform: translateY(0) scale(1); } 97%,100% { opacity: 0; } }
+@keyframes pwc-char2 { 0%,18% { opacity: 0; transform: translateY(6px) scale(0.75); } 25% { opacity: 1; transform: translateY(0) scale(1); } 92% { opacity: 1; transform: translateY(0) scale(1); } 97%,100% { opacity: 0; } }
+@keyframes pwc-char3 { 0%,25% { opacity: 0; transform: translateY(6px) scale(0.75); } 32% { opacity: 1; transform: translateY(0) scale(1); } 92% { opacity: 1; transform: translateY(0) scale(1); } 97%,100% { opacity: 0; } }
+@keyframes pwc-char4 { 0%,32% { opacity: 0; transform: translateY(6px) scale(0.75); } 39% { opacity: 1; transform: translateY(0) scale(1); } 92% { opacity: 1; transform: translateY(0) scale(1); } 97%,100% { opacity: 0; } }
 
 @keyframes pwc-highlight-bg {
-  0%, 49% { transform: scaleX(0); opacity: 0.001; }
-  50% { opacity: 1; }
-  72% { transform: scaleX(1); opacity: 1; }
-  92% { transform: scaleX(1); opacity: 1; }
-  96% { opacity: 0; transform: scaleX(1); }
-  100% { opacity: 0; transform: scaleX(0); }
+  0%, 51% { transform: scaleX(0) rotate(-0.6deg); opacity: 0; }
+  53% { opacity: 1; }
+  78% { transform: scaleX(1) rotate(-0.6deg); opacity: 1; }
+  88% { transform: scaleX(1) rotate(-0.6deg); opacity: 1; }
+  93% { opacity: 0; }
+  100% { opacity: 0; transform: scaleX(0) rotate(-0.6deg); }
 }
 
-/* --- 펜·형광펜 (실제 3D 좌표계: perspective+rotate) --- */
+/* --- 펜·형광펜: 실제 3D 렌더 이미지(Fluent Emoji 3D) --- */
 .pwc__pen,
 .pwc__highlighter {
   position: absolute;
-  top: -8px;
-  width: 34px;
-  height: 34px;
-  perspective: 150px;
-  transform-style: preserve-3d;
+  top: -18%;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
   pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
 }
-.pwc__pen { animation: pwc-pen-write 6.4s linear infinite; }
-.pwc__highlighter { animation: pwc-highlighter-move 6.4s linear infinite; }
+.pwc__pen { animation: pwc-pen-write 7.2s ease-in-out infinite; }
+.pwc__highlighter { animation: pwc-highlighter-move 7.2s ease-in-out infinite; }
 
 @keyframes pwc-pen-write {
-  0% { left: -6%; opacity: 0; }
-  4% { opacity: 1; }
-  6%, 7% { left: 4%; }
-  12%, 13% { left: 22%; }
-  19%, 20% { left: 40%; }
-  26%, 27% { left: 58%; }
-  33%, 35% { left: 76%; opacity: 1; }
-  40% { left: 90%; opacity: 0; }
-  100% { left: 90%; opacity: 0; }
+  0% { left: -8%; opacity: 0; transform: rotate(-6deg); }
+  6% { opacity: 1; transform: rotate(4deg); }
+  11% { left: 6%; transform: rotate(-6deg); }
+  18% { left: 24%; transform: rotate(4deg); }
+  25% { left: 42%; transform: rotate(-6deg); }
+  32% { left: 60%; transform: rotate(4deg); }
+  39% { left: 78%; opacity: 1; transform: rotate(-6deg); }
+  46% { left: 92%; opacity: 0; transform: rotate(10deg); }
+  100% { left: 92%; opacity: 0; }
 }
 @keyframes pwc-highlighter-move {
-  0%, 46% { left: -6%; opacity: 0; }
-  49% { opacity: 1; left: -2%; }
-  72% { left: 96%; opacity: 1; }
-  80%, 100% { left: 102%; opacity: 0; }
-}
-
-.pwc__pen-body {
-  position: absolute;
-  bottom: 8px;
-  left: 12px;
-  width: 8px;
-  height: 26px;
-  border-radius: 3px;
-  background: linear-gradient(115deg, #4b5563 0%, #1f2937 45%, #111827 100%);
-  box-shadow: inset -1px 0 2px rgba(255, 255, 255, 0.15), inset 1px 0 2px rgba(0, 0, 0, 0.3);
-  transform: perspective(100px) rotateX(35deg) rotateZ(-32deg);
-  transform-origin: bottom center;
-}
-.pwc__pen-tip {
-  position: absolute;
-  bottom: 3px;
-  left: 10px;
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 6px solid #cbd5e1;
-  transform: perspective(100px) rotateX(35deg) rotateZ(-32deg);
-  transform-origin: top center;
-}
-.pwc__highlighter-body {
-  position: absolute;
-  bottom: 8px;
-  left: 12px;
-  width: 10px;
-  height: 26px;
-  border-radius: 3px;
-  background: linear-gradient(115deg, #fde047 0%, #facc15 40%, #eab308 75%, #ca8a04 100%);
-  box-shadow: inset -1.5px 0 2px rgba(0, 0, 0, 0.2), inset 1px 0 2px rgba(255, 255, 255, 0.55);
-  transform: perspective(100px) rotateX(35deg) rotateZ(-32deg);
-  transform-origin: bottom center;
-}
-.pwc__highlighter-tip {
-  position: absolute;
-  bottom: 4px;
-  left: 10px;
-  width: 0;
-  height: 0;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  border-top: 7px solid #a16207;
-  transform: perspective(100px) rotateX(35deg) rotateZ(-32deg);
-  transform-origin: top center;
+  0%, 50% { left: -8%; opacity: 0; transform: rotate(-8deg); }
+  53% { opacity: 1; left: -3%; }
+  78% { left: 94%; opacity: 1; transform: rotate(-2deg); }
+  88% { left: 100%; opacity: 0; transform: rotate(6deg); }
+  100% { left: 100%; opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pwc__char { animation: none; opacity: 1; transform: scale(1); }
-  .pwc__highlight-bg { animation: none; transform: scaleX(1); opacity: 1; }
+  .pwc__char { animation: none; opacity: 1; transform: translateY(0) scale(1); }
+  .pwc__highlight-bg { animation: none; transform: scaleX(1) rotate(-0.6deg); opacity: 1; }
   .pwc__pen, .pwc__highlighter { display: none; }
 }
