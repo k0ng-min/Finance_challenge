@@ -2196,25 +2196,28 @@ button { cursor: pointer; font-family: inherit; }
 /* 형광펜이 칠한 자리 — 텍스트 뒤가 아니라 위에 그리고 mix-blend-mode:multiply로
    섞는다. 실제 형광펜이 이미 쓰인 검은 글자 위에 반투명 잉크를 얹었을 때처럼
    글자가 노란 배경에 "비쳐서" 보이게 하기 위함(불투명 사각형을 글자 뒤에 까는
-   방식보다 훨씬 실제 형광펜에 가깝다). 양끝을 비대칭으로 둥글리고 살짝 기울여
-   손으로 그은 듯한 마감을 낸다. */
+   방식보다 훨씬 실제 형광펜에 가깝다). 모양 자체는 각진 직사각형을 유지하고
+   (border-radius로 둥근 blob을 만들면 타원처럼 보인다), 대신 mask-image로
+   좌우 끝만 투명하게 페이드시켜 형광펜이 힘이 빠지며 스치듯 끝나는 느낌을 낸다. */
 .pwc__highlight-bg {
   position: absolute;
-  left: -3%;
-  right: -3%;
-  top: 18%;
+  left: -1%;
+  right: -1%;
+  top: 16%;
   bottom: 10%;
-  background: linear-gradient(100deg, #fde047 0%, #fee97a 45%, #fde047 100%);
-  border-radius: 40% 60% 55% 45% / 60% 55% 45% 40%;
+  background: #fde047;
+  border-radius: 3px;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
   transform-origin: left center;
-  transform: scaleX(0) rotate(-0.6deg);
+  transform: scaleX(0);
   mix-blend-mode: multiply;
   opacity: 0;
   z-index: 1;
   animation: pwc-highlight-bg 7.2s ease-in-out infinite;
 }
 :root[data-theme="dark"] .pwc__highlight-bg {
-  background: linear-gradient(100deg, #ca8a04 0%, #eab308 45%, #ca8a04 100%);
+  background: #eab308;
   mix-blend-mode: screen;
   opacity: 0;
 }
@@ -2239,12 +2242,12 @@ button { cursor: pointer; font-family: inherit; }
 @keyframes pwc-char4 { 0%,32% { opacity: 0; transform: translateY(6px) scale(0.75); } 39% { opacity: 1; transform: translateY(0) scale(1); } 92% { opacity: 1; transform: translateY(0) scale(1); } 97%,100% { opacity: 0; } }
 
 @keyframes pwc-highlight-bg {
-  0%, 51% { transform: scaleX(0) rotate(-0.6deg); opacity: 0; }
+  0%, 51% { transform: scaleX(0); opacity: 0; }
   53% { opacity: 1; }
-  78% { transform: scaleX(1) rotate(-0.6deg); opacity: 1; }
-  88% { transform: scaleX(1) rotate(-0.6deg); opacity: 1; }
+  78% { transform: scaleX(1); opacity: 1; }
+  88% { transform: scaleX(1); opacity: 1; }
   93% { opacity: 0; }
-  100% { opacity: 0; transform: scaleX(0) rotate(-0.6deg); }
+  100% { opacity: 0; transform: scaleX(0); }
 }
 
 /* --- 펜·형광펜: 실제 3D 렌더 이미지(Fluent Emoji 3D) --- */
@@ -2282,6 +2285,6 @@ button { cursor: pointer; font-family: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   .pwc__char { animation: none; opacity: 1; transform: translateY(0) scale(1); }
-  .pwc__highlight-bg { animation: none; transform: scaleX(1) rotate(-0.6deg); opacity: 1; }
+  .pwc__highlight-bg { animation: none; transform: scaleX(1); opacity: 1; }
   .pwc__pen, .pwc__highlighter { display: none; }
 }
