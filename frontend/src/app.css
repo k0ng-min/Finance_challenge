@@ -2182,9 +2182,12 @@ button { cursor: pointer; font-family: inherit; }
   min-height: 130px;
   padding: 10px 0;
 }
-/* 지우개 단계(88%~98%)에서 왼쪽부터 통째로(글자+하이라이트) 가려서 "지워지는"
-   효과를 낸다. 개별 글자의 clip-path(쓰는 단계)와는 별개로 부모 단계에서 한 번 더
-   덮어씌우는 것 — 아래 pwc__eraser의 이동 구간과 반드시 같이 맞춰 고칠 것. */
+/* 아래 모든 애니메이션(글자 획, 펜, 형광펜, 지우개, 지워지는 clip-path)은
+   CSS keyframes가 아니라 PenWriteCompass.tsx의 GSAP 타임라인
+   (gsap.timeline({repeat:-1}), DrawSVGPlugin + MotionPathPlugin)이 인라인
+   스타일로 직접 찍어준다 — 참고한 CodePen(akshsharma1218, "Animated
+   Handwriting with DrawSVG GSAP3")과 같은 방식. 여기 CSS는 정적인 모양/색만
+   담당한다. */
 .pwc__text {
   position: relative;
   display: inline-flex;
@@ -2192,12 +2195,6 @@ button { cursor: pointer; font-family: inherit; }
   font-size: clamp(2.8rem, 9.2svh, 4.4rem);
   letter-spacing: 0.01em;
   white-space: nowrap;
-  clip-path: inset(0 0 0 0%);
-  animation: pwc-text-erase 36s linear infinite;
-}
-@keyframes pwc-text-erase {
-  0%, 88% { clip-path: inset(0 0 0 0%); }
-  98%, 100% { clip-path: inset(0 0 0 100%); }
 }
 
 /* 형광펜이 칠한 자리 — 텍스트 뒤가 아니라 위에 그리고 mix-blend-mode:multiply로
@@ -2216,84 +2213,35 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: 3px;
   mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
-  transform-origin: left center;
-  transform: scaleX(0);
   mix-blend-mode: multiply;
-  opacity: 0;
   z-index: 1;
-  animation: pwc-highlight-bg 36s ease-in-out infinite;
 }
 :root[data-theme="dark"] .pwc__highlight-bg {
   background: #eab308;
   mix-blend-mode: screen;
-  opacity: 0;
 }
 
-/* 글자가 통째로 팝업되지 않고, 펜이 실제 글자 윤곽선(opentype.js로 뽑은 진짜
-   Gaegu 폰트 glyph path, src/generated/penGlyphPaths.ts) 위를 실제로 지나가면서
-   (PenWriteCompass.tsx의 requestAnimationFrame 루프) 꽉 찬 글자 fill을
-   펜이 도달한 x좌표까지만 clip-path로 드러낸다 — 항상 "완전한 글자 모양"만
-   보이므로 ㅂ/ㅁ처럼 안이 뚫린 글자도 속이 빈 테두리로 보이지 않는다. */
+/* 손으로 그린 자모 획 순서(스켈레톤 path, src/data/penStrokes.ts) — 이 stroke
+   자체가 잉크라서 ㅂ/ㅁ처럼 안이 뚫린 글자도 실제 손글씨처럼 획만 두껍게
+   채워지고 속이 빈 테두리로 보이지 않는다. GSAP DrawSVGPlugin이
+   stroke-dasharray/dashoffset을 직접 관리한다. */
 .pwc__char {
   position: relative;
   display: inline-block;
+  width: 0.92em;
   height: 1em;
   overflow: visible;
 }
-/* 화면에는 그리지 않고, 펜이 따라갈 좌표를 getPointAtLength로 구하기 위한
-   기하 전용 path — 렌더는 되어야 좌표 계산이 되므로 display:none 대신
-   투명하게만 처리한다. */
-.pwc__char-guide {
+.pwc__char-stroke {
   fill: none;
-  stroke: none;
-}
-.pwc__char-fill-live {
-  fill: var(--heading);
-  clip-path: inset(0 100% 0 0);
-}
-
-@keyframes pwc-highlight-bg {
-  0%, 51% { transform: scaleX(0); opacity: 0; }
-  53% { opacity: 1; }
-  78%, 99% { transform: scaleX(1); opacity: 1; }
-  100% { opacity: 0; transform: scaleX(0); }
+  stroke: var(--heading);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-/* --- 형광펜: 실제 3D 렌더 이미지(Fluent Emoji 3D) --- */
-.pwc__highlighter {
-  position: absolute;
-  top: -18%;
-  width: 58px;
-  height: 58px;
-  object-fit: contain;
-  pointer-events: none;
-  filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
-  animation: pwc-highlighter-move 36s ease-in-out infinite;
-}
-
-/* 펜(pwc__pen-svg)은 이제 각 글자 svg 안의 <image>로, CSS 애니메이션이
-   아니라 PenWriteCompass.tsx의 requestAnimationFrame 루프가
-   getPointAtLength로 실제 획 좌표를 읽어 transform을 직접 찍어준다 —
-   그래서 opacity 전환만 부드럽게 CSS로 처리한다. */
-.pwc__pen-svg {
-  pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(53, 104, 201, 0.3));
-  transition: opacity 0.12s linear;
-}
-
-@keyframes pwc-highlighter-move {
-  0%, 50% { left: -8%; opacity: 0; transform: rotate(-8deg); }
-  53% { opacity: 1; left: -3%; }
-  78% { left: 94%; opacity: 1; transform: rotate(-2deg); }
-  88% { left: 100%; opacity: 0; transform: rotate(6deg); }
-  100% { left: 100%; opacity: 0; }
-}
-
-/* --- 지우개(연필 뒤쪽 끝) — 오른쪽위→왼쪽아래 대각선을 반복하며(쓱싹쓱싹)
-   전체적으로는 오른쪽으로 이동한다. 지우개 전용 에셋이 없어 연필을 180도 돌려
-   지우개 쪽 끝이 아래(글자 쪽)를 향하게 쓴다. 실제로 지워지는 건 이 이미지가
-   아니라 위 pwc-text-erase(부모 clip-path)이며, 이 키프레임은 그 구간(88%~98%)과
-   맞춰 시각적으로만 훑고 지나가는 척한다. */
+/* --- 펜·형광펜·지우개: 실제 3D 렌더 이미지 --- */
+.pwc__highlighter,
 .pwc__eraser {
   position: absolute;
   top: -18%;
@@ -2302,26 +2250,13 @@ button { cursor: pointer; font-family: inherit; }
   object-fit: contain;
   pointer-events: none;
   filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
-  animation: pwc-eraser-scrub 36s linear infinite;
 }
-@keyframes pwc-eraser-scrub {
-  0%, 87% { left: -8%; top: -18%; opacity: 0; transform: rotate(174deg); }
-  88% { left: 6%; top: -26%; opacity: 1; transform: rotate(170deg); }
-  89.4% { left: -2%; top: -10%; transform: rotate(184deg); }
-  90.4% { left: 24%; top: -26%; transform: rotate(170deg); }
-  91.8% { left: 16%; top: -10%; transform: rotate(184deg); }
-  92.8% { left: 42%; top: -26%; transform: rotate(170deg); }
-  94.2% { left: 34%; top: -10%; transform: rotate(184deg); }
-  95.2% { left: 60%; top: -26%; transform: rotate(170deg); }
-  96.6% { left: 52%; top: -10%; transform: rotate(184deg); }
-  97.6% { left: 90%; top: -18%; opacity: 1; transform: rotate(178deg); }
-  98.4% { left: 98%; opacity: 0; transform: rotate(178deg); }
-  100% { left: 98%; opacity: 0; }
+.pwc__pen-svg {
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(53, 104, 201, 0.3));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pwc__text { animation: none; clip-path: inset(0 0 0 0%); }
-  .pwc__char-fill-live { clip-path: inset(0 0% 0 0); }
-  .pwc__highlight-bg { animation: none; transform: scaleX(1); opacity: 1; }
+  .pwc__char-stroke { stroke-dasharray: none; }
   .pwc__pen-svg, .pwc__highlighter, .pwc__eraser { display: none; }
 }
