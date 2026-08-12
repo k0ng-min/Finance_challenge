@@ -37,10 +37,14 @@ import { PEN_GLYPH_PATHS } from "../generated/penGlyphPaths";
  * Microsoft)에서 받은 실제 3D 렌더 이미지다(/public/3d/crayon.webp).
  * 되돌리고 싶으면 Home.tsx에서 이 컴포넌트 호출을 원래 Icon3D로 바꾸면 된다. */
 
-// 자모 덩어리 하나를 그리는 데 걸리는 시간 — 글자마다 덩어리 수가 달라서
-// (보=1→2밴드, 험/형=3, 광/펜=4) 글자 전체 시간도 자연스럽게 복잡도에
-// 비례한다.
-const GROUP_DURATION = 1.65;
+// 모든 자모 덩어리에 같은 시간(예전의 고정 GROUP_DURATION)을 주면, ㅎ의 작은
+// 위쪽 고리처럼 실제 길이가 짧은 획도 큰 원만큼 오래 걸려서 "거의 안 자라는
+// 작은 점" 상태로 한참 머문다 — 그게 실제로는 잔상이나 버그가 아니라 그냥
+// 짧은 획이 부자연스럽게 느리게 그려지는 것뿐이었다. 그래서 실제 획 길이에
+// 비례한 속도로 그리되(짧은 획은 금방, 긴 획은 그만큼 오래), 너무 짧아
+// 순간적으로 사라지듯 그려지지 않게 최소 시간만 깔아 둔다.
+const UNITS_PER_SEC = 1000;
+const MIN_GROUP_DURATION = 0.4;
 const CHAR_GAP = 0.1;
 // mask stroke 굵기 = bbox 짧은 쪽 변 × 비율. ㅁ/ㅇ/ㅎ처럼 널찍한(정사각形에
 // 가까운) 덩어리는 bbox가 "구멍 크기"를 반영하므로 낮은 비율이 맞지만, ㅣ처럼
@@ -108,14 +112,21 @@ export function PenWriteCompass() {
         maskStrokeRefs.current[i].forEach((strokeEl) => {
           if (!strokeEl) return;
           const len = strokeEl.getTotalLength();
+          const duration = Math.max(MIN_GROUP_DURATION, len / UNITS_PER_SEC);
 
           tl.set(strokeEl, { strokeDashoffset: len });
           tl.to(
             {},
             {
-              duration: GROUP_DURATION,
+              duration,
               onUpdate() {
-                const dist = this.progress() * len;
+                // 처음 그려지는 짧은 구간(원의 시작 부분 등)은 그대로 두면
+                // 선이 아니라 작은 뭉친 점처럼 보이는 순간이 길게 이어진다 —
+                // 진행률을 그대로 안 쓰고 ease-out(초반 빠르게, 후반
+                // 차분하게)으로 눌러서 그 "작은 점" 단계를 빨리 지나가게 한다.
+                const raw = this.progress();
+                const eased = 1 - (1 - raw) * (1 - raw);
+                const dist = eased * len;
                 strokeEl.style.strokeDashoffset = String(len - dist);
               },
             },

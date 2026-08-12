@@ -2238,7 +2238,14 @@ button { cursor: pointer; font-family: inherit; }
 .pwc__char-mask-stroke {
   fill: none;
   stroke: #fff;
-  stroke-linecap: round;
+  /* stroke-linecap:round를 쓰면, 아직 안 그려진(strokeDashoffset이 전체
+     길이와 같은, 즉 dash 길이가 0인) 자모 조각의 각 서브패스 시작/끝점에
+     둥근 캡이 "0 길이 dash"보다 살짝 더 튀어나와 작은 점으로 보이는
+     렌더링 문제가 있었다 — 아직 쓰지도 않은 뒤쪽 글자들이 작은 점들처럼
+     흩뿌려져 보이던 원인이 바로 이거였다(getBBox/stroke-dasharray 값 자체는
+     0%로 정확했는데, 렌더링에서만 새어나온 것). butt로 바꿔서 0-길이 dash가
+     실제로 아무것도 안 그리게 한다. */
+  stroke-linecap: butt;
   stroke-linejoin: round;
   /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 자모"가 잠깐 그대로
      다 보이는 깜빡임을 막는 기본값 — 실제 굵기/길이는
