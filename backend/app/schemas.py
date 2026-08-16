@@ -536,3 +536,91 @@ class OverlapReportOut(BaseModel):
     gaps: list[OverlapFindingOut] = []
     fixed_ok: list[OverlapFindingOut] = []
     unknown: list[OverlapFindingOut] = []
+
+
+# --- 현지 대응 팩(「현지에서」) --------------------------------------------
+# 한 번의 요청으로 사고유형 8개분을 전부 담는다. 오프라인 캐시에 실리는 단위가 요청
+# 하나여야 비행기모드에서 화면이 온전히 뜬다(services/onsite.py 참고).
+
+class OnsiteRequirementOut(BaseModel):
+    #: 한국어 원문. 현지어만 단독으로 나가는 일이 없도록 항상 채운다.
+    label_ko: str
+    #: 번역을 못 구하면 None — 빈 문자열이나 한국어를 대신 넣지 않는다(번역된 척하지 않는다).
+    label_local: Optional[str] = None
+    clause_id: Optional[int] = None
+    clause_article_no: Optional[str] = None
+    #: 조항 원문의 부분 문자열. 근거는 번역하지 않는다.
+    clause_quote: Optional[str] = None
+    insurer_name: Optional[str] = None
+
+
+class OnsiteDocOut(BaseModel):
+    required_doc_std_id: int
+    doc_code: str
+    doc_name_ko: str
+    doc_name_local: Optional[str] = None
+    acquire_location: Optional[str] = None
+    note: Optional[str] = None
+    status: Optional[str] = None
+    requirements: list[OnsiteRequirementOut] = []
+
+
+class OnsiteIncidentTypeOut(BaseModel):
+    type_id: int
+    l1_code: str
+    name: str
+
+
+class OnsitePackOut(BaseModel):
+    country: Optional[str] = None
+    lang_code: str
+    lang_name_ko: str
+    intro_ko: str
+    intro_local: Optional[str] = None
+    trip_id: Optional[int] = None
+    start_date: Optional[dt.date] = None
+    end_date: Optional[dt.date] = None
+    insurer_names: list[str] = []
+    incident_types: list[OnsiteIncidentTypeOut] = []
+    docs_by_type: dict[int, list[OnsiteDocOut]] = {}
+    #: 연결된 사고가 있을 때만. 없으면 0/N으로 지어내지 않고 None으로 둔다.
+    progress_total: Optional[int] = None
+    progress_secured: Optional[int] = None
+    generated_at: dt.datetime
+
+
+# --- 사고 시뮬레이션 --------------------------------------------------------
+
+class SimulationResultOut(BaseModel):
+    insurer_name: str
+    #: 직접 | 조건부 | 면책 | 확인불가
+    verdict: str
+    coverage_name: Optional[str] = None
+    clause_article_no: Optional[str] = None
+    clause_quote: Optional[str] = None
+
+
+class SimulationSubTypeOut(BaseModel):
+    type_id: int
+    name: str
+
+
+class SimulatedScenarioOut(BaseModel):
+    code: str
+    title: str
+    narrative: str
+    l1_type_id: int
+    selected_type_id: int
+    incident_type_name: str
+    sub_types: list[SimulationSubTypeOut] = []
+    results: list[SimulationResultOut] = []
+
+
+class SimulationOut(BaseModel):
+    trip_id: int
+    destination: Optional[str] = None
+    start_date: Optional[dt.date] = None
+    end_date: Optional[dt.date] = None
+    scenarios: list[SimulatedScenarioOut] = []
+    #: 화면에 고정으로 띄우는 경계 문구. 서버가 내려보내 화면과 테스트가 같은 문장을 쓴다.
+    disclaimer: str

@@ -235,9 +235,16 @@ body {
   --home-card-desc: clamp(0.7rem, 1.45svh, 0.84rem);
   --home-quick-label: clamp(0.62rem, 1.25svh, 0.74rem);
 
-  --home-h-hero: clamp(120px, 22svh, 200px);
-  --home-h-card: clamp(64px, 11svh, 96px);
-  --home-h-quick: clamp(72px, 13svh, 104px);
+  /* 각 밴드의 "이보다 더 줄이면 내용이 상자를 넘친다"는 하한선. clamp의 최솟값과 아래
+     min-height가 같은 값을 쓰도록 이름을 붙여 둔다 — 둘이 어긋나면 창을 낮췄을 때
+     칸끼리 겹쳐 보인다(실제로 겪은 증상). */
+  --home-h-hero-min: 112px;
+  --home-h-card-min: 62px;
+  --home-h-quick-min: 70px;
+
+  --home-h-hero: clamp(var(--home-h-hero-min), 22svh, 200px);
+  --home-h-card: clamp(var(--home-h-card-min), 11svh, 96px);
+  --home-h-quick: clamp(var(--home-h-quick-min), 13svh, 104px);
 
   display: flex;
   flex-direction: column;
@@ -279,7 +286,8 @@ body {
   padding: 0 6px;
   /* 기본 크기는 내용만큼(auto), 칸들이 자리를 잡고 남는 높이는 전부 여기로 온다(위 3번). */
   flex: 1 1 auto;
-  min-height: 0;
+  /* 0으로 두면 창이 낮을 때 인사말·아이콘이 상자 밖으로 밀려나 아래 카드와 겹친다. */
+  min-height: var(--home-h-hero-min);
 }
 .home__hero .icon3d { width: var(--home-icon-hero) !important; height: var(--home-icon-hero) !important; }
 .home__title {
@@ -300,7 +308,7 @@ body {
      shrink는 열어둔다. */
   flex: 0 1 auto;
   height: calc(var(--home-h-card) * 2 + var(--home-gap));
-  min-height: 0;
+  min-height: calc(var(--home-h-card-min) * 2 + var(--home-gap));
 }
 .home-card {
   display: flex;
@@ -337,7 +345,7 @@ body {
   gap: var(--home-gap);
   flex: 0 1 auto;
   height: var(--home-h-quick);
-  min-height: 0;
+  min-height: var(--home-h-quick-min);
 }
 /* margin-top:auto를 쓰지 않는다 — 남는 높이를 전부 푸터 위 한 군데에 몰아버려서
    화면 아래쪽이 통째로 비는 원인이었다. 이제는 밴드들이 비율대로 나눠 갖는다. */
@@ -1891,7 +1899,10 @@ button { cursor: pointer; font-family: inherit; }
      없이 계산한다 — 상한선이 있으면 뷰포트가 커질수록 여백만 계속 벌어져 버렸다. */
   .app-shell {
     height: calc(100vh - 80px);
-    min-height: 0;
+    /* 창을 세로로 아주 낮추면 프레임이 같이 납작해지면서 안쪽 칸들이 서로 겹쳐 보였다.
+       프레임에 하한을 두고, 그보다 낮은 창에서는 프레임을 줄이는 대신 바깥(body)이
+       스크롤되게 한다 — 겹쳐 보이는 것보다 스크롤이 낫다. */
+    min-height: 560px;
     width: 760px;
     flex: none;
     background: var(--card-bg-translucent);
@@ -1948,7 +1959,10 @@ button { cursor: pointer; font-family: inherit; }
      오버레이가 없지만 다른 화면에는 있으므로, 셸 전체에 걸면 안 된다. */
   .app-shell--home .app-main {
     padding-bottom: 0;
-    overflow: hidden;
+    /* 원래 hidden이었다. 홈이 프레임에 "정확히 들어맞는다"는 전제였는데, 창을 낮추거나
+       브라우저 글자 크기를 키우면 그 전제가 깨지면서 내용이 잘려 사라졌다. auto면 그런
+       경우에만 막대가 생기고 평소에는 넘치지 않아 그대로 보인다. */
+    overflow-y: auto;
     container-type: size;
     container-name: shell;
   }
@@ -1967,9 +1981,9 @@ button { cursor: pointer; font-family: inherit; }
     --home-card-desc: clamp(0.78rem, 1.7cqh, 0.96rem);
     --home-quick-label: clamp(0.68rem, 1.45cqh, 0.86rem);
     /* 칸 높이 상한도 프레임 높이 기준으로 — 프레임이 커지면 칸도 어느 정도까지는 같이 커진다. */
-    --home-h-hero: clamp(140px, 24cqh, 240px);
-    --home-h-card: clamp(74px, 13.5cqh, 138px);
-    --home-h-quick: clamp(84px, 15.5cqh, 156px);
+    --home-h-hero: clamp(var(--home-h-hero-min), 24cqh, 240px);
+    --home-h-card: clamp(var(--home-h-card-min), 13.5cqh, 138px);
+    --home-h-quick: clamp(var(--home-h-quick-min), 15.5cqh, 156px);
     padding-top: 0;
     padding-bottom: clamp(10px, 2cqh, 26px);
   }
@@ -1988,6 +2002,7 @@ button { cursor: pointer; font-family: inherit; }
     .home__quick-grid {
       grid-template-columns: repeat(2, 1fr);
       height: calc(var(--home-h-quick) * 2 + var(--home-gap));
+      min-height: calc(var(--home-h-quick-min) * 2 + var(--home-gap));
     }
     .home-quick { flex-direction: row; justify-content: center; gap: clamp(8px, 1.6cqh, 16px); }
     .home-quick .icon3d {
@@ -2243,47 +2258,32 @@ button { cursor: pointer; font-family: inherit; }
   mix-blend-mode: screen;
 }
 
-/* 글자는 실제 폰트(학교안심 민들레홀씨 R, KERIS, OFL)에서 opentype.js로 뽑은
-   진짜 윤곽선이다(자모 단위 groups, src/generated/penGlyphPaths.ts).
-   pwc__char-mask-stroke는 그 윤곽선을 stroke-dasharray/dashoffset으로 점점
-   그려나가는 획 — 화면에 직접 보이지 않고 <mask>로만 쓰여서, 그 아래 꽉 찬
-   pwc__char-fill-live(진짜 자모 모양)를 획이 지나간 만큼만 드러낸다. 그냥
-   윤곽선을 화면에 직접 그리면 ㅁ/ㅇ처럼 안이 뚫린 자모가 속이 빈 테두리로
-   보이는데, mask를 거치면 항상 "완전한 자모 모양"으로 채워져 보인다
-   (PenWriteCompass.tsx). */
-.pwc__char {
-  position: relative;
-  display: inline-block;
-  height: 1em;
+/* 글자는 실제 폰트(학교안심 민들레홀씨 R, KERIS, OFL)의 글리프이고, 획 순서
+   데이터까지 같이 들어 있다(src/generated/penStrokeGlyphs.ts).
+   pwc__word-stroke는 획 하나의 "중심선" — 화면에 직접 보이지 않고 <mask>로만
+   쓰여서, 그 아래 완성된 글자 모양(pwc__char-fill-live)을 붓이 지나간 만큼만
+   드러낸다. 각 중심선은 그 획의 윤곽선(clipPath)으로 잘려 있어서, 붓이 아무리
+   두꺼워도 획 밖으로는 절대 번지지 않는다 — 그래서 삐침처럼 굵기가 변하는
+   끝부분도 폰트 모양 그대로 나온다(PenWriteCompass.tsx). */
+.pwc__word {
+  display: block;
+  /* viewBox가 3895×880 유닛이고 1em = 1000유닛이라, 그대로 em으로 환산해서
+     글꼴 크기(=.pwc__text의 font-size)에 따라 같이 커지고 작아지게 한다. */
+  width: 3.895em;
+  height: 0.88em;
   overflow: visible;
 }
-.pwc__char-mask-stroke {
+.pwc__word-stroke {
   fill: none;
   stroke: #fff;
-  /* stroke-linecap:round를 쓰면, 아직 안 그려진(strokeDashoffset이 전체
-     길이와 같은, 즉 dash 길이가 0인) 자모 조각의 각 서브패스 시작/끝점에
-     둥근 캡이 "0 길이 dash"보다 살짝 더 튀어나와 작은 점으로 보이는
-     렌더링 문제가 있었다 — 아직 쓰지도 않은 뒤쪽 글자들이 작은 점들처럼
-     흩뿌려져 보이던 원인이 바로 이거였다(getBBox/stroke-dasharray 값 자체는
-     0%로 정확했는데, 렌더링에서만 새어나온 것). butt로 바꿔서 0-길이 dash가
-     실제로 아무것도 안 그리게 한다. */
-  /* 닫힌 윤곽선은 시작점과 끝점이 같은 지점이라, 그 지점 주변은 트레이스의
-     "시작"과 "끝"이 양쪽에서 다 지나가야 비로소 다 덮인다 — butt(뭉툭한) 캡을
-     쓰면 시작점 뒤쪽으로는 붓이 조금도 안 뻗어서, 획을 시작하는 자리에 빈
-     공간이 생겼다가 트레이스가 한 바퀴 다 돌아 끝날 때에야 채워지는 현상이
-     생긴다. round 캡은 시작점에서 반지름만큼 뒤로도 덮어주기 때문에 그 빈
-     공간이 처음부터 생기지 않는다.
-     예전에 round 캡을 쓸 때 "아직 안 쓴 자모가 작은 점들로 보이던" 문제는,
-     dash 길이가 0일 때도 둥근 캡이 렌더링되기 때문이었다 — 이제는 아직
-     시작 안 한 자모를 visibility:hidden으로 아예 숨기고 자기 차례가 될 때만
-     보이게 해서(PenWriteCompass.tsx) 그 문제 없이 round 캡을 쓸 수 있다. */
-  stroke-linecap: round;
+  /* 아직 안 그려진 획(dash 길이가 0)에서 둥근 캡이 작은 점으로 렌더링되는
+     문제가 있어서 butt로 둔다. 획 끝 모양은 어차피 그 획의 윤곽선(clipPath)이
+     결정하기 때문에 캡 모양은 화면에 아무 영향이 없다. */
+  stroke-linecap: butt;
   stroke-linejoin: round;
-  /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 자모"가 잠깐 그대로
-     다 보이는 깜빡임을 막는 기본값 — 실제 굵기/길이는
-     PenWriteCompass.tsx가 마운트 시 getBBox/getTotalLength로 계산해 찍는다. */
-  stroke-dasharray: 3000;
-  stroke-dashoffset: 3000;
+  /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 글자"가 잠깐 다 보이는
+     깜빡임을 막는 기본값 — 실제 길이는 PenWriteCompass.tsx가 마운트 시
+     getTotalLength로 재서 찍고, 그때 visibility도 켠다. */
   visibility: hidden;
 }
 .pwc__char-fill-live {
@@ -2298,17 +2298,6 @@ button { cursor: pointer; font-family: inherit; }
   will-change: transform;
   transform: translateZ(0);
 }
-/* fill 위에 배경색 테두리선을 한 겹 더 그려서 가장자리를 살짝 깎아내
-   화면에 보이는 글자를 얇아 보이게 만드는 화장용 레이어(PenWriteCompass.tsx
-   참고) — mask 두께(커버리지 안전값)와는 완전히 분리해서 조절한다. */
-.pwc__char-erode-stroke {
-  fill: none;
-  stroke: var(--card-bg);
-  stroke-linejoin: round;
-  will-change: transform;
-  transform: translateZ(0);
-}
-
 /* --- 형광펜: 실제 3D 렌더 이미지 ---
    z-index를 안 주면 DOM 순서상 뒤에 오는 pwc__text(그 안의
    pwc__highlight-bg는 z-index:1)에 가려서 형광펜이 글자 "뒤로" 지나가는
@@ -2330,6 +2319,247 @@ button { cursor: pointer; font-family: inherit; }
 @media (prefers-reduced-motion: reduce) {
   /* 애니메이션 없이 완성된 글자만 보여준다 — 기본값이 visibility:hidden이라
      여기서 다시 보이게 해줘야 한다(안 그러면 글자가 통째로 안 보인다). */
-  .pwc__char-mask-stroke { stroke-dashoffset: 0; visibility: visible; }
+  .pwc__word-stroke { stroke-dashoffset: 0; visibility: visible; }
   .pwc__highlighter { display: none; }
 }
+
+/* --- 「현지에서」 (/onsite) ------------------------------------------------
+   창구에 그대로 보여주는 화면이라, 현지어를 크게 두고 한국어를 그 아래 작게 둔다.
+   근거 조항 인용은 언제나 한국어 원문이라 인용 블록만 따로 구분해 둔다. */
+.onsite-offline-badge {
+  background: var(--yellow-soft);
+  color: #7a5a12;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.onsite-summary__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.onsite-summary__country { display: block; font-size: 1.24rem; color: var(--heading); margin-top: 2px; }
+
+.onsite-dday { text-align: right; flex: none; }
+.onsite-dday__num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.onsite-dday__label { font-size: 0.7rem; color: var(--muted); }
+
+.onsite-progress { margin-top: 14px; }
+.onsite-progress__bar {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--primary-soft);
+  overflow: hidden;
+}
+.onsite-progress__fill { height: 100%; border-radius: 99px; background: var(--primary); transition: width 0.3s ease; }
+.onsite-progress__text { display: block; margin-top: 7px; font-size: 0.78rem; color: var(--muted); }
+.onsite-progress__text strong { color: var(--text); }
+
+.onsite-group-label { display: block; margin: 18px 0 8px; }
+
+.onsite-intro { background: var(--primary-soft); border-color: transparent; }
+.onsite-intro__label { font-size: 0.72rem; font-weight: 800; color: var(--primary-dark); }
+.onsite-intro__local {
+  margin: 8px 0 6px;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 700;
+  color: var(--heading);
+  /* 태국어·아랍어 등은 자소 높이가 커서 줄간격을 넉넉히 준다. */
+  word-break: keep-all;
+}
+.onsite-intro__ko { margin: 0; font-size: 0.8rem; color: var(--text); opacity: 0.85; }
+
+/* 귀국하면 못 받는 서류는 왼쪽 테두리로 구분한다 — 이 화면이 막으려는 실패가 그것이다. */
+.onsite-doc--urgent { border-left: 4px solid var(--orange); }
+
+.onsite-doc__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.onsite-doc__names { min-width: 0; }
+.onsite-doc__local {
+  display: block;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  color: var(--heading);
+  word-break: keep-all;
+}
+.onsite-doc__ko { display: block; margin-top: 3px; font-size: 0.8rem; color: var(--muted); }
+.onsite-doc__status {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 99px;
+  background: var(--mint-soft);
+  color: #2f7461;
+}
+.onsite-doc__note { margin: 10px 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.onsite-req-list { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.onsite-req-list__label { font-size: 0.72rem; font-weight: 800; color: var(--primary-dark); }
+.onsite-req { margin-top: 10px; }
+.onsite-req__local { margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--heading); word-break: keep-all; }
+.onsite-req__ko { margin: 2px 0 0; font-size: 0.78rem; color: var(--muted); }
+.onsite-req__quote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.onsite-req__source { display: block; font-size: 0.7rem; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+
+.onsite-offline { display: flex; align-items: center; gap: 12px; }
+.onsite-offline strong { font-size: 0.9rem; color: var(--heading); }
+
+/* --- 「사고 시뮬레이션」 (/simulate) ---------------------------------------- */
+.sim-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+.sim-context b { color: var(--heading); }
+
+/* 판정 네 가지의 뜻. "면책"·"확인불가"는 일상어가 아니라서, 뜻이 없으면 색만 보고
+   나쁜 쪽으로 읽힌다. */
+.sim-legend ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.sim-legend li { display: flex; align-items: center; gap: 10px; }
+.sim-legend__meaning { font-size: 0.78rem; color: var(--muted); line-height: 1.45; }
+.sim-legend .sim-verdict { min-width: 60px; text-align: center; }
+
+.sim-card__head { display: flex; align-items: center; gap: 8px; }
+.sim-card__num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sim-card__title { flex: 1; font-size: 1.02rem; color: var(--heading); }
+
+/* 6개사 판정 분포를 표보다 먼저 보여주는 띠. */
+.sim-summary { margin-top: 12px; }
+.sim-summary__bar {
+  display: flex;
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--cream-deep);
+}
+.sim-summary__seg { display: block; height: 100%; }
+.sim-summary__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.sim-summary__counts span { display: inline-flex; align-items: center; gap: 5px; }
+.sim-summary__dot { width: 8px; height: 8px; border-radius: 99px; display: inline-block; }
+/* 띠와 점은 배경색만 쓴다 — 알약(.sim-verdict)의 글자색·패딩까지 물려받으면 안 된다. */
+.sim-summary__seg, .sim-summary__dot { padding: 0; font-size: 0; }
+.sim-card__type {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+.sim-card__narrative { margin: 8px 0 0; font-size: 0.82rem; line-height: 1.6; color: var(--muted); }
+
+.sim-subtypes { margin-top: 14px; }
+.sim-subtypes__label { display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); margin-bottom: 7px; }
+
+.sim-results { list-style: none; margin: 14px 0 0; padding: 0; }
+.sim-result { border-top: 1px solid var(--border); padding: 10px 0; }
+.sim-result:first-child { border-top: none; }
+.sim-result__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.sim-result__head:disabled { cursor: default; }
+.sim-result__insurer { flex: 1; font-size: 0.86rem; font-weight: 700; color: var(--text); }
+.sim-result__chevron { flex: none; color: var(--muted); font-size: 0.9rem; }
+.sim-result__coverage { margin: 4px 0 0; font-size: 0.76rem; color: var(--muted); }
+.sim-result__coverage--muted { font-style: italic; }
+.sim-result__quote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.sim-result__source { display: block; font-size: 0.7rem; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+
+.sim-verdict {
+  flex: none;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.sim-verdict--direct { background: var(--mint-soft); color: #2f7461; }
+.sim-verdict--conditional { background: var(--yellow-soft); color: #8a6410; }
+.sim-verdict--waived { background: var(--orange-soft); color: var(--orange-dark); }
+/* 확인불가는 경고가 아니라 "근거가 없다"는 사실이라, 색으로 나쁘게 보이지 않게 중립으로 둔다. */
+.sim-verdict--unknown { background: var(--cream-deep); color: var(--muted); }
+
+.sim-disclaimer {
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--muted);
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 4px 0 20px;
+}
+
+/* 「내 보험 보관함」 상단의 두 버튼(보험 등록 / 보험료 비교). 세로로 쌓으면 정작 봐야 할
+   보험 목록이 화면 밖으로 밀려나서 한 줄에 나란히 둔다. 화면이 좁으면 한 칸씩 접힌다. */
+.policy-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 420px) {
+  .policy-actions { grid-template-columns: 1fr; }
+}
+/* 한 줄에 둘이 들어가므로 가로 여백과 글자를 줄인다 — 아이콘 크기는 JSX에서 함께 줄인다. */
+.home-card--compact { padding: 14px 14px; gap: 10px; }
+.home-card--compact .home-card__text strong { font-size: 0.92rem; }
+.home-card--compact .home-card__text span { font-size: 0.74rem; }
+.home-card--compact .home-card__arrow { font-size: 1.1rem; }

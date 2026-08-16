@@ -550,6 +550,95 @@ export interface TravelAlertOut {
   visiting_regions?: TravelAlertRow[];
 }
 
+// --- 현지 대응 팩(「현지에서」) ---------------------------------------------
+// 한 번의 요청에 사고유형 8개분이 전부 담긴다. 오프라인 캐시에 실리는 단위가 요청
+// 하나여야 비행기모드에서 화면이 온전히 뜬다.
+
+export interface OnsiteRequirementOut {
+  /** 한국어 원문. 현지어만 단독으로 나가는 일이 없도록 서버가 항상 채운다. */
+  label_ko: string;
+  /** 번역을 못 구하면 null — 화면은 그 자리에 한국어만 보여준다. */
+  label_local: string | null;
+  clause_id: number | null;
+  clause_article_no: string | null;
+  /** 조항 원문의 부분 문자열. 근거는 번역하지 않는다. */
+  clause_quote: string | null;
+  insurer_name: string | null;
+}
+
+export interface OnsiteDocOut {
+  required_doc_std_id: number;
+  doc_code: string;
+  doc_name_ko: string;
+  doc_name_local: string | null;
+  /** 현지only | 귀국가능 | 공통 */
+  acquire_location: string | null;
+  note: string | null;
+  /** 연결된 사고가 있을 때만 채워진다. */
+  status: string | null;
+  requirements: OnsiteRequirementOut[];
+}
+
+export interface OnsiteIncidentTypeOut {
+  type_id: number;
+  l1_code: string;
+  name: string;
+}
+
+export interface OnsitePackOut {
+  country: string | null;
+  lang_code: string;
+  lang_name_ko: string;
+  intro_ko: string;
+  intro_local: string | null;
+  trip_id: number | null;
+  start_date: string | null;
+  end_date: string | null;
+  insurer_names: string[];
+  incident_types: OnsiteIncidentTypeOut[];
+  docs_by_type: Record<string, OnsiteDocOut[]>;
+  /** 연결된 사고가 없으면 null — 0/N으로 지어내지 않는다. */
+  progress_total: number | null;
+  progress_secured: number | null;
+  generated_at: string;
+}
+
+// --- 사고 시뮬레이션 --------------------------------------------------------
+
+export interface SimulationResultOut {
+  insurer_name: string;
+  /** 직접 | 조건부 | 면책 | 확인불가 */
+  verdict: string;
+  coverage_name: string | null;
+  clause_article_no: string | null;
+  clause_quote: string | null;
+}
+
+export interface SimulationSubTypeOut {
+  type_id: number;
+  name: string;
+}
+
+export interface SimulatedScenarioOut {
+  code: string;
+  title: string;
+  narrative: string;
+  l1_type_id: number;
+  selected_type_id: number;
+  incident_type_name: string;
+  sub_types: SimulationSubTypeOut[];
+  results: SimulationResultOut[];
+}
+
+export interface SimulationOut {
+  trip_id: number;
+  destination: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  scenarios: SimulatedScenarioOut[];
+  disclaimer: string;
+}
+
 export const api = {
   createUser: (nickname: string) =>
     request<UserOut>("/users", { method: "POST", body: JSON.stringify({ nickname }) }),
@@ -558,6 +647,24 @@ export const api = {
     request<RecommendationOut>("/trips", { method: "POST", body: JSON.stringify(payload) }),
 
   getTrip: (tripId: number) => request<RecommendationOut>(`/trips/${tripId}`),
+
+  /** 이 여행 기준 현지 대응 팩. 보험이 연결돼 있으면 그 보험사 요건만 담긴다. */
+  getTripOnsitePack: (tripId: number) => request<OnsitePackOut>(`/trips/${tripId}/onsite`),
+
+  /** 여행 없이 나라만으로 보는 현지 대응 팩(게스트 가능). */
+  getOnsitePack: (country: string) =>
+    request<OnsitePackOut>(`/onsite?country=${encodeURIComponent(country)}`),
+
+  /**
+   * 사고 시뮬레이션. selected는 {시나리오코드: L2 사고유형 id} —
+   * 고르지 않은 시나리오는 L1 기준으로 계산된다.
+   */
+  getTripSimulation: (tripId: number, selected: Record<string, number> = {}) => {
+    const params = Object.entries(selected)
+      .map(([code, typeId]) => `select=${encodeURIComponent(`${code}:${typeId}`)}`)
+      .join("&");
+    return request<SimulationOut>(`/trips/${tripId}/simulation${params ? `?${params}` : ""}`);
+  },
 
   /** 목적지 여행경보. 자료에 없는 나라면 alert가 null이다(추측하지 않는다). */
   getTravelAlert: (country: string) =>

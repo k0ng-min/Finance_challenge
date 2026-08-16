@@ -1,6 +1,7 @@
 import json
+from dataclasses import asdict
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -9,11 +10,24 @@ from app.models.user import AppUser, Trip, UserPolicy
 from app.models.analysis import AnalysisRun
 from app.routers.auth import get_current_user_optional, verify_owner
 from app.models.kb import FlightDelayStat
-from app.schemas import TripCreate, TripUpdate, TripDetailOut, RecommendationOut, FlightDelayStatOut, FlightDelayStatsOut
+from app.schemas import (
+    TripCreate, TripUpdate, TripDetailOut, RecommendationOut, FlightDelayStatOut,
+    FlightDelayStatsOut, OnsitePackOut, SimulationOut,
+)
 from app.services.rules import build_risk_profile, generate_pre_trip_findings
 from app.services.travel_alert import build_alert_findings, country_alert
 from app.services.finding_persistence import persist_findings, load_findings_out
 from app.services.deletion import delete_trip_cascade, wipe_user_data
+from app.services.onsite import build_onsite_pack
+from app.services.simulation import build_simulation
+
+#: 시뮬레이션 화면에 고정으로 붙는 경계 문구. 서버가 내려보내 화면과 테스트가 같은 문장을
+#: 쓴다 — 이 기능은 약관 조항 매핑을 보여줄 뿐 지급을 약속하지 않는다.
+SIMULATION_DISCLAIMER = (
+    "이 결과는 각 보험사 약관 조항의 사고유형 매핑에 근거한 예시입니다. "
+    "실제 보험금 지급 여부는 사고 경위와 보험사 심사에 따라 달라질 수 있으니, "
+    "가입 전에 해당 보험사에 직접 확인하세요."
+)
 
 router = APIRouter(prefix="/trips", tags=["trips"])
 
@@ -235,3 +249,64 @@ def delete_trip(
     delete_trip_cascade(db, trip)
     db.commit()
     return {"status": "deleted"}
+
+
+@router.get("/{trip_id}/onsite", response_model=OnsitePackOut)
+@limiter.limit("30/minute")
+def get_trip_onsite_pack(
+    request: Request, trip_id: int, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """이 여행 기준 현지 대응 팩.
+
+    여행에 보험이 연결돼 있으면 그 보험사 요건만, 아니면 6개사 합집합을 보여준다
+    (요건마다 어느 보험사 조항인지는 응답에 함께 담긴다).
+    """
+    trip = db.get(Trip, trip_id)
+    if not trip:
+        raise HTTPException(status_code=404, detail="여행 정보를 찾을 수 없습니다.")
+    verify_owner(trip.user_id, current)
+    pack = build_onsite_pack(db, country=trip.destination, trip=trip)
+    return OnsitePackOut(**asdict(pack))
+
+
+@router.get("/{trip_id}/simulation", response_model=SimulationOut)
+@limiter.limit("30/minute")
+def get_trip_simulation(
+    request: Request, trip_id: int,
+    select: list[str] = Query(default_factory=list),
+    db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """이 여행에서 일어날 수 있는 사고를 보험사별로 미리 돌려본다.
+
+    `select`는 "시나리오코드:L2사고유형id" 형태를 여러 번 받는다(예:
+    `?select=THEFT:12&select=ILLNESS:7`). 세분화를 고르지 않으면 L1 기준으로 계산한다.
+    그 L2가 해당 시나리오 L1의 자식이 아니면 400으로 거절한다 — 다른 L1의 L2를 끼워 넣어
+    엉뚱한 판정을 만들지 못하게 한다.
+    """
+    trip = db.get(Trip, trip_id)
+    if not trip:
+        raise HTTPException(status_code=404, detail="여행 정보를 찾을 수 없습니다.")
+    verify_owner(trip.user_id, current)
+
+    selected: dict[str, int] = {}
+    for item in select:
+        code, _, raw_type_id = item.partition(":")
+        if not code or not raw_type_id.isdigit():
+            raise HTTPException(status_code=400, detail="사고유형 선택값을 다시 확인해 주세요.")
+        selected[code] = int(raw_type_id)
+
+    try:
+        scenarios = build_simulation(db, trip, selected)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return SimulationOut(
+        trip_id=trip.trip_id,
+        destination=trip.destination,
+        start_date=trip.start_date,
+        end_date=trip.end_date,
+        scenarios=[asdict(s) for s in scenarios],
+        disclaimer=SIMULATION_DISCLAIMER,
+    )

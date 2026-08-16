@@ -400,3 +400,77 @@ class InsurerPremium(Base):
     collected_at = Column(Date)
 
     insurer = relationship("Insurer")
+
+
+class CountryLanguage(Base):
+    """한국어 국가명 → 그 나라 서류 창구에서 통하는 언어.
+
+    country_name 표기는 TravelAlert.country_name과 맞춘다(둘 다 외교부 국가명 기준).
+    매핑이 없는 나라는 추측하지 않고 영어로 떨어뜨린다 — 화면에는 한국어가 항상 병기되므로
+    언어를 잘못 골라도 정보가 사라지지는 않는다.
+    """
+
+    __tablename__ = "country_language"
+    __table_args__ = (UniqueConstraint("country_name", "lang_code", name="uq_country_language"),)
+
+    id = Column(Integer, primary_key=True)
+    country_name = Column(String, nullable=False, index=True)
+    lang_code = Column(String, nullable=False)     # ISO 639-1
+    lang_name_ko = Column(String, nullable=False)  # "영어"
+    is_primary = Column(Boolean, default=True)
+
+
+class OnsitePhraseI18n(Base):
+    """현지어 문구 캐시.
+
+    **조항 원문은 여기 들어오지 않는다.** 조항은 근거 그 자체라 번역하지 않고 한국어 원문
+    그대로 인용한다. 여기 담기는 것은 서류명(RequiredDocStd.doc_name), 요건 표시문구
+    (DocRequirement.label), 창구에 보여줄 안내문 세 가지뿐이다.
+
+    source='seed'는 사람이 검수해 커밋한 번역, 'gemini'는 런타임에 만들어 캐시한 번역이다.
+    같은 (kind, ref_id, lang_code)를 두 번 만들지 않으므로 두 번째 사용자부터는 API 호출이
+    없고, 오프라인 캐시에도 그대로 실린다.
+    """
+
+    __tablename__ = "onsite_phrase_i18n"
+    __table_args__ = (UniqueConstraint("kind", "ref_id", "lang_code", name="uq_onsite_phrase"),)
+
+    KIND_DOC_NAME = "doc_name"
+    KIND_REQUIREMENT = "requirement"
+    KIND_INTRO = "intro"
+    ALLOWED_KINDS = (KIND_DOC_NAME, KIND_REQUIREMENT, KIND_INTRO)
+
+    id = Column(Integer, primary_key=True)
+    kind = Column(String, nullable=False)
+    ref_id = Column(Integer, nullable=False)   # required_doc_std_id | requirement_id | 0(intro)
+    lang_code = Column(String, nullable=False)
+    text = Column(Text, nullable=False)
+    source = Column(String, nullable=False)    # seed | gemini
+
+
+class SimulationScenario(Base):
+    """여행 정보로 자동 선정되는 사고 시나리오(L1 단위).
+
+    선정 조건을 코드 분기가 아니라 행으로 두는 이유는 OverlapRule과 같다 — 시나리오가
+    늘어나도 선정 로직은 늘어나지 않는다.
+
+    type_id는 반드시 L1 루트 행(IncidentType.parent_id IS NULL)을 가리킨다. L2 세분화는
+    사용자가 화면에서 고르고 요청 파라미터로만 전달된다 — 시뮬레이션에는 자유서술이 없어
+    L2를 추론할 근거가 없으므로, 추측하지 않고 사람이 고르게 한다.
+    """
+
+    __tablename__ = "simulation_scenario"
+
+    scenario_id = Column(Integer, primary_key=True)
+    code = Column(String, unique=True, nullable=False)
+    title = Column(String, nullable=False)
+    narrative = Column(Text, nullable=False)
+    type_id = Column(Integer, ForeignKey("incident_type.type_id"), nullable=False)
+    modifiers = Column(Text)                       # JSON, 예: {"activity": "스쿠버다이빙"}
+    # 선정 조건 — 전부 비어 있으면 항상 뜨는 기본 시나리오
+    require_activity = Column(String)
+    require_rental_car = Column(Boolean)
+    require_alert_nationwide = Column(Boolean)
+    sort_order = Column(Integer, default=0)
+
+    incident_type = relationship("IncidentType")

@@ -83,7 +83,7 @@ export function PremiumCalc() {
 
   return (
     <div className="page">
-      <TopBar title="비교공시 보험료" />
+      <TopBar title="보험료 비교" />
       <PageHero
         icon="wallet"
         eyebrow="PREMIUM"

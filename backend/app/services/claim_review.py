@@ -101,10 +101,13 @@ def _activity_matches_waiver(clause_text: str, modifiers: dict | None) -> bool:
     return activity.strip() in clause_text
 
 
-def _rank_maps(maps: list["ClauseIncidentMap"], modifiers: dict | None) -> list["ClauseIncidentMap"]:
+def rank_maps(maps: list["ClauseIncidentMap"], modifiers: dict | None) -> list["ClauseIncidentMap"]:
     """관련도 순으로 정렬한다. 기본은 직접 > 조건부 > 면책이지만, 수식자(활동)이 실제로
     그 면책 조항 원문에 언급돼 있으면 그 면책 조항을 맨 앞으로 — '직접'이 같이 걸려있어도
-    이번 사고엔 면책이 실제로 적용될 근거가 있으므로 면책을 대표값으로 쓴다."""
+    이번 사고엔 면책이 실제로 적용될 근거가 있으므로 면책을 대표값으로 쓴다.
+
+    사고 시뮬레이션(services/simulation.py)도 이 함수를 그대로 호출한다. 가입 전 화면과
+    사고 접수 화면의 판정 기준이 갈라지지 않게 하려면 정렬 규칙이 한 군데에만 있어야 한다."""
     def sort_key(m):
         if m.relevance == "면책" and _activity_matches_waiver(m.clause.text, modifiers):
             return (-1, 0)
@@ -145,7 +148,7 @@ def relevant_coverages_for_type(
         )
         if not maps:
             continue
-        best = _rank_maps(maps, modifiers)[0]
+        best = rank_maps(maps, modifiers)[0]
         yield uc, cov, cov.policy_version.product.insurer, best.relevance
 
 
@@ -156,7 +159,7 @@ def _evidence_clauses(db: Session, coverage_id: int, type_id: int, modifiers: di
         .filter(Clause.coverage_id == coverage_id, ClauseIncidentMap.type_id == type_id)
         .all()
     )
-    ranked = _rank_maps(maps, modifiers)
+    ranked = rank_maps(maps, modifiers)
     seen: set[int] = set()
     clauses: list[Clause] = []
     for m in ranked:

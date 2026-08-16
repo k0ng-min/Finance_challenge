@@ -49,6 +49,18 @@ services:
       # 백엔드 배포 URL로 채운다. 예: https://travel-insurance-api.onrender.com
       - key: VITE_API_BASE
         sync: false
+    # 서비스워커(「현지에서」 오프라인 열람용)는 절대 캐시하지 않는다. 이 파일이 캐시되면
+    # 재배포해도 브라우저가 옛 워커를 계속 써서 새 화면이 영영 안 내려간다.
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /registerSW.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /manifest.webmanifest
+        name: Cache-Control
+        value: no-cache
     routes:
       - type: rewrite
         source: /*

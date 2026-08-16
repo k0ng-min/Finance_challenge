@@ -2,7 +2,8 @@ import pytest
 
 from app.models.external import ExternalPolicy, OverlapRule
 from app.models.kb import Clause, CoverageStd
-from app.services.coverage_overlap import diagnose, _QUOTE_LIMIT
+from app.services.clause_quote import QUOTE_LIMIT
+from app.services.coverage_overlap import diagnose
 
 
 @pytest.fixture
@@ -113,8 +114,8 @@ def test_인용문은_조항_원문의_부분_문자열이다(seeded):
 
 def test_길이를_초과하는_조항은_정확히_자른다(seeded):
     """
-    _QUOTE_LIMIT를 넘는 조항 텍스트는 정확히 자르고, 말줄임표를 붙이지 않는다.
-    이 테스트는 `text[:_QUOTE_LIMIT] + "..."` 같은 회귀를 감지한다.
+    QUOTE_LIMIT를 넘는 조항 텍스트는 정확히 자르고, 말줄임표를 붙이지 않는다.
+    이 테스트는 `text[:QUOTE_LIMIT] + "..."` 같은 회귀를 감지한다.
     """
     long_text = (
         "보험사는 피보험자가 여행 중 질병, 상해, 사고로 인하여 의료기관에서 치료받은 모든 의료비를 "
@@ -122,8 +123,8 @@ def test_길이를_초과하는_조항은_정확히_자른다(seeded):
         "약제비 등 각 항목별로 정한 한도액이 있으며, 자기부담금을 공제합니다. 해외에서 발생한 질병 및 상해는 "
         "특별 약관의 보장 범위와 조건을 따르며, 보험사가 지정한 네트워크 병원을 이용할 경우 할인이 적용됩니다."
     )
-    # 길이 확인: _QUOTE_LIMIT(200)보다 길어야 함
-    assert len(long_text) > _QUOTE_LIMIT
+    # 길이 확인: QUOTE_LIMIT(200)보다 길어야 함
+    assert len(long_text) > QUOTE_LIMIT
 
     # 긴 텍스트를 포함하는 Clause 추가
     seeded.add(Clause(
@@ -160,8 +161,8 @@ def test_길이를_초과하는_조항은_정확히_자른다(seeded):
     assert not quote.endswith("…"), f"인용문이 '…'로 끝나면 안 됩니다: {quote!r}"
 
     # 검증 3: 길이가 제한 이하다
-    assert len(quote) <= _QUOTE_LIMIT, (
-        f"인용문 길이({len(quote)})가 _QUOTE_LIMIT({_QUOTE_LIMIT})을 초과합니다: {quote!r}"
+    assert len(quote) <= QUOTE_LIMIT, (
+        f"인용문 길이({len(quote)})가 QUOTE_LIMIT({QUOTE_LIMIT})을 초과합니다: {quote!r}"
     )
 
 
@@ -171,10 +172,10 @@ def test_근거_문구가_조항_뒷부분에_있어도_인용문에서_잘리�
     상태가 된다(운영 DB에서 실제로 발생: PASSPORT_LOSS·OVS_ILL_MED 국내 규칙). anchor_phrase가
     있으면 그 문구를 포함하는 창을 잘라내야 한다."""
     anchor = "이 뒤쪽에 있는 근거 문구"
-    # _QUOTE_LIMIT(200)보다 훨씬 뒤쪽(원문 300자 지점 이후)에 anchor를 배치한다.
+    # QUOTE_LIMIT(200)보다 훨씬 뒤쪽(원문 300자 지점 이후)에 anchor를 배치한다.
     long_text = ("앞부분 내용입니다. " * 30) + anchor + (" 뒷부분 내용입니다." * 5)
-    assert len(long_text) > _QUOTE_LIMIT
-    assert long_text.index(anchor) > _QUOTE_LIMIT  # 앞에서 200자만 잘랐다면 절대 포함 못 할 위치
+    assert len(long_text) > QUOTE_LIMIT
+    assert long_text.index(anchor) > QUOTE_LIMIT  # 앞에서 200자만 잘랐다면 절대 포함 못 할 위치
 
     db_session = seeded
     db_session.add(Clause(
@@ -198,4 +199,4 @@ def test_근거_문구가_조항_뒷부분에_있어도_인용문에서_잘리�
         f"anchor_phrase가 clause_quote에서 잘려나갔습니다: {finding.clause_quote!r}"
     )
     assert finding.clause_quote in long_text
-    assert len(finding.clause_quote) <= _QUOTE_LIMIT
+    assert len(finding.clause_quote) <= QUOTE_LIMIT

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api, type UserPolicyOut, type ExternalPolicyOut, type OverlapReportOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
@@ -78,6 +78,7 @@ function PolicyCard({
 
 export function MyPolicies() {
   const { userId, isLoggedIn, age: profileAge, updateAge } = useApp();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefillInsurer = INSURERS.find((i) => i.code === searchParams.get("insurer"))?.name;
   const [mode, setMode] = useState<"list" | "add">(searchParams.get("mode") === "add" ? "add" : "list");
@@ -299,20 +300,39 @@ export function MyPolicies() {
         불러와요. 매칭된 담보만 사고 후 청구 검토 대상이 됩니다.
       </p>
 
-      <motion.button
-        type="button"
-        className="home-card"
-        style={{ marginBottom: 16 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => setMode("add")}
-      >
-        <Icon3D src="gift" size={56} />
-        <div className="home-card__text">
-          <strong>새 보험 등록하기</strong>
-          <span>2단계면 충분해요</span>
-        </div>
-        <span className="home-card__arrow">›</span>
-      </motion.button>
+      {/* 두 버튼은 성격이 같다 — "보험을 들이는 일"과 "얼마인지 보는 일". 세로로 쌓으면
+          목록(보험 카드)이 화면 아래로 밀려나므로 한 줄에 나란히 둔다.
+          보험료 비교가 여기 있는 이유: 홈의 작은 칸은 4개를 넘기지 않고, 비로그인
+          상태에서는 이 화면 자체를 못 보므로 그때만 홈 첫 칸이 보험료 비교로 바뀐다. */}
+      <div className="policy-actions">
+        <motion.button
+          type="button"
+          className="home-card home-card--compact"
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setMode("add")}
+        >
+          <Icon3D src="gift" size={44} />
+          <div className="home-card__text">
+            <strong>새 보험 등록하기</strong>
+            <span>2단계면 충분해요</span>
+          </div>
+          <span className="home-card__arrow">›</span>
+        </motion.button>
+
+        <motion.button
+          type="button"
+          className="home-card home-card--compact"
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/premium")}
+        >
+          <Icon3D src="wallet" size={44} />
+          <div className="home-card__text">
+            <strong>보험료 비교</strong>
+            <span>6개사 공시 보험료</span>
+          </div>
+          <span className="home-card__arrow">›</span>
+        </motion.button>
+      </div>
 
       {policies.length === 0 && (
         <div className="empty-state">

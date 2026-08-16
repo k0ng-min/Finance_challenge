@@ -35,7 +35,7 @@ def test_UNKNOWN이_아닌_규칙은_모두_근거조항_조회조건을_갖는�
 
 def test_UNKNOWN이_아닌_규칙은_anchor_phrase도_갖는다():
     """clause_id가 있다고 인용문이 근거를 담는 건 아니다 — note의 핵심 주장을 가리키는
-    anchor_phrase가 있어야 _quote()가 그 문구를 잘라내지 않고 담을 수 있다."""
+    anchor_phrase가 있어야 quote_clause()가 그 문구를 잘라내지 않고 담을 수 있다."""
     for spec in RULE_SPECS:
         if spec["relation"] != "UNKNOWN":
             assert spec.get("anchor_phrase"), f"anchor_phrase 없는 규칙: {spec}"
@@ -172,10 +172,10 @@ def test_시드된_규칙의_근거조항_원문에_note의_핵심주장이_실�
 
 
 def test_시드된_규칙의_clause_quote에_note의_핵심주장이_실제로_있다():
-    """clause.text 전체에 핵심 문구가 있어도, 화면에 실제로 보여주는 clause_quote(인용문)가
+    """clause.text 전체에 핵심 문구가 있어도, 화면에 실제로 보여주는 clausequote_clause(인용문)가
     그 문구를 잘라버리면 사용자는 근거 없는 주장을 보게 된다 — 이전 리뷰 두 번이 이 간극을
     놓쳤다(PASSPORT_LOSS·OVS_ILL_MED 국내 규칙에서 실제로 발생). clause.text가 아니라
-    _quote()가 만드는 clause_quote 자체를 검증해야 이 결함을 잡는다.
+    quote_clause()가 만드는 clause_quote 자체를 검증해야 이 결함을 잡는다.
     운영 DB가 없는 환경(CI 등)에서는 건너뛴다."""
     if not os.path.exists(_APP_DB_PATH):
         pytest.skip("운영 DB(backend/data/app.db)가 없어 근거 원문 대조를 건너뜁니다")
@@ -185,7 +185,7 @@ def test_시드된_규칙의_clause_quote에_note의_핵심주장이_실제로_�
 
     from app.models.external import OverlapRule as _OverlapRule
     from app.models.kb import Clause, CoverageStd
-    from app.services.coverage_overlap import _quote
+    from app.services.clause_quote import quote_clause
 
     engine = create_engine(f"sqlite:///{_APP_DB_PATH}")
     db = sessionmaker(bind=engine)()
@@ -208,7 +208,7 @@ def test_시드된_규칙의_clause_quote에_note의_핵심주장이_실제로_�
             clause = db.query(Clause).filter(Clause.clause_id == rule.clause_id).first()
             assert clause is not None, f"clause_id={rule.clause_id}가 가리키는 조항이 없음: {key}"
 
-            quote = _quote(clause, rule.anchor_phrase)
+            quote = quote_clause(clause, rule.anchor_phrase)
             assert quote is not None, f"{key} 규칙의 clause_quote가 비어있습니다"
             assert quote in clause.text, f"{key} 규칙의 clause_quote가 원문의 부분 문자열이 아닙니다"
             assert phrase in quote, (

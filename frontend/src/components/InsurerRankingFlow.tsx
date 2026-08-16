@@ -10,6 +10,7 @@ import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 import { OverlapReportView } from "./OverlapReport";
 import { TravelAlertBadge } from "./TravelAlertBadge";
+import { NextStepCard } from "./NextStepCard";
 
 type Phase = "tier" | "ranking" | "detail";
 
@@ -263,6 +264,16 @@ export function InsurerRankingFlow({
             </motion.button>
           ))}
         </div>
+
+        {/* 순위는 "어느 보험사가 나은가"까지만 답한다. 그 숫자가 실제 상황에서 어떻게
+            갈리는지는 시뮬레이션이 조항 원문으로 보여주므로, 여행 준비의 마지막 자리에서
+            바로 이어지게 둔다. */}
+        <NextStepCard
+          to="/simulate"
+          icon="target"
+          label="다음 단계"
+          title="이 여행에서 사고가 나면?"
+        />
       </div>
     );
   }

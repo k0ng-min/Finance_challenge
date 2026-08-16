@@ -15,7 +15,9 @@ from app.database import Base, engine
 from app.limiter import limiter
 from app.services.kb_provenance import synchronize_policy_fingerprints
 from app import models  # noqa: F401  (모델 등록을 위해 import)
-from app.routers import users, trips, policies, incidents, insurers, auth, clauses, external_policies
+from app.routers import (
+    users, trips, policies, incidents, insurers, auth, clauses, external_policies, onsite,
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -140,8 +142,44 @@ def _ensure_travel_alerts():
         db.close()
 
 
+def _ensure_onsite_and_simulation():
+    """「현지에서」·「사고 시뮬레이션」이 쓰는 시드를 비어 있을 때만 채운다.
+
+    doc_requirement·travel_alert와 같은 이유로 기동 시에 둔다 — 저장소를 클론한 사람이
+    시드 명령을 따로 기억하지 않아도 기능이 온전히 돈다.
+
+    셋을 한 함수에 묶은 이유는 실패 처리가 같기 때문이다. 약관 KB나 사고유형이 아직
+    적재되지 않은 DB에서는 근거가 없어 시드가 예외를 던지는데, 그건 이 상황에서 정상이므로
+    앱을 죽이지 않는다. 그 경우 해당 화면만 비어 보이고 근거 없는 결과를 내지는 않는다.
+    """
+    from app.database import SessionLocal
+    from app.models.kb import CountryLanguage, OnsitePhraseI18n, SimulationScenario
+
+    seeds = [
+        ("country_language", CountryLanguage, "app.seed_country_language"),
+        ("onsite_phrase_i18n", OnsitePhraseI18n, "app.seed_onsite_phrases"),
+        ("simulation_scenario", SimulationScenario, "app.seed_simulation_scenarios"),
+    ]
+    for label, model, module_path in seeds:
+        db = SessionLocal()
+        try:
+            if db.query(model).first() is not None:
+                continue
+            module = __import__(module_path, fromlist=["seed"])
+            count = module.seed(db)
+            db.commit()
+            if count:
+                print(f"[startup] {label} {count}건 시드 완료")
+        except Exception as exc:  # noqa: BLE001 — 어떤 이유든 앱 기동을 막지 않는다
+            db.rollback()
+            print(f"[startup] {label} 시드를 건너뜁니다: {exc}")
+        finally:
+            db.close()
+
+
 _ensure_doc_requirements()
 _ensure_travel_alerts()
+_ensure_onsite_and_simulation()
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 
@@ -240,6 +278,7 @@ app.include_router(auth.router)
 app.include_router(clauses.router)
 app.include_router(external_policies.router)
 app.include_router(external_policies.overlap_router)
+app.include_router(onsite.router)
 
 
 @app.get("/health")
