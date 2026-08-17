@@ -60,6 +60,36 @@ def test_audit_detects_ungrounded_evidence_and_broken_freeze(tmp_path):
     assert report["error_count"] >= 2
 
 
+def test_issued_file_status_is_ranking_eligible(tmp_path):
+    """공개 URL이 없는 보험사 공식 발행 파일도 순위 대상으로 인정한다.
+
+    2026년 약관은 방화벽 안쪽 발행 경로에서 받아 공개 URL이 없다. 문서 자체가 보험사
+    공식 발행본이므로 2차 유통본과 같게 취급하지 않는다.
+    """
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "insurer": "SAMSUNG",
+                        "verification_status": "VERIFIED_ISSUED_FILE",
+                        "ranking_eligible": True,
+                    },
+                    {
+                        "insurer": "MERITZ",
+                        "verification_status": "SECONDARY_SOURCE",
+                        "ranking_eligible": False,
+                    },
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    assert ranking_eligible_insurer_codes(manifest) == {"SAMSUNG"}
+
+
 def test_startup_sync_upgrades_existing_database_fingerprints(tmp_path):
     database = tmp_path / "app.db"
     shutil.copy2(DEFAULT_DATABASE, database)

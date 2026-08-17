@@ -9,7 +9,9 @@ from sqlalchemy import text
 
 
 MANIFEST_PATH = Path(__file__).resolve().parents[2] / "data" / "dataset_manifest.json"
-RANKING_ELIGIBLE_STATUSES = {"VERIFIED_CURRENT", "VERIFIED_VERSIONED"}
+# VERIFIED_ISSUED_FILE: 공개 URL은 없지만 보험사가 공식 발행한 약관 파일. 2차 유통본
+# (SECONDARY_SOURCE)과 달리 발행 주체가 보험사 자신이므로 순위 대상으로 둔다.
+RANKING_ELIGIBLE_STATUSES = {"VERIFIED_CURRENT", "VERIFIED_VERSIONED", "VERIFIED_ISSUED_FILE"}
 
 
 def load_dataset_manifest(path: Path = MANIFEST_PATH) -> dict:
