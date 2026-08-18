@@ -3,6 +3,9 @@ uvicorn[standard]==0.30.6
 sqlalchemy==2.0.35
 pydantic==2.13.4
 pdfplumber==0.11.4
+# 보험사 다이렉트 사이트에서 직접 조회한 보험료·보장내역 엑셀을 시드할 때만 쓴다
+# (seed_premiums_actual.py, seed_plan_coverage.py)
+openpyxl==3.1.5
 # 0.0.18 미만은 조작된 multipart로 CPU를 고갈시킬 수 있다(파일 업로드 경로에 직접 노출).
 python-multipart==0.0.20
 httpx==0.28.1

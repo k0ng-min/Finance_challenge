@@ -81,6 +81,25 @@ _add_missing_columns("insurer_premium", {
     "period_days": "ALTER TABLE insurer_premium ADD COLUMN period_days INTEGER DEFAULT 7 NOT NULL",
 })
 
+
+def _migrate_insurer_premium_to_plan_schema():
+    """옛 insurer_premium은 (insurer_id, sex, age)에 UNIQUE가 걸려 있어 보험사 등급별로
+    여러 행을 못 넣는다. SQLite는 ALTER로 UNIQUE 제약을 못 바꾸므로, plan_name이
+    없는 옛 테이블이면 통째로 지우고 새 스키마로 다시 만든다 — 2026-08-19에 보험다모아
+    비교공시값을 보험사 실제 등급별 가격으로 전면 교체하면서 생긴 스키마 변경이다.
+    app.seed_premiums_actual을 다시 돌리면 채워진다."""
+    with engine.connect() as conn:
+        existing = {row[1] for row in conn.execute(text("PRAGMA table_info(insurer_premium)"))}
+        if existing and "plan_name" not in existing:
+            conn.execute(text("DROP TABLE insurer_premium"))
+            conn.commit()
+            Base.metadata.create_all(bind=engine)
+            print("[startup] insurer_premium을 등급별 가격 스키마로 재생성했습니다 — "
+                  "python -m app.seed_premiums_actual 로 다시 채워주세요.")
+
+
+_migrate_insurer_premium_to_plan_schema()
+
 # 기존 app.db도 새 시드와 동일한 PDF 지문을 갖도록 멱등 동기화한다.
 synchronize_policy_fingerprints(engine)
 

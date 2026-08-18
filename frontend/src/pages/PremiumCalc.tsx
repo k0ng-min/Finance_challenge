@@ -16,9 +16,13 @@ const INSURERS = [
 ];
 
 /**
- * 보험료 비교공시 — 보험사를 골라 나이·성별에 따른 1일 표준조건 공시값을 비교한다.
+ * 보험료 비교 — 보험사를 골라 나이·성별에 따른 1일 기준 실제 보험료를 비교한다.
  *
- * 숫자는 약관에서 뽑은 값이 아니라 보험다모아 비교공시에서 수집한 값이라, 산출 전제와
+ * 2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
+ * 직접 조회한 실제 등급(플랜)별 가격을 쓴다 — 등급 선택 화면이 아직 없어 보험사마다
+ * 표준 등급 하나만 대표로 보여준다(product_name에 그 등급명이 함께 온다).
+ *
+ * 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이라, 산출 전제와
  * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
  */
 export function PremiumCalc() {
@@ -54,7 +58,7 @@ export function PremiumCalc() {
       .catch(() => {
         if (!cancelled) {
           setData(null);
-          setError("이 나이는 6개사 모두 가입연령 범위 밖이라 비교공시에 보험료가 없어요.");
+          setError("이 나이는 가격을 확보한 보험사 전부의 가입연령 범위 밖이라 비교할 보험료가 없어요.");
         }
       })
       .finally(() => {
@@ -75,10 +79,18 @@ export function PremiumCalc() {
     () => (data?.items ?? []).filter((i) => selected.includes(i.insurer_code)),
     [data, selected]
   );
-  // 고른 보험사 중 이 나이·성별로는 상품이 없는 곳 — 조용히 빼지 않고 이유를 밝힌다.
+  // 고른 보험사 중 목록에 안 나온 곳 — 조용히 빼지 않고 이유를 밝힌다. 이유가 둘로
+  // 갈린다: (1) 이 나이만 가입연령 범위 밖 (2) 나이와 무관하게 가격 자체를 아직
+  // 못 구함(DB·메리츠) — 서버가 내려주는 no_data_insurer_codes로 구분한다. 하나로
+  // 뭉뚱그리면 "아직 못 구함"을 "가입 안 되는 나이"로 잘못 전달하게 된다.
   const missing = useMemo(() => {
     const present = new Set((data?.items ?? []).map((i) => i.insurer_code));
-    return INSURERS.filter((i) => selected.includes(i.code) && !present.has(i.code));
+    const noDataCodes = new Set(data?.no_data_insurer_codes ?? []);
+    const notShown = INSURERS.filter((i) => selected.includes(i.code) && !present.has(i.code));
+    return {
+      ageOutOfRange: notShown.filter((i) => !noDataCodes.has(i.code)),
+      noDataYet: notShown.filter((i) => noDataCodes.has(i.code)),
+    };
   }, [data, selected]);
 
   return (
@@ -87,8 +99,8 @@ export function PremiumCalc() {
       <PageHero
         icon="wallet"
         eyebrow="PREMIUM"
-        title={"1일 표준조건\n보험료를 비교해요"}
-        subtitle="보험다모아에 공시된 동일 기준의 보험료를 보험사별로 비교해 드려요."
+        title={"1일 기준\n실제 보험료를 비교해요"}
+        subtitle="각 보험사 다이렉트 사이트에서 직접 조회한 등급별 가격을 비교해 드려요."
       />
 
       <div className="card">
@@ -151,7 +163,7 @@ export function PremiumCalc() {
         </div>
       </div>
 
-      {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>공시 자료를 불러오는 중...</p>}
+      {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>보험료 자료를 불러오는 중...</p>}
       {!loading && error && <div className="error-box">{error}</div>}
 
       {!loading && !error && selected.length === 0 && (
@@ -185,22 +197,29 @@ export function PremiumCalc() {
             ))}
           </ul>
 
-          {missing.length > 0 && (
+          {missing.ageOutOfRange.length > 0 && (
             <p className="muted premium-basis">
-              {missing.map((m) => m.label).join(", ")} — 만 {age}세 {sex === "M" ? "남성" : "여성"}은
-              가입연령 범위 밖이라 비교공시에 상품이 나오지 않아요.
+              {missing.ageOutOfRange.map((m) => m.label).join(", ")} — 만 {age}세 {sex === "M" ? "남성" : "여성"}은
+              가입연령 범위 밖이라 상품이 나오지 않아요.
+            </p>
+          )}
+          {missing.noDataYet.length > 0 && (
+            <p className="muted premium-basis">
+              {missing.noDataYet.map((m) => m.label).join(", ")} — 아직 실제 보험료를 확보하지 못해
+              비교에서 빠졌어요(나이·성별과는 무관해요).
             </p>
           )}
 
           <p className="premium-basis">
-            <strong>{data.premium_period_days}일 표준조건 비교공시 보험료입니다.</strong>
+            <strong>{data.premium_period_days}일 기준으로 조회한 실제 보험료입니다.</strong>
             <br />
             {data.basis}
             <br />
-            실제 가입 보험료는 여행기간, 담보구성, 가입금액 등 계약조건에 따라 달라질 수 있습니다.{" "}
+            여행기간, 담보구성, 가입금액 등 실제 계약조건에 따라 보험료는 달라질 수 있습니다.{" "}
+            {data.source && `(출처: ${data.source}, ${data.collected_at} 조회)`}
             {data.source_url && (
               <a href={data.source_url} target="_blank" rel="noreferrer">
-                {data.source} ({data.collected_at} 수집)에서 실제 가입조건 보험료 확인 →
+                {" "}실제 가입조건 보험료 확인 →
               </a>
             )}
           </p>

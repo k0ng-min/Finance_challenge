@@ -376,27 +376,70 @@ class NonpaymentRate(Base):
 
 
 class InsurerPremium(Base):
-    """보험다모아에서 수집한 나이·성별별 예시 보험료.
+    """보험사 다이렉트 사이트에서 직접 조회한 나이·성별·플랜별 실제 보험료.
 
-    약관에서 뽑아낸 보장 조건과 달리 이 값은 외부 비교공시 사이트에서 가져온 숫자다.
-    그래서 어떤 전제(basis)로 산출된 값인지, 어디서 언제 가져왔는지를 행마다 같이
-    저장한다 — 근거 없이 숫자만 보여주지 않는다는 원칙은 보험료에도 똑같이 적용한다.
+    2026-08-19 이전에는 보험다모아 비교공시(표준조건 1개 값)를 크롤링해서 채웠다.
+    지금은 사용자가 각 사 다이렉트 계산기에서 직접 조회한 값으로 전면 교체했다 —
+    보험사마다 실제로 파는 등급(플랜)이 여러 개(예: 라이트/베이직/플러스)라 등급별로
+    가격이 다르므로, plan_name을 기본키의 일부로 둔다.
+
+    약관에서 뽑아낸 보장 조건과 달리 이 값은 외부(보험사 공시 화면)에서 가져온
+    숫자다. 그래서 어떤 전제(basis)로 산출된 값인지, 어디서 언제 가져왔는지를 행마다
+    같이 저장한다 — 근거 없이 숫자만 보여주지 않는다는 원칙은 보험료에도 똑같이
+    적용한다.
     """
     __tablename__ = "insurer_premium"
-    __table_args__ = (UniqueConstraint("insurer_id", "sex", "age", name="uq_premium_insurer_sex_age"),)
+    __table_args__ = (
+        UniqueConstraint("insurer_id", "sex", "age", "plan_name", name="uq_premium_insurer_sex_age_plan"),
+    )
 
     premium_id = Column(Integer, primary_key=True)
     insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=False)
     sex = Column(String, nullable=False)          # M/F
     age = Column(Integer, nullable=False)         # 보험나이(만)
-    premium = Column(Integer, nullable=False)     # 보험다모아 표준조건 비교공시 보험료(원)
-    period_days = Column(Integer, nullable=False, default=7)  # 공시값의 기준 보험기간
-    product_name = Column(String)                 # 비교공시상 상품명
-    source_product_code = Column(String)          # 보험다모아 상품코드
+    plan_name = Column(String, nullable=False, default="")  # 그 보험사가 실제 쓰는 등급명 그대로(예: "베이직")
+    # 등급 선택 UI가 아직 없는 화면(보험료 비교·순위표)에 대표로 보여줄 등급 하나를
+    # 표시한다 — 보험사마다 "표준" 격에 해당하는 등급 하나씩만 True다.
+    is_standard_tier = Column(Boolean, nullable=False, default=False)
+    premium = Column(Integer, nullable=False)     # 실제 조회한 보험료(원)
+    period_days = Column(Integer, nullable=False, default=1)  # 조회값의 기준 보험기간(일)
+    product_name = Column(String)                 # 화면 표시용 등급명(plan_name과 동일하게 채운다)
+    source_product_code = Column(String)          # 보험다모아 상품코드(옛 크롤링 자료 호환용, 신규 값엔 비움)
     age_range = Column(String)                    # 해당 상품의 가입연령 표기(예: "19~79")
-    basis = Column(String)                        # 보험료 산출 전제
+    basis = Column(String)                        # 보험료 산출 전제(조회 조건)
     source = Column(String)
     source_url = Column(String)
+    collected_at = Column(Date)
+
+    insurer = relationship("Insurer")
+
+
+class InsurerPlanCoverage(Base):
+    """보험사 다이렉트 사이트에서 직접 조회한, 플랜(등급)별 담보 가입금액표.
+
+    InsurerPremium과 같은 성격의 외부 공시 자료(약관 조항에서 뽑은 값이 아니다).
+    금액 칸에 순수 숫자가 아니라 "-"(미가입)·"미제공"(그 상품 자체에 없음)·
+    "가입"(정액·한도 비공개 특약) 같은 표시가 섞여 있어서 amount_text는 원문 표기를
+    그대로 문자열로 둔다 — 숫자만 있는 줄도 문자열로 저장한다(이 표의 단위는 항상
+    '만원', unit 컬럼 참고).
+    """
+    __tablename__ = "insurer_plan_coverage"
+    __table_args__ = (
+        UniqueConstraint(
+            "insurer_id", "plan_name", "coverage_label",
+            name="uq_plan_coverage_insurer_plan_label",
+        ),
+    )
+
+    coverage_row_id = Column(Integer, primary_key=True)
+    insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=False)
+    plan_name = Column(String, nullable=False)       # 그 보험사가 실제 쓰는 등급명 그대로
+    coverage_label = Column(String, nullable=False)  # 원문 담보명 그대로
+    amount_text = Column(String, nullable=False)     # 원문 표기 그대로("10000", "-", "미가입(손해액기준)" 등)
+    unit = Column(String, default="만원")            # 숫자 항목의 단위. 텍스트 항목엔 의미 없음.
+    sort_order = Column(Integer, nullable=False)     # 원문 시트의 담보 순서(화면에 그대로 재현하기 위함)
+    source = Column(String)
+    source_note = Column(Text)                       # 그 보험사 시트 하단의 출처·주의사항 각주 원문
     collected_at = Column(Date)
 
     insurer = relationship("Insurer")

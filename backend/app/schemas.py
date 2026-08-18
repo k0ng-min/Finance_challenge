@@ -140,11 +140,11 @@ class InsurerCoverageOut(BaseModel):
 
 
 class InsurerPremiumOut(BaseModel):
-    """나이·성별 하나에 대한 보험사별 1일 표준조건 비교공시 보험료."""
+    """나이·성별 하나에 대한 보험사별 1일 기준 실제 보험료(표준 등급 하나 대표)."""
     insurer_code: str
     insurer_name: str
-    product_name: Optional[str] = None
-    published_premium: int    # 비교공시 원문 값. 여행일수로 환산하지 않는다.
+    product_name: Optional[str] = None  # 대표로 보여주는 등급명(예: "표준형")
+    published_premium: int    # 다이렉트 사이트에서 직접 조회한 값. 여행일수로 환산하지 않는다.
     age_range: Optional[str] = None
 
 
@@ -154,7 +154,7 @@ class PremiumPointOut(BaseModel):
 
 
 class InsurerPremiumCurveOut(BaseModel):
-    """한 보험사의 나이별 1일 표준조건 비교공시 보험료 곡선."""
+    """한 보험사의 나이별 1일 기준 실제 보험료 곡선(표준 등급 하나 대표)."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None
@@ -168,7 +168,7 @@ class InsurerPremiumCurveOut(BaseModel):
 
 
 class PremiumComparisonOut(BaseModel):
-    """보험료는 외부 비교공시에서 가져온 값이라 전제·출처를 항상 함께 내려보낸다."""
+    """보험료는 보험사 다이렉트 사이트에서 직접 조회한 값이라 전제·출처를 항상 함께 내려보낸다."""
     age: int
     sex: str
     basis: Optional[str] = None
@@ -177,7 +177,8 @@ class PremiumComparisonOut(BaseModel):
     collected_at: Optional[dt.date] = None
     premium_period_days: int = 7
     items: list[InsurerPremiumOut]
-    unavailable_insurers: list[str] = []
+    unavailable_insurers: list[str] = []  # 가격을 추적 중인데 이 나이만 가입연령 범위 밖인 보험사(이름)
+    no_data_insurer_codes: list[str] = []  # 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드)
 
 
 class UserPolicyOut(BaseModel):

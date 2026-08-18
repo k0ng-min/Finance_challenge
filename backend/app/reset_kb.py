@@ -64,6 +64,7 @@ KEEP_TABLES: frozenset[str] = frozenset(
         "required_doc_std",
         "standard_clause",
         "insurer_premium",
+        "insurer_plan_coverage",
         "travel_alert",
         "nonpayment_rate",
         "flight_delay_stat",

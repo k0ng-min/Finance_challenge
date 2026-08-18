@@ -63,27 +63,35 @@ def get_premium_comparison(
     order: str = "asc",
     db: Session = Depends(get_db),
 ):
-    """해당 나이·성별의 6개사 1일 표준조건 비교공시 보험료를 돌려준다.
+    """해당 나이·성별의 1일 기준 실제 보험료를 보험사별로 돌려준다.
 
-    이 숫자는 약관에서 뽑은 값이 아니라 보험다모아 비교공시에서 수집한 값이므로,
+    2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
+    사용자가 직접 조회한 실제 등급별 가격을 쓴다. 등급을 고르는 화면이 아직 없어
+    보험사마다 등급(is_standard_tier) 하나만 대표로 내려준다.
+
+    이 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이므로,
     산출 전제(basis)와 출처·수집일을 항상 같이 내려보낸다. 화면에서 숫자만 떼어
     보여주지 않기 위한 것이다.
 
-    days는 구버전 클라이언트 호환을 위해 받지만 계산에는 사용하지 않는다. 공시값만
+    days는 구버전 클라이언트 호환을 위해 받지만 계산에는 사용하지 않는다. 조회값만
     확보한 상태에서 여행일수에 비례한다고 가정하면 근거 없는 보험료를 만들게 되기 때문이다.
 
-    해당 나이가 가입연령 범위 밖이라 비교공시에 아예 나오지 않는 보험사는
-    unavailable_insurers로 따로 알려준다 — 조용히 빠뜨리면 "그 보험사는 더 싼가?"
-    하는 오해를 만든다."""
+    해당 나이가 가입연령 범위 밖이라 조회 자체가 안 되는 보험사는 unavailable_insurers로
+    따로 알려준다 — 조용히 빠뜨리면 "그 보험사는 더 싼가?" 하는 오해를 만든다.
+    아직 가격을 확보하지 못한 보험사(예: DB·메리츠)는 그 보험사에 해당하는 행이 아예
+    없어서 unavailable_insurers에도 잡히지 않는다 — 가격을 준비되는 대로
+    app.seed_premiums_actual만 다시 돌리면 자동으로 나타난다."""
     sex = sex.upper()
     if sex not in ("M", "F"):
         raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
 
     _ = days
+    # 보험사마다 실제로 파는 등급(플랜)이 여럿이라 (나이,성별) 하나에 여러 행이 걸린다 —
+    # 등급을 고르는 화면이 아직 없는 여기서는 보험사마다 표준 등급 하나만 대표로 보여준다.
     direction = InsurerPremium.premium.desc() if order == "desc" else InsurerPremium.premium.asc()
     rows = (
         db.query(InsurerPremium)
-        .filter(InsurerPremium.age == age, InsurerPremium.sex == sex)
+        .filter(InsurerPremium.age == age, InsurerPremium.sex == sex, InsurerPremium.is_standard_tier.is_(True))
         .order_by(direction)
         .all()
     )
@@ -91,11 +99,17 @@ def get_premium_comparison(
         raise HTTPException(status_code=404, detail="해당 나이·성별의 보험료 자료가 없습니다.")
 
     covered = {r.insurer_id for r in rows}
-    unavailable = [
-        i.name for i in db.query(Insurer).all()
-        if i.insurer_id not in covered
-        and db.query(InsurerPremium).filter(InsurerPremium.insurer_id == i.insurer_id).first() is not None
-    ]
+    all_insurers = db.query(Insurer).all()
+    tracked_ids = {
+        i.insurer_id for i in all_insurers
+        if db.query(InsurerPremium).filter(InsurerPremium.insurer_id == i.insurer_id).first() is not None
+    }
+    # 이 보험사는 가격 자체를 추적 중인데 이 나이만 범위 밖인 경우(가입연령 초과/미달).
+    unavailable = [i.name for i in all_insurers if i.insurer_id not in covered and i.insurer_id in tracked_ids]
+    # 이 보험사는 애초에 가격을 하나도 못 구했다(예: DB·메리츠, 아직 수집 전) — 나이와 무관하다.
+    # 원인이 다르므로 화면 문구도 나눠 보여준다(그렇지 않으면 "가입연령 범위 밖"이라는
+    # 틀린 이유를 사용자에게 전달하게 된다).
+    no_data = [i.code for i in all_insurers if i.insurer_id not in tracked_ids]
 
     first = rows[0]
     return PremiumComparisonOut(
@@ -103,6 +117,7 @@ def get_premium_comparison(
         basis=_display_basis(first.basis), source=first.source, source_url=first.source_url,
         collected_at=first.collected_at,
         premium_period_days=DISPLAY_PREMIUM_PERIOD_DAYS,
+        no_data_insurer_codes=no_data,
         items=[
             InsurerPremiumOut(
                 insurer_code=r.insurer.code, insurer_name=r.insurer.name,
@@ -128,7 +143,10 @@ def get_insurer_premium_curve(insurer_code: str, sex: str, db: Session = Depends
 
     rows = (
         db.query(InsurerPremium)
-        .filter(InsurerPremium.insurer_id == insurer.insurer_id, InsurerPremium.sex == sex)
+        .filter(
+            InsurerPremium.insurer_id == insurer.insurer_id, InsurerPremium.sex == sex,
+            InsurerPremium.is_standard_tier.is_(True),
+        )
         .order_by(InsurerPremium.age.asc())
         .all()
     )
@@ -164,7 +182,10 @@ def _attach_published_premiums(
 
     rows = (
         db.query(InsurerPremium)
-        .filter(InsurerPremium.age == age, InsurerPremium.sex == normalized_sex)
+        .filter(
+            InsurerPremium.age == age, InsurerPremium.sex == normalized_sex,
+            InsurerPremium.is_standard_tier.is_(True),
+        )
         .all()
     )
     by_id = {r.insurer_id: r for r in rows}

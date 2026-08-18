@@ -397,7 +397,7 @@ export interface InsurerRankOut {
   reasons: string[];
   tags: string[];
   official_url: string | null;
-  /** 나이·성별을 함께 넘긴 경우의 보험다모아 공시 원문 값. 여행일수로 환산하지 않는다. */
+  /** 나이·성별을 함께 넘긴 경우, 보험사 다이렉트 사이트에서 직접 조회한 실제 값. 여행일수로 환산하지 않는다. */
   published_premium: number | null;
   premium_period_days: number | null;
   premium_basis: string | null;
@@ -429,8 +429,10 @@ export interface PremiumComparisonOut {
   collected_at: string | null;
   premium_period_days: number;
   items: InsurerPremiumOut[];
-  /** 해당 나이가 가입연령 밖이라 비교공시에 나오지 않는 보험사 */
+  /** 가격을 추적 중인데 이 나이만 가입연령 범위 밖인 보험사(이름) */
   unavailable_insurers: string[];
+  /** 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드) — 예: DB·메리츠 */
+  no_data_insurer_codes: string[];
 }
 
 export interface AuthUserOut {

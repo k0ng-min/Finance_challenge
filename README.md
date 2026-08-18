@@ -217,16 +217,26 @@ python -m app.seed_onsite_phrases         # 서류명·요건 문구의 검수�
 python -m app.seed_simulation_scenarios   # 시뮬레이션 시나리오(L1 단위)
 ```
 
-### 1-1. 보험료 데이터 갱신 (선택)
+### 1-1. 보험료·담보 가입금액표 데이터 (선택)
 
-보험료는 `backend/data/premiums.json`에 수집된 상태로 저장소에 포함돼 있어 그대로 쓰면 됩니다.
-비교공시 값이 바뀌어 다시 받고 싶을 때만 아래를 실행하세요(협회 서버 부담을 줄이려고 요청 간
-1.2초 간격을 두므로 전체 수집에 4분쯤 걸립니다).
+2026-08-19부터 보험다모아 비교공시 대신, 각 사 다이렉트 사이트에서 **직접 조회한 실제
+등급(플랜)별 가격**을 씁니다. 저장소엔 이미 적재된 상태로 포함돼 있어 그대로 쓰면 됩니다.
+원본 엑셀은 `backend/data/source_files/`에 있고, 새로 조회한 값으로 갱신하고 싶으면 같은
+경로에 같은 형식(시트명·열 순서)으로 엑셀을 덮어쓴 뒤 아래를 실행하세요 — 보험사별로
+테이블을 통째로 갈아끼웁니다.
 
 ```bash
-python -m app.crawl_premiums    # 만 0~80세 × 남/녀, data/premiums.json 갱신
-python -m app.seed_premiums     # insurer_premium 테이블에 적재(있으면 덮어씀)
+python -m app.seed_premiums_actual   # insurer_premium: 나이·성별·등급별 실제 보험료
+python -m app.seed_plan_coverage     # insurer_plan_coverage: 등급별 담보 가입금액표
 ```
+
+가격 데이터는 아직 4개사(카카오페이·현대해상·KB·삼성)만 확보돼 있습니다. DB손해보험·
+메리츠화재는 시트가 없어 조용히 건너뛰며(화면에도 "아직 확보하지 못함"으로 안내), 나중에
+같은 형식의 시트를 엑셀에 추가하고 스크립트를 다시 돌리기만 하면 코드 변경 없이 채워집니다.
+담보 가입금액표(`seed_plan_coverage`)는 6개사 전부 확보돼 있습니다.
+
+옛 `crawl_premiums.py`/`seed_premiums.py`(보험다모아 표준조건 크롤링)는 코드만 남아 있고
+더 이상 쓰지 않습니다 — 보험사가 실제로 파는 여러 등급의 가격을 보여주지 못했기 때문입니다.
 
 여행경보도 같은 방식입니다. `backend/data/travel_alerts.json`에 수집된 상태로 포함돼 있고,
 경보가 바뀌었을 때만 다시 받으면 됩니다. 갱신하려면 공공데이터포털에서 「외교부_국가·지역별
@@ -248,7 +258,7 @@ cd backend
 .venv/Scripts/python.exe -m pytest tests/ -q   # macOS/Linux는 .venv/bin/python
 ```
 
-188건이 통과해야 합니다. 실손 세대 판정 경계값, Provider 계약, API 권한(게스트 차단·타인 데이터 접근 차단), 탈퇴 시 데이터 삭제와 함께 **진단 인용문이 실제 조항 원문의 부분 문자열인지, 안내 문구의 핵심 주장이 그 인용문 안에 실제로 들어 있는지**까지 검증합니다.
+197건이 통과해야 합니다. 실손 세대 판정 경계값, Provider 계약, API 권한(게스트 차단·타인 데이터 접근 차단), 탈퇴 시 데이터 삭제와 함께 **진단 인용문이 실제 조항 원문의 부분 문자열인지, 안내 문구의 핵심 주장이 그 인용문 안에 실제로 들어 있는지**까지 검증합니다.
 
 ### 2. 프론트엔드
 
@@ -330,11 +340,14 @@ backend/
     seed_doc_requirements.py 서류별 약관 요건 시드(앱 기동 시 비어 있으면 자동 실행)
     seed_standard_clauses.py     금감원 표준약관(해외여행 실손의료보험) 조문 시드
     seed_clause_standard_map.py  보험사 조항 ↔ 표준약관 조항 대조 판정 시드(근거 조항 조회해 물림)
-    crawl_premiums.py       보험다모아 나이·성별별 보험료 수집
-    seed_premiums.py        수집한 보험료를 insurer_premium 테이블에 적재
+    crawl_premiums.py       (옛 자료) 보험다모아 나이·성별별 보험료 수집 — 더 이상 안 씀
+    seed_premiums.py        (옛 자료) crawl_premiums.py 결과 적재 — 더 이상 안 씀
+    seed_premiums_actual.py 각 사 다이렉트에서 직접 조회한 등급별 실제 보험료 적재
+    seed_plan_coverage.py   각 사 다이렉트에서 직접 조회한 등급별 담보 가입금액표 적재
   tests/                   pytest(진단 근거 검증, 세대 판정 경계값, API 권한 등)
   data/app.db              SQLite DB(정제된 데이터 포함, 저장소에 커밋됨)
-  data/premiums.json       수집한 보험료 원본(출처·전제·수집일 포함)
+  data/source_files/       보험료·담보 가입금액표 원본 엑셀(사용자가 직접 조회, 출처 각주 포함)
+  data/premiums.json       (옛 자료) 보험다모아 수집본 — 더 이상 안 씀
   data/standard_terms/     금감원 표준약관 원문(HWP, 정부 공개 행정규칙이라 커밋 가능)
   data/flight_delay_stats.json  한국공항공사 항공지연 통계 스냅샷(출처·수집일 포함)
   PDF_EXTRACTION_PLAYBOOK.md      조항 추출 원칙 문서
