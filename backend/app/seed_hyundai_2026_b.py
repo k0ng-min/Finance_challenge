@@ -140,7 +140,7 @@
 from datetime import date
 from app.database import SessionLocal
 from app import models  # noqa: F401
-from app.models.kb import Clause, Coverage, PolicyVersion
+from app.models.kb import Clause, Coverage, CoverageStd, PolicyVersion
 from app.services.kb_seed_common import get_or_create_coverage_std
 
 PRODUCT_CODE = "HYUNDAI-OVERSEAS-2026"
@@ -192,25 +192,69 @@ def run():
         print(f"Processing PolicyVersion: {VERSION_LABEL}")
 
         # 특약 1: 기본형 해외여행 급여 실손의료비보장 특별약관
-        cov_std_basic = get_or_create_coverage_std(
-            db, 'OVS_MED_BASIC', '해외여행 급여 의료비', '의료비', is_base=False
+        # 다른 5개사처럼 상해/질병을 OVS_INJ_MED / OVS_ILL_MED로 나눈다(기존 코드 재사용).
+        # 원래 이 특약을 OVS_MED_BASIC 하나로 묶어서 시드했었는데, 그러면 사고유형 매핑·
+        # 표준약관 대조에서 현대만 빠지는 문제가 있었다(2026-08-19 지적). 상해/질병 어느
+        # 쪽에도 속하지 않는 공통 절차 조항(제1조 보장종목 개요, 제5조 한도, 제7·8조
+        # 청구절차)은 상해측 Coverage에 붙인다 — 내용이 둘 다를 언급하지만 한쪽에는
+        # 붙어야 하고, 둘 다 만들면 같은 조항이 두 담보에 중복 등장한다.
+        cov_std_inj = get_or_create_coverage_std(
+            db, 'OVS_INJ_MED', '해외발생 상해의료비', '의료', is_base=False
+        )
+        cov_std_ill = get_or_create_coverage_std(
+            db, 'OVS_ILL_MED', '해외발생 질병의료비', '의료', is_base=False
         )
 
-        coverage_basic = db.query(Coverage).filter(
+        coverage_inj = db.query(Coverage).filter(
             Coverage.policy_version_id == pv.policy_version_id,
-            Coverage.raw_name == '기본형 해외여행 급여 실손의료비보장'
+            Coverage.raw_name == '기본형 해외여행 급여 실손의료비보장 - 상해'
         ).first()
-
-        if not coverage_basic:
-            coverage_basic = Coverage(
+        if not coverage_inj:
+            coverage_inj = Coverage(
                 policy_version_id=pv.policy_version_id,
-                coverage_std_id=cov_std_basic.coverage_std_id,
-                raw_name='기본형 해외여행 급여 실손의료비보장',
-                definition='해외여행 중 발생한 상해 및 질병으로 인한 의료비 보상'
+                coverage_std_id=cov_std_inj.coverage_std_id,
+                raw_name='기본형 해외여행 급여 실손의료비보장 - 상해',
+                definition='해외여행 중 발생한 상해로 인한 의료비 보상'
             )
-            db.add(coverage_basic)
+            db.add(coverage_inj)
             db.flush()
-            print("Created Coverage: 기본형 해외여행 급여 실손의료비보장")
+            print("Created Coverage: 기본형 해외여행 급여 실손의료비보장 - 상해")
+
+        coverage_ill = db.query(Coverage).filter(
+            Coverage.policy_version_id == pv.policy_version_id,
+            Coverage.raw_name == '기본형 해외여행 급여 실손의료비보장 - 질병'
+        ).first()
+        if not coverage_ill:
+            coverage_ill = Coverage(
+                policy_version_id=pv.policy_version_id,
+                coverage_std_id=cov_std_ill.coverage_std_id,
+                raw_name='기본형 해외여행 급여 실손의료비보장 - 질병',
+                definition='해외여행 중 발생한 질병으로 인한 의료비 보상'
+            )
+            db.add(coverage_ill)
+            db.flush()
+            print("Created Coverage: 기본형 해외여행 급여 실손의료비보장 - 질병")
+
+        # 이전에 OVS_MED_BASIC 담보로 붙어 있던 조항이 있으면 새 담보로 옮긴다(idempotent
+        # 재실행 대비 — coverage_basic 자체는 더 이상 만들지 않는다).
+        legacy_std = db.query(CoverageStd).filter_by(std_code='OVS_MED_BASIC').first()
+        if legacy_std:
+            legacy_coverage = db.query(Coverage).filter_by(
+                policy_version_id=pv.policy_version_id, coverage_std_id=legacy_std.coverage_std_id
+            ).first()
+            if legacy_coverage:
+                from app.models.kb import CoverageDocMap
+                for legacy_clause in db.query(Clause).filter_by(coverage_id=legacy_coverage.coverage_id).all():
+                    legacy_clause.coverage_id = (
+                        coverage_ill.coverage_id if '질병' in (legacy_clause.article_no or '') else coverage_inj.coverage_id
+                    )
+                # CoverageDocMap.coverage_id는 NOT NULL이라 legacy_coverage를 지우기 전에
+                # 그 담보를 참조하는 서류 매핑을 먼저 지운다 — 새 담보 몫은
+                # seed_coverage_doc_map.py를 다시 돌리면 채워진다.
+                db.query(CoverageDocMap).filter_by(coverage_id=legacy_coverage.coverage_id).delete()
+                db.delete(legacy_coverage)
+                db.flush()
+                print("Migrated legacy OVS_MED_BASIC clauses to OVS_INJ_MED/OVS_ILL_MED")
 
         # 기본형 특약의 주요 조항들
         basic_clauses = [
@@ -265,8 +309,11 @@ def run():
         ]
 
         for clause_data in basic_clauses:
+            target_coverage_id = (
+                coverage_ill.coverage_id if '질병' in clause_data['article_no'] else coverage_inj.coverage_id
+            )
             existing = db.query(Clause).filter(
-                Clause.coverage_id == coverage_basic.coverage_id,
+                Clause.coverage_id == target_coverage_id,
                 Clause.article_no == clause_data['article_no'],
                 Clause.text == clause_data['text']
             ).first()
@@ -274,7 +321,7 @@ def run():
             if not existing:
                 clause = Clause(
                     policy_version_id=pv.policy_version_id,
-                    coverage_id=coverage_basic.coverage_id,
+                    coverage_id=target_coverage_id,
                     article_no=clause_data['article_no'],
                     text=clause_data['text'],
                     clause_type=clause_data['clause_type'],

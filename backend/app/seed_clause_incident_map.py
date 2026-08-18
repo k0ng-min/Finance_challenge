@@ -173,6 +173,28 @@ ADMIN_STD_CODES = {"DISABILITY_CONVERSION", "TRAVEL_COMPANION", "DELEGATION_CLAI
 
 SKIP_CLAUSE_TYPES = {"서류"}
 
+# 담보표준코드만으로는 못 잡는 L2(SPC_NATURAL_DISASTER/PROP_CASH_SECURITIES/LIA_LODGING)를
+# 문구 증거로 보충한다. 원문에 이 문구가 실제로 있는 조항에만 건다(EVIDENCE_RULES 원칙,
+# seed_overlap_rules.py와 동일) — 없으면 조용히 건너뛴다.
+# (evidence_phrase, l2_code, relevance)
+EVIDENCE_RULES: list[tuple[str, str, str]] = [
+    # 천재지변으로 인한 여행중단은 TRIP_INTERRUPTION 보장정의 안에 "지진, 분화, 해일
+    # 또는 이와 비슷한 천재지변"이 지급사유로 직접 열거돼 있다.
+    ("천재지변", "SPC_NATURAL_DISASTER", "직접"),
+    # 배상책임 면책 조항에 "통화, 유가증권..." 등을 보험목적에서 제외한다는 문구가 있으면
+    # 현금·유가증권 손해는 이 담보로 보상받지 못한다는 직접 증거다.
+    ("유가증권", "PROP_CASH_SECURITIES", "면책"),
+    # 배상책임 면책 조항이 재물손해 배상책임을 일반적으로 면책하면서 "호텔의 객실이나
+    # 객실내의 동산에 끼치는 손해"만 예외로 되살리는 경우 — 임차물·호텔객실 배상책임이
+    # 조건부로 살아 있다는 증거다.
+    ("호텔의 객실", "LIA_LODGING", "조건부"),
+    # 6개사 전부 "항공기 및 수하물 지연비용" 특별약관 하나로 항공지연·수하물지연을 함께
+    # 다룬다(별도 CoverageStd로 안 나뉜다) — "피보험자의 수하물이 …도착시각으로부터 N시간
+    # 이후에 도착"이라는 지급사유 문구가 있으면 수하물 지연도 같은 담보로 보상된다는
+    # 직접 증거다.
+    ("수하물이 항공편의 예정된 도착", "TRV_BAGGAGE_DELAY", "직접"),
+]
+
 
 def run():
     db = SessionLocal()
@@ -198,28 +220,49 @@ def run():
         by_relevance: dict[str, int] = {}
         unmapped: list[tuple[int, str, str]] = []
 
+        made: set[tuple[int, int, str]] = set()  # (clause_id, type_id, relevance) 중복 방지
+
+        def _add(clause_id: int, l2_code: str, relevance: str) -> bool:
+            itype = types.get(l2_code)
+            if itype is None:
+                return False
+            key = (clause_id, itype.type_id, relevance)
+            if key in made:
+                return False
+            made.add(key)
+            db.add(ClauseIncidentMap(
+                clause_id=clause_id, type_id=itype.type_id,
+                relevance=relevance, mapped_by=MAPPED_BY, confidence=None,
+            ))
+            return True
+
         for clause, std_code in rows:
             if clause.clause_type in SKIP_CLAUSE_TYPES:
                 continue
-            if std_code in ADMIN_STD_CODES:
-                continue
-            targets = BASE_RULES.get((std_code, clause.clause_type), [])
-            if not targets:
+
+            base_hit = False
+            if std_code not in ADMIN_STD_CODES:
+                targets = BASE_RULES.get((std_code, clause.clause_type), [])
+                for l2_code, relevance in targets:
+                    if _add(clause.clause_id, l2_code, relevance):
+                        base_hit = True
+                        created += 1
+                        by_relevance[relevance] = by_relevance.get(relevance, 0) + 1
+                    else:
+                        unmapped.append((clause.clause_id, std_code, f"incident_type 사전에 {l2_code} 없음"))
+
+            # 담보표준코드 규칙과 별개로, 원문에 증거 문구가 있으면 추가로 매핑한다
+            # (같은 조항이 BASE_RULES로 이미 매핑됐어도 중복 없이 더 붙는다).
+            for phrase, l2_code, relevance in EVIDENCE_RULES:
+                if phrase in (clause.text or "") and _add(clause.clause_id, l2_code, relevance):
+                    base_hit = True
+                    created += 1
+                    by_relevance[relevance] = by_relevance.get(relevance, 0) + 1
+
+            if not base_hit and std_code not in ADMIN_STD_CODES:
                 reason = "담보에 연결되지 않은 조항(coverage_id NULL)" if std_code is None else \
                     f"매핑 규칙 없음 (std={std_code}, type={clause.clause_type})"
                 unmapped.append((clause.clause_id, std_code or "-", reason))
-                continue
-            for l2_code, relevance in targets:
-                itype = types.get(l2_code)
-                if itype is None:
-                    unmapped.append((clause.clause_id, std_code, f"incident_type 사전에 {l2_code} 없음"))
-                    continue
-                db.add(ClauseIncidentMap(
-                    clause_id=clause.clause_id, type_id=itype.type_id,
-                    relevance=relevance, mapped_by=MAPPED_BY, confidence=None,
-                ))
-                created += 1
-                by_relevance[relevance] = by_relevance.get(relevance, 0) + 1
 
         db.commit()
         print(f"clause_incident_map 시드 완료: {created}건 생성 (조항 {len(rows)}건 검토)")
