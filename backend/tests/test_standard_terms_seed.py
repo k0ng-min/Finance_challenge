@@ -24,10 +24,12 @@ def test_relation은_정의된_값만_쓴다():
         assert spec["relation"] in allowed
 
 
-def test_같은_보험사_같은_조문_규칙이_중복되지_않는다():
+def test_같은_조항_같은_조문_규칙이_중복되지_않는다():
+    """2026-08-18 재구축 이후로는 insurer_frag(보험사명 조각) 대신 전수 검색으로 확인한
+    clause_id를 직접 쓴다(seed_overlap_rules.py와 같은 이유)."""
     seen = set()
     for spec in RULE_SPECS:
-        key = (spec["insurer_frag"], spec["article_no"])
+        key = (spec["clause_id"], spec["article_no"])
         assert key not in seen, f"중복된 규칙 키: {key}"
         seen.add(key)
 

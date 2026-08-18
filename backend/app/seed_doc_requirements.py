@@ -7,16 +7,11 @@
 seed_overlap_rules와 같은 방식을 쓴다 — 행마다 근거 조항을 조회해 붙이고, anchor_phrase가
 그 조항 원문의 부분 문자열이 아니면 예외를 던지고 롤백한다.
 
-지금 넣는 요건은 두 가지뿐이다. 6개사 약관 제7조를 읽어 실제로 적혀 있는 것만 골랐다.
-
-  - 사고증명서(진료비계산서·세부내역서·입원치료확인서·처방전·장해진단서·사망진단서)
-    → "의료기관에서 발급한 것이어야" (제7조 ②항)
-      해외 서류를 정면으로 다루는 조항이라, 외국 병원 서류를 볼 때 바로 쓸 수 있다.
-  - 신분증 → "사진이 붙은 정부기관발행" (제7조 ①항 3호)
-
-금액·진료일자·환자명 같은 항목은 약관 어디에도 없다. 그건 근거가 없으므로 여기 넣지 않고
-services/doc_verify_gemini.py의 PRACTICAL_CHECKS에 따로 두며, 화면에서도 칸을 나눠
-"약관 근거는 아니에요"라고 밝힌다.
+2026-08-18 약관 재구축 후 재작성. 구판본에 있던 ISSUER_MEDICAL("의료기관에서 발급한
+것이어야")은 새 6개사 조항 어디에도 그 문구가 없어(직접 전수 검색 확인) 뺐다 — 지어내지
+않는다는 원칙상 근거 없는 요건을 다시 넣을 수 없다. PHOTO_GOV_ID만 남긴다. 신분증 요건
+문구는 보험사마다 "부착된"/"붙은"으로 약간 다르게 적혀 있어 실제로 있는 표현
+("사진이 부착된 정부기관발행 신분증")을 그대로 앵커로 쓴다.
 """
 from __future__ import annotations
 
@@ -30,22 +25,9 @@ Base.metadata.create_all(bind=engine)
 # (요건코드, 화면 표시 라벨, 조항에서 찾을 문구, 이 요건이 붙는 서류 코드들)
 REQUIREMENTS: list[tuple[str, str, str, tuple[str, ...]]] = [
     (
-        "ISSUER_MEDICAL",
-        "의료기관이 발급한 서류",
-        "의료기관에서 발급한 것이어야",
-        (
-            "MEDICAL_EXPENSE_CERT",
-            "MEDICAL_DETAIL_CERT",
-            "TREATMENT_CERT",
-            "PRESCRIPTION",
-            "DISABILITY_CERT",
-            "DEATH_CERT",
-        ),
-    ),
-    (
         "PHOTO_GOV_ID",
-        "사진이 붙은 정부기관 발행 신분증",
-        "사진이 붙은 정부기관발행 신분증",
+        "사진이 부착된 정부기관 발행 신분증",
+        "사진이 부착된 정부기관발행 신분증",
         ("ID_CARD",),
     ),
 ]
@@ -56,7 +38,7 @@ def _find_clause(db: Session, phrase: str) -> Clause | None:
     하나를 근거로 쓴다 — 어느 보험사 약관에도 같은 취지로 적혀 있다는 뜻이라 대표로 충분하다."""
     return (
         db.query(Clause)
-        .filter(Clause.clause_type == "서류", Clause.text.contains(phrase))
+        .filter(Clause.text.contains(phrase))
         .order_by(Clause.clause_id)
         .first()
     )
@@ -73,8 +55,6 @@ def seed(db: Session) -> int:
                 f"[{code}] 근거 조항을 찾지 못했습니다: '{phrase}'. "
                 "약관 시드가 끝난 뒤에 이 스크립트를 실행하세요."
             )
-        # 조회로 찾았으니 당연히 들어 있지만, 조회 조건이 바뀌어도 이 불변식이 깨지지 않도록
-        # 저장 직전에 한 번 더 대조한다(ClauseTerm.raw_text와 같은 규칙).
         if phrase not in clause.text:
             raise RuntimeError(f"[{code}] anchor_phrase가 조항 원문에 없습니다: '{phrase}'")
 

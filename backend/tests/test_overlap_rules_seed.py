@@ -27,10 +27,15 @@ _KEY_PHRASES = {
 
 
 def test_UNKNOWN이_아닌_규칙은_모두_근거조항_조회조건을_갖는다():
-    """근거 없는 판정을 구조적으로 막는다 — 이 테스트가 그 계약을 강제한다."""
+    """근거 없는 판정을 구조적으로 막는다 — 이 테스트가 그 계약을 강제한다.
+
+    2026-08-18 재구축 이후로는 "보험사명+조항 제목 조각" 퍼지 조회(clause_lookup) 대신
+    앵커 문구를 원문 전수 검색으로 먼저 확인한 뒤 그 clause_id를 직접 박아 쓴다 —
+    구판본에서 fuzzy 조회가 엉뚱한 특약을 집어온 적이 있어(PASSPORT_LOSS 사례,
+    seed_overlap_rules.py 주석 참고) 더 안전한 방식으로 바꿨다."""
     for spec in RULE_SPECS:
         if spec["relation"] != "UNKNOWN":
-            assert spec.get("clause_lookup"), f"근거 없는 규칙: {spec}"
+            assert spec.get("clause_id") is not None, f"근거 없는 규칙: {spec}"
 
 
 def test_UNKNOWN이_아닌_규칙은_anchor_phrase도_갖는다():
@@ -41,13 +46,13 @@ def test_UNKNOWN이_아닌_규칙은_anchor_phrase도_갖는다():
             assert spec.get("anchor_phrase"), f"anchor_phrase 없는 규칙: {spec}"
 
 
-def test_UNKNOWN_규칙은_clause_lookup이_없다():
-    """근거를 못 찾은 규칙은 clause_lookup 자체를 두지 않는다 — clause_id가 실수로도
-    채워지지 않게 하는 구조적 장치다(seed_overlap_rules()가 relation==UNKNOWN이면
-    clause_lookup을 아예 쓰지 않는다)."""
+def test_UNKNOWN_규칙은_clause_id가_없다():
+    """근거를 못 찾은 규칙은 clause_id 자체를 두지 않는다 — 실수로도 채워지지 않게 하는
+    구조적 장치다(seed_overlap_rules()가 relation==UNKNOWN이면 clause_id를 아예 쓰지
+    않는다)."""
     for spec in RULE_SPECS:
         if spec["relation"] == "UNKNOWN":
-            assert "clause_lookup" not in spec, f"UNKNOWN인데 clause_lookup이 있는 규칙: {spec}"
+            assert "clause_id" not in spec, f"UNKNOWN인데 clause_id가 있는 규칙: {spec}"
 
 
 def test_같은_담보_구간_조합이_중복되지_않는다():

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_version": "travel-kb-2026.08.18-rebuild",
-  "frozen_at": "2026-08-18T17:28:30+00:00",
-  "kb_content_sha256": "420fa1883f635eea05e059941e3a082144ec9da02da521ba1e11b2b2dab6b4a5",
+  "frozen_at": "2026-08-18T18:22:49+00:00",
+  "kb_content_sha256": "cf35b98cca8292ce5341a9ecbefdbc09df51888fdf9bdd5183201e4e604eaef9",
   "fingerprint_scope": [
     "insurer",
     "product",
@@ -35,9 +35,9 @@
       "coverage_count": 17,
       "clause_count": 48,
       "incident_map_count": 71,
-      "term_count": 0,
+      "term_count": 29,
       "doc_map_count": 67,
-      "known_gap": "표지가 이미지라 약관 버전 코드와 시행일이 인쇄돼 있지 않다. clause_term(정량조건)과 doc_requirement(서류 세부요건 앵커)는 이번 재구축 1차분에서 아직 만들지 않았다."
+      "known_gap": "표지가 이미지라 약관 버전 코드와 시행일이 인쇄돼 있지 않다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "HYUNDAI",
@@ -53,9 +53,9 @@
       "coverage_count": 12,
       "clause_count": 42,
       "incident_map_count": 33,
-      "term_count": 0,
+      "term_count": 10,
       "doc_map_count": 37,
-      "known_gap": "clause_term(정량조건)과 doc_requirement(서류 세부요건 앵커)는 이번 재구축 1차분에서 아직 만들지 않았다."
+      "known_gap": " clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "MERITZ",
@@ -71,9 +71,9 @@
       "coverage_count": 42,
       "clause_count": 143,
       "incident_map_count": 145,
-      "term_count": 0,
+      "term_count": 67,
       "doc_map_count": 162,
-      "known_gap": "약관번호 뒷자리(2607A)를 시행일로 단정할 근거가 없어 effective_date를 비워 뒀다. clause_term과 doc_requirement는 아직 만들지 않았다."
+      "known_gap": "약관번호 뒷자리(2607A)를 시행일로 단정할 근거가 없어 effective_date를 비워 뒀다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "KB",
@@ -89,9 +89,9 @@
       "coverage_count": 25,
       "clause_count": 56,
       "incident_map_count": 66,
-      "term_count": 0,
+      "term_count": 29,
       "doc_map_count": 92,
-      "known_gap": "표지 표기는 \"2026.06\"뿐이라 정확한 시행일로 단정 못해 effective_date를 비워 뒀다. 실손의료비 특별약관(p.170-286)은 핵심 보장정의·면책만 넣고 비급여 세부·미가입자 추가특약은 범위 밖으로 남겼다. clause_term과 doc_requirement는 아직 만들지 않았다."
+      "known_gap": "표지 표기는 \"2026.06\"뿐이라 정확한 시행일로 단정 못해 effective_date를 비워 뒀다. 실손의료비 특별약관(p.170-286)은 핵심 보장정의·면책만 넣고 비급여 세부·미가입자 추가특약은 범위 밖으로 남겼다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "DB",
@@ -107,9 +107,9 @@
       "coverage_count": 17,
       "clause_count": 94,
       "incident_map_count": 165,
-      "term_count": 0,
+      "term_count": 18,
       "doc_map_count": 68,
-      "known_gap": "버전 코드·시행일이 본문에 인쇄돼 있지 않아 effective_date를 비워 뒀다. clause_term과 doc_requirement는 아직 만들지 않았다."
+      "known_gap": "버전 코드·시행일이 본문에 인쇄돼 있지 않아 effective_date를 비워 뒀다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "KAKAOPAY",
@@ -125,9 +125,9 @@
       "coverage_count": 18,
       "clause_count": 29,
       "incident_map_count": 24,
-      "term_count": 0,
+      "term_count": 9,
       "doc_map_count": 71,
-      "known_gap": "「함께하는 해외여행보험」(f558fafbd3439e91525bea49cb46299d43afcf667deb20c5cf505edde997d16b)과 「함께하는 해외여행보험II」(a4b41ae4d606121188a838e6ebc7838dc579d6324c433253b7c394738866d19a) 두 파일을 함께 읽어 본문이 「해외여행보험」(기준 파일, 위 sha256)과 동일함을 확인하고 하나로 통합했다. file_hash는 기준 파일의 것이다. clause_term과 doc_requirement는 아직 만들지 않았다."
+      "known_gap": "「함께하는 해외여행보험」(f558fafbd3439e91525bea49cb46299d43afcf667deb20c5cf505edde997d16b)과 「함께하는 해외여행보험II」(a4b41ae4d606121188a838e6ebc7838dc579d6324c433253b7c394738866d19a) 두 파일을 함께 읽어 본문이 「해외여행보험」(기준 파일, 위 sha256)과 동일함을 확인하고 하나로 통합했다. file_hash는 기준 파일의 것이다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     }
   ]
 }

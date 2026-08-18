@@ -198,14 +198,15 @@ python -m app.seed_samsung_2026_a && python -m app.seed_samsung_2026_b && python
   && python -m app.seed_kakaopay_2026_a && python -m app.seed_kakaopay_2026_b && python -m app.seed_kakaopay_2026_c \
   && python -m app.seed_kakaopay_2026_d && python -m app.seed_kakaopay_2026_together_diff \
   && python -m app.seed_questions && python -m app.seed_validation_rules \
-  && python -m app.seed_incident_types && python -m app.seed_clause_incident_map && python -m app.seed_coverage_doc_map
+  && python -m app.seed_incident_types && python -m app.seed_clause_incident_map && python -m app.seed_coverage_doc_map \
+  && python -m app.seed_clause_terms && python -m app.seed_overlap_rules && python -m app.seed_clause_standard_map
 ```
 
-`ClauseTerm`(정량 조건)·`DocRequirement`(서류 세부 요건)·`OverlapRule`(중복 판정)·
-`ClauseStandardMap`(표준약관 대조)은 이번 재구축에서 아직 다시 만들지 않았다 —
-`docs/compliance/source_register.md`의 "2026-08-18 재구축에서 아직 만들지 않은 것" 참고.
-`seed_doc_requirements`는 앱 기동 시 자동 실행을 시도하지만 새 조항 원문에서 앵커
-문구를 못 찾으면 조용히 건너뛴다(앱은 정상 기동한다).
+`seed_doc_requirements`는 앱 기동 시 자동으로 실행되므로(비어 있을 때만) 보통 따로
+실행할 필요가 없다. 파생 데이터 커버리지는 `docs/compliance/source_register.md`의
+"2026-08-18 재구축에서 새로 만든 파생 데이터" 참고 — 근거를 못 찾은 일부 칸(예: 현대의
+실손의료비 상해/질병 미분리, 실손 표준약관 부재로 인한 의료비 중복 판정 `UNKNOWN`)은
+단정하지 않고 비워 뒀다.
 
 「현지에서」·「사고 시뮬레이션」 시드도 앱 기동 시 비어 있으면 자동으로 채워지므로 보통
 따로 실행할 필요가 없습니다.
