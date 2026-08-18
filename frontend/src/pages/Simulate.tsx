@@ -49,37 +49,50 @@ export function Simulate() {
   const { tripId } = useApp();
   const navigate = useNavigate();
   const [data, setData] = useState<SimulationOut | null>(null);
-  const [selected, setSelected] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 세분화 칩을 누른 "그 카드만" 다시 도는 동안 표시할 로딩 — 카드별로 따로
+  // 갖는다. 예전에는 화면 전체가 하나의 loading을 공유해서, 카드 하나의 칩을
+  // 눌러도 나머지 3개 카드까지 6개사분(4×6) 전부 다시 조회되고 그동안 모든
+  // 카드의 칩이 같이 잠겼다 — 이제 바뀐 카드 하나만 다시 조회하고 잠근다.
+  const [busyCodes, setBusyCodes] = useState<Set<string>>(new Set());
 
-  const load = useCallback(
-    (choices: Record<string, number>) => {
+  useEffect(() => {
+    if (!tripId) return;
+    setLoading(true);
+    setError(null);
+    api
+      .getTripSimulation(tripId)
+      .then(setData)
+      .catch(() => setError("시뮬레이션을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."))
+      .finally(() => setLoading(false));
+  }, [tripId]);
+
+  const chooseSubType = useCallback(
+    (code: string, typeId: number | null) => {
       if (!tripId) return;
-      setLoading(true);
+      setBusyCodes((prev) => new Set(prev).add(code));
       setError(null);
       api
-        .getTripSimulation(tripId, choices)
-        .then(setData)
-        .catch(() => setError("시뮬레이션을 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요."))
-        .finally(() => setLoading(false));
+        .getTripSimulationScenario(tripId, code, typeId)
+        .then((scenario) => {
+          setData((prev) =>
+            prev
+              ? { ...prev, scenarios: prev.scenarios.map((s) => (s.code === code ? scenario : s)) }
+              : prev,
+          );
+        })
+        .catch(() => setError("시나리오를 다시 계산하지 못했어요. 잠시 뒤 다시 시도해 주세요."))
+        .finally(() => {
+          setBusyCodes((prev) => {
+            const next = new Set(prev);
+            next.delete(code);
+            return next;
+          });
+        });
     },
     [tripId],
   );
-
-  useEffect(() => {
-    load(selected);
-    // selected가 바뀔 때마다 서버에서 다시 계산한다 — 판정 로직을 화면에 복제하지 않는다.
-  }, [load, selected]);
-
-  function chooseSubType(code: string, typeId: number | null) {
-    setSelected((prev) => {
-      const next = { ...prev };
-      if (typeId == null) delete next[code];
-      else next[code] = typeId;
-      return next;
-    });
-  }
 
   if (!tripId) {
     return (
@@ -149,7 +162,7 @@ export function Simulate() {
               scenario={s}
               index={i}
               onChooseSubType={(typeId) => chooseSubType(s.code, typeId)}
-              busy={loading}
+              busy={busyCodes.has(s.code)}
             />
           ))}
 

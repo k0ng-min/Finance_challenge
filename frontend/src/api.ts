@@ -666,6 +666,15 @@ export const api = {
     return request<SimulationOut>(`/trips/${tripId}/simulation${params ? `?${params}` : ""}`);
   },
 
+  /** 세분화 칩 하나를 눌렀을 때 그 시나리오 하나만 다시 계산한다 — 나머지
+   * 시나리오는 화면에 이미 있는 결과를 그대로 둔다. */
+  getTripSimulationScenario: (tripId: number, code: string, typeId: number | null) => {
+    const q = typeId != null ? `?type_id=${typeId}` : "";
+    return request<SimulatedScenarioOut>(
+      `/trips/${tripId}/simulation/${encodeURIComponent(code)}${q}`,
+    );
+  },
+
   /** 목적지 여행경보. 자료에 없는 나라면 alert가 null이다(추측하지 않는다). */
   getTravelAlert: (country: string) =>
     request<{ alert: TravelAlertOut | null }>(`/trips/travel-alerts/${encodeURIComponent(country)}`),

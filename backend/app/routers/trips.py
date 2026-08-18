@@ -12,14 +12,14 @@ from app.routers.auth import get_current_user_optional, verify_owner
 from app.models.kb import FlightDelayStat
 from app.schemas import (
     TripCreate, TripUpdate, TripDetailOut, RecommendationOut, FlightDelayStatOut,
-    FlightDelayStatsOut, OnsitePackOut, SimulationOut,
+    FlightDelayStatsOut, OnsitePackOut, SimulationOut, SimulatedScenarioOut,
 )
 from app.services.rules import build_risk_profile, generate_pre_trip_findings
 from app.services.travel_alert import build_alert_findings, country_alert
 from app.services.finding_persistence import persist_findings, load_findings_out
 from app.services.deletion import delete_trip_cascade, wipe_user_data
 from app.services.onsite import build_onsite_pack
-from app.services.simulation import build_simulation
+from app.services.simulation import build_simulation, build_one_scenario
 
 #: 시뮬레이션 화면에 고정으로 붙는 경계 문구. 서버가 내려보내 화면과 테스트가 같은 문장을
 #: 쓴다 — 이 기능은 약관 조항 매핑을 보여줄 뿐 지급을 약속하지 않는다.
@@ -310,3 +310,29 @@ def get_trip_simulation(
         scenarios=[asdict(s) for s in scenarios],
         disclaimer=SIMULATION_DISCLAIMER,
     )
+
+
+@router.get("/{trip_id}/simulation/{code}", response_model=SimulatedScenarioOut)
+@limiter.limit("60/minute")
+def get_trip_simulation_scenario(
+    request: Request, trip_id: int, code: str,
+    type_id: int | None = Query(default=None),
+    db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """시나리오 하나만 다시 계산한다(칩으로 세분화를 바꿨을 때).
+
+    화면에서 세분화 칩 하나를 누르면 이 엔드포인트만 부른다 — 나머지 시나리오
+    3개까지 6개사분 다시 조회하던 것을, 바뀐 시나리오 하나(6개사분)로 줄인다.
+    """
+    trip = db.get(Trip, trip_id)
+    if not trip:
+        raise HTTPException(status_code=404, detail="여행 정보를 찾을 수 없습니다.")
+    verify_owner(trip.user_id, current)
+
+    try:
+        scenario = build_one_scenario(db, trip, code, type_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return SimulatedScenarioOut(**asdict(scenario))

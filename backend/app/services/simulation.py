@@ -203,6 +203,44 @@ def _sub_types(db: Session, l1_type_id: int) -> list[dict]:
     return [{"type_id": t.type_id, "name": t.name} for t in rows]
 
 
+def build_one_scenario(
+    db: Session, trip: Trip, code: str, type_id: int | None = None,
+) -> SimulatedScenario:
+    """시나리오 하나만 다시 계산한다.
+
+    칩(세분화 선택)을 하나 눌렀다고 다른 3개 시나리오까지 6개사분 조회를
+    새로 돌 이유가 없다 — build_simulation()은 화면 최초 진입 때만 쓰고,
+    이후 칩 클릭은 이 함수로 바뀐 시나리오 하나만 다시 태운다. 시나리오가
+    이 여행에 실제로 뜬 것인지는 select_scenarios()로 다시 확인한다 —
+    그래야 다른 여행/다른 조건에서만 뜨는 시나리오 코드를 끼워 넣어 엉뚱한
+    결과를 만들 수 없다.
+    """
+    scenario = next((s for s in select_scenarios(db, trip) if s.code == code), None)
+    if scenario is None:
+        raise ValueError(f"'{code}' 시나리오는 이 여행에 해당하지 않습니다.")
+
+    modifiers = json.loads(scenario.modifiers) if scenario.modifiers else None
+    sub_types = _sub_types(db, scenario.type_id)
+
+    resolved_type_id = scenario.type_id
+    if type_id is not None:
+        if not any(s["type_id"] == type_id for s in sub_types):
+            raise ValueError(f"'{code}' 시나리오에 속하지 않는 사고유형입니다.")
+        resolved_type_id = type_id
+
+    type_row = db.get(IncidentType, resolved_type_id)
+    return SimulatedScenario(
+        code=scenario.code,
+        title=scenario.title,
+        narrative=scenario.narrative,
+        l1_type_id=scenario.type_id,
+        selected_type_id=resolved_type_id,
+        incident_type_name=type_row.name if type_row else "",
+        sub_types=sub_types,
+        results=_results_for_type(db, resolved_type_id, modifiers),
+    )
+
+
 def build_simulation(
     db: Session, trip: Trip, selected: dict[str, int] | None = None,
 ) -> list[SimulatedScenario]:
