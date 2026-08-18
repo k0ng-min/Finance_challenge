@@ -287,6 +287,16 @@ npm run dev
 초기화될 수 있습니다(약관 원문 KB는 저장소에 커밋돼 있어 항상 그대로 복원됩니다). GitHub 저장소에
 푸시하면 Render Auto-Deploy가 `main` 브랜치 변경을 감지해 자동으로 다시 빌드·배포합니다.
 
+`backend/data/app.db`를 커밋할 때는 개발 중 쌓인 게스트 계정·여행·사고 기록이 약관 KB와 같은
+파일에 섞여 diff에 그대로 드러납니다. 커밋 전에 아래로 사용자 데이터만 지우세요(약관 KB는
+건드리지 않습니다):
+
+```bash
+cd backend
+python -m app.reset_guest_data            # 삭제될 행 수만 미리 확인
+python -m app.reset_guest_data --confirm  # 실제 삭제
+```
+
 ## 프로젝트 구조
 
 ```

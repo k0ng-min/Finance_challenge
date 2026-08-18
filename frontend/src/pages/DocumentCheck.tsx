@@ -68,6 +68,21 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
     }
   }
 
+  // activeIncidentId가 없으면 아래에서 안내 화면으로 일찍 반환하는데, 그 반환 이전에
+  // 훅을 전부 호출해 둬야 한다 — usePager를 반환 뒤(조건부)에 두면 사고를 고르는 순간
+  // 훅 개수가 늘어나 React가 "Rendered more hooks than during the previous render"로
+  // 터진다(2026-08-19 oxlint가 잡은 버그, PolicyCard가 쓰는 정답 패턴을 따랐다).
+  const grouped = new Map<string, ChecklistOut["items"]>();
+  (checklist?.items ?? []).forEach((it) => {
+    const key = it.coverage_target_ref;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(it);
+  });
+  const targets = [...grouped.keys()];
+  const current = activeTarget ?? targets[0];
+  const items = current ? grouped.get(current) ?? [] : [];
+  const { page, setPage, totalPages, pageItems } = usePager(items, 4);
+
   if (!activeIncidentId) {
     return (
       <div className={embedded ? "" : "page"}>
@@ -79,17 +94,6 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
       </div>
     );
   }
-
-  const grouped = new Map<string, ChecklistOut["items"]>();
-  (checklist?.items ?? []).forEach((it) => {
-    const key = it.coverage_target_ref;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(it);
-  });
-  const targets = [...grouped.keys()];
-  const current = activeTarget ?? targets[0];
-  const items = current ? grouped.get(current) ?? [] : [];
-  const { page, setPage, totalPages, pageItems } = usePager(items, 4);
 
   return (
     <div className={embedded ? "" : "page"}>
