@@ -27,7 +27,7 @@ Gemini API 키가 없어도 앱은 정상 동작합니다 — LLM이 필요한 �
 
 ## 데이터: 6개사 약관을 어떻게 정제해서 쓰는가
 
-`data/raw_pdfs/`의 실제 약관 PDF(보험사당 126~252쪽)를 다음 단계로 구조화해 SQLite(`backend/data/app.db`)에 담습니다.
+`data/raw_pdfs/`의 실제 약관 PDF(보험사당 162~326쪽, 2026-08-18 재구축분)를 다음 단계로 구조화해 SQLite(`backend/data/app.db`)에 담습니다.
 
 1. **원문 추출** — pdfplumber로 페이지 단위 텍스트 추출. 표 레이아웃 때문에 열 라벨이 문장 중간에 끼어드는 경우만 제거하고, 나머지는 원문을 한 글자도 바꾸지 않습니다.
 2. **조항 단위 분해(`Clause`)** — 조(제N조) 단위로 잘라 `clause_type`(보장정의/면책/제한/조건/서류/공통)을 붙입니다.
@@ -184,28 +184,37 @@ API 문서: `http://localhost:8000/docs`
 
 앱을 처음 띄우면 `main.py`가 스키마 마이그레이션(누락된 컬럼 추가)과 함께, 서류 사진 확인이 인용할 약관 근거(`doc_requirement`)가 비어 있으면 자동으로 채웁니다 — 클론한 뒤 따로 실행할 명령은 없습니다. 약관이 아직 적재되지 않은 DB에서는 조용히 건너뛰고 앱은 정상 기동합니다.
 
-DB를 완전히 새로 만들고 싶다면(`backend/data/app.db` 삭제 후) `backend/app/seed_*.py`를 아래 순서로 실행하세요 — 단, 이 경우 조항 원문 확보를 위해 `data/raw_pdfs/`에 각사 약관 PDF가 있어야 합니다(아래 "약관 원문" 참고).
+DB를 완전히 새로 만들고 싶다면(`backend/data/app.db` 삭제 후) `backend/app/seed_*.py`를 아래 순서로 실행하세요 — 단, 이 경우 조항 원문 확보를 위해 `data/raw_pdfs/`에 각사 약관 PDF가 있어야 합니다(아래 "약관 원문" 참고). 2026-08-18에 약관을 전면 재구축했다(설계:
+`docs/superpowers/specs/2026-08-18-terms-rebuild-2026-design.md`) — 조항 시드는 보험사당
+`seed_<insurer>_2026_<a|b|c...>.py` 청크로 나뉘어 있다.
 
 ```bash
-python -m app.seed_samsung && python -m app.seed_hyundai && python -m app.seed_meritz \
-  && python -m app.seed_kb && python -m app.seed_db && python -m app.seed_kakaopay \
-  && python -m app.seed_personal_effects && python -m app.seed_questions && python -m app.seed_validation_rules \
-  && python -m app.seed_incident_types && python -m app.seed_clause_incident_map
-# 이후 backend/app/seed_*_inj_deep.py, seed_*_full_chunk*.py, seed_*_terms_docs.py를
-# 보험사별로 순서대로 실행하면 이번에 확장한 딥다이브 데이터까지 재구성됩니다.
+python -m app.seed_samsung_2026_a && python -m app.seed_samsung_2026_b && python -m app.seed_samsung_2026_c \
+  && python -m app.seed_samsung_2026_d && python -m app.seed_samsung_2026_e && python -m app.seed_samsung_2026_f \
+  && python -m app.seed_hyundai_2026_a && python -m app.seed_hyundai_2026_b && python -m app.seed_hyundai_2026_c && python -m app.seed_hyundai_2026_d \
+  && python -m app.seed_meritz_2026_a && python -m app.seed_meritz_2026_b && python -m app.seed_meritz_2026_c && python -m app.seed_meritz_2026_d \
+  && python -m app.seed_kb_2026_a && python -m app.seed_kb_2026_b && python -m app.seed_kb_2026_c && python -m app.seed_kb_2026_d && python -m app.seed_kb_2026_e \
+  && python -m app.seed_db_2026_a && python -m app.seed_db_2026_b && python -m app.seed_db_2026_c && python -m app.seed_db_2026_d \
+  && python -m app.seed_kakaopay_2026_a && python -m app.seed_kakaopay_2026_b && python -m app.seed_kakaopay_2026_c \
+  && python -m app.seed_kakaopay_2026_d && python -m app.seed_kakaopay_2026_together_diff \
+  && python -m app.seed_questions && python -m app.seed_validation_rules \
+  && python -m app.seed_incident_types && python -m app.seed_clause_incident_map && python -m app.seed_coverage_doc_map
+```
 
-# 마지막으로 근거를 조회해 붙이는 시드 둘을 실행합니다(약관 조항이 모두 적재된 뒤라야 합니다).
-python -m app.seed_overlap_rules      # 중복 판정 규칙
-python -m app.seed_doc_requirements   # 서류별 약관 요건(앱 기동 시 자동 실행되므로 보통 생략 가능)
+`ClauseTerm`(정량 조건)·`DocRequirement`(서류 세부 요건)·`OverlapRule`(중복 판정)·
+`ClauseStandardMap`(표준약관 대조)은 이번 재구축에서 아직 다시 만들지 않았다 —
+`docs/compliance/source_register.md`의 "2026-08-18 재구축에서 아직 만들지 않은 것" 참고.
+`seed_doc_requirements`는 앱 기동 시 자동 실행을 시도하지만 새 조항 원문에서 앵커
+문구를 못 찾으면 조용히 건너뛴다(앱은 정상 기동한다).
 
-# 「현지에서」·「사고 시뮬레이션」 시드도 앱 기동 시 비어 있으면 자동으로 채워지므로
-# 보통 따로 실행할 필요가 없습니다.
+「현지에서」·「사고 시뮬레이션」 시드도 앱 기동 시 비어 있으면 자동으로 채워지므로 보통
+따로 실행할 필요가 없습니다.
+
+```bash
 python -m app.seed_country_language       # 국가 → 현지어
 python -m app.seed_onsite_phrases         # 서류명·요건 문구의 검수된 번역(8개 언어)
 python -m app.seed_simulation_scenarios   # 시뮬레이션 시나리오(L1 단위)
 ```
-
-`seed_overlap_rules`와 `seed_doc_requirements`는 행마다 근거 조항을 DB에서 조회해 연결합니다. 근거를 못 찾거나 근거 문구가 실제 조항 원문에 없으면 **예외를 던지고 롤백**하므로, 성공했다면 모든 판정·요건에 근거가 붙어 있다는 뜻입니다.
 
 ### 1-1. 보험료 데이터 갱신 (선택)
 
@@ -335,7 +344,7 @@ data/raw_pdfs/  원본 약관 PDF (gitignore, 로컬 전용 — 아래 "약관 �
 
 ## 약관 원문
 
-`data/raw_pdfs/`, `data/processed/`는 저장소에 포함하지 않습니다. 각 보험사가 공식 홈페이지에 공개한 약관 PDF 원문을 재배포하지 않기 위함입니다(`docs/compliance/source_register.md`에 각사 공식 출처 URL과 수집 방법을 기록해 두었습니다). 조항 원문 발췌 자체는 `backend/app/seed_*.py`와 `backend/data/app.db`에 이미 포함돼 있으므로, PDF 없이도 서버 실행과 조회는 됩니다 — 원문을 처음부터 다시 추출하거나 검수하려면 `source_register.md`의 URL에서 각자 PDF를 받아야 합니다.
+`data/raw_pdfs/`, `data/processed/`는 저장소에 포함하지 않습니다. 보험사 공식 발행 약관 PDF 원문을 재배포하지 않기 위함입니다(`docs/compliance/source_register.md`에 각사 출처·SHA-256을 기록해 두었습니다). 2026-08-18 재구축분은 공개 URL이 없는 발행 파일이라 자동 재다운로드는 불가능하다 — 조항 원문 발췌 자체는 `backend/app/seed_*_2026_*.py`와 `backend/data/app.db`에 이미 포함돼 있으므로, PDF 없이도 서버 실행과 조회는 됩니다.
 
 ## 구현 현황
 
