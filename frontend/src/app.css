@@ -142,7 +142,12 @@ body {
   transition: background-color 0.25s, color 0.25s;
 }
 
-.app-shell { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+/* 100vh가 아니라 100dvh를 쓴다 — 모바일 사파리는 100vh를 "주소창이 완전히 사라진"
+   가장 큰 값으로 계산해서, 주소창이 보이는 평소 상태에서는 실제 화면보다 셸이 더 커진다.
+   그러면 .home 내부는 svh(실제 보이는 최소 영역) 기준으로 딱 맞게 줄어들어 있는데도
+   바깥 body가 그 차이만큼 미세하게 스크롤됐다(폰마다 주소창 높이가 달라 증상도 기종마다
+   달랐다). 100dvh는 지금 실제로 보이는 뷰포트를 그대로 따라가므로 이 차이가 없다. */
+.app-shell { display: flex; flex-direction: column; align-items: center; min-height: 100dvh; }
 
 .app-main {
   flex: 1;
@@ -224,23 +229,24 @@ body {
    기본값(모바일·태블릿)은 뷰포트 높이(svh) 기준, 데스크톱 프레임 안에서는 컨테이너 높이(cqh)
    기준으로 아래 미디어쿼리에서 다시 정의한다 — 프레임은 뷰포트보다 작으므로 기준이 달라야 한다. */
 .home {
-  --home-gap: clamp(6px, 1.1svh, 14px);
+  --home-gap: clamp(5px, 1.1svh, 14px);
   --home-pad: clamp(6px, 1svh, 14px);
   --home-icon-hero: clamp(46px, 9svh, 78px);
   --home-icon-card: clamp(32px, 6svh, 52px);
   --home-icon-quick: clamp(24px, 4.4svh, 38px);
-  --home-title: clamp(1.02rem, 2.5svh, 1.42rem);
-  --home-subtitle: clamp(0.72rem, 1.5svh, 0.88rem);
+  --home-title: clamp(0.92rem, 2.5svh, 1.42rem);
+  --home-subtitle: clamp(0.68rem, 1.5svh, 0.88rem);
   --home-card-title: clamp(0.9rem, 1.9svh, 1.08rem);
   --home-card-desc: clamp(0.7rem, 1.45svh, 0.84rem);
   --home-quick-label: clamp(0.62rem, 1.25svh, 0.74rem);
 
   /* 각 밴드의 "이보다 더 줄이면 내용이 상자를 넘친다"는 하한선. clamp의 최솟값과 아래
      min-height가 같은 값을 쓰도록 이름을 붙여 둔다 — 둘이 어긋나면 창을 낮췄을 때
-     칸끼리 겹쳐 보인다(실제로 겪은 증상). */
-  --home-h-hero-min: 112px;
-  --home-h-card-min: 62px;
-  --home-h-quick-min: 70px;
+     칸끼리 겹쳐 보인다(실제로 겪은 증상). 폴더폰 커버 화면(360x480)처럼 아주 낮은
+     프레임에서도 스크롤 없이 들어가도록 2026-08-19에 한 번 더 낮췄다. */
+  --home-h-hero-min: 100px;
+  --home-h-card-min: 54px;
+  --home-h-quick-min: 60px;
 
   --home-h-hero: clamp(var(--home-h-hero-min), 22svh, 200px);
   --home-h-card: clamp(var(--home-h-card-min), 11svh, 96px);
@@ -290,7 +296,11 @@ body {
   min-height: var(--home-h-hero-min);
 }
 .home__hero .icon3d { width: var(--home-icon-hero) !important; height: var(--home-icon-hero) !important; }
-.home__title {
+/* .page h1(0,1,1)이 .home__title 단독 클래스(0,1,0)보다 명시도가 높아서, 지금까지
+   이 var(--home-title) 반응형 크기가 항상 .page h1의 고정 1.3rem에 가려져 있었다
+   (화면을 낮춰도 실제로는 안 줄고 있었다) — .home .home__title(0,2,0)로 명시도를
+   올려서 이 규칙이 이기게 한다. */
+.home .home__title {
   font-family: var(--font-display);
   font-size: var(--home-title);
   line-height: 1.32;
@@ -2194,7 +2204,10 @@ button { cursor: pointer; font-family: inherit; }
   justify-content: center;
   width: 100%;
   max-width: 560px;
-  min-height: 130px;
+  /* 예전엔 130px 고정값이라, 화면이 낮을 때(폴더폰 외부화면 등) 히어로
+     전체의 최소 높이(--home-h-hero-min: 112px)보다 이 한 줄이 더 커서
+     혼자서 화면을 넘치게 만들었다 — svh 기준으로 같이 줄어들게 바꾼다. */
+  min-height: clamp(52px, 12svh, 130px);
   padding: 10px 0;
 }
 /* 아래 모든 애니메이션(글자 획, 펜, 형광펜, 지우개, 지워지는 clip-path)은
@@ -2207,7 +2220,7 @@ button { cursor: pointer; font-family: inherit; }
   position: relative;
   display: inline-flex;
   align-items: flex-end;
-  font-size: clamp(2.8rem, 9.2svh, 4.4rem);
+  font-size: clamp(2.4rem, 9.2svh, 4.4rem);
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
@@ -2418,6 +2431,26 @@ button { cursor: pointer; font-family: inherit; }
 
 .onsite-offline { display: flex; align-items: center; gap: 12px; }
 .onsite-offline strong { font-size: 0.9rem; color: var(--heading); }
+
+/* 휴대폰을 눕히면(가로모드) 세로 높이가 344~393px까지 떨어진다. 세로로 밴드를
+   쌓는 기본 배치는 이 높이대에서 항상 스크롤이 남았다(손글씨 애니메이션 +
+   부제목 + 카드 2단 쌓기가 다 세로 공간을 먹기 때문). 가로모드에서는 세로
+   공간 대신 남는 가로 공간을 쓴다: 손글씨 애니메이션·부제목은 접어 넣고,
+   내 여행 준비/사고 카드 2장은 세로로 쌓지 않고 나란히 놓는다.
+   파일 맨 끝에 두는 이유: .pwc의 기본 정의(위쪽)와 .page h1의 고정 크기
+   규칙이 소스 순서·명시도(specificity)에서 이 규칙을 이길 수 있어서, 항상
+   나중에 오는 이 자리에 두고 선택자 명시도도 그만큼 올려 확실히 이기게 한다. */
+@media (orientation: landscape) and (max-height: 430px) {
+  .home .home__hero { min-height: 0; }
+  .home .pwc,
+  .home .home__subtitle { display: none; }
+  .page h1.home__title { font-size: clamp(0.94rem, 4svh, 1.2rem); }
+  .home .home__grid {
+    flex-direction: row;
+    height: var(--home-h-card, auto);
+    min-height: var(--home-h-card-min, 54px);
+  }
+}
 
 /* --- 「사고 시뮬레이션」 (/simulate) ---------------------------------------- */
 .sim-context {
