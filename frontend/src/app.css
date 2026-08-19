@@ -2650,6 +2650,60 @@ button { cursor: pointer; font-family: inherit; }
 .share-card__footnote { margin: 18px 0 0; font-size: 0.66rem; line-height: 1.55; color: #8592a8; }
 .share-card__download-btn { display: block; width: 100%; margin-top: 14px; }
 
+/* --- 해외 서류 챙기기: 파일로 저장할 카드 ---
+   화면에 보이는 미리보기가 곧 저장되는 그림이라, 테마 변수를 쓰지 않고 흰 배경 기준으로
+   색을 고정한다. 다크 모드에서 저장한 파일이 창구 직원 폰에서 검게 나오면 곤란하다. */
+.onsite-export-card {
+  width: 480px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 24px 20px;
+  background: #ffffff;
+  border: 1px solid #e2eaf7;
+  border-radius: 18px;
+  color: #1f2a3d;
+}
+.onsite-export-card__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: #4b84ec;
+}
+.onsite-export-card__title { margin: 0 0 2px; font-size: 1.16rem; font-weight: 800; line-height: 1.4; }
+.onsite-export-card__subtitle { margin: 0 0 16px; font-size: 0.76rem; color: #8592a8; }
+.onsite-export-card__intro-local { margin: 0 0 4px; font-size: 0.96rem; font-weight: 700; line-height: 1.5; }
+.onsite-export-card__intro-ko { margin: 0 0 16px; font-size: 0.8rem; color: #5a6880; line-height: 1.55; }
+.onsite-export-card__doc {
+  padding: 13px 0;
+  border-top: 1px solid #eef4fd;
+}
+.onsite-export-card__doc-local { margin: 0 0 2px; font-size: 0.94rem; font-weight: 700; }
+.onsite-export-card__doc-ko { margin: 0; font-size: 0.78rem; color: #5a6880; }
+.onsite-export-card__note { margin: 6px 0 0; font-size: 0.74rem; color: #5a6880; line-height: 1.5; }
+.onsite-export-card__req { margin-top: 9px; }
+.onsite-export-card__req-local { margin: 0 0 2px; font-size: 0.84rem; font-weight: 600; }
+.onsite-export-card__req-ko { margin: 0; font-size: 0.74rem; color: #5a6880; }
+.onsite-export-card__quote {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  background: #f7faff;
+  border-left: 3px solid #b9d0f5;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.71rem;
+  line-height: 1.55;
+  color: #45536b;
+}
+.onsite-export-card__quote span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #4b84ec;
+}
+.onsite-export-actions { display: flex; gap: 8px; margin-top: 14px; }
+.onsite-export-actions button { flex: 1; }
+
 /* --- 기존보험 연결 & 중복·공백 진단 --- */
 
 /* 화면 안에서 성격이 다른 덩어리를 나눈다. 위 구분선이 "여기서부터 다른 이야기"를 알려준다. */

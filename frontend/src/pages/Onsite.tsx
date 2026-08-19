@@ -7,6 +7,7 @@ import { PageHero } from "../components/PageHero";
 import { PickerField } from "../components/PickerField";
 import { Icon3D } from "../components/Icon3D";
 import { LoadingState } from "../components/LoadingState";
+import { OnsiteExport } from "../components/OnsiteExport";
 import { COUNTRIES } from "../data/countries";
 
 const LOCAL_ONLY = "현지only";
@@ -81,6 +82,8 @@ export function Onsite() {
 
   const localOnly = docs.filter((d) => d.acquire_location === LOCAL_ONLY);
   const others = docs.filter((d) => d.acquire_location !== LOCAL_ONLY);
+  const activeTypeName =
+    pack?.incident_types.find((t) => t.type_id === activeType)?.name ?? "필요서류";
 
   const daysLeft = useMemo(() => {
     if (!pack?.end_date) return null;
@@ -232,6 +235,10 @@ export function Onsite() {
                   ))}
                 </>
               )}
+
+              {/* 창구 앞은 데이터가 잘 안 터지고, 폰을 직원에게 넘겨줘야 할 때도 있다 —
+                  앱을 열어야만 볼 수 있으면 정작 필요한 순간에 못 쓴다. */}
+              <OnsiteExport pack={pack} docs={docs} typeName={activeTypeName} />
             </>
           )}
 
