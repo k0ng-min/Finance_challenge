@@ -1,6 +1,7 @@
 import { lazy, Suspense, useRef } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { LoadingState } from "./components/LoadingState";
+import { AppFooter } from "./components/AppFooter";
 import { BackgroundDecor } from "./components/BackgroundDecor";
 import { FrameScrollbar } from "./components/FrameScrollbar";
 import { useApp } from "./context/AppContext";
@@ -30,10 +31,14 @@ const OAuthCallback = lazy(() =>
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 function App() {
-  const { loading } = useApp();
+  const { loading, isLoggedIn, signupCompleted } = useApp();
   const location = useLocation();
   const isHome = location.pathname === "/";
   const mainRef = useRef<HTMLElement>(null);
+  // 소셜 콜백은 계정 행을 먼저 만든 뒤 닉네임 설정 화면으로 보낸다. 예전에는 거기서
+  // 뒤로 나가면 계정만 남고 프로필은 빈 채로 굳어버렸다(다시 로그인해도 채울 화면이
+  // 없었다). 가입 마무리가 끝나지 않은 동안에는 어느 주소로 들어와도 그 화면으로 되돌린다.
+  const needsSignupFinish = isLoggedIn && !signupCompleted;
 
   if (loading) {
     return (
@@ -45,6 +50,10 @@ function App() {
         </main>
       </div>
     );
+  }
+
+  if (needsSignupFinish && location.pathname !== "/account/nickname") {
+    return <Navigate to="/account/nickname" replace />;
   }
 
   return (
@@ -78,6 +87,9 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          {/* 홈은 프레임 높이에 맞춘 자체 배치 안에 같은 문구를 이미 갖고 있다(.home__footer) —
+              여기서 또 붙이면 두 번 나온다. */}
+          {!isHome && <AppFooter />}
         </main>
         <FrameScrollbar targetRef={mainRef} />
       </div>

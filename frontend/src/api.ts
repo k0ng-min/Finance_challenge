@@ -514,6 +514,10 @@ export interface AuthUserOut {
   age: number | null;
   sex: string | null;
   is_new_user: boolean;
+  /** 닉네임·나이·필수동의까지 마친 계정인지. false면 어느 화면에 있든 가입 마무리 화면으로 되돌린다. */
+  signup_completed: boolean;
+  /** 이메일+비밀번호로도 로그인할 수 있게 비밀번호를 정해 뒀는지. */
+  has_password: boolean;
 }
 
 export interface ProviderStatusOut {
@@ -889,9 +893,22 @@ export const api = {
       body: JSON.stringify(items),
     }),
 
-  // 이메일/비밀번호 회원가입·로그인은 지원하지 않는다 — 카카오·구글만 쓴다.
+  // 회원가입은 카카오·구글로만 한다. 아래 loginWithEmail은 그렇게 가입한 계정이 계정
+  // 화면에서 따로 정해 둔 비밀번호로 들어오는 통로다(비밀번호로 새 계정을 만들 수는 없다).
+  loginWithEmail: (email: string, password: string) =>
+    request<AuthUserOut>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+
+  setPassword: (newPassword: string, currentPassword?: string | null) =>
+    request<AuthUserOut>("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ new_password: newPassword, current_password: currentPassword ?? null }),
+    }),
+
+  /** 가입 마무리 전에 되돌아 나갈 때 — 아직 완료되지 않은 계정을 지운다. */
+  cancelPendingSignup: () => request<{ status: string }>("/auth/signup-pending", { method: "DELETE" }),
+
   submitConsent: (consent: { agreeTerms: boolean; agreePrivacy: boolean; agreeMarketing: boolean }) =>
-    request<{ status: string }>("/auth/consent", {
+    request<AuthUserOut>("/auth/consent", {
       method: "POST",
       body: JSON.stringify({
         agree_terms: consent.agreeTerms, agree_privacy: consent.agreePrivacy, agree_marketing: consent.agreeMarketing,

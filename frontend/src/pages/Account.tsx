@@ -6,6 +6,8 @@ import { Icon3D } from "../components/Icon3D";
 import { Modal } from "../components/Modal";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PickerField } from "../components/PickerField";
+import { DeleteButton } from "../components/DeleteButton";
+import { GoogleMark, KakaoMark } from "../components/BrandIcon";
 import { DateTimeField } from "../components/DateTimeField";
 import { COUNTRIES } from "../data/countries";
 import { useApp } from "../context/AppContext";
@@ -16,6 +18,7 @@ import {
   type TripSummaryOut,
   type IncidentSummaryOut,
   type UserPolicyOut,
+  userMessage,
 } from "../api";
 
 function kakaoAuthorizeUrl(clientId: string, redirectUri: string) {
@@ -34,7 +37,10 @@ function googleAuthorizeUrl(clientId: string, redirectUri: string) {
 }
 
 export function Account() {
-  const { isLoggedIn, userId, nickname, email, logout, deleteAccount } = useApp();
+  const {
+    isLoggedIn, userId, nickname, email, age, logout, deleteAccount,
+    hasPassword, loginWithEmail, setPassword, updateNickname, updateAge,
+  } = useApp();
   const navigate = useNavigate();
   const [providers, setProviders] = useState<ProviderStatusOut | null>(null);
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
@@ -69,6 +75,80 @@ export function Account() {
   // 않기로 했다). "로그인" 의도로 눌렀는데 가입 이력이 없는 계정이면, 조용히 회원가입
   // 되는 대신 백엔드가 거부하도록 intent를 리다이렉트 전에 sessionStorage에 남겨둔다.
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  // 이메일 로그인 칸 — 가입은 카카오·구글로만 하고, 여기는 그렇게 가입한 계정이 계정
+  // 화면에서 따로 정해 둔 비밀번호로 들어오는 통로다.
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginBusy, setLoginBusy] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // 로그인 후: 프로필(닉네임·나이) 수정과 비밀번호 설정
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileNickname, setProfileNickname] = useState("");
+  const [profileAge, setProfileAge] = useState("");
+  const [profileBusy, setProfileBusy] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwCurrent, setPwCurrent] = useState("");
+  const [pwNext, setPwNext] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwDone, setPwDone] = useState(false);
+
+  async function handleEmailLogin() {
+    if (!loginEmail.trim() || !loginPassword) return;
+    setLoginBusy(true);
+    setLoginError(null);
+    try {
+      await loginWithEmail(loginEmail.trim(), loginPassword);
+      navigate("/");
+    } catch (err) {
+      setLoginError(userMessage(err, "로그인하지 못했어요. 다시 시도해 주세요."));
+    } finally {
+      setLoginBusy(false);
+    }
+  }
+
+  async function handleSaveProfile() {
+    if (!profileNickname.trim()) return;
+    setProfileBusy(true);
+    setProfileError(null);
+    try {
+      await updateNickname(profileNickname.trim());
+      if (profileAge) await updateAge(Number(profileAge));
+      setProfileOpen(false);
+    } catch (err) {
+      setProfileError(userMessage(err, "저장하지 못했어요. 다시 시도해 주세요."));
+    } finally {
+      setProfileBusy(false);
+    }
+  }
+
+  async function handleSavePassword() {
+    if (pwNext.length < 8) {
+      setPwError("비밀번호는 8자 이상으로 정해주세요.");
+      return;
+    }
+    if (pwNext !== pwConfirm) {
+      setPwError("새 비밀번호가 서로 다릅니다.");
+      return;
+    }
+    setPwBusy(true);
+    setPwError(null);
+    try {
+      await setPassword(pwNext, hasPassword ? pwCurrent : null);
+      setPwCurrent("");
+      setPwNext("");
+      setPwConfirm("");
+      setPwDone(true);
+      setPwOpen(false);
+    } catch (err) {
+      setPwError(userMessage(err, "비밀번호를 저장하지 못했어요."));
+    } finally {
+      setPwBusy(false);
+    }
+  }
 
   function startOAuth(url: string) {
     sessionStorage.setItem("oauth_intent", authMode);
@@ -121,7 +201,110 @@ export function Account() {
         />
         <div className="card">
           <div className="muted">계정</div>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>{email ?? "소셜 계정으로 로그인됨"}</div>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>{email ?? "소셜 계정으로 로그인됨"}</div>
+
+          {/* 예전에는 가입 도중 닉네임 화면에서 뒤로 나가면 프로필이 빈 채로 굳어버렸고,
+              여기 들어와도 다시 채울 수단이 없었다. 언제든 고칠 수 있는 자리를 둔다. */}
+          {profileOpen ? (
+            <div className="account-inline-form">
+              <label>
+                닉네임
+                <input
+                  value={profileNickname}
+                  onChange={(e) => setProfileNickname(e.target.value)}
+                  maxLength={20}
+                  placeholder="예: 여행자"
+                />
+              </label>
+              <label>
+                나이
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={profileAge}
+                  onChange={(e) => setProfileAge(e.target.value)}
+                  placeholder="예: 30"
+                />
+              </label>
+              {profileError && <div className="error-box">{profileError}</div>}
+              <div className="account-inline-form__actions">
+                <button type="button" className="btn-secondary" onClick={() => setProfileOpen(false)}>취소</button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={profileBusy || !profileNickname.trim()}
+                  onClick={handleSaveProfile}
+                >
+                  {profileBusy ? "저장 중..." : "저장"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="account-row-btn"
+              onClick={() => {
+                setProfileNickname(nickname ?? "");
+                setProfileAge(age != null ? String(age) : "");
+                setProfileError(null);
+                setProfileOpen(true);
+              }}
+            >
+              <span>
+                <strong>프로필 정보</strong>
+                <em>{nickname ?? "닉네임 없음"}{age != null ? ` · 만 ${age}세` : " · 나이 미입력"}</em>
+              </span>
+              <span className="account-row-btn__arrow">›</span>
+            </button>
+          )}
+
+          {/* 이메일+비밀번호로도 들어올 수 있게 하는 자리. 가입은 여전히 카카오·구글로만 한다. */}
+          {pwOpen ? (
+            <div className="account-inline-form">
+              {hasPassword && (
+                <label>
+                  현재 비밀번호
+                  <input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} />
+                </label>
+              )}
+              <label>
+                새 비밀번호 (8자 이상)
+                <input type="password" value={pwNext} onChange={(e) => setPwNext(e.target.value)} />
+              </label>
+              <label>
+                새 비밀번호 확인
+                <input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
+              </label>
+              {pwError && <div className="error-box">{pwError}</div>}
+              <div className="account-inline-form__actions">
+                <button type="button" className="btn-secondary" onClick={() => { setPwOpen(false); setPwError(null); }}>
+                  취소
+                </button>
+                <button type="button" className="btn-primary" disabled={pwBusy} onClick={handleSavePassword}>
+                  {pwBusy ? "저장 중..." : "저장"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="account-row-btn"
+              onClick={() => { setPwError(null); setPwDone(false); setPwOpen(true); }}
+            >
+              <span>
+                <strong>{hasPassword ? "비밀번호 변경" : "비밀번호 설정"}</strong>
+                <em>
+                  {pwDone
+                    ? "저장했어요"
+                    : hasPassword
+                      ? "이메일과 비밀번호로도 로그인할 수 있어요"
+                      : "설정하면 이메일과 비밀번호로도 로그인할 수 있어요"}
+                </em>
+              </span>
+              <span className="account-row-btn__arrow">›</span>
+            </button>
+          )}
         </div>
 
         <p className="section-label" style={{ margin: "20px 2px 10px" }}>내 여행 기록</p>
@@ -139,14 +322,7 @@ export function Account() {
                   </div>
                 </div>
               </button>
-              <button
-                type="button"
-                className="history-card__delete"
-                title="삭제"
-                onClick={() => setConfirmDeleteTrip(t.trip_id)}
-              >
-                🗑
-              </button>
+              <DeleteButton label="여행 기록 삭제" onClick={() => setConfirmDeleteTrip(t.trip_id)} />
             </div>
           ))}
         </div>
@@ -157,7 +333,7 @@ export function Account() {
           {incidents.map((i) => (
             <div className="history-card" key={i.incident_id}>
               <button type="button" className="history-card__main" onClick={() => setIncidentModal(i)}>
-                <Icon3D src="chat-bubble" size={36} />
+                <Icon3D src="collision" size={36} />
                 <div className="history-card__text">
                   <strong>{i.diagnosis ?? i.cause ?? "사고 접수 내역"}</strong>
                   <div className="history-card__tags">
@@ -169,14 +345,7 @@ export function Account() {
                   </div>
                 </div>
               </button>
-              <button
-                type="button"
-                className="history-card__delete"
-                title="삭제"
-                onClick={() => setConfirmDeleteIncident(i.incident_id)}
-              >
-                🗑
-              </button>
+              <DeleteButton label="사고 이력 삭제" onClick={() => setConfirmDeleteIncident(i.incident_id)} />
             </div>
           ))}
         </div>
@@ -383,9 +552,51 @@ export function Account() {
       <div className="card">
         <p className="muted" style={{ fontSize: "0.85rem", marginTop: 0, marginBottom: 14 }}>
           {authMode === "login"
-            ? "카카오 또는 구글 계정으로 로그인하세요."
+            ? "카카오·구글로 가입한 계정이면 이메일과 비밀번호로도 로그인할 수 있어요."
             : "처음이신가요? 카카오 또는 구글 계정으로 바로 시작할 수 있어요. 비밀번호를 따로 만들 필요가 없어요."}
         </p>
+
+        {/* 이메일 로그인은 "가입" 경로가 아니다 — 카카오·구글로 가입한 계정이 계정 화면에서
+            따로 정해 둔 비밀번호로 들어오는 통로라, 회원가입 모드에서는 아예 감춘다. */}
+        {authMode === "login" && (
+          <>
+            <form
+              className="email-login"
+              onSubmit={(e) => { e.preventDefault(); handleEmailLogin(); }}
+            >
+              <label>
+                이메일
+                <input
+                  type="email"
+                  autoComplete="username"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="가입한 구글·카카오 계정 이메일"
+                />
+              </label>
+              <label>
+                비밀번호
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="계정 화면에서 설정한 비밀번호"
+                />
+              </label>
+              {loginError && <div className="error-box">{loginError}</div>}
+              <button
+                type="submit"
+                className="btn-primary email-login__submit"
+                disabled={loginBusy || !loginEmail.trim() || !loginPassword}
+              >
+                {loginBusy ? "로그인 중..." : "로그인"}
+              </button>
+            </form>
+            <div className="auth-divider"><span>또는</span></div>
+          </>
+        )}
+
         <div className="social-login-row">
           <button
             type="button"
@@ -396,19 +607,19 @@ export function Account() {
               if (providers) startOAuth(kakaoAuthorizeUrl(providers.kakao_client_id, providers.kakao_redirect_uri));
             }}
           >
-            <Icon3D src="chat-bubble" size={24} />
+            <KakaoMark size={19} />
             {authMode === "login" ? "카카오로 로그인" : "카카오로 가입하기"}
           </button>
           <button
             type="button"
-            className="social-btn"
+            className="social-btn social-btn--google"
             disabled={!googleReady}
             title={googleReady ? undefined : "구글 OAuth 연동 후 이용할 수 있어요"}
             onClick={() => {
               if (providers) startOAuth(googleAuthorizeUrl(providers.google_client_id, providers.google_redirect_uri));
             }}
           >
-            <Icon3D src="star" size={24} />
+            <GoogleMark size={19} />
             {authMode === "login" ? "구글로 로그인" : "구글로 가입하기"}
           </button>
         </div>

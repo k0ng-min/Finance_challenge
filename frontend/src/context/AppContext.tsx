@@ -17,8 +17,20 @@ interface AppState {
   /** "M" | "F" — 보험료가 나이와 함께 성별로도 갈려서 같이 들고 다닌다. */
   sex: string | null;
   isLoggedIn: boolean;
+  /** 닉네임·나이·필수동의까지 마친 계정인지. 소셜 콜백에서 계정 행이 먼저 만들어지는
+   * 구조라 "계정은 있는데 프로필이 빈" 중간 상태가 생기는데, 이 값이 false인 동안에는
+   * App이 어느 화면에 있든 가입 마무리 화면으로 되돌린다. */
+  signupCompleted: boolean;
+  /** 이메일+비밀번호로도 로그인할 수 있게 비밀번호를 정해 뒀는지. */
+  hasPassword: boolean;
   loginWithKakao: (code: string, intent: "login" | "signup") => Promise<boolean>;
   loginWithGoogle: (code: string, intent: "login" | "signup") => Promise<boolean>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  setPassword: (newPassword: string, currentPassword?: string | null) => Promise<void>;
+  /** 가입 마무리를 끝냈다고 표시한다(약관 동의 응답을 그대로 반영). */
+  applyAuthUser: (res: AuthUserOut) => void;
+  /** 가입 마무리 전에 되돌아 나갈 때 — 아직 완료되지 않은 계정을 지우고 게스트로 되돌린다. */
+  cancelPendingSignup: () => Promise<void>;
   updateNickname: (nickname: string) => Promise<void>;
   updateAge: (age: number) => Promise<void>;
   updateSex: (sex: string) => Promise<void>;
@@ -55,6 +67,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [age, setAge] = useState<number | null>(() => Number(localStorage.getItem(LS_AGE)) || null);
   const [sex, setSex] = useState<string | null>(() => localStorage.getItem(LS_SEX));
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [signupCompleted, setSignupCompleted] = useState(true);
+  const [hasPassword, setHasPassword] = useState(false);
 
   async function bootstrapGuest() {
     const existing = Number(localStorage.getItem(LS_USER));
@@ -82,6 +96,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setEmail(res.email);
     setAge(res.age);
     setSex(res.sex ?? null);
+    setSignupCompleted(res.signup_completed);
+    setHasPassword(res.has_password);
     setIsLoggedIn(true);
   }
 
@@ -108,12 +124,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
             localStorage.removeItem(LS_EMAIL);
             setNickname(null);
             setEmail(null);
+            setSignupCompleted(true);
+            setHasPassword(false);
             setIsLoggedIn(false);
           } else {
             localStorage.setItem(LS_NICKNAME, me.nickname);
             if (me.email) localStorage.setItem(LS_EMAIL, me.email);
             setNickname(me.nickname);
             setEmail(me.email);
+            setSignupCompleted(me.signup_completed);
+            setHasPassword(me.has_password);
             setIsLoggedIn(true);
           }
           setLoading(false);
@@ -189,6 +209,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return res.is_new_user;
   }
 
+  async function loginWithEmail(email: string, password: string) {
+    clearTripAndIncident();
+    const res = await api.loginWithEmail(email, password);
+    applyAuthResult(res);
+  }
+
+  async function setPassword(newPassword: string, currentPassword?: string | null) {
+    const res = await api.setPassword(newPassword, currentPassword);
+    setHasPassword(res.has_password);
+  }
+
+  /** 약관 동의 응답처럼 계정 상태 전체가 담긴 응답을 그대로 반영한다(토큰은 그대로 유지). */
+  function applyAuthUser(res: AuthUserOut) {
+    localStorage.setItem(LS_NICKNAME, res.nickname);
+    if (res.email) localStorage.setItem(LS_EMAIL, res.email);
+    setNickname(res.nickname);
+    setEmail(res.email);
+    setAge(res.age);
+    setSex(res.sex ?? null);
+    setSignupCompleted(res.signup_completed);
+    setHasPassword(res.has_password);
+  }
+
+  async function cancelPendingSignup() {
+    try {
+      await api.cancelPendingSignup();
+    } catch {
+      // 이미 지워졌거나 세션이 끊긴 경우 — 아래 뒷정리는 그대로 진행한다.
+    }
+    await logout();
+  }
+
   async function updateNickname(newNickname: string) {
     const res = await api.updateNickname(newNickname);
     localStorage.setItem(LS_NICKNAME, res.nickname);
@@ -223,6 +275,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNickname(null);
     setEmail(null);
     setAge(null);
+    setSignupCompleted(true);
+    setHasPassword(false);
     setIsLoggedIn(false);
     setUserId(null);
     setLoading(true);
@@ -245,6 +299,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNickname(null);
     setEmail(null);
     setAge(null);
+    setSignupCompleted(true);
+    setHasPassword(false);
     setIsLoggedIn(false);
     setUserId(null);
     setLoading(true);
@@ -256,7 +312,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppCtx.Provider
       value={{
         userId, tripId, incidentId, setTripId, setIncidentId, loading,
-        nickname, email, age, sex, isLoggedIn, loginWithKakao, loginWithGoogle,
+        nickname, email, age, sex, isLoggedIn, signupCompleted, hasPassword,
+        loginWithKakao, loginWithGoogle, loginWithEmail, setPassword,
+        applyAuthUser, cancelPendingSignup,
         updateNickname, updateAge, updateSex, deleteAccount, logout,
       }}
     >

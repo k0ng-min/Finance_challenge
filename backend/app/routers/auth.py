@@ -2,13 +2,16 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import config
 from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident
-from app.services.auth import hash_session_token, issue_session, session_expiry
+from app.services.auth import (
+    hash_password, hash_session_token, issue_session, session_expiry, verify_password,
+)
 from app.services.deletion import delete_user_cascade, wipe_user_data
 from app.services.oauth import exchange_kakao_code, exchange_google_code
 
@@ -32,6 +35,12 @@ class LoginIn(BaseModel):
     password: str
 
 
+class PasswordSetIn(BaseModel):
+    """소셜(카카오·구글)로 가입한 계정에 이메일 로그인용 비밀번호를 새로 정하거나 바꾼다."""
+    new_password: str
+    current_password: str | None = None  # 이미 비밀번호가 있으면 확인용으로 받는다
+
+
 class ConsentIn(BaseModel):
     agree_terms: bool = False
     agree_privacy: bool = False
@@ -53,6 +62,12 @@ class AuthUserOut(BaseModel):
     age: int | None = None
     sex: str | None = None
     is_new_user: bool = False
+    # 가입 마지막 단계(닉네임·나이·필수동의)를 실제로 마쳤는지. 소셜 로그인은 콜백에서
+    # 계정 행이 먼저 만들어지므로, 이 값이 False면 프론트가 어디에 있든 그 화면으로
+    # 되돌린다 — 중간에 뒤로 나가서 "계정은 있는데 프로필이 빈" 상태로 남지 않게 한다.
+    signup_completed: bool = True
+    # 이메일+비밀번호로도 로그인할 수 있게 비밀번호를 설정해 뒀는지(계정 화면 표시용).
+    has_password: bool = False
 
     class Config:
         from_attributes = True
@@ -77,6 +92,28 @@ class ProviderStatusOut(BaseModel):
     google_client_id: str
     kakao_redirect_uri: str
     google_redirect_uri: str
+
+
+def signup_completed(user: AppUser) -> bool:
+    """가입 마지막 단계(닉네임·나이·필수동의)를 마쳤는지.
+
+    소셜 로그인은 인가 코드를 받는 순간 계정 행을 먼저 만들어야 세션을 줄 수 있어서,
+    "계정은 생겼는데 프로필은 비어 있는" 중간 상태가 반드시 한 번 생긴다. 예전에는 그
+    상태에서 뒤로 나가버리면 계정만 덩그러니 남고, 다시 로그인해도 프로필을 채울 화면이
+    없어서 영영 빈 계정이 됐다. 필수 동의 시각(terms_agreed_at)을 "가입 완료" 표시로 삼아
+    프론트가 그 화면으로 다시 데려가게 한다.
+    """
+    return user.terms_agreed_at is not None
+
+
+def auth_user_out(user: AppUser, *, is_new: bool = False) -> "AuthUserOut":
+    return AuthUserOut(
+        user_id=user.user_id, nickname=user.nickname, email=user.email,
+        auth_provider=user.auth_provider, token=user.raw_session_token,
+        age=user.age, sex=user.sex, is_new_user=is_new,
+        signup_completed=signup_completed(user),
+        has_password=bool(user.password_hash),
+    )
 
 
 def _login_or_upgrade(db: Session, *, id_column, provider_id: str, email: str | None,
@@ -186,13 +223,89 @@ def signup(request: Request, payload: SignupIn):
 
 @router.post("/login", response_model=AuthUserOut)
 @limiter.limit("10/minute")
-def login(request: Request, payload: LoginIn):
-    raise HTTPException(status_code=403, detail="이메일 로그인은 지원하지 않아요. 카카오 또는 구글로 로그인해주세요.")
+def login(request: Request, payload: LoginIn, db: Session = Depends(get_db)):
+    """이메일 + 비밀번호 로그인.
+
+    가입 자체는 여전히 카카오·구글로만 한다. 이 경로는 그렇게 가입한 계정이 계정 화면에서
+    따로 정해 둔 비밀번호로 들어오는 통로다(비밀번호를 처음 만드는 회원가입 경로가 아니다).
+    그래서 소셜 연결이 없는 계정은 비밀번호가 있어도 여기로 들어올 수 없다.
+
+    응답 문구는 "이메일이 없음"과 "비밀번호가 틀림"을 구분하지 않는다 — 구분하면 어떤
+    이메일이 가입돼 있는지 밖에서 훑을 수 있다. 다만 "이 계정은 아직 비밀번호를 안 정했다"는
+    본인이 실제로 소셜 로그인을 통과해야만 알 수 있는 정보가 아니라 안내가 꼭 필요한
+    상태라, 그때만 별도 문구를 준다.
+    """
+    email = (payload.email or "").strip().lower()
+    user = db.query(AppUser).filter(func.lower(AppUser.email) == email).first()
+    is_social = bool(user and (user.kakao_id or user.google_id))
+
+    if user and is_social and not user.password_hash:
+        raise HTTPException(
+            status_code=403,
+            detail="이 계정은 아직 비밀번호를 정하지 않았어요. 구글 또는 카카오로 로그인한 뒤 계정 화면에서 비밀번호를 설정해 주세요.",
+        )
+    if not user or not is_social or not verify_password(payload.password, user.password_hash, user.password_salt or ""):
+        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 맞지 않아요.")
+
+    user.raw_session_token = issue_session(user)
+    db.commit()
+    return auth_user_out(user)
 
 
-@router.post("/consent")
+@router.post("/password", response_model=AuthUserOut)
+@limiter.limit("10/hour")
+def set_password(
+    request: Request, payload: PasswordSetIn,
+    user: AppUser = Depends(get_current_user), db: Session = Depends(get_db),
+):
+    """소셜로 가입한 계정에 이메일 로그인용 비밀번호를 정하거나 바꾼다.
+
+    비밀번호만으로 새 계정을 만들 수는 없다(가입 경로는 카카오·구글 하나뿐이다). 이미
+    비밀번호가 있으면 현재 비밀번호를 확인한다 — 세션이 탈취됐을 때 조용히 비밀번호가
+    바뀌어 계정이 통째로 넘어가는 걸 막기 위함이다.
+    """
+    if not (user.kakao_id or user.google_id):
+        raise HTTPException(status_code=403, detail="구글 또는 카카오로 가입한 계정만 비밀번호를 설정할 수 있어요.")
+    if not user.email:
+        raise HTTPException(status_code=400, detail="이 계정에는 이메일이 없어서 이메일 로그인을 쓸 수 없어요.")
+    if user.password_hash:
+        if not payload.current_password or not verify_password(
+            payload.current_password, user.password_hash, user.password_salt or ""
+        ):
+            raise HTTPException(status_code=400, detail="현재 비밀번호가 맞지 않아요.")
+    new_password = payload.new_password or ""
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="비밀번호는 8자 이상으로 정해주세요.")
+    if len(new_password) > 72:
+        raise HTTPException(status_code=400, detail="비밀번호는 72자 이하로 정해주세요.")
+
+    digest, salt = hash_password(new_password)
+    user.password_hash = digest
+    user.password_salt = salt
+    db.commit()
+    return auth_user_out(user)
+
+
+@router.delete("/signup-pending")
+def cancel_pending_signup(user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    """가입 마지막 단계(닉네임·나이·필수동의)를 마치기 전에 되돌아 나갈 때 계정을 지운다.
+
+    소셜 콜백에서 계정 행이 먼저 만들어지는 구조라 이 뒷정리가 없으면 "가입을 끝내지
+    않았는데 계정만 남아 있는" 상태가 생긴다. 이미 가입을 마친 계정에는 아무 일도 하지
+    않는다 — 실수로 이 경로를 다시 불러도 정상 계정이 사라지면 안 된다."""
+    if signup_completed(user):
+        return {"status": "kept"}
+    delete_user_cascade(db, user)
+    db.commit()
+    return {"status": "deleted"}
+
+
+@router.post("/consent", response_model=AuthUserOut)
 def submit_consent(payload: ConsentIn, user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
-    """카카오·구글로 처음 가입한 사용자용 — 닉네임 설정 화면에서 필수 약관에 동의를 받는다."""
+    """카카오·구글로 처음 가입한 사용자용 — 닉네임 설정 화면에서 필수 약관에 동의를 받는다.
+
+    이 동의 시각이 곧 "가입 완료" 표시다(signup_completed). 그래서 갱신된 계정 상태를
+    그대로 돌려줘, 프론트가 별도 조회 없이 가입 미완료 리다이렉트를 풀 수 있게 한다."""
     if not (payload.agree_terms and payload.agree_privacy):
         raise HTTPException(status_code=400, detail="이용약관과 개인정보 수집·이용에 동의해야 계속할 수 있어요.")
     now = datetime.utcnow()
@@ -201,7 +314,7 @@ def submit_consent(payload: ConsentIn, user: AppUser = Depends(get_current_user)
     if payload.agree_marketing:
         user.marketing_agreed_at = now
     db.commit()
-    return {"status": "ok"}
+    return auth_user_out(user)
 
 
 @router.post("/logout")
@@ -214,10 +327,7 @@ def logout(user: AppUser = Depends(get_current_user), db: Session = Depends(get_
 @router.get("/me", response_model=AuthUserOut)
 @limiter.limit("60/minute")
 def me(request: Request, user: AppUser = Depends(get_current_user)):
-    return AuthUserOut(
-        user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
-    )
+    return auth_user_out(user)
 
 
 @router.delete("/me")
@@ -252,10 +362,7 @@ async def kakao_login(request: Request, payload: OAuthIn, db: Session = Depends(
         db, id_column=AppUser.kakao_id, provider_id=info["provider_id"], email=info["email"],
         nickname=info["nickname"], provider="kakao", guest_user_id=payload.user_id, intent=payload.intent,
     )
-    return AuthUserOut(
-        user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex, is_new_user=is_new,
-    )
+    return auth_user_out(user, is_new=is_new)
 
 
 @router.post("/google", response_model=AuthUserOut)
@@ -268,10 +375,7 @@ async def google_login(request: Request, payload: OAuthIn, db: Session = Depends
         db, id_column=AppUser.google_id, provider_id=info["provider_id"], email=info["email"],
         nickname=info["nickname"], provider="google", guest_user_id=payload.user_id, intent=payload.intent,
     )
-    return AuthUserOut(
-        user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex, is_new_user=is_new,
-    )
+    return auth_user_out(user, is_new=is_new)
 
 
 @router.patch("/nickname", response_model=AuthUserOut)
@@ -283,10 +387,7 @@ def update_nickname(payload: NicknameIn, user: AppUser = Depends(get_current_use
         raise HTTPException(status_code=400, detail="닉네임은 20자 이하로 입력해주세요.")
     user.nickname = nickname
     db.commit()
-    return AuthUserOut(
-        user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
-    )
+    return auth_user_out(user)
 
 
 @router.patch("/sex", response_model=AuthUserOut)
@@ -296,10 +397,7 @@ def update_sex(payload: SexIn, user: AppUser = Depends(get_current_user), db: Se
         raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
     user.sex = sex
     db.commit()
-    return AuthUserOut(
-        user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
-    )
+    return auth_user_out(user)
 
 
 @router.patch("/age", response_model=AuthUserOut)
@@ -308,7 +406,4 @@ def update_age(payload: AgeIn, user: AppUser = Depends(get_current_user), db: Se
         raise HTTPException(status_code=400, detail="나이를 0~120 사이로 입력해주세요.")
     user.age = payload.age
     db.commit()
-    return AuthUserOut(
-        user_id=user.user_id, nickname=user.nickname, email=user.email,
-        auth_provider=user.auth_provider, token=user.raw_session_token, age=user.age, sex=user.sex,
-    )
+    return auth_user_out(user)
