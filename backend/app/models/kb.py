@@ -96,6 +96,16 @@ class Clause(Base):
     default_color = Column(String)  # 파랑/초록/노랑/빨강/회색
     highlight_spans = Column(Text, nullable=True)  # Gemini가 나눈 인라인 색상 구간 캐시 (JSON)
     plain_text = Column(Text, nullable=True)  # Gemini가 풀어쓴 쉬운말 설명 캐시
+    # 이 조항이 현재 약관 판이 아니라 이전 판에서 보완해 들여온 것이면 그 판 이름.
+    # None이면 현재 판(data/raw_pdfs의 약관 원본)에서 나온 조항이다.
+    #
+    # 2026-08-18 약관 전면 재구축은 전체로는 매핑이 352→527건으로 늘었지만, 현대해상과
+    # 카카오페이는 휴대품·긴급지원처럼 통째로 비어버린 사고유형이 생겼다(새 PDF에 해당
+    # 특약이 실리지 않았다). 그 자리에서 "관련 약관을 찾을 수 없다"가 뜨는 걸 막으려고
+    # 이전 판의 실제 조항 원문을 그 빈칸에만 들여온다(app.merge_archived_kb).
+    # 지어낸 문장이 아니라 이전 판 약관의 원문 그대로이며, 현재 판에 조항이 하나라도
+    # 있는 자리에는 절대 들어가지 않는다 — 현재 판이 항상 우선이다.
+    source_edition = Column(String, nullable=True)
 
     policy_version = relationship("PolicyVersion", back_populates="clauses")
     coverage = relationship("Coverage", back_populates="clauses")

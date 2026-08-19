@@ -307,6 +307,30 @@ python -m app.reset_guest_data            # 삭제될 행 수만 미리 확인
 python -m app.reset_guest_data --confirm  # 실제 삭제
 ```
 
+### 이전 판 약관으로 빈칸 메우기
+
+2026-08-18에 약관 원본을 새 PDF로 갈아끼우며 KB를 전면 재구축했습니다(89beae8). 전체로는
+사고유형 매핑이 352 → 527건으로 늘었지만, 새 PDF에 실리지 않은 특약 때문에 **통째로 비어버린
+자리**가 생겼습니다 — 현대해상·카카오페이의 휴대품(PROP)과 긴급지원(EMG)이 각각 0건이 되어,
+현대해상으로 "휴대폰을 분실했어요"를 접수하면 관련 약관이 하나도 나오지 않았습니다.
+
+그래서 이전 판 약관에서 **그 빈칸에만** 실제 조항 원문을 들여옵니다. 새 PDF에서 나온 조항이
+하나라도 있는 자리는 건드리지 않습니다(항상 새 판이 우선). 들여온 조항에는 어느 판에서 왔는지
+`clause.source_edition`에 남습니다.
+
+```bash
+cd backend
+git show 89beae8^:backend/data/app.db > /tmp/kb_prev.db
+python -m app.merge_archived_kb /tmp/kb_prev.db            # 무엇이 들어올지만 확인
+python -m app.merge_archived_kb /tmp/kb_prev.db --confirm  # 실제 반영
+python -m app.kb_manifest --confirm                        # 매니페스트를 DB에 다시 맞춤
+```
+
+KB를 고치면 `data/dataset_manifest.json`(커밋된 app.db가 무엇을 담고 있어야 하는지의 기록)과
+어긋나 `scripts/validate_kb.py` 검사가 걸립니다. 이건 KB가 아무도 모르게 바뀌는 걸 잡는
+장치이므로, 일부러 고쳤을 때는 위 `app.kb_manifest`로 개수와 지문만 다시 맞춥니다 — 출처
+URL·PDF 해시·검증 상태처럼 사람이 원본을 확인해 적은 값은 자동으로 덮어쓰지 않습니다.
+
 ## 프로젝트 구조
 
 ```
