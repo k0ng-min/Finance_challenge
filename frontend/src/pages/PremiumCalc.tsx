@@ -43,8 +43,10 @@ function isCoveredValue(value: string | undefined | null): boolean {
  * 초기화된다(둘이 뒤섞이면 헷갈리므로). "N등급 · 6개사 보장금액 한눈에 비교" 버튼은
  * InsurerComparisonMetric(같은 항목끼리 미리 정리해 둔 비교표)을 보여준다.
  *
- * 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이라, 산출 전제와
- * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
+ * 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이라, 무엇을 기준으로
+ * 조회한 값인지(며칠치·어떤 조건)를 숫자 옆에 같이 둔다. 다만 우리가 그 값을 언제
+ * 수집했는지는 화면에 쓰지 않는다 — 읽는 사람이 판단에 쓰는 정보가 아니라 우리 사정이고,
+ * 화면마다 붙으면 정작 봐야 할 가격이 뒤로 밀린다.
  */
 export function PremiumCalc() {
   const { age: profileAge, sex: profileSex, userId, isLoggedIn } = useApp();

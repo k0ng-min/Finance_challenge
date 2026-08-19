@@ -64,9 +64,10 @@ export function StandardTermsComparison({ insurerCode }: { insurerCode: string }
   return (
     <div>
       <p className="muted" style={{ fontSize: "0.85rem", marginTop: 0, marginBottom: 12 }}>
-        금융감독원 표준약관(<a href={data.source_url} target="_blank" rel="noreferrer">원문</a>
-        {data.amended_at ? ` · ${data.amended_at} 개정` : ""})과 {data.insurer_name} 실제 약관을
-        조문 단위로 대조했어요. 대조는 보상 여부를 판정하는 근거가 아니라 참고 정보입니다 —
+        {/* 개정일은 화면에서 빼둔다 — 자료를 언제 만졌는지는 읽는 사람이 판단에 쓰는 정보가
+            아니라 우리 사정이고, 화면마다 붙으면 정작 읽어야 할 대조 결과가 밀린다. */}
+        금융감독원 표준약관(<a href={data.source_url} target="_blank" rel="noreferrer">원문</a>)과
+        {" "}{data.insurer_name} 실제 약관을 조문 단위로 대조했어요. 대조는 보상 여부를 판정하는 근거가 아니라 참고 정보입니다 —
         표준과 다르게 쓰여 있는 조문이 보이면 원문을 확인하고 보험사에 직접 물어보세요.
       </p>
       {pageItems.map((item) => (
