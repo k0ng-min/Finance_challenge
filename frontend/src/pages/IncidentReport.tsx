@@ -61,13 +61,18 @@ export function IncidentReport() {
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const [age, setAge] = useState("");
   const [sex, setSex] = useState<"M" | "F" | "">("");
-  // 등록된 여행이 하나도 없으면(=사고만 단독 접수) 어느 나라에서 있었던 일인지 이 화면에서
-  // 바로 물어본다 — 안 그러면 이 사고가 서류체크/실수방지/약관형광펜 화면에서 아무 여행
-  // 맥락 없이 뜨게 된다.
-  const [destination, setDestination] = useState("");
-  // 연결할 여행이 없을 때 여기서 여행도 같이 등록한다 — 사고만 덩그러니 남지 않게.
-  const [newTripStart, setNewTripStart] = useState("");
-  const [newTripEnd, setNewTripEnd] = useState("");
+  // 이번 사고를 어느 여행에 붙일지. 등록된 여행 중에서 고르거나(selectedTripId), 이
+  // 자리에서 새 여행을 만들어 붙일 수 있다(newTrip).
+  //
+  // 예전에는 등록된 여행이 딱 하나면 선택기 자체를 안 띄우고 그 여행으로 못박았다.
+  // 그래서 지난달 유럽 여행이 하나 남아 있으면, 이번 홍콩에서 난 사고까지 유럽 여행
+  // 기록에 들어갔다 — 여행이 하나뿐일 때가 오히려 "새 여행"일 확률이 높은데도.
+  // 이제는 여행이 몇 개든 항상 고르게 하고, 그 옆에 새 여행을 만드는 팝업을 둔다.
+  const [newTrip, setNewTrip] = useState<{ destination: string; start: string; end: string } | null>(null);
+  const [showNewTripModal, setShowNewTripModal] = useState(false);
+  const [draftDestination, setDraftDestination] = useState("");
+  const [draftStart, setDraftStart] = useState("");
+  const [draftEnd, setDraftEnd] = useState("");
   // 이번 접수에서 기존보험을 골랐을 때만 중복·공백 진단을 시도한다(안 골랐으면 빈 결과만
   // 온다). linkExternalPolicies는 fire-and-forget이라 저장이 실제로 끝났는지 알 수 없는데,
   // 진단은 그 저장이 끝난 뒤 DB에서 다시 읽어야 의미가 있다 — 그래서 그 Promise를 들고
@@ -99,11 +104,17 @@ export function IncidentReport() {
     if (!userId) return;
     api.listTrips(userId).then((list) => {
       setTrips(list);
-      setSelectedTripId((prev) => prev ?? (list.length > 0 ? list[0].trip_id : null));
+      // 자동으로 첫 여행을 고르지 않는다 — 사용자가 직접 고르거나 새로 만들게 한다.
+      setSelectedTripId((prev) => (prev != null && list.some((t) => t.trip_id === prev) ? prev : null));
     }).catch(() => {});
   }, [userId]);
 
-  const selectedTrip = trips.find((t) => t.trip_id === selectedTripId) ?? null;
+  // 사고 일시의 선택 범위·안내 문구는 "고른 기존 여행"이든 "방금 만든 새 여행"이든
+  // 똑같이 필요하다 — 두 경우를 같은 모양으로 맞춰 아래에서 한 번만 다룬다.
+  const selectedTrip = newTrip
+    ? { destination: newTrip.destination, start_date: newTrip.start, end_date: newTrip.end }
+    : trips.find((t) => t.trip_id === selectedTripId) ?? null;
+  const hasTripContext = newTrip !== null || selectedTripId !== null;
 
   // 결과 화면에 진입했고, 이번에 기존보험을 골랐을 때만 중복·공백 진단을 조회한다.
   // (기존보험 저장을 기다렸다가 조회 — 위 externalLinkReadyRef 주석 참고.)
@@ -138,7 +149,7 @@ export function IncidentReport() {
     return (
       <div className="page">
         <TopBar title="사고가 발생했어요" />
-        <LoadingScreen icon="chat-bubble" title="이전 접수 내역을 불러오고 있어요" messages={["예전에 접수했던 사고를 찾고 있어요"]} />
+        <LoadingScreen icon="collision" title="이전 접수 내역을 불러오고 있어요" messages={["예전에 접수했던 사고를 찾고 있어요"]} />
       </div>
     );
   }
@@ -148,7 +159,7 @@ export function IncidentReport() {
       <div className="page">
         <TopBar title="사고가 발생했어요" />
         <LoadingScreen
-          icon="chat-bubble"
+          icon="collision"
           title="사고 내용을 분석하고 있어요"
           messages={[
             "입력하신 사고 상황을 정리하고 있어요",
@@ -169,7 +180,7 @@ export function IncidentReport() {
       if (sex && sex !== profileSex) await updateSex(sex).catch(() => {});
       const res = await api.createIncident({
         user_id: userId,
-        trip_id: selectedTripId,
+        trip_id: newTrip ? null : selectedTripId,
         // 등록된 보험을 골랐으면 그걸 쓰고, 없으면(비로그인이거나 등록 전이거나) 고른
         // 보험사 코드로 검토한다 — 백엔드는 user_policy_id가 없을 때 insurer_code를 본다.
         user_policy_id: selectedPolicyId,
@@ -177,11 +188,12 @@ export function IncidentReport() {
         plan_name: selectedPolicyId ? null : incidentPlanName,
         free_text: freeText,
         occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
-        country: trips.length === 0 ? destination || null : null,
-        // 여행이 하나도 없으면 방금 입력한 목적지·기간으로 여행도 같이 만든다.
-        new_trip_destination: trips.length === 0 ? destination || null : null,
-        new_trip_start_date: trips.length === 0 ? newTripStart || null : null,
-        new_trip_end_date: trips.length === 0 ? newTripEnd || null : null,
+        country: newTrip ? newTrip.destination : null,
+        // 새 여행을 고른 경우 백엔드가 이 값들로 여행을 만들어 사고에 붙인다
+        // (trip_id를 비워 보내야 이 경로가 탄다).
+        new_trip_destination: newTrip ? newTrip.destination : null,
+        new_trip_start_date: newTrip ? newTrip.start : null,
+        new_trip_end_date: newTrip ? newTrip.end : null,
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
@@ -269,7 +281,7 @@ export function IncidentReport() {
 
   if (phase === "questions" && analysis && analysis.pending_questions.length > 0) {
     const q = analysis.pending_questions[0];
-    const icon = QUESTION_ICON[q.target_field] ?? "chat-bubble";
+    const icon = QUESTION_ICON[q.target_field] ?? "collision";
     return (
       <div className="page">
         <TopBar title="사고가 발생했어요" />
@@ -415,26 +427,100 @@ export function IncidentReport() {
             );
           })()}
 
-          {trips.length > 1 && (
-            <label style={{ marginTop: 14 }}>
-              어느 여행에서 있었던 일인가요?
+          {/* 어느 여행에서 난 사고인지는 서류체크·실수방지·약관형광펜까지 따라다니는
+              맥락이라 반드시 정하고 넘어간다. 등록된 여행이 없거나, 있어도 이번 사고가
+              그중 어느 것도 아닐 수 있으므로 새 여행을 만드는 길을 항상 같이 둔다. */}
+          <label style={{ marginTop: 14 }}>어느 여행에서 있었던 일인가요?</label>
+          {trips.length > 0 && (
+            <PickerField
+              value={newTrip ? "" : String(selectedTripId ?? "")}
+              onChange={(v) => { setNewTrip(null); setSelectedTripId(Number(v)); }}
+              modalTitle="여행 선택"
+              placeholder="여행을 선택하세요"
+              options={trips.map((t) => ({
+                value: String(t.trip_id),
+                label: `${t.destination} · ${t.start_date} ~ ${t.end_date}`,
+              }))}
+            />
+          )}
+          {newTrip && (
+            <div className="new-trip-chip">
+              <span>
+                <strong>새 여행 · {newTrip.destination}</strong>
+                <em>{newTrip.start} ~ {newTrip.end}</em>
+              </span>
+              <button type="button" onClick={() => setNewTrip(null)} aria-label="새 여행 취소">✕</button>
+            </div>
+          )}
+          <button
+            type="button"
+            className="rank-compare-trigger"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              setDraftDestination(newTrip?.destination ?? "");
+              setDraftStart(newTrip?.start ?? "");
+              setDraftEnd(newTrip?.end ?? "");
+              setShowNewTripModal(true);
+            }}
+          >
+            <span>＋ 목록에 없어요 · 새 여행 등록하기</span>
+            <span className="rank-compare-trigger__arrow">›</span>
+          </button>
+
+          <Modal
+            open={showNewTripModal}
+            onClose={() => setShowNewTripModal(false)}
+            title="새 여행 등록"
+          >
+            <label>
+              여행 국가
               <PickerField
-                value={String(selectedTripId ?? "")}
-                onChange={(v) => setSelectedTripId(Number(v))}
-                modalTitle="여행 선택"
-                placeholder="여행을 선택하세요"
-                options={trips.map((t) => ({
-                  value: String(t.trip_id),
-                  label: `${t.destination} · ${t.start_date} ~ ${t.end_date}`,
-                }))}
+                value={draftDestination}
+                onChange={setDraftDestination}
+                placeholder="국가를 선택하세요"
+                modalTitle="여행 국가"
+                options={COUNTRIES.map((c) => ({ value: c, label: c }))}
               />
             </label>
-          )}
+            <DateTimeField
+              label="여행 시작일"
+              value={draftStart}
+              onChange={(v) => {
+                setDraftStart(v);
+                if (v && (!draftEnd || draftEnd <= v)) setDraftEnd(addDays(v, 1));
+              }}
+            />
+            <DateTimeField
+              label="여행 종료일"
+              value={draftEnd}
+              onChange={setDraftEnd}
+              minDate={draftStart ? addDays(draftStart, 1) : undefined}
+            />
+            <p className="muted" style={{ fontSize: "0.76rem" }}>
+              이 사고와 함께 여행도 새로 등록해 드려요. 나중에 계정 화면에서 고칠 수 있어요.
+            </p>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ width: "100%" }}
+              disabled={!draftDestination || !draftStart || !draftEnd || draftEnd <= draftStart}
+              onClick={() => {
+                setNewTrip({ destination: draftDestination, start: draftStart, end: draftEnd });
+                setSelectedTripId(null);
+                setOccurredAt("");
+                setShowNewTripModal(false);
+              }}
+            >
+              이 여행으로 등록하기
+            </button>
+          </Modal>
         </>
       ),
       // 등록된 보험이 있으면 그중 하나를 골라야 하고, 없으면 보험사 선택은 선택사항이다
       // (사고 상황부터 적고 나중에 보험을 붙여도 되게 둔다).
-      canNext: policies.length > 0 ? selectedPolicyId !== null : (isLoggedIn ? true : !!insurerCode),
+      canNext:
+        hasTripContext &&
+        (policies.length > 0 ? selectedPolicyId !== null : (isLoggedIn ? true : !!insurerCode)),
     },
     {
       icon: "umbrella",
@@ -444,7 +530,7 @@ export function IncidentReport() {
       canNext: true,
     },
     {
-      icon: "chat-bubble",
+      icon: "collision",
       eyebrow: "STEP 2 · 사고 내용",
       title: "당황하지 마세요,\n하나씩 도와드릴게요",
       content: (
@@ -475,37 +561,6 @@ export function IncidentReport() {
               </button>
             ))}
           </div>
-          {trips.length === 0 && (
-            <>
-              <label>
-                여행 국가
-                <PickerField
-                  value={destination}
-                  onChange={setDestination}
-                  placeholder="국가를 선택하세요"
-                  modalTitle="여행 국가"
-                  options={COUNTRIES.map((c) => ({ value: c, label: c }))}
-                />
-              </label>
-              <DateTimeField
-                label="여행 시작일"
-                value={newTripStart}
-                onChange={(v) => {
-                  setNewTripStart(v);
-                  if (v && (!newTripEnd || newTripEnd <= v)) setNewTripEnd(addDays(v, 1));
-                }}
-              />
-              <DateTimeField
-                label="여행 종료일"
-                value={newTripEnd}
-                onChange={setNewTripEnd}
-                minDate={newTripStart ? addDays(newTripStart, 1) : undefined}
-              />
-              <p className="muted" style={{ fontSize: "0.76rem", marginTop: -8 }}>
-                등록된 여행이 없어서 이 사고와 함께 여행도 등록해 드려요. 나중에 계정 화면에서 고칠 수 있어요.
-              </p>
-            </>
-          )}
           <label>
             사고 상황 (자유롭게 작성)
             <textarea
@@ -532,7 +587,7 @@ export function IncidentReport() {
           {error && <div className="error-box">{error}</div>}
         </>
       ),
-      canNext: !!freeText.trim() && !!age && !!sex && (trips.length > 0 || (!!destination && !!newTripStart && !!newTripEnd)),
+      canNext: !!freeText.trim() && !!age && !!sex,
     },
   ];
 

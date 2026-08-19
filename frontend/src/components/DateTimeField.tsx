@@ -60,6 +60,104 @@ function WheelCol({ items, index, onIndex }: WheelColProps) {
   );
 }
 
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** YYYY-MM-DD 세 값을 하나의 정수로 눌러 크기 비교에 쓴다(2026-08-19 → 20260819). */
+function dayKey(y: number, m: number, d: number) {
+  return y * 10000 + m * 100 + d;
+}
+
+interface MonthCalendarProps {
+  year: number;
+  month: number;
+  selectedDay: number;
+  /** 선택 가능한 최소/최대 날짜(포함). 없으면 제한 없음. */
+  min: Parsed | null;
+  max: Parsed | null;
+  onSelect: (y: number, m: number, d: number) => void;
+  onMoveMonth: (delta: number) => void;
+}
+
+/**
+ * 바텀시트 위쪽의 한 달짜리 달력.
+ *
+ * 휠 스피너만 있을 때는 "8월 23일이 무슨 요일인지", "주말이 언제인지"를 알 수 없어서
+ * 여행 기간처럼 요일이 중요한 날짜를 고르기 어려웠다. 시중 앱들이 쓰는 평범한 월 단위
+ * 격자를 그대로 두되(요일 머리글 + 7열 격자 + 좌우 월 이동), 색과 모서리만 이 서비스의
+ * 것을 쓴다. 휠은 아래에 그대로 남겨서 연·월을 멀리 건너뛸 때 계속 쓸 수 있다 — 둘은
+ * 같은 draft를 보고 있어서 어느 쪽으로 골라도 서로 따라 움직인다.
+ */
+function MonthCalendar({ year, month, selectedDay, min, max, onSelect, onMoveMonth }: MonthCalendarProps) {
+  const firstWeekday = new Date(year, month - 1, 1).getDay();
+  const dayCount = daysInMonth(year, month);
+  // 앞쪽 빈 칸 + 날짜 — 뒤쪽 빈 칸은 격자가 알아서 비우므로 채우지 않는다.
+  const cells: (number | null)[] = [
+    ...Array.from({ length: firstWeekday }, () => null),
+    ...Array.from({ length: dayCount }, (_, i) => i + 1),
+  ];
+
+  function disabled(day: number) {
+    const key = dayKey(year, month, day);
+    if (min && key < dayKey(min.y, min.m, min.d)) return true;
+    if (max && key > dayKey(max.y, max.m, max.d)) return true;
+    return false;
+  }
+
+  // 이전/다음 달로 넘어갈 수 있는지 — 넘어가 봐야 고를 날이 하나도 없으면 막는다.
+  const prevBlocked = !!min && dayKey(year, month, 1) <= dayKey(min.y, min.m, min.d);
+  const nextBlocked = !!max && dayKey(year, month, dayCount) >= dayKey(max.y, max.m, max.d);
+
+  return (
+    <div className="calendar">
+      <div className="calendar__head">
+        <button
+          type="button"
+          className="calendar__nav"
+          onClick={() => onMoveMonth(-1)}
+          disabled={prevBlocked}
+          aria-label="이전 달"
+        >
+          ‹
+        </button>
+        <span className="calendar__title">{year}년 {month}월</span>
+        <button
+          type="button"
+          className="calendar__nav"
+          onClick={() => onMoveMonth(1)}
+          disabled={nextBlocked}
+          aria-label="다음 달"
+        >
+          ›
+        </button>
+      </div>
+      <div className="calendar__weekdays">
+        {WEEKDAY_LABELS.map((w, i) => (
+          <span key={w} className={`calendar__weekday${i === 0 ? " calendar__weekday--sun" : ""}${i === 6 ? " calendar__weekday--sat" : ""}`}>
+            {w}
+          </span>
+        ))}
+      </div>
+      <div className="calendar__grid">
+        {cells.map((day, i) =>
+          day === null ? (
+            <span key={`pad-${i}`} className="calendar__cell calendar__cell--empty" />
+          ) : (
+            <button
+              key={day}
+              type="button"
+              className={`calendar__cell${day === selectedDay ? " calendar__cell--on" : ""}${i % 7 === 0 ? " calendar__cell--sun" : ""}${i % 7 === 6 ? " calendar__cell--sat" : ""}`}
+              disabled={disabled(day)}
+              onClick={() => onSelect(year, month, day)}
+            >
+              {day}
+            </button>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface Parsed { y: number; m: number; d: number; h: number; min: number }
 
 type FieldMode = "date" | "datetime" | "month";
@@ -197,6 +295,28 @@ export function DateTimeField({
                 ? `${draft.y}년 ${draft.m}월`
                 : `${draft.y}년 ${draft.m}월 ${dClamped}일${mode === "datetime" ? ` ${pad2(draft.h)}:${pad2(draft.min)}` : ""}`}
             </div>
+            {/* 달력이 주인공이고, 아래 휠은 연·월을 멀리 건너뛸 때 쓰는 보조 수단이다.
+                연·월만 고르는 month 모드에는 날짜 격자가 의미가 없어서 달력을 두지 않는다. */}
+            {mode !== "month" && (
+              <MonthCalendar
+                year={draft.y}
+                month={draft.m}
+                selectedDay={dClamped}
+                min={minParsed}
+                max={maxParsed}
+                onSelect={(y, m, d) => setDraft((p) => ({ ...p, y, m, d }))}
+                onMoveMonth={(delta) => {
+                  setDraft((p) => {
+                    const moved = new Date(p.y, p.m - 1 + delta, 1);
+                    const y = moved.getFullYear();
+                    const m = moved.getMonth() + 1;
+                    // 31일에서 2월로 넘어가는 것처럼 그 달에 없는 날짜가 되면 말일로 당긴다.
+                    const d = Math.min(p.d, daysInMonth(y, m));
+                    return clampToRange({ ...p, y, m, d });
+                  });
+                }}
+              />
+            )}
             <div className="wheel-row">
               <div className="wheel-highlight" />
               <WheelCol
