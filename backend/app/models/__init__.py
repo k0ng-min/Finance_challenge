@@ -4,7 +4,7 @@ from app.models.kb import (
     IncidentType, ClauseIncidentMap, ClauseTerm,
 )
 from app.models.user import (
-    AppUser, Trip, UserPolicy, UserCoverage, Incident, Evidence,
+    AppUser, Trip, UserPolicy, UserCoverage, Incident, Evidence, UserPremiumWatchlist,
 )
 from app.models.question import QuestionBank, UserQuestionLog
 from app.models.analysis import (
@@ -16,7 +16,7 @@ __all__ = [
     "Insurer", "Product", "PolicyVersion", "CoverageStd", "Coverage", "Clause",
     "RequiredDocStd", "CoverageDocMap",
     "IncidentType", "ClauseIncidentMap", "ClauseTerm",
-    "AppUser", "Trip", "UserPolicy", "UserCoverage", "Incident", "Evidence",
+    "AppUser", "Trip", "UserPolicy", "UserCoverage", "Incident", "Evidence", "UserPremiumWatchlist",
     "QuestionBank", "UserQuestionLog",
     "AnalysisRun", "AnalysisFinding", "FindingEvidenceLink", "ValidationRule",
     "ValidationResult", "EvalLog",

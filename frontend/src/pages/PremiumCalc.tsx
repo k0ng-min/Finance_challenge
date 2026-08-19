@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { toPng } from "html-to-image";
 import {
   api, type PremiumComparisonOut, type NonpaymentRatesOut, type InsurerPlansOut, type InsurerComparisonOut,
 } from "../api";
@@ -22,6 +23,16 @@ const INSURERS = [
 // backend/app/services/insurer_tiers.py의 TIER_LABELS와 반드시 같은 순서로 둔다.
 const PLAN_TIER_LABELS = ["실속", "표준", "고급"];
 
+/** InsurerComparisonMetric의 원문 표기 기준 "이 담보가 있다"고 볼 수 있는 값인지.
+ * "-"·"미제공"·"미가입"류는 없는 것으로 본다 — 정확한 조건은 표 상세를 봐야 하므로
+ * 이 필터는 "후보를 좁히는 용도"라는 문구를 화면에 같이 둔다. */
+function isCoveredValue(value: string | undefined | null): boolean {
+  if (!value) return false;
+  if (value === "-" || value === "미제공") return false;
+  if (value.startsWith("미가입")) return false;
+  return true;
+}
+
 /**
  * 보험료 비교 — 보험사를 골라 나이·성별에 따른 1일 기준 실제 보험료를 비교한다.
  *
@@ -36,7 +47,7 @@ const PLAN_TIER_LABELS = ["실속", "표준", "고급"];
  * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
  */
 export function PremiumCalc() {
-  const { age: profileAge, sex: profileSex } = useApp();
+  const { age: profileAge, sex: profileSex, userId, isLoggedIn } = useApp();
   // 처음엔 아무것도 고르지 않은 상태로 시작한다 — 전부 켜둔 채로 열면 "내가 고른 것"이
   // 아니라 "일단 다 나온 것"으로 보여서, 비교하려고 고르는 행동 자체가 흐려진다.
   const [selected, setSelected] = useState<string[]>([]);
@@ -63,6 +74,23 @@ export function PremiumCalc() {
   const [showComparison, setShowComparison] = useState(false);
   const [comparison, setComparison] = useState<InsurerComparisonOut | null>(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
+  // 필터 카드가 나이 하나만으로 시작해 한눈에 보이게 하고, 나머지(등급·성별·정렬·담보
+  // 유형·가격대)는 눌러서 펼쳐야 나온다 — 전부 펼쳐 두면 스크롤이 길어지고 화면이 복잡해진다.
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  // 담보 유형 필터 — "category|||metric_label"로 인코딩해 고른다. 안 고르면(null) 필터 없음.
+  const [coverageFilterKey, setCoverageFilterKey] = useState<string | null>(null);
+  // 가격대 필터 — 빈 문자열이면 그쪽 경계 없음.
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  // 비교 결과 공유 카드
+  const [showShareCard, setShowShareCard] = useState(false);
+  const [shareCardBusy, setShareCardBusy] = useState(false);
+  const [shareCardError, setShareCardError] = useState(false);
+  const shareCardRef = useRef<HTMLDivElement>(null);
+  // 로그인 계정의 비교함(찜하기) — 처음 불러오기 전까지는 저장하지 않는다(안 그러면
+  // 빈 목록으로 시작하는 첫 렌더가 곧바로 서버 저장을 덮어써 버린다).
+  const skipWatchlistSaveRef = useRef(false);
+  const [watchlistSaved, setWatchlistSaved] = useState(false);
 
   useEffect(() => {
     if (profileAge != null) setAge(profileAge);
@@ -71,6 +99,34 @@ export function PremiumCalc() {
   useEffect(() => {
     api.getNonpaymentRates().then(setNonpayment).catch(() => setNonpayment(null));
   }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn || !userId) return;
+    skipWatchlistSaveRef.current = true;
+    api.getPremiumWatchlist(userId)
+      .then((res) => {
+        const codes = res.insurer_codes.filter((c) => INSURERS.some((i) => i.code === c));
+        if (codes.length > 0) setSelected(codes);
+      })
+      .catch(() => {
+        skipWatchlistSaveRef.current = false;
+      });
+  }, [isLoggedIn, userId]);
+
+  useEffect(() => {
+    if (!isLoggedIn || !userId) return;
+    if (skipWatchlistSaveRef.current) {
+      skipWatchlistSaveRef.current = false;
+      return;
+    }
+    api.setPremiumWatchlist(userId, selected)
+      .then(() => {
+        setWatchlistSaved(true);
+        setTimeout(() => setWatchlistSaved(false), 1500);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, isLoggedIn, userId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,14 +158,15 @@ export function PremiumCalc() {
     setPlansByInsurer({});
   }, [planTierRank]);
 
+  // 비교표 팝업뿐 아니라 담보 유형 필터의 목록·판정에도 같은 자료가 필요해서, 팝업을
+  // 열었을 때만이 아니라 등급이 바뀔 때마다 미리 불러와 둔다.
   useEffect(() => {
-    if (!showComparison) return;
     setComparisonLoading(true);
     api.getInsurerComparisonMetrics(planTierRank)
       .then(setComparison)
       .catch(() => setComparison(null))
       .finally(() => setComparisonLoading(false));
-  }, [showComparison, planTierRank]);
+  }, [planTierRank]);
 
   function toggle(code: string) {
     setSelected((prev) =>
@@ -117,10 +174,44 @@ export function PremiumCalc() {
     );
   }
 
-  const rows = useMemo(
-    () => (data?.items ?? []).filter((i) => selected.includes(i.insurer_code)),
-    [data, selected]
-  );
+  // 담보 유형 필터 드롭다운에 쓸 목록 — 카테고리별로 묶어 <optgroup>으로 보여준다.
+  const coverageOptions = useMemo(() => {
+    if (!comparison) return [];
+    return comparison.categories.map((cat) => ({
+      category: cat.category,
+      items: cat.metrics.map((m) => ({ key: `${cat.category}|||${m.metric_label}`, label: m.metric_label })),
+    }));
+  }, [comparison]);
+
+  // 고른 담보 유형을 "가지고 있다"고 볼 수 있는 보험사 코드 집합. 못 고르면(null) 필터 없음.
+  const coveredCodes = useMemo(() => {
+    if (!coverageFilterKey || !comparison) return null;
+    const [category, metricLabel] = coverageFilterKey.split("|||");
+    const metric = comparison.categories
+      .find((c) => c.category === category)
+      ?.metrics.find((m) => m.metric_label === metricLabel);
+    if (!metric) return null;
+    return new Set(metric.values.filter((v) => isCoveredValue(v.value_text)).map((v) => v.insurer_code));
+  }, [coverageFilterKey, comparison]);
+
+  const priceBounds = useMemo(() => {
+    const min = minPrice.trim() ? Number(minPrice) : null;
+    const max = maxPrice.trim() ? Number(maxPrice) : null;
+    return {
+      min: min != null && !Number.isNaN(min) ? min : null,
+      max: max != null && !Number.isNaN(max) ? max : null,
+    };
+  }, [minPrice, maxPrice]);
+
+  const hasExtraFilter = coveredCodes != null || priceBounds.min != null || priceBounds.max != null;
+
+  const rows = useMemo(() => {
+    let list = (data?.items ?? []).filter((i) => selected.includes(i.insurer_code));
+    if (coveredCodes) list = list.filter((i) => coveredCodes.has(i.insurer_code));
+    if (priceBounds.min != null) list = list.filter((i) => i.published_premium >= priceBounds.min!);
+    if (priceBounds.max != null) list = list.filter((i) => i.published_premium <= priceBounds.max!);
+    return list;
+  }, [data, selected, coveredCodes, priceBounds]);
   // 고른 보험사 중 목록에 안 나온 곳 — 조용히 빼지 않고 이유를 밝힌다. 이유가 둘로
   // 갈린다: (1) 이 나이만 가입연령 범위 밖 (2) 나이와 무관하게 가격 자체를 아직
   // 못 구함(DB·메리츠) — 서버가 내려주는 no_data_insurer_codes로 구분한다. 하나로
@@ -159,6 +250,13 @@ export function PremiumCalc() {
             </button>
           ))}
         </div>
+        {isLoggedIn ? (
+          <p className="muted calc-watchlist-hint">
+            {watchlistSaved ? "✓ 비교함에 저장했어요" : "고른 보험사는 비교함에 저장돼요 — 나중에 다시 와도 그대로예요."}
+          </p>
+        ) : (
+          <p className="muted calc-watchlist-hint">로그인하면 고른 보험사 목록이 비교함에 저장돼요.</p>
+        )}
 
         <div className="calc-filter-group">
           <label>
@@ -173,57 +271,120 @@ export function PremiumCalc() {
           </label>
         </div>
 
-        <div className="calc-filter-group">
-          <span className="calc-filter-group__label">등급</span>
-          <div className="calc-seg">
-            {PLAN_TIER_LABELS.map((label, rank) => (
-              <button
-                key={label}
-                type="button"
-                className={`premium-chip${planTierRank === rank ? " premium-chip--on" : ""}`}
-                onClick={() => setPlanTierRank(rank)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button
+          type="button"
+          className="calc-more-toggle"
+          onClick={() => setFiltersExpanded((v) => !v)}
+        >
+          {filtersExpanded ? "접기 ▴" : "더보기 ▾"}
+        </button>
+        {!filtersExpanded && (
+          <p className="muted calc-filter-summary">
+            {PLAN_TIER_LABELS[planTierRank]} 등급 · {sex === "M" ? "남자" : "여자"} ·{" "}
+            {order === "asc" ? "낮은 가격순" : "높은 가격순"}
+            {hasExtraFilter && " · 필터 적용중"}
+          </p>
+        )}
 
-        <div className="calc-filter-group">
-          <span className="calc-filter-group__label">성별</span>
-          <div className="calc-seg">
-            {(["M", "F"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={`premium-chip${sex === s ? " premium-chip--on" : ""}`}
-                onClick={() => setSex(s)}
-              >
-                {s === "M" ? "남자" : "여자"}
-              </button>
-            ))}
-          </div>
-        </div>
+        {filtersExpanded && (
+          <>
+            <div className="calc-filter-group">
+              <span className="calc-filter-group__label">등급</span>
+              <div className="calc-seg">
+                {PLAN_TIER_LABELS.map((label, rank) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`premium-chip${planTierRank === rank ? " premium-chip--on" : ""}`}
+                    onClick={() => setPlanTierRank(rank)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <div className="calc-filter-group">
-          <span className="calc-filter-group__label">정렬</span>
-          <div className="calc-seg">
-            <button
-              type="button"
-              className={`premium-chip${order === "asc" ? " premium-chip--on" : ""}`}
-              onClick={() => setOrder("asc")}
-            >
-              낮은 가격순
-            </button>
-            <button
-              type="button"
-              className={`premium-chip${order === "desc" ? " premium-chip--on" : ""}`}
-              onClick={() => setOrder("desc")}
-            >
-              높은 가격순
-            </button>
-          </div>
-        </div>
+            <div className="calc-filter-group">
+              <span className="calc-filter-group__label">성별</span>
+              <div className="calc-seg">
+                {(["M", "F"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`premium-chip${sex === s ? " premium-chip--on" : ""}`}
+                    onClick={() => setSex(s)}
+                  >
+                    {s === "M" ? "남자" : "여자"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="calc-filter-group">
+              <span className="calc-filter-group__label">정렬</span>
+              <div className="calc-seg">
+                <button
+                  type="button"
+                  className={`premium-chip${order === "asc" ? " premium-chip--on" : ""}`}
+                  onClick={() => setOrder("asc")}
+                >
+                  낮은 가격순
+                </button>
+                <button
+                  type="button"
+                  className={`premium-chip${order === "desc" ? " premium-chip--on" : ""}`}
+                  onClick={() => setOrder("desc")}
+                >
+                  높은 가격순
+                </button>
+              </div>
+            </div>
+
+            <div className="calc-filter-group">
+              <span className="calc-filter-group__label">담보 유형</span>
+              <select
+                value={coverageFilterKey ?? ""}
+                onChange={(e) => setCoverageFilterKey(e.target.value || null)}
+              >
+                <option value="">전체 보기</option>
+                {coverageOptions.map((group) => (
+                  <optgroup key={group.category} label={group.category}>
+                    {group.items.map((opt) => (
+                      <option key={opt.key} value={opt.key}>{opt.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {coverageFilterKey && (
+                <p className="muted calc-filter-note">
+                  {PLAN_TIER_LABELS[planTierRank]} 등급 기준으로 이 담보가 있는 곳만 보여드려요(정확한 조건은
+                  담보 상세표를 확인해 주세요).
+                </p>
+              )}
+            </div>
+
+            <div className="calc-filter-group">
+              <span className="calc-filter-group__label">가격대 (1일 기준, 원)</span>
+              <div className="calc-filter-group__row">
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="최소"
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                />
+                <span className="calc-filter-group__tilde">~</span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="최대"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <button
@@ -285,6 +446,78 @@ export function PremiumCalc() {
         )}
       </Modal>
 
+      {selected.length > 0 && (
+        <button
+          type="button"
+          className="rank-compare-trigger"
+          onClick={() => { setShareCardError(false); setShowShareCard(true); }}
+        >
+          <span>🖼 비교 결과 공유 카드 만들기</span>
+          <span className="rank-compare-trigger__arrow">›</span>
+        </button>
+      )}
+      <Modal
+        open={showShareCard}
+        onClose={() => setShowShareCard(false)}
+        title="비교 결과 공유 카드"
+        className="modal-card--wide"
+      >
+        {rows.length === 0 ? (
+          <p className="muted" style={{ fontSize: "0.82rem" }}>
+            카드로 만들 보험사가 없어요. 필터를 조정해 주세요.
+          </p>
+        ) : (
+          <>
+            <div ref={shareCardRef} className="share-card">
+              <p className="share-card__eyebrow">TRAVEL INSURANCE</p>
+              <h3 className="share-card__title">
+                만 {age}세 {sex === "M" ? "남성" : "여성"} · {PLAN_TIER_LABELS[planTierRank]} 등급 보험료 비교
+              </h3>
+              <p className="share-card__subtitle">
+                1일 기준 실제 보험료{data?.collected_at ? ` · ${data.collected_at} 조회` : ""}
+              </p>
+              <div className="share-card__list">
+                {rows.map((item, i) => (
+                  <div key={item.insurer_code} className="share-card__row">
+                    <span className="share-card__name">{i + 1}. {item.insurer_name}</span>
+                    <span className="share-card__price">{item.published_premium.toLocaleString()}원</span>
+                  </div>
+                ))}
+              </div>
+              <p className="share-card__footnote">
+                각 보험사 다이렉트 사이트에서 직접 조회한 값이며, 실제 가입조건에 따라 달라질 수 있어요.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary share-card__download-btn"
+              disabled={shareCardBusy}
+              onClick={async () => {
+                if (!shareCardRef.current) return;
+                setShareCardBusy(true);
+                setShareCardError(false);
+                try {
+                  const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 2, cacheBust: true });
+                  const a = document.createElement("a");
+                  a.href = dataUrl;
+                  a.download = `보험료비교_${age}세_${PLAN_TIER_LABELS[planTierRank]}등급.png`;
+                  a.click();
+                } catch {
+                  setShareCardError(true);
+                } finally {
+                  setShareCardBusy(false);
+                }
+              }}
+            >
+              {shareCardBusy ? "이미지 만드는 중..." : "이미지로 다운로드"}
+            </button>
+            {shareCardError && (
+              <p className="error-box" style={{ marginTop: 8 }}>이미지 생성에 실패했어요. 다시 시도해 주세요.</p>
+            )}
+          </>
+        )}
+      </Modal>
+
       {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>보험료 자료를 불러오는 중...</p>}
       {!loading && error && <div className="error-box">{error}</div>}
 
@@ -295,7 +528,21 @@ export function PremiumCalc() {
         </div>
       )}
 
-      {!loading && data && selected.length > 0 && (
+      {!loading && !error && selected.length > 0 && rows.length === 0 && hasExtraFilter && (
+        <div className="empty-state">
+          <Icon3D src="wallet" size={56} />
+          <p className="muted">필터 조건에 맞는 보험사가 없어요.</p>
+          <button
+            type="button"
+            className="premium-chip"
+            onClick={() => { setCoverageFilterKey(null); setMinPrice(""); setMaxPrice(""); }}
+          >
+            필터 초기화
+          </button>
+        </div>
+      )}
+
+      {!loading && data && selected.length > 0 && rows.length > 0 && (
         <>
           <ul className="premium-list">
             {rows.map((item, i) => {
@@ -334,7 +581,7 @@ export function PremiumCalc() {
                       aria-label="더보기"
                       onClick={() => setMenuOpenFor(menuOpen ? null : item.insurer_code)}
                     >
-                      ⌄
+                      ⋮
                     </button>
                   </div>
                   {menuOpen && (
@@ -377,7 +624,11 @@ export function PremiumCalc() {
               />
             </Modal>
           ))}
+        </>
+      )}
 
+      {!loading && data && selected.length > 0 && (missing.ageOutOfRange.length > 0 || missing.noDataYet.length > 0) && (
+        <>
           {missing.ageOutOfRange.length > 0 && (
             <p className="muted premium-basis">
               {missing.ageOutOfRange.map((m) => m.label).join(", ")} — 만 {age}세 {sex === "M" ? "남성" : "여성"}은
@@ -390,32 +641,34 @@ export function PremiumCalc() {
               비교에서 빠졌어요(나이·성별과는 무관해요).
             </p>
           )}
-
-          <p className="premium-basis">
-            <strong>{data.premium_period_days}일 기준으로 조회한 실제 보험료입니다.</strong>
-            <br />
-            {data.basis}
-            <br />
-            여행기간, 담보구성, 가입금액 등 실제 계약조건에 따라 보험료는 달라질 수 있습니다.{" "}
-            {data.source && `(출처: ${data.source}, ${data.collected_at} 조회)`}
-            {data.source_url && (
-              <a href={data.source_url} target="_blank" rel="noreferrer">
-                {" "}실제 가입조건 보험료 확인 →
-              </a>
-            )}
-          </p>
         </>
+      )}
+
+      {!loading && data && selected.length > 0 && rows.length > 0 && (
+        <p className="premium-basis">
+          <strong>{data.premium_period_days}일 기준으로 조회한 실제 보험료입니다.</strong>
+          <br />
+          {data.basis}
+          <br />
+          여행기간, 담보구성, 가입금액 등 실제 계약조건에 따라 보험료는 달라질 수 있습니다.{" "}
+          {data.source && `(출처: ${data.source}, ${data.collected_at} 조회)`}
+          {data.source_url && (
+            <a href={data.source_url} target="_blank" rel="noreferrer">
+              {" "}실제 가입조건 보험료 확인 →
+            </a>
+          )}
+        </p>
       )}
 
       {selected.length > 0 && nonpayment && (
         <div className="card" style={{ marginTop: 16 }}>
           <button
             type="button"
-            className="collapsible-header"
+            className="calc-more-toggle calc-more-toggle--plain"
             onClick={() => setShowNonpayment((v) => !v)}
           >
             <span className="section-label">보험금 부지급률(손보협회 공시)</span>
-            <span className="collapsible-header__chevron">{showNonpayment ? "⌃" : "⌄"}</span>
+            <span>{showNonpayment ? "접기 ▴" : "펼치기 ▾"}</span>
           </button>
           {showNonpayment && (
           <>

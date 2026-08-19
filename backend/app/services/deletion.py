@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from app.models.analysis import AnalysisFinding, AnalysisRun, FindingEvidenceLink, ValidationResult
 from app.models.external import ExternalCoverage, ExternalPolicy
 from app.models.question import UserQuestionLog
-from app.models.user import AppUser, Evidence, Incident, Trip, UserPolicy, UserCoverage
+from app.models.user import (
+    AppUser, Evidence, Incident, Trip, UserPolicy, UserCoverage, UserPremiumWatchlist,
+)
 
 
 def delete_analysis_run(db: Session, run: AnalysisRun):
@@ -73,6 +75,9 @@ def wipe_user_data(db: Session, user_id: int):
         db.query(ExternalPolicy).filter(
             ExternalPolicy.external_policy_id.in_(ext_ids)
         ).delete(synchronize_session=False)
+    # 보험료 비교함(찜한 보험사 목록)도 같은 이유(rowid 재사용)로 같이 지운다.
+    db.query(UserPremiumWatchlist).filter(UserPremiumWatchlist.user_id == user_id) \
+        .delete(synchronize_session=False)
 
 
 def delete_user_cascade(db: Session, user: AppUser):

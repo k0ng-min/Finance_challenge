@@ -500,6 +500,11 @@ export interface InsurerComparisonOut {
   collected_at: string | null;
 }
 
+/** 로그인 계정이 보험료 비교에서 담아 둔 보험사 목록("비교함"). 게스트는 저장하지 않는다. */
+export interface PremiumWatchlistOut {
+  insurer_codes: string[];
+}
+
 export interface AuthUserOut {
   user_id: number;
   nickname: string;
@@ -841,6 +846,16 @@ export const api = {
   /** 6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
   getInsurerComparisonMetrics: (planTier: number) =>
     request<InsurerComparisonOut>(`/insurers/comparison-metrics?plan_tier=${planTier}`),
+
+  /** 로그인 계정의 보험료 비교함. 게스트는 부를 필요가 없다(서버에 저장된 게 없다). */
+  getPremiumWatchlist: (userId: number) =>
+    request<PremiumWatchlistOut>(`/users/${userId}/premium-watchlist`),
+
+  setPremiumWatchlist: (userId: number, insurerCodes: string[]) =>
+    request<PremiumWatchlistOut>(`/users/${userId}/premium-watchlist`, {
+      method: "PUT",
+      body: JSON.stringify({ insurer_codes: insurerCodes }),
+    }),
 
   getClause: (clauseId: number) => request<ClauseOut>(`/clauses/${clauseId}`),
 

@@ -41,6 +41,7 @@ DELETE_ORDER: tuple[str, ...] = (
     "user_policy",
     "external_coverage",
     "external_policy",
+    "user_premium_watchlist",
     "app_user",
     # 조항 파생
     "clause_standard_map",

@@ -2324,30 +2324,38 @@ button { cursor: pointer; font-family: inherit; }
   gap: 10px;
   width: 100%;
 }
-.collapsible-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-}
-.collapsible-header__chevron {
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+/* 접었다 펼치는 조작 — 예전엔 동그란 화살표 아이콘 버튼(수동으로 눌러야 뭔지 알 수
+   있는)이었는데, 라벨 텍스트 자체에 "더 보기/접기"를 담아 한눈에 뭘 하는 버튼인지
+   보이게 바꿨다. 필터 카드(나이만 보이다 눌러야 나머지가 나옴)와 부지급률 표에 쓴다. */
+.calc-more-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--cream-deep);
-  border-radius: 50%;
-  font-size: 0.86rem;
-  color: var(--muted);
+  gap: 6px;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  cursor: pointer;
 }
+.calc-more-toggle--plain {
+  justify-content: space-between;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  color: var(--muted);
+  font-weight: 700;
+}
+.calc-filter-summary { font-size: 0.76rem; margin: 6px 0 0; }
+/* 세로 점 세 개(케밥 메뉴) — 예전엔 화살표(⌄)였는데, "펼치기" 아이콘처럼 보여서
+   눌러도 안 펼쳐지고 "비교에서 빼기" 메뉴만 나오는 게 헷갈린다는 피드백을 받았다.
+   점 세 개는 "부가 조작 메뉴"로 통용되는 표시라 그런 오해가 없다. */
 .premium-row__menu-btn {
   flex-shrink: 0;
   width: 26px;
@@ -2358,7 +2366,9 @@ button { cursor: pointer; font-family: inherit; }
   background: var(--cream-deep);
   border: none;
   border-radius: 50%;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
   color: var(--muted);
   cursor: pointer;
 }
@@ -2390,6 +2400,68 @@ button { cursor: pointer; font-family: inherit; }
 }
 .premium-basis a { color: var(--primary-dark); font-weight: 700; }
 .premium-basis strong { color: var(--heading); }
+
+.calc-watchlist-hint { font-size: 0.72rem; margin: 8px 0 0; }
+
+/* 담보 유형 필터 드롭다운 — .step__content select와 같은 톤으로 맞춘다. */
+.calc-filter-group select {
+  font-size: 0.9rem;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: inherit;
+  background: var(--ivory);
+  width: 100%;
+}
+.calc-filter-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+  background: var(--card-bg);
+}
+.calc-filter-note { font-size: 0.72rem; margin: 8px 0 0; line-height: 1.5; }
+/* 가격대(최소~최대)처럼 입력 두 칸을 한 줄에 나란히 둘 때 쓴다. */
+.calc-filter-group__row { display: flex; align-items: center; gap: 8px; }
+.calc-filter-group__row input { flex: 1; min-width: 0; }
+.calc-filter-group__tilde { flex-shrink: 0; color: var(--muted); font-weight: 700; }
+
+/* --- 비교 결과 공유 카드 (html-to-image로 캡처) ---
+   테마(라이트/다크)와 무관하게 항상 같은 톤으로 캡처돼야 다른 사람에게 공유했을 때도
+   보기 좋다 — var() 대신 고정된 색을 쓴다. */
+.share-card {
+  width: 480px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 28px 24px;
+  background: #ffffff;
+  border: 1px solid #e2eaf7;
+  border-radius: 20px;
+  margin: 0 auto;
+}
+.share-card__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #4b84ec;
+}
+.share-card__title { margin: 0 0 4px; font-size: 1.2rem; font-weight: 800; color: #1f2a3d; line-height: 1.4; }
+.share-card__subtitle { margin: 0 0 18px; font-size: 0.76rem; color: #8592a8; }
+.share-card__list { display: flex; flex-direction: column; }
+.share-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #eef4fd;
+}
+.share-card__row:last-child { border-bottom: none; }
+.share-card__name { font-size: 0.88rem; font-weight: 700; color: #1f2a3d; }
+.share-card__price { font-size: 1rem; font-weight: 800; color: #3568c9; flex-shrink: 0; }
+.share-card__footnote { margin: 18px 0 0; font-size: 0.66rem; line-height: 1.55; color: #8592a8; }
+.share-card__download-btn { display: block; width: 100%; margin-top: 14px; }
 
 /* --- 기존보험 연결 & 중복·공백 진단 --- */
 

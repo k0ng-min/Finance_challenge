@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.user import AppUser, Trip, Incident
+from app.models.user import AppUser, Trip, Incident, UserPremiumWatchlist
 from app.limiter import limiter
 from app.routers.auth import get_current_user_optional, verify_owner
 from app.services.auth import issue_session
@@ -42,6 +42,14 @@ class IncidentSummaryOut(BaseModel):
     user_policy_id: int | None = None
     linked_insurer_code: str | None = None
     linked_insurer_name: str | None = None
+
+
+class PremiumWatchlistIn(BaseModel):
+    insurer_codes: list[str]
+
+
+class PremiumWatchlistOut(BaseModel):
+    insurer_codes: list[str]
 
 
 @router.post("", response_model=UserOut)
@@ -124,3 +132,41 @@ def list_incidents(
             linked_insurer_name=linked_insurer_name,
         ))
     return out
+
+
+@router.get("/{user_id}/premium-watchlist", response_model=PremiumWatchlistOut)
+def get_premium_watchlist(
+    user_id: int, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """보험료 비교(PremiumCalc)에서 담아 둔 보험사 목록("비교함"). 게스트는 서버에 저장하지
+    않으므로(로그인해야만 나중에 다시 찾을 수 있다) 로그인 계정만 부를 수 있다."""
+    verify_owner(user_id, current)
+    rows = (
+        db.query(UserPremiumWatchlist)
+        .filter(UserPremiumWatchlist.user_id == user_id)
+        .all()
+    )
+    return PremiumWatchlistOut(insurer_codes=[r.insurer_code for r in rows])
+
+
+@router.put("/{user_id}/premium-watchlist", response_model=PremiumWatchlistOut)
+def set_premium_watchlist(
+    user_id: int, payload: PremiumWatchlistIn, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """비교함 전체를 통째로 갈아끼운다(추가/삭제를 화면에서 미리 합친 최종 목록을 그대로
+    받는다) — 항목 하나하나를 추가/삭제 API로 나누면 화면 쪽 상태와 서버 쪽 상태가
+    어긋날 여지가 생긴다."""
+    verify_owner(user_id, current)
+    db.query(UserPremiumWatchlist).filter(UserPremiumWatchlist.user_id == user_id) \
+        .delete(synchronize_session=False)
+    seen: set[str] = set()
+    for code in payload.insurer_codes:
+        code = code.upper().strip()
+        if not code or code in seen:
+            continue
+        seen.add(code)
+        db.add(UserPremiumWatchlist(user_id=user_id, insurer_code=code))
+    db.commit()
+    return PremiumWatchlistOut(insurer_codes=sorted(seen))

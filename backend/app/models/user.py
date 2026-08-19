@@ -1,6 +1,6 @@
 """영역 B: 사용자 도메인 (new.md 참조)"""
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
+    Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -143,6 +143,25 @@ class Incident(Base):
     evidences = relationship("Evidence", back_populates="incident")
     user_policy = relationship("UserPolicy")
     trip = relationship("Trip")
+
+
+class UserPremiumWatchlist(Base):
+    """로그인 계정이 보험료 비교(PremiumCalc)에서 담아 둔 보험사 목록("비교함").
+
+    게스트는 이 표에 저장하지 않는다 — 이 앱은 로그인 없는 게스트도 모든 기능을 쓸 수
+    있는 게 기본 설계지만, 게스트는 user_id가 브라우저를 벗어나면 이어지지 않으므로
+    서버에 남겨봐야 다시 못 찾는다(다른 데이터도 전부 이 원칙을 따른다). 그래서 이
+    목록은 화면의 selected 상태로만 갖고 있다가, 로그인 계정일 때만 서버에 동기화한다.
+    """
+    __tablename__ = "user_premium_watchlist"
+    __table_args__ = (
+        UniqueConstraint("user_id", "insurer_code", name="uq_watchlist_user_insurer"),
+    )
+
+    watchlist_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_user.user_id"), nullable=False)
+    insurer_code = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
 
 
 class Evidence(Base):
