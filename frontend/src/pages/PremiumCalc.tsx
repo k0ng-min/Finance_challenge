@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { api, type PremiumComparisonOut, type NonpaymentRatesOut } from "../api";
+import { api, type PremiumComparisonOut, type NonpaymentRatesOut, type InsurerPlansOut } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
+import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
+import { Modal } from "../components/Modal";
 
 const INSURERS = [
   { code: "SAMSUNG", label: "삼성화재" },
@@ -19,8 +21,10 @@ const INSURERS = [
  * 보험료 비교 — 보험사를 골라 나이·성별에 따른 1일 기준 실제 보험료를 비교한다.
  *
  * 2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
- * 직접 조회한 실제 등급(플랜)별 가격을 쓴다 — 등급 선택 화면이 아직 없어 보험사마다
- * 표준 등급 하나만 대표로 보여준다(product_name에 그 등급명이 함께 온다).
+ * 직접 조회한 실제 등급(플랜)별 가격을 쓴다. 목록 행에는 표준 등급 가격만 보이고,
+ * 보험사 이름을 누르면 등급 칩·담보 가입금액표(스크롤)를 팝업으로 볼 수 있다
+ * (PlanCoverageBoard) — 목록을 담보 표로 길게 늘리지 않으면서도 등급은 자유롭게
+ * 바꿔볼 수 있다. 팝업에서 등급을 바꾸면 목록 행의 가격도 그 등급 가격으로 바뀐다.
  *
  * 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이라, 산출 전제와
  * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
@@ -37,6 +41,16 @@ export function PremiumCalc() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [nonpayment, setNonpayment] = useState<NonpaymentRatesOut | null>(null);
+  // 행마다 등급 칩·담보한도표가 처음부터 펼쳐져 있다(표준 등급으로 고정하지 않고
+  // 자유롭게 등급을 바꿔볼 수 있게). 고른 등급과 그 등급의 실시간 가격을 보험사별로 기억한다.
+  const [planByInsurer, setPlanByInsurer] = useState<Record<string, string>>({});
+  const [plansByInsurer, setPlansByInsurer] = useState<Record<string, InsurerPlansOut | null>>({});
+  // 행 오른쪽 화살표를 누르면 "이 보험사 비교에서 빼기" 메뉴가 나온다 — 한 번에 하나만 연다.
+  const [menuOpenFor, setMenuOpenFor] = useState<string | null>(null);
+  // 보험사 이름을 누르면 등급·담보한도 팝업이 뜬다.
+  const [planModalFor, setPlanModalFor] = useState<string | null>(null);
+  // 부지급률 표는 기본으로 접어 둔다 — 누르면 펼쳐진다.
+  const [showNonpayment, setShowNonpayment] = useState(false);
 
   useEffect(() => {
     if (profileAge != null) setAge(profileAge);
@@ -118,7 +132,7 @@ export function PremiumCalc() {
           ))}
         </div>
 
-        <div className="calc-grid calc-grid--single">
+        <div className="calc-filter-group">
           <label>
             나이 (만)
             <input
@@ -131,7 +145,8 @@ export function PremiumCalc() {
           </label>
         </div>
 
-        <div className="calc-row">
+        <div className="calc-filter-group">
+          <span className="calc-filter-group__label">성별</span>
           <div className="calc-seg">
             {(["M", "F"] as const).map((s) => (
               <button
@@ -144,6 +159,10 @@ export function PremiumCalc() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="calc-filter-group">
+          <span className="calc-filter-group__label">정렬</span>
           <div className="calc-seg">
             <button
               type="button"
@@ -176,26 +195,85 @@ export function PremiumCalc() {
       {!loading && data && selected.length > 0 && (
         <>
           <ul className="premium-list">
-            {rows.map((item, i) => (
-              <motion.li
-                key={item.insurer_code}
-                className="premium-row"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-              >
-                <span className="premium-row__rank">{i + 1}</span>
-                <span className="premium-row__name">
-                  {item.insurer_name}
-                  {item.product_name && <em>{item.product_name}</em>}
-                </span>
-                <span className="premium-row__amount">
-                  <span className="premium-row__cost">{item.published_premium.toLocaleString()}원</span>
-                  <small>1일 기준</small>
-                </span>
-              </motion.li>
-            ))}
+            {rows.map((item, i) => {
+              const chosenPlan = planByInsurer[item.insurer_code];
+              const livePlans = plansByInsurer[item.insurer_code];
+              const chosenPremium = livePlans?.plans.find((p) => p.plan_name === chosenPlan)?.premium
+                ?? item.published_premium;
+              const chosenLabel = chosenPlan ?? item.product_name;
+              const menuOpen = menuOpenFor === item.insurer_code;
+              return (
+                <motion.li
+                  key={item.insurer_code}
+                  className="premium-row"
+                  style={{ flexDirection: "column", alignItems: "stretch" }}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                >
+                  <div className="premium-row__head">
+                    <span className="premium-row__rank">{i + 1}</span>
+                    <button
+                      type="button"
+                      className="premium-row__name premium-row__name--clickable"
+                      onClick={() => setPlanModalFor(item.insurer_code)}
+                    >
+                      {item.insurer_name}
+                      {chosenLabel && <em>{chosenLabel}</em>}
+                    </button>
+                    <span className="premium-row__amount">
+                      <span className="premium-row__cost">{chosenPremium.toLocaleString()}원</span>
+                      <small>1일 기준</small>
+                    </span>
+                    <button
+                      type="button"
+                      className="premium-row__menu-btn"
+                      aria-label="더보기"
+                      onClick={() => setMenuOpenFor(menuOpen ? null : item.insurer_code)}
+                    >
+                      ⌄
+                    </button>
+                  </div>
+                  {menuOpen && (
+                    <div className="premium-row__menu">
+                      <button
+                        type="button"
+                        className="premium-row__menu-item"
+                        onClick={() => {
+                          toggle(item.insurer_code);
+                          setMenuOpenFor(null);
+                        }}
+                      >
+                        🗑 이 보험사 비교에서 빼기
+                      </button>
+                    </div>
+                  )}
+                </motion.li>
+              );
+            })}
           </ul>
+
+          {rows.map((item) => (
+            <Modal
+              key={item.insurer_code}
+              open={planModalFor === item.insurer_code}
+              onClose={() => setPlanModalFor(null)}
+              title={`${item.insurer_name} 등급·담보한도`}
+            >
+              <PlanCoverageBoard
+                insurerCode={item.insurer_code}
+                age={age}
+                sex={sex}
+                selectedPlan={planByInsurer[item.insurer_code] ?? null}
+                onSelectPlan={(plan) =>
+                  setPlanByInsurer((prev) => ({ ...prev, [item.insurer_code]: plan }))
+                }
+                onPlansLoaded={(p) =>
+                  setPlansByInsurer((prev) => ({ ...prev, [item.insurer_code]: p }))
+                }
+              />
+            </Modal>
+          ))}
 
           {missing.ageOutOfRange.length > 0 && (
             <p className="muted premium-basis">
@@ -228,7 +306,16 @@ export function PremiumCalc() {
 
       {selected.length > 0 && nonpayment && (
         <div className="card" style={{ marginTop: 16 }}>
-          <p className="section-label" style={{ marginBottom: 8 }}>보험금 부지급률(손보협회 공시)</p>
+          <button
+            type="button"
+            className="premium-row__detail-toggle"
+            style={{ marginTop: 0, fontSize: "0.85rem" }}
+            onClick={() => setShowNonpayment((v) => !v)}
+          >
+            {showNonpayment ? "보험금 부지급률(손보협회 공시) 접기 ⌃" : "보험금 부지급률(손보협회 공시) 보기 ⌄"}
+          </button>
+          {showNonpayment && (
+          <>
           <table className="coverage-table">
             <thead>
               <tr>
@@ -266,6 +353,8 @@ export function PremiumCalc() {
               {nonpayment.source}({nonpayment.collected_at} 수집) 원문 확인 →
             </a>
           </p>
+          </>
+          )}
         </div>
       )}
     </div>

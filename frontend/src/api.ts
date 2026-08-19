@@ -207,6 +207,7 @@ export interface UserPolicyOut {
   user_policy_id: number;
   insurer_name_raw: string;
   product_name_raw: string | null;
+  plan_name: string | null;
   subscriber_age: number | null;
   period_start: string;
   period_end: string;
@@ -405,6 +406,8 @@ export interface InsurerRankOut {
   premium_source_url: string | null;
   premium_collected_at: string | null;
   premium_note: string | null;
+  /** 등급별 담보 가입금액표를 볼 수 있는 보험사면 그 담보 항목 수(순위 점수에는 섞이지 않는다). */
+  plan_coverage_item_count: number | null;
 }
 
 export interface InsurerRankingOut {
@@ -433,6 +436,39 @@ export interface PremiumComparisonOut {
   unavailable_insurers: string[];
   /** 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드) — 예: DB·메리츠 */
   no_data_insurer_codes: string[];
+}
+
+export interface InsurerPlanOut {
+  plan_name: string;
+  premium: number;
+  is_standard_tier: boolean;
+}
+
+export interface InsurerPlansOut {
+  insurer_code: string;
+  insurer_name: string;
+  premium_period_days: number;
+  plans: InsurerPlanOut[];
+  /** 이 나이·성별(또는 아예) 가격 자료가 없으면 true — 등급 이름만 있고 가격은 비어 있다. */
+  price_unavailable: boolean;
+}
+
+export interface InsurerPlanCoverageRowOut {
+  plan_name: string;
+  coverage_label: string;
+  amount_text: string;
+  unit: string;
+  sort_order: number;
+}
+
+export interface InsurerPlanCoverageOut {
+  insurer_code: string;
+  insurer_name: string;
+  plan_names: string[];
+  rows: InsurerPlanCoverageRowOut[];
+  source: string | null;
+  source_note: string | null;
+  collected_at: string | null;
 }
 
 export interface AuthUserOut {
@@ -721,6 +757,17 @@ export const api = {
 
   getPremiumComparison: (age: number, sex: string, order: "asc" | "desc") =>
     request<PremiumComparisonOut>(`/insurers/premiums?age=${age}&sex=${sex}&order=${order}`),
+
+  /** 한 보험사가 실제로 파는 등급(플랜) 전부와 가격. age·sex를 안 주면 가격 없이
+   * 등급 이름만 온다(나이를 아직 모르는 단계에서도 등급은 먼저 보여줄 수 있다). */
+  getInsurerPlans: (insurerCode: string, age?: number, sex?: "M" | "F") => {
+    const q = age != null && sex ? `?age=${age}&sex=${sex}` : "";
+    return request<InsurerPlansOut>(`/insurers/${insurerCode}/plans${q}`);
+  },
+
+  /** 한 보험사의 등급별 담보 가입금액표(나이·성별 무관). */
+  getInsurerPlanCoverage: (insurerCode: string) =>
+    request<InsurerPlanCoverageOut>(`/insurers/${insurerCode}/plan-coverage`),
 
   getInsurerCoverages: (insurerCode: string) =>
     request<InsurerCoverageOut[]>(`/insurers/${insurerCode}/coverages`),

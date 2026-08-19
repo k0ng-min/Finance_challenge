@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import (
-    Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerPremium,
-    NonpaymentRate, PolicyVersion, Product, StandardClause,
+    Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerPlanCoverage,
+    InsurerPremium, NonpaymentRate, PolicyVersion, Product, StandardClause,
 )
 from app.schemas import (
     ClauseOut, ClauseTermOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerStandardComparisonOut,
-    InsurerTierOut, InsurerRankingOut, InsurerPremiumCurveOut, InsurerPremiumOut, NonpaymentRateOut,
+    InsurerTierOut, InsurerRankingOut, InsurerPlanCoverageOut, InsurerPlanCoverageRowOut, InsurerPlanOut,
+    InsurerPlansOut, InsurerPremiumCurveOut, InsurerPremiumOut, NonpaymentRateOut,
     NonpaymentRatesOut, PremiumComparisonOut, PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
 from app.services.insurer_ranking import list_tiers, rank_insurers
@@ -163,6 +165,99 @@ def get_insurer_premium_curve(insurer_code: str, sex: str, db: Session = Depends
     )
 
 
+@router.get("/{insurer_code}/plans", response_model=InsurerPlansOut)
+def get_insurer_plans(
+    insurer_code: str, age: int | None = None, sex: str | None = None, db: Session = Depends(get_db),
+):
+    """한 보험사가 실제로 파는 등급(플랜) 전부와 그 나이·성별 기준 가격.
+
+    /{insurer_code}/premiums(등급 하나만 대표로 주는 곡선)와 달리 이건 등급을 직접
+    고르는 화면(순위 상세, 보험 등록, 보험료 비교 세부설정)에 쓴다. age·sex를 안 주면
+    가격 없이 등급 이름만 돌려준다 — 나이를 아직 모르는 단계(보험 등록 1단계 등)에서도
+    등급 이름과 담보한도는 먼저 보여줄 수 있게 하기 위함이다."""
+    insurer = db.query(Insurer).filter(Insurer.code == insurer_code.upper()).first()
+    if not insurer:
+        raise HTTPException(status_code=404, detail="보험사를 찾을 수 없습니다.")
+
+    if age is None or not sex:
+        # 등급 이름만 필요하면 InsurerPlanCoverage(담보한도표)에서 뽑는다 — 가격 자료가
+        # 아직 없는 보험사(DB·메리츠)도 등급 이름은 여기서 나온다.
+        plan_names = (
+            db.query(InsurerPlanCoverage.plan_name)
+            .filter(InsurerPlanCoverage.insurer_id == insurer.insurer_id)
+            .distinct()
+            .all()
+        )
+        return InsurerPlansOut(
+            insurer_code=insurer.code, insurer_name=insurer.name,
+            plans=[InsurerPlanOut(plan_name=p[0], premium=0, is_standard_tier=False) for p in plan_names],
+            price_unavailable=True,
+        )
+
+    normalized_sex = sex.upper()
+    if normalized_sex not in ("M", "F"):
+        raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
+
+    rows = (
+        db.query(InsurerPremium)
+        .filter(
+            InsurerPremium.insurer_id == insurer.insurer_id, InsurerPremium.age == age,
+            InsurerPremium.sex == normalized_sex,
+        )
+        .order_by(InsurerPremium.premium.asc())
+        .all()
+    )
+    if not rows:
+        return InsurerPlansOut(insurer_code=insurer.code, insurer_name=insurer.name, plans=[], price_unavailable=True)
+
+    return InsurerPlansOut(
+        insurer_code=insurer.code, insurer_name=insurer.name,
+        premium_period_days=DISPLAY_PREMIUM_PERIOD_DAYS,
+        plans=[
+            InsurerPlanOut(plan_name=r.plan_name, premium=r.premium, is_standard_tier=r.is_standard_tier)
+            for r in rows
+        ],
+    )
+
+
+@router.get("/{insurer_code}/plan-coverage", response_model=InsurerPlanCoverageOut)
+def get_insurer_plan_coverage(insurer_code: str, db: Session = Depends(get_db)):
+    """한 보험사의 등급별 담보 가입금액표(다이렉트 사이트에서 직접 조회한 값).
+
+    나이·성별과 무관하다 — 원본 자료의 각주에 "담보한도는 통상 연령 무관하게 동일"이라고
+    명시돼 있다(seed_plan_coverage.py 참고)."""
+    insurer = db.query(Insurer).filter(Insurer.code == insurer_code.upper()).first()
+    if not insurer:
+        raise HTTPException(status_code=404, detail="보험사를 찾을 수 없습니다.")
+
+    rows = (
+        db.query(InsurerPlanCoverage)
+        .filter(InsurerPlanCoverage.insurer_id == insurer.insurer_id)
+        .order_by(InsurerPlanCoverage.sort_order.asc(), InsurerPlanCoverage.plan_name.asc())
+        .all()
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="해당 보험사의 담보 가입금액표가 없습니다.")
+
+    plan_names: list[str] = []
+    for r in rows:
+        if r.plan_name not in plan_names:
+            plan_names.append(r.plan_name)
+
+    return InsurerPlanCoverageOut(
+        insurer_code=insurer.code, insurer_name=insurer.name,
+        plan_names=plan_names,
+        rows=[
+            InsurerPlanCoverageRowOut(
+                plan_name=r.plan_name, coverage_label=r.coverage_label,
+                amount_text=r.amount_text, unit=r.unit or "", sort_order=r.sort_order,
+            )
+            for r in rows
+        ],
+        source=rows[0].source, source_note=rows[0].source_note, collected_at=rows[0].collected_at,
+    )
+
+
 def _attach_published_premiums(
     db: Session,
     ranking: list[dict],
@@ -189,10 +284,18 @@ def _attach_published_premiums(
         .all()
     )
     by_id = {r.insurer_id: r for r in rows}
+    all_insurers = db.query(Insurer).all()
     code_to_row = {
         insurer.code: by_id[insurer.insurer_id]
-        for insurer in db.query(Insurer).all()
+        for insurer in all_insurers
         if insurer.insurer_id in by_id
+    }
+    # 이 나이만 범위 밖인 건지, 이 보험사가 가격 자체를 아직 하나도 못 구한 건지 구분한다
+    # (get_premium_comparison의 no_data_insurer_codes와 같은 원칙) — 안 그러면 DB·메리츠처럼
+    # 가격을 아직 못 구한 보험사도 "가입연령 범위 밖"이라는 틀린 이유로 안내하게 된다.
+    tracked_codes = {
+        insurer.code for insurer in all_insurers
+        if db.query(InsurerPremium).filter(InsurerPremium.insurer_id == insurer.insurer_id).first() is not None
     }
 
     for item in ranking:
@@ -212,7 +315,33 @@ def _attach_published_premiums(
             item["premium_source"] = None
             item["premium_source_url"] = None
             item["premium_collected_at"] = None
-            item["premium_note"] = "이 나이·성별은 가입연령 범위 밖이에요"
+            item["premium_note"] = (
+                "이 나이·성별은 가입연령 범위 밖이에요"
+                if item["insurer_code"] in tracked_codes
+                else "아직 실제 보험료를 확보하지 못했어요"
+            )
+
+
+def _attach_plan_coverage_summary(db: Session, ranking: list[dict]) -> None:
+    """랭킹 카드에 "등급별 담보 가입금액표를 볼 수 있는 보험사인지"만 붙인다.
+
+    _attach_published_premiums와 같은 이유로 순위 점수(rank_insurers의 네 가지 근거 축)에는
+    섞지 않는다 — 이 표는 약관 조항이 아니라 보험사 다이렉트 사이트에서 직접 조회한
+    외부 값이라(InsurerPlanCoverage), 근거 축과 성격이 다르다. 순위 카드에서 "이 보험사는
+    등급별 한도를 볼 수 있다"는 사실만 미리 보여주고, 실제 비교는 상세 화면의
+    PlanCoverageBoard(스크롤 가능한 전체 표)에서 한다."""
+    counts = dict(
+        db.query(InsurerPlanCoverage.insurer_id, func.count(InsurerPlanCoverage.coverage_row_id))
+        .group_by(InsurerPlanCoverage.insurer_id)
+        .all()
+    )
+    code_to_count = {
+        insurer.code: counts[insurer.insurer_id]
+        for insurer in db.query(Insurer).all()
+        if insurer.insurer_id in counts
+    }
+    for item in ranking:
+        item["plan_coverage_item_count"] = code_to_count.get(item["insurer_code"])
 
 
 @router.get("/{insurer_code}/coverages", response_model=list[InsurerCoverageOut])
@@ -428,5 +557,6 @@ def get_insurer_ranking(
     # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,
     # 보험료는 외부 비교공시 값이므로 순위 산정에도 섞지 않는다.
     _attach_published_premiums(db, ranking, age, sex)
+    _attach_plan_coverage_summary(db, ranking)
 
     return InsurerRankingOut(tier_code=tier, ranking=ranking)

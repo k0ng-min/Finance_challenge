@@ -112,6 +112,8 @@ class UserPolicyCreate(BaseModel):
     trip_id: Optional[int] = None
     insurer_name_raw: str
     product_name_raw: Optional[str] = None
+    # 그 보험사가 실제로 파는 등급명(예: "표준형"). 몰라도 등록할 수 있게 선택값이다.
+    plan_name: Optional[str] = None
     subscriber_age: Optional[int] = None
     period_start: dt.date
     period_end: dt.date
@@ -181,10 +183,54 @@ class PremiumComparisonOut(BaseModel):
     no_data_insurer_codes: list[str] = []  # 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드)
 
 
+# --- 보험사 등급(플랜) — 가격·담보한도 비교 --------------------------------
+
+class InsurerPlanOut(BaseModel):
+    """보험사 한 곳의 등급 하나(예: "표준형")와 그 나이·성별 기준 1일 가격."""
+    plan_name: str
+    premium: int
+    is_standard_tier: bool
+
+
+class InsurerPlansOut(BaseModel):
+    insurer_code: str
+    insurer_name: str
+    premium_period_days: int = 1
+    plans: list[InsurerPlanOut]
+    #: 이 나이·성별 자료 자체가 없으면 True — 등급 칩은 이름만, 가격 없이 보여준다.
+    price_unavailable: bool = False
+
+
+class InsurerPlanCoverageRowOut(BaseModel):
+    plan_name: str
+    coverage_label: str
+    #: 원문 표기 그대로("10000", "-", "미가입(손해액기준)" 등) — 숫자로 강제 변환하지 않는다.
+    amount_text: str
+    unit: str
+    sort_order: int
+
+
+class InsurerPlanCoverageOut(BaseModel):
+    """보험사 다이렉트 사이트에서 직접 조회한 등급별 담보 가입금액표.
+
+    약관 조항에서 뽑은 값이 아니라 외부(보험사 공시 화면)에서 가져온 값이므로
+    UserCoverage(실제 약관 Coverage 기준)와는 다른 목적이다 — 이건 가입 전
+    "어느 등급을 고를지" 비교하는 용도고, UserCoverage는 실제로 등록한 보험의
+    청구 검토 근거다. 둘을 섞지 않는다."""
+    insurer_code: str
+    insurer_name: str
+    plan_names: list[str]  # 원문 등급 순서 그대로(중복 없이)
+    rows: list[InsurerPlanCoverageRowOut]
+    source: Optional[str] = None
+    source_note: Optional[str] = None
+    collected_at: Optional[dt.date] = None
+
+
 class UserPolicyOut(BaseModel):
     user_policy_id: int
     insurer_name_raw: str
     product_name_raw: Optional[str]
+    plan_name: Optional[str] = None
     subscriber_age: Optional[int] = None
     period_start: dt.date
     period_end: dt.date
@@ -206,6 +252,8 @@ class IncidentCreate(BaseModel):
     # 게스트(비로그인)는 "내 보험"을 쓸 수 없어 등록된 보험이 없다 — 대신 6개 보험사 중
     # 하나를 바로 고르면, 서버가 그 보험사로 최소한의 보험 기록을 대신 만들어 청구 검토에 쓴다.
     insurer_code: Optional[str] = None
+    # insurer_code와 함께 등급도 골랐으면 같이 남긴다(선택값 — 몰라도 접수할 수 있다).
+    plan_name: Optional[str] = None
     free_text: str = ""
     country: Optional[str] = None
     occurred_at: Optional[dt.datetime] = None
@@ -471,6 +519,9 @@ class InsurerRankOut(BaseModel):
     premium_source_url: Optional[str] = None
     premium_collected_at: Optional[dt.date] = None
     premium_note: Optional[str] = None
+    # 등급별 담보 가입금액표(InsurerPlanCoverage)를 볼 수 있는 보험사면 그 담보 항목 수.
+    # None이면 아직 자료가 없다는 뜻 — 순위 점수에는 섞이지 않는다(published_premium과 동일 원칙).
+    plan_coverage_item_count: Optional[int] = None
 
 
 class InsurerRankingOut(BaseModel):

@@ -7,6 +7,7 @@ import { StepFlow } from "../components/StepFlow";
 import { Icon3D } from "../components/Icon3D";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { InsurerPicker } from "../components/InsurerPicker";
+import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
 import { DateTimeField } from "../components/DateTimeField";
 import { ExternalPolicyPicker, KIND_LABELS, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { OverlapReportView } from "../components/OverlapReport";
@@ -38,6 +39,7 @@ function PolicyCard({
             ›
           </span>
           <strong>{shortInsurerName(policy.matched_insurer_code, policy.matched_insurer_name ?? policy.insurer_name_raw)} 여행자보험</strong>
+          {policy.plan_name && <span className="policy-card__plan">{policy.plan_name}</span>}
         </button>
         <button type="button" className="history-card__delete" title="삭제" onClick={onDelete}>
           🗑
@@ -77,7 +79,7 @@ function PolicyCard({
 }
 
 export function MyPolicies() {
-  const { userId, isLoggedIn, age: profileAge, updateAge } = useApp();
+  const { userId, isLoggedIn, age: profileAge, sex: profileSex, updateAge } = useApp();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefillInsurer = INSURERS.find((i) => i.code === searchParams.get("insurer"))?.name;
@@ -89,6 +91,7 @@ export function MyPolicies() {
 
   const [insurerName, setInsurerName] = useState(prefillInsurer ?? "");
   const [productName, setProductName] = useState("");
+  const [planName, setPlanName] = useState<string | null>(null);
   const [age, setAge] = useState("");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
@@ -150,6 +153,7 @@ export function MyPolicies() {
     setStep(0);
     setInsurerName("");
     setProductName("");
+    setPlanName(null);
     setAge("");
     setPeriodStart("");
     setPeriodEnd("");
@@ -166,6 +170,7 @@ export function MyPolicies() {
       await api.registerPolicy(userId, {
         insurer_name_raw: insurerName,
         product_name_raw: productName || null,
+        plan_name: planName,
         subscriber_age: age ? Number(age) : null,
         period_start: periodStart,
         period_end: periodEnd,
@@ -234,7 +239,13 @@ export function MyPolicies() {
         title: "어느 보험사에\n가입하셨나요?",
         content: (
           <>
-            <InsurerPicker value={insurerName} onChange={setInsurerName} />
+            <InsurerPicker
+              value={insurerName}
+              onChange={(name) => {
+                setInsurerName(name);
+                setPlanName(null);
+              }}
+            />
             <label style={{ marginTop: 16 }}>
               상품명 (알고 있으면)
               <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="예: 해외여행보험" />
@@ -244,8 +255,24 @@ export function MyPolicies() {
         canNext: insurerName.trim().length > 0,
       },
       {
+        icon: "shield",
+        eyebrow: "STEP 2 · 등급",
+        title: "어느 등급으로\n가입하셨나요?",
+        content: (
+          <PlanCoverageBoard
+            insurerCode={INSURERS.find((i) => i.name === insurerName)?.code ?? ""}
+            age={Number(age) || profileAge}
+            sex={profileSex === "F" ? "F" : profileSex === "M" ? "M" : null}
+            selectedPlan={planName}
+            onSelectPlan={setPlanName}
+          />
+        ),
+        // 몰라도 건너뛸 수 있다 — 담보한도 자료가 없는 보험사(DB·메리츠 등)도 등록은 막지 않는다.
+        canNext: true,
+      },
+      {
         icon: "calendar",
-        eyebrow: "STEP 2 · 가입 정보",
+        eyebrow: "STEP 3 · 가입 정보",
         title: "나이와 보험기간을\n알려주세요",
         content: (
           <>

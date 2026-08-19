@@ -511,7 +511,8 @@ body {
 .step__content input:not([type]),
 .step__content select,
 .step__content textarea,
-.calc-grid input[type="number"] {
+.calc-grid input[type="number"],
+.calc-filter-group input[type="number"] {
   font-size: 0.98rem;
   padding: 12px 14px;
   border: 1.5px solid var(--border);
@@ -523,7 +524,8 @@ body {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .step__content input:focus, .step__content select:focus, .step__content textarea:focus,
-.calc-grid input:focus {
+.calc-grid input:focus,
+.calc-filter-group input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-soft);
@@ -531,18 +533,22 @@ body {
 }
 /* 네이티브 숫자칸의 위아래 스피너 화살표는 앱 톤과 안 맞아서 없애고, 텍스트 입력처럼 깔끔하게 둔다. */
 .step__content input[type="number"],
-.calc-grid input[type="number"] {
+.calc-grid input[type="number"],
+.calc-filter-group input[type="number"] {
   -moz-appearance: textfield;
 }
 .step__content input[type="number"]::-webkit-outer-spin-button,
 .step__content input[type="number"]::-webkit-inner-spin-button,
 .calc-grid input[type="number"]::-webkit-outer-spin-button,
-.calc-grid input[type="number"]::-webkit-inner-spin-button {
+.calc-grid input[type="number"]::-webkit-inner-spin-button,
+.calc-filter-group input[type="number"]::-webkit-outer-spin-button,
+.calc-filter-group input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 .step__content label,
-.calc-grid label {
+.calc-grid label,
+.calc-filter-group label {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -564,6 +570,19 @@ body {
 }
 
 .section-label { font-size: 0.78rem; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+
+.rank-plan-summary {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.rank-plan-summary__label { font-size: 0.78rem; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+.rank-plan-summary__value { font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); }
 
 .form label {
   display: flex;
@@ -792,6 +811,7 @@ button { cursor: pointer; font-family: inherit; }
   padding: 15px 17px 14px;
   text-align: left;
   font-family: inherit;
+  cursor: pointer;
   box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.07);
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
@@ -825,12 +845,24 @@ button { cursor: pointer; font-family: inherit; }
   box-shadow: 0 3px 10px rgba(var(--shadow-tint), 0.3);
 }
 .rank-card__name { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-.rank-card__name strong {
+.rank-card__name-btn {
+  font-family: inherit;
+  font-weight: 700;
   font-size: 0.97rem;
   color: var(--heading);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
 }
 .rank-card__basis { font-size: 0.68rem; color: var(--muted); }
 /* 보험료는 이 화면에서 가장 먼저 눈에 들어와야 하는 값이라 크게 둔다. */
@@ -1478,6 +1510,14 @@ button { cursor: pointer; font-family: inherit; }
 
 .policy-card__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
 .policy-card__head strong { color: var(--heading); }
+.policy-card__plan {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
 .muted { color: var(--muted); font-size: 0.88rem; }
 
 .coverage-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; color: var(--text); }
@@ -1485,6 +1525,26 @@ button { cursor: pointer; font-family: inherit; }
 .coverage-table select { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 8px; font-family: inherit; background: var(--ivory); color: var(--text); }
 .match-ok { color: #4a9d7e; font-weight: 700; }
 .match-none { color: #c07a3d; }
+
+/* --- 보험사 등급(플랜)·담보한도 카드(PlanCoverageBoard) ---
+   담보 항목이 많은 보험사는 30줄 가까이 되므로, 화면 전체를 늘리는 대신 카드 안에서만
+   세로 스크롤되게 높이를 고정한다. */
+.plan-board__scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 10px;
+}
+.plan-board__scroll .coverage-table { margin-top: 0; }
+.plan-board__scroll .coverage-table th {
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  z-index: 1;
+}
+.plan-board__source { font-size: 0.74rem; margin-top: 8px; line-height: 1.5; }
+.plan-board--compact .plan-board__scroll { max-height: 160px; }
 
 .question-card { display: flex; align-items: center; gap: 12px; }
 .question-text { font-size: 0.9rem; font-weight: 700; flex: 1; color: var(--heading); }
@@ -2073,6 +2133,23 @@ button { cursor: pointer; font-family: inherit; }
 .calc-grid--single { grid-template-columns: minmax(0, 1fr); }
 .calc-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-top: 16px; }
 .calc-seg { display: flex; gap: 6px; }
+
+/* 필터 항목(나이·성별·정렬)을 한 덩어리로 뭉치지 않고, 각각 자기 이름을 밝힌 채
+   구분선으로 나눠 보여준다 — 예전엔 성별·정렬 칩이 라벨 없이 한 줄에 붙어 있어서
+   어느 칩이 무슨 기준인지 헷갈렸다. */
+.calc-filter-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.calc-filter-group:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+.calc-filter-group__label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
 .premium-chip {
   font-family: inherit;
   font-size: 0.78rem;
@@ -2115,6 +2192,17 @@ button { cursor: pointer; font-family: inherit; }
   font-weight: 700;
   color: var(--heading);
 }
+.premium-row__name--clickable {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+}
 .premium-row__name em {
   font-style: normal;
   font-size: 0.7rem;
@@ -2128,6 +2216,46 @@ button { cursor: pointer; font-family: inherit; }
 .premium-row__amount { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
 .premium-row__amount small { margin-top: 2px; font-size: 0.62rem; font-weight: 700; color: var(--muted); }
 .premium-row:first-child .premium-row__cost { color: var(--primary-dark); }
+.premium-row__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.premium-row__menu-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream-deep);
+  border: none;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.premium-row__menu {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+.premium-row__menu-item {
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #c0453f;
+  background: none;
+  border: none;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+.premium-row__detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
 .premium-basis {
   font-size: 0.74rem;
   line-height: 1.55;

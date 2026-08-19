@@ -10,6 +10,7 @@ import { NextStepCard } from "../components/NextStepCard";
 import { DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
+import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
 import { PickerField } from "../components/PickerField";
 import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { OverlapReportView } from "../components/OverlapReport";
@@ -51,6 +52,9 @@ export function IncidentReport() {
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
   const [selectedPolicyId, setSelectedPolicyId] = useState<number | null>(null);
   const [insurerCode, setInsurerCode] = useState("");
+  // 등록된 보험이 없을 때 보험사만 고르는 경우, 그 보험사의 어느 등급으로 청구할지도
+  // 같이 받는다(참고용 — 담보한도를 보고 청구 전에 감을 잡게 해준다).
+  const [incidentPlanName, setIncidentPlanName] = useState<string | null>(null);
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const [age, setAge] = useState("");
@@ -168,6 +172,7 @@ export function IncidentReport() {
         // 보험사 코드로 검토한다 — 백엔드는 user_policy_id가 없을 때 insurer_code를 본다.
         user_policy_id: selectedPolicyId,
         insurer_code: selectedPolicyId ? null : insurerCode || null,
+        plan_name: selectedPolicyId ? null : incidentPlanName,
         free_text: freeText,
         occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
         country: trips.length === 0 ? destination || null : null,
@@ -302,19 +307,37 @@ export function IncidentReport() {
         <>
           {isLoggedIn ? (
             policies.length > 0 ? (
-              <label>
-                어느 보험으로 청구하시나요?
-                <PickerField
-                  value={String(selectedPolicyId ?? "")}
-                  onChange={(v) => setSelectedPolicyId(Number(v))}
-                  modalTitle="청구할 보험"
-                  placeholder="보험을 선택하세요"
-                  options={policies.map((p) => ({
-                    value: String(p.user_policy_id),
-                    label: `${shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험`,
-                  }))}
-                />
-              </label>
+              <>
+                <label>
+                  어느 보험으로 청구하시나요?
+                  <PickerField
+                    value={String(selectedPolicyId ?? "")}
+                    onChange={(v) => setSelectedPolicyId(Number(v))}
+                    modalTitle="청구할 보험"
+                    placeholder="보험을 선택하세요"
+                    options={policies.map((p) => ({
+                      value: String(p.user_policy_id),
+                      label: `${shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험`,
+                    }))}
+                  />
+                </label>
+                {(() => {
+                  const chosen = policies.find((p) => p.user_policy_id === selectedPolicyId);
+                  return chosen?.matched_insurer_code ? (
+                    <div className="card" style={{ marginTop: 12 }}>
+                      <p className="section-label" style={{ marginBottom: 8 }}>이 보험의 담보한도 (참고용)</p>
+                      <PlanCoverageBoard
+                        insurerCode={chosen.matched_insurer_code}
+                        age={Number(age) || profileAge}
+                        sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
+                        selectedPlan={incidentPlanName ?? chosen.plan_name}
+                        onSelectPlan={setIncidentPlanName}
+                        compact
+                      />
+                    </div>
+                  ) : null;
+                })()}
+              </>
             ) : (
               // 등록된 보험이 없어도 여기서 흐름을 끊지 않는다. 예전에는 "내 보험 등록하러
               // 가기"로 내보내서 사고 접수가 통째로 중단됐다. 보험사만 고르면 그 회사 약관으로
@@ -323,13 +346,29 @@ export function IncidentReport() {
                 <label style={{ marginBottom: 8 }}>어느 보험사로 청구하시나요?</label>
                 <InsurerPicker
                   value={INSURERS.find((i) => i.code === insurerCode)?.name ?? ""}
-                  onChange={(name) => setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "")}
+                  onChange={(name) => {
+                    setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "");
+                    setIncidentPlanName(null);
+                  }}
                 />
                 <p className="step-note">
                   아직 등록한 보험이 없네요. 보험사만 골라두면 그 회사 약관으로 맞춰 볼게요.
                   <br />
                   지금 모르겠으면 그냥 넘어가도 괜찮아요.
                 </p>
+                {insurerCode && (
+                  <div className="card" style={{ marginTop: 12 }}>
+                    <p className="section-label" style={{ marginBottom: 8 }}>어느 등급인가요? (알고 있으면, 담보한도 참고용)</p>
+                    <PlanCoverageBoard
+                      insurerCode={insurerCode}
+                      age={Number(age) || profileAge}
+                      sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
+                      selectedPlan={incidentPlanName}
+                      onSelectPlan={setIncidentPlanName}
+                      compact
+                    />
+                  </div>
+                )}
               </>
             )
           ) : (
@@ -337,8 +376,24 @@ export function IncidentReport() {
               <label style={{ marginBottom: 8 }}>어느 보험사로 청구하시나요?</label>
               <InsurerPicker
                 value={INSURERS.find((i) => i.code === insurerCode)?.name ?? ""}
-                onChange={(name) => setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "")}
+                onChange={(name) => {
+                  setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "");
+                  setIncidentPlanName(null);
+                }}
               />
+              {insurerCode && (
+                <div className="card" style={{ marginTop: 12 }}>
+                  <p className="section-label" style={{ marginBottom: 8 }}>어느 등급인가요? (알고 있으면, 담보한도 참고용)</p>
+                  <PlanCoverageBoard
+                    insurerCode={insurerCode}
+                    age={Number(age) || profileAge}
+                    sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
+                    selectedPlan={incidentPlanName}
+                    onSelectPlan={setIncidentPlanName}
+                    compact
+                  />
+                </div>
+              )}
             </>
           )}
 

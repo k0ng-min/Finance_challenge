@@ -75,6 +75,11 @@ class UserPolicy(Base):
     product_name_raw = Column(String)
     policy_type = Column(String)  # 직접가입/카드부가/단체 — 더 이상 등록 화면에서 받지 않음(과거 데이터 호환용으로만 남김)
     subscriber_age = Column(Integer, nullable=True)  # 가입자 나이
+    # 그 보험사가 실제로 파는 등급명 그대로(예: "표준형") — 보험사 순위·보험료 화면에서
+    # 등급을 고르고 등록하면 여기 남는다. 담보 목록(UserCoverage)은 여전히 policy_version의
+    # 실제 약관(Coverage)에서 채우므로 이 값이 담보 목록 자체를 바꾸지는 않는다 — 어느
+    # 등급을 염두에 두고 등록했는지 기록해 사고 접수·보관함 화면에 참고로 보여줄 뿐이다.
+    plan_name = Column(String, nullable=True)
     period_start = Column(Date)
     period_end = Column(Date)
 

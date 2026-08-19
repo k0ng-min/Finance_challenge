@@ -50,6 +50,9 @@ _add_missing_columns("app_user", {
 _add_missing_columns("trip", {
     "user_policy_id": "ALTER TABLE trip ADD COLUMN user_policy_id INTEGER",
 })
+_add_missing_columns("user_policy", {
+    "plan_name": "ALTER TABLE user_policy ADD COLUMN plan_name VARCHAR",
+})
 _add_missing_columns("clause", {
     "highlight_spans": "ALTER TABLE clause ADD COLUMN highlight_spans TEXT",
     "plain_text": "ALTER TABLE clause ADD COLUMN plain_text TEXT",

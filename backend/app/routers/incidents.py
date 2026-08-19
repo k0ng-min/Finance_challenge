@@ -267,7 +267,7 @@ def create_incident(
             raise HTTPException(status_code=404, detail="알 수 없는 보험사예요.")
         today = date.today()
         policy = create_policy_for_user(
-            db, user_id=payload.user_id, insurer_name_raw=insurer.name,
+            db, user_id=payload.user_id, insurer_name_raw=insurer.name, plan_name=payload.plan_name,
             period_start=today, period_end=today + timedelta(days=30),
         )
         user_policy_id = policy.user_policy_id

@@ -51,9 +51,18 @@ _SEX_MAP = {"남": "M", "여": "F"}
 #: 시트 이름 -> (보험사 코드, 세로형 여부, 화면에 대표로 보여줄 표준 등급명)
 _SHEET_CONFIG: dict[str, tuple[str, bool, str]] = {
     "카카오": ("KAKAOPAY", True, "베이직"),
-    "현대해상": ("HYUNDAI", False, "표준"),
+    "현대해상": ("HYUNDAI", False, "표준형"),
     "kb": ("KB", False, "표준형"),
     "삼성": ("SAMSUNG", False, "표준플랜"),
+}
+
+#: 가격표 시트의 등급명 열 헤더가 담보 가입금액표(InsurerPlanCoverage)와 다르게 적힌
+#: 경우를 여기서 맞춘다 — 현대해상은 가격표엔 "실속(원)"처럼 "형"이 빠져 있는데
+#: 담보한도표(seed_plan_coverage.py)는 "실속형"으로 적혀 있다(둘 다 사용자가 각 사
+#: 사이트에서 그대로 옮긴 값이라 시트마다 표기가 달랐다). 두 테이블을 등급명으로
+#: 이어 붙여 써야 하므로(PlanCoverageBoard) 여기서 하나로 통일한다.
+_PLAN_NAME_ALIASES: dict[str, dict[str, str]] = {
+    "HYUNDAI": {"실속": "실속형", "표준": "표준형", "고급": "고급형"},
 }
 
 #: 조회 조건 — 보험사마다 산출 전제가 달라 각각 남긴다(근거 없이 숫자만 보여주지 않는다).
@@ -133,6 +142,8 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
 
             rows = list(wb[sheet_name].iter_rows(values_only=True))
             parsed = _rows_from_sheet(sheet_name, rows, vertical)
+            aliases = _PLAN_NAME_ALIASES.get(insurer_code, {})
+            parsed = [(age, sex, aliases.get(plan_name, plan_name), premium) for age, sex, plan_name, premium in parsed]
             for age, sex, plan_name, premium in parsed:
                 db.add(InsurerPremium(
                     insurer_id=insurer_id, sex=sex, age=age, plan_name=plan_name,
