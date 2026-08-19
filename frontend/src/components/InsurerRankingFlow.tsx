@@ -116,7 +116,9 @@ export function InsurerRankingFlow({
   function pickInsurer(item: InsurerRankOut) {
     setSelected(item);
     setRegistered(false);
-    setSelectedPlan(null);
+    // 목록에서 고른 등급(실속/표준/고급)을 그대로 이어서 보여준다 — 안 그러면 "고급"을
+    // 보고 들어왔는데 상세 화면은 다시 "표준"으로 돌아가 버린다.
+    setSelectedPlan(item.plan_name ?? null);
     setPhase("detail");
   }
 
@@ -404,7 +406,7 @@ export function InsurerRankingFlow({
               insurerCode={r.insurer_code}
               age={age}
               sex={normalizedSex}
-              selectedPlan={previewPlanByInsurer[r.insurer_code] ?? null}
+              selectedPlan={previewPlanByInsurer[r.insurer_code] ?? r.plan_name ?? null}
               onSelectPlan={(plan) =>
                 setPreviewPlanByInsurer((prev) => ({ ...prev, [r.insurer_code]: plan }))
               }

@@ -11,6 +11,7 @@ import { DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
+import { Modal } from "../components/Modal";
 import { PickerField } from "../components/PickerField";
 import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { OverlapReportView } from "../components/OverlapReport";
@@ -55,6 +56,7 @@ export function IncidentReport() {
   // 등록된 보험이 없을 때 보험사만 고르는 경우, 그 보험사의 어느 등급으로 청구할지도
   // 같이 받는다(참고용 — 담보한도를 보고 청구 전에 감을 잡게 해준다).
   const [incidentPlanName, setIncidentPlanName] = useState<string | null>(null);
+  const [showIncidentPlanModal, setShowIncidentPlanModal] = useState(false);
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const [age, setAge] = useState("");
@@ -324,17 +326,15 @@ export function IncidentReport() {
                 {(() => {
                   const chosen = policies.find((p) => p.user_policy_id === selectedPolicyId);
                   return chosen?.matched_insurer_code ? (
-                    <div className="card" style={{ marginTop: 12 }}>
-                      <p className="section-label" style={{ marginBottom: 8 }}>이 보험의 담보한도 (참고용)</p>
-                      <PlanCoverageBoard
-                        insurerCode={chosen.matched_insurer_code}
-                        age={Number(age) || profileAge}
-                        sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
-                        selectedPlan={incidentPlanName ?? chosen.plan_name}
-                        onSelectPlan={setIncidentPlanName}
-                        compact
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      className="rank-compare-trigger"
+                      style={{ marginTop: 12 }}
+                      onClick={() => setShowIncidentPlanModal(true)}
+                    >
+                      <span>📋 이 보험의 등급·담보한도 보기 (참고용)</span>
+                      <span className="rank-compare-trigger__arrow">›</span>
+                    </button>
                   ) : null;
                 })()}
               </>
@@ -357,17 +357,15 @@ export function IncidentReport() {
                   지금 모르겠으면 그냥 넘어가도 괜찮아요.
                 </p>
                 {insurerCode && (
-                  <div className="card" style={{ marginTop: 12 }}>
-                    <p className="section-label" style={{ marginBottom: 8 }}>어느 등급인가요? (알고 있으면, 담보한도 참고용)</p>
-                    <PlanCoverageBoard
-                      insurerCode={insurerCode}
-                      age={Number(age) || profileAge}
-                      sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
-                      selectedPlan={incidentPlanName}
-                      onSelectPlan={setIncidentPlanName}
-                      compact
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className="rank-compare-trigger"
+                    style={{ marginTop: 12 }}
+                    onClick={() => setShowIncidentPlanModal(true)}
+                  >
+                    <span>📋 어느 등급인가요? (알고 있으면, 담보한도 참고용)</span>
+                    <span className="rank-compare-trigger__arrow">›</span>
+                  </button>
                 )}
               </>
             )
@@ -382,20 +380,40 @@ export function IncidentReport() {
                 }}
               />
               {insurerCode && (
-                <div className="card" style={{ marginTop: 12 }}>
-                  <p className="section-label" style={{ marginBottom: 8 }}>어느 등급인가요? (알고 있으면, 담보한도 참고용)</p>
-                  <PlanCoverageBoard
-                    insurerCode={insurerCode}
-                    age={Number(age) || profileAge}
-                    sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
-                    selectedPlan={incidentPlanName}
-                    onSelectPlan={setIncidentPlanName}
-                    compact
-                  />
-                </div>
+                <button
+                  type="button"
+                  className="rank-compare-trigger"
+                  style={{ marginTop: 12 }}
+                  onClick={() => setShowIncidentPlanModal(true)}
+                >
+                  <span>📋 어느 등급인가요? (알고 있으면, 담보한도 참고용)</span>
+                  <span className="rank-compare-trigger__arrow">›</span>
+                </button>
               )}
             </>
           )}
+          {(() => {
+            const chosenPolicy = policies.length > 0
+              ? policies.find((p) => p.user_policy_id === selectedPolicyId)
+              : null;
+            const activeInsurerCode = chosenPolicy?.matched_insurer_code ?? (insurerCode || null);
+            if (!activeInsurerCode) return null;
+            return (
+              <Modal
+                open={showIncidentPlanModal}
+                onClose={() => setShowIncidentPlanModal(false)}
+                title="등급·담보한도"
+              >
+                <PlanCoverageBoard
+                  insurerCode={activeInsurerCode}
+                  age={Number(age) || profileAge}
+                  sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
+                  selectedPlan={incidentPlanName ?? chosenPolicy?.plan_name ?? null}
+                  onSelectPlan={setIncidentPlanName}
+                />
+              </Modal>
+            );
+          })()}
 
           {trips.length > 1 && (
             <label style={{ marginTop: 14 }}>

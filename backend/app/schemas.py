@@ -542,6 +542,10 @@ class InsurerRankOut(BaseModel):
     official_url: Optional[str] = None
     # 나이·성별을 함께 받은 경우에만 채워진다. 여행일수로 환산하지 않은 공시 원문 값이다.
     published_premium: Optional[int] = None
+    # published_premium이 어느 등급 가격인지(plan_tier로 고른 등급, 또는 기본 표준 등급).
+    # 이 보험사 상세 화면(등급 선택)에 처음 들어갈 때 여기 등급을 그대로 이어서 보여준다 —
+    # 안 그러면 목록에서 "고급"을 봐 놓고 상세 화면은 "표준"으로 되돌아가 버린다.
+    plan_name: Optional[str] = None
     premium_period_days: Optional[int] = None
     premium_basis: Optional[str] = None
     premium_source: Optional[str] = None

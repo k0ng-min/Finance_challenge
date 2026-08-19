@@ -387,6 +387,7 @@ def _attach_published_premiums(
         row = code_to_row.get(item["insurer_code"])
         if row:
             item["published_premium"] = row.premium
+            item["plan_name"] = row.plan_name
             item["premium_period_days"] = DISPLAY_PREMIUM_PERIOD_DAYS
             item["premium_basis"] = _display_basis(row.basis)
             item["premium_source"] = row.source
@@ -395,6 +396,9 @@ def _attach_published_premiums(
             item["premium_note"] = None
         else:
             item["published_premium"] = None
+            # 가격은 없어도 등급 이름은 안다(DB·메리츠도 InsurerPlanCoverage로 등급명은 있다) —
+            # 상세 화면에 들어갔을 때 목록에서 고른 등급 그대로 이어지게 채워 둔다.
+            item["plan_name"] = plan_name_for_tier(item["insurer_code"], tier_rank) if tier_rank is not None else None
             item["premium_period_days"] = DISPLAY_PREMIUM_PERIOD_DAYS
             item["premium_basis"] = None
             item["premium_source"] = None

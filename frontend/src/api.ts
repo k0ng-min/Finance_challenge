@@ -400,6 +400,9 @@ export interface InsurerRankOut {
   official_url: string | null;
   /** 나이·성별을 함께 넘긴 경우, 보험사 다이렉트 사이트에서 직접 조회한 실제 값. 여행일수로 환산하지 않는다. */
   published_premium: number | null;
+  /** published_premium이 어느 등급 가격인지(plan_tier로 고른 등급). 상세 화면에 들어갈 때
+   * 이 등급을 그대로 이어서 보여준다. */
+  plan_name: string | null;
   premium_period_days: number | null;
   premium_basis: string | null;
   premium_source: string | null;
