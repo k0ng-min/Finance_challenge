@@ -30,6 +30,7 @@ from app.models.kb import Clause, ClauseIncidentMap, CoverageDocMap, IncidentTyp
 from app.models.user import Incident, UserCoverage, UserPolicy
 from app.models.question import QuestionBank
 from app.services import incident_classify_gemini as incident_classify
+from app.services import incident_questions_gemini
 from app.services.incident_context import build_incident_context
 from app.services.nlu import NLUEngine, ExtractedField, IncidentDraft, get_nlu_engine
 
@@ -353,24 +354,44 @@ def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
+    incident: Incident | None = None, generate: bool = False,
 ):
-    """분류된 대분류(l1_code)에 해당하는(또는 공통, applies_to_l1=NULL인) 질문 중,
-    아직 확인 안 됐거나 신뢰도가 낮은 것만 골라서 impact_weight 순으로 반환한다.
+    """이 사고에서 아직 물어볼 게 남은 질문을 impact_weight 순으로 반환한다.
 
-    L2 판별용 질문(applies_to_l1로 태그됨)이 이 함수의 주 용도다 — L1이 아직 없으면
-    (분류 실패/자유서술 없음) 공통 질문만 반환한다."""
+    질문은 두 곳에서 온다.
+
+    1. **사고별 맞춤 질문** — 사고 내용을 읽고 그 자리에서 만든 것
+       (incident_questions_gemini). 사고에 이미 적혀 있는 건 묻지 않고, 그 사고에서만
+       중요한 것(예: 분실 장소가 잠겨 있었는지)을 묻는다. 이게 있으면 이걸 쓴다.
+    2. **공용 질문 뱅크**(seed_questions.py, incident_id=NULL) — 1이 없을 때의 폴백.
+       분류된 대분류(l1_code)에 태그된 것과 공통(applies_to_l1=NULL)만 후보가 된다.
+
+    둘 다 question_bank 한 테이블에 들어 있어서, 공용 후보를 뽑을 때 incident_id가
+    달린 행은 반드시 빼야 한다 — 안 그러면 어떤 사고에서 만들어진 질문이 그 뒤로 모든
+    사람의 사고에 따라붙는다.
+
+    incident를 넘기지 않으면 1을 아예 시도하지 않는다. generate=True는 저장까지 하는
+    경로(분석 실행)에서만 켠다 — 조회 전용 경로는 커밋을 하지 않기 때문이다."""
     modifiers = modifiers or {}
-    all_questions = (
-        db.query(QuestionBank)
-        .filter(QuestionBank.context_type == "사고후")
-        .order_by(QuestionBank.impact_weight.desc())
-        .all()
-    )
+
+    candidates = None
+    if incident is not None:
+        candidates = incident_questions_gemini.generate_questions(
+            db, incident_id=incident.incident_id, free_text=incident.free_text,
+            l1_code=l1_code, merged=merged, modifiers=modifiers, create=generate,
+        )
+
+    if candidates is None:
+        candidates = (
+            db.query(QuestionBank)
+            .filter(QuestionBank.context_type == "사고후", QuestionBank.incident_id.is_(None))
+            .order_by(QuestionBank.impact_weight.desc())
+            .all()
+        )
+        candidates = [q for q in candidates if _question_applies(q.applies_to_l1, l1_code)]
 
     pending = []
-    for q in all_questions:
-        if not _question_applies(q.applies_to_l1, l1_code):
-            continue
+    for q in candidates:
         field = q.target_field
         if field in merged:
             f = merged[field]

@@ -35,12 +35,24 @@ DELETE_ORDER: tuple[str, ...] = (
     "user_policy",
     "external_coverage",
     "external_policy",
+    "user_premium_watchlist",
     "app_user",
+)
+
+# 통째로 지우면 안 되는 테이블 — 행 일부만 사용자 데이터다.
+# question_bank에는 공용 질문 뱅크(seed_questions.py, incident_id IS NULL)와 사고 한 건을
+# 위해 그때 만들어진 질문(incident_id 있음)이 함께 들어 있다. 앞의 것은 약관 KB와 같은
+# 성격이라 남기고, 뒤의 것만 지운다.
+PARTIAL_DELETES: tuple[tuple[str, str], ...] = (
+    ("question_bank", "incident_id IS NOT NULL"),
 )
 
 
 def counts(db) -> dict[str, int]:
-    return {table: db.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar() or 0 for table in DELETE_ORDER}
+    result = {table: db.execute(text(f"SELECT COUNT(*) FROM {table}")).scalar() or 0 for table in DELETE_ORDER}
+    for table, where in PARTIAL_DELETES:
+        result[table] = db.execute(text(f"SELECT COUNT(*) FROM {table} WHERE {where}")).scalar() or 0
+    return result
 
 
 def run(confirm: bool = False) -> dict[str, int]:
@@ -57,6 +69,8 @@ def run(confirm: bool = False) -> dict[str, int]:
             return before
         for table in DELETE_ORDER:
             db.execute(text(f"DELETE FROM {table}"))
+        for table, where in PARTIAL_DELETES:
+            db.execute(text(f"DELETE FROM {table} WHERE {where}"))
         db.commit()
         after = counts(db)
         remaining = sum(after.values())

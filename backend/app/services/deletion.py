@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.analysis import AnalysisFinding, AnalysisRun, FindingEvidenceLink, ValidationResult
 from app.models.external import ExternalCoverage, ExternalPolicy
-from app.models.question import UserQuestionLog
+from app.models.question import QuestionBank, UserQuestionLog
 from app.models.user import (
     AppUser, Evidence, Incident, Trip, UserPolicy, UserCoverage, UserPremiumWatchlist,
 )
@@ -41,6 +41,10 @@ def delete_incident_cascade(db: Session, incident: Incident):
     for run in runs:
         delete_analysis_run(db, run)
     db.query(Evidence).filter(Evidence.incident_id == incident.incident_id).delete(synchronize_session=False)
+    # 이 사고 하나를 위해 만들어진 추가 질문(incident_questions_gemini)도 같이 지운다.
+    # 공용 질문 뱅크(incident_id=NULL)는 건드리지 않는다 — 그건 모든 사고가 함께 쓴다.
+    # 답변 로그(UserQuestionLog)는 위에서 분석 실행과 함께 이미 지워져 참조가 남지 않는다.
+    db.query(QuestionBank).filter(QuestionBank.incident_id == incident.incident_id)         .delete(synchronize_session=False)
     db.delete(incident)
 
 

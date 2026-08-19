@@ -180,7 +180,9 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
     findings_out = persist_findings(db, run, finding_specs)
 
     l1_code = _l1_code_for_type(db, incident.type_id)
-    questions = pending_questions(db, l1_code, merged, _modifiers_dict(incident))
+    questions = pending_questions(
+        db, l1_code, merged, _modifiers_dict(incident), incident=incident, generate=True,
+    )
 
     validation_specs = run_core_validation(db, incident.user_id, incident.occurred_at, merged, l1_code)
     doc_check = check_docs_not_secured(db, incident.incident_id)
@@ -354,7 +356,9 @@ def get_incident(
 
     merged = _current_merged(incident)
     l1_code = _l1_code_for_type(db, incident.type_id)
-    questions = pending_questions(db, l1_code, merged, _modifiers_dict(incident))
+    questions = pending_questions(
+        db, l1_code, merged, _modifiers_dict(incident), incident=incident, generate=False,
+    )
 
     return IncidentAnalysisOut(
         incident_id=incident.incident_id,
