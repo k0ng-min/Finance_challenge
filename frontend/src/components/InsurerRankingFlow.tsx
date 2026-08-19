@@ -228,8 +228,12 @@ export function InsurerRankingFlow({
           subtitle="근거가 된 약관 조항 항목을 함께 표시했어요. 눌러서 담보 추천 결과를 확인하세요."
         />
         <div className="rank-toolbar">
-          <button type="button" className="btn-secondary" onClick={() => setPhase("tier")}>
-            ← 기준 다시 선택
+          <button
+            type="button"
+            className="btn-secondary rank-toolbar__reselect"
+            onClick={() => setPhase("tier")}
+          >
+            다시 선택
           </button>
           <div className="rank-toolbar__tiers">
             {PLAN_TIER_LABELS.map((label, rank) => (
@@ -297,24 +301,12 @@ export function InsurerRankingFlow({
                 </div>
               ))}
               <p className="muted plan-board__source">
-                {comparison.source}에서 직접 조회{comparison.collected_at ? ` (${comparison.collected_at})` : ""} — 실제
+                {comparison.source}에서 직접 조회한 값이며 — 실제
                 가입 시 금액은 달라질 수 있어요.
               </p>
             </>
           )}
         </Modal>
-        <a
-          className="price-link"
-          href="https://www.e-insmarket.or.kr/m/tripIns/tripInsList.knia?prdtSmlClsCd=H001"
-          target="_blank"
-          rel="noreferrer"
-        >
-          💳 여행기간·담보구성 등 실제 가입조건 보험료는 보험다모아에서 확인할 수 있어요 →
-        </a>
-        <p className="rank-premium-note">
-          카드의 금액은 각 보험사 다이렉트 사이트에서 직접 조회한 {ranking[0]?.premium_period_days ?? 1}일 기준
-          실제 가격이며, 선택한 여행일수로 환산한 견적이 아닙니다.
-        </p>
         <div className="rank-list">
           {ranking.map((r, i) => (
             <motion.div
@@ -394,6 +386,13 @@ export function InsurerRankingFlow({
             </motion.div>
           ))}
         </div>
+
+        {/* 금액에 대한 단서는 카드를 다 읽은 뒤 확인하는 각주라, 목록 위가 아니라 아래에 둔다 —
+            위에 있으면 순위를 보기도 전에 회색 글씨부터 읽게 된다. */}
+        <p className="rank-premium-note">
+          카드의 금액은 각 보험사 다이렉트 사이트에서 직접 조회한 {ranking[0]?.premium_period_days ?? 1}일 기준
+          실제 가격이며, 선택한 여행일수로 환산한 견적이 아닙니다.
+        </p>
 
         {ranking.map((r) => (
           <Modal

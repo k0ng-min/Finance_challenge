@@ -15,7 +15,8 @@ from app.schemas import (
     InsurerPlansOut, InsurerPremiumCurveOut, InsurerPremiumOut, NonpaymentRateOut,
     NonpaymentRatesOut, PremiumComparisonOut, PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
-from app.services.insurer_ranking import list_tiers, rank_insurers
+from app.services.insurer_ranking import TIERS, list_tiers, rank_insurers
+from app.services.insurer_ranking_score_gemini import score_ranking
 from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
 
 router = APIRouter(prefix="/insurers", tags=["insurers"])
@@ -666,6 +667,23 @@ def get_insurer_ranking(
         ranking = rank_insurers(db, tier, trip_context)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    # 규칙 기반 순위는 약관 근거 네 축만 보므로 등급(실속/표준/고급)을 바꿔도 결과가 같다.
+    # 등급 사이에서 실제로 갈리는 건 보장금액이라, 그 등급의 실제 보장금액표까지 넣고
+    # Gemini에게 점수를 매기게 해서 다시 정렬한다. 실패하면 규칙 기반 순위를 그대로 쓴다.
+    if plan_tier is not None:
+        tier_meta = TIERS.get(tier, {})
+        scored = score_ranking(
+            db,
+            tier_code=tier,
+            tier_label=tier_meta.get("label", tier),
+            tier_description=tier_meta.get("description", ""),
+            plan_tier=plan_tier,
+            trip_context=trip_context,
+            ranking=ranking,
+        )
+        if scored:
+            ranking = scored
 
     # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,
     # 보험료는 외부 비교공시 값이므로 순위 산정에도 섞지 않는다.
