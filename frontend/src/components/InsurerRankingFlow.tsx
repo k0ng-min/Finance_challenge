@@ -245,62 +245,54 @@ export function InsurerRankingFlow({
         </div>
         <button
           type="button"
-          className="collapsible-header"
-          style={{ marginBottom: 10 }}
-          onClick={() => setShowComparison((v) => !v)}
+          className="rank-compare-trigger"
+          onClick={() => setShowComparison(true)}
         >
-          <span className="section-label">
-            {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교
-          </span>
-          <span className="collapsible-header__chevron">{showComparison ? "⌃" : "⌄"}</span>
+          <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교</span>
+          <span className="rank-compare-trigger__arrow">›</span>
         </button>
-        {showComparison && (
-          <div className="card" style={{ marginBottom: 14 }}>
-            {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
-            {!comparisonLoading && comparison && (
-              <>
-                {comparison.categories.map((cat) => (
-                  <div key={cat.category} className="compare-category">
-                    <p className="compare-category__title">{cat.category}</p>
-                    <div className="plan-board__scroll" style={{ maxHeight: 220 }}>
-                      <table className="coverage-table compare-table">
-                        <thead>
-                          <tr>
-                            <th>담보</th>
-                            {ranking.map((r) => (
-                              <th key={r.insurer_code}>{shortInsurerName(r.insurer_code, r.insurer_name)}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {cat.metrics.map((m) => {
-                            const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+        <Modal
+          open={showComparison}
+          onClose={() => setShowComparison(false)}
+          title={`${PLAN_TIER_LABELS[planTierRank]} 등급 · 보장금액 비교`}
+        >
+          {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
+          {!comparisonLoading && comparison && (
+            <>
+              {comparison.categories.map((cat) => (
+                <div key={cat.category} className="compare-category">
+                  <p className="compare-category__title">{cat.category}</p>
+                  {cat.metrics.map((m) => {
+                    const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+                    return (
+                      <div key={m.metric_label} className="compare-metric">
+                        <p className="compare-metric__label">{m.metric_label}</p>
+                        <div className="compare-metric__grid">
+                          {ranking.map((r) => {
+                            const raw = valueByCode.get(r.insurer_code);
+                            const display = raw == null
+                              ? "-"
+                              : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
                             return (
-                              <tr key={m.metric_label}>
-                                <td>{m.metric_label}</td>
-                                {ranking.map((r) => {
-                                  const raw = valueByCode.get(r.insurer_code);
-                                  const display = raw == null
-                                    ? "-"
-                                    : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
-                                  return <td key={r.insurer_code}>{display}</td>;
-                                })}
-                              </tr>
+                              <div key={r.insurer_code} className="compare-metric__row">
+                                <span className="compare-metric__insurer">{shortInsurerName(r.insurer_code, r.insurer_name)}</span>
+                                <span className="compare-metric__value">{display}</span>
+                              </div>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-                <p className="muted plan-board__source">
-                  {comparison.source}에서 직접 조회{comparison.collected_at ? ` (${comparison.collected_at})` : ""} — 실제
-                  가입 시 금액은 달라질 수 있어요.
-                </p>
-              </>
-            )}
-          </div>
-        )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+              <p className="muted plan-board__source">
+                {comparison.source}에서 직접 조회{comparison.collected_at ? ` (${comparison.collected_at})` : ""} — 실제
+                가입 시 금액은 달라질 수 있어요.
+              </p>
+            </>
+          )}
+        </Modal>
         <a
           className="price-link"
           href="https://www.e-insmarket.or.kr/m/tripIns/tripInsList.knia?prdtSmlClsCd=H001"

@@ -841,15 +841,61 @@ button { cursor: pointer; font-family: inherit; }
 }
 .rank-toolbar__tier--on { background: var(--card-bg); color: var(--primary-dark); box-shadow: 0 2px 6px rgba(var(--shadow-tint), 0.12); }
 
-/* 6개사 보장금액 비교표(InsurerComparisonMetric) — 카테고리마다 표를 나눠서 한 번에
-   너무 길어지지 않게 한다. */
-.compare-category { margin-bottom: 16px; }
+/* 비교표를 여는 카드형 버튼 — 예전엔 작은 접이식 텍스트 링크였는데, 눈에 잘 안 띄고
+   안 예쁘다는 피드백을 받아 다른 안내 카드(.price-link)와 같은 톤의 카드로 바꿨다. */
+.rank-compare-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 13px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.rank-compare-trigger__arrow { font-size: 1.1rem; flex-shrink: 0; }
+
+/* 6개사 보장금액 비교(InsurerComparisonMetric) — 팝업(Modal) 안에서 세로로만 스크롤되게
+   한다. 표로 6개사를 옆으로 나란히 두면 모바일 폭에 하나도 안 들어가 옆스크롤이
+   생겼다 — 그 대신 항목마다 "보험사 : 금액" 줄을 세로로 쌓는다. */
+.compare-category { margin-bottom: 18px; }
 .compare-category:last-child { margin-bottom: 0; }
-.compare-category__title { font-size: 0.8rem; font-weight: 800; color: var(--heading); margin-bottom: 6px; }
-.compare-table { font-size: 0.78rem; }
-.compare-table th:first-child, .compare-table td:first-child { position: sticky; left: 0; background: var(--card-bg); }
-.compare-table td, .compare-table th { white-space: nowrap; }
-.compare-table td:first-child, .compare-table th:first-child { white-space: normal; min-width: 110px; }
+.compare-category__title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid var(--primary-soft);
+}
+.compare-metric { margin-bottom: 12px; }
+.compare-metric:last-child { margin-bottom: 0; }
+.compare-metric__label { font-size: 0.82rem; font-weight: 700; color: var(--heading); margin-bottom: 6px; }
+.compare-metric__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+}
+.compare-metric__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+  background: var(--cream-deep);
+  border-radius: var(--radius-sm);
+  padding: 7px 9px;
+  min-width: 0;
+}
+.compare-metric__insurer { font-size: 0.72rem; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.compare-metric__value { font-size: 0.78rem; color: var(--heading); font-weight: 800; flex-shrink: 0; white-space: nowrap; }
 
 .rank-card__head { display: flex; align-items: center; gap: 11px; }
 .rank-badge {
