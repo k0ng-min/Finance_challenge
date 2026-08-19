@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { api, type PremiumComparisonOut, type NonpaymentRatesOut, type InsurerPlansOut } from "../api";
+import {
+  api, type PremiumComparisonOut, type NonpaymentRatesOut, type InsurerPlansOut, type InsurerComparisonOut,
+} from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
@@ -17,14 +19,18 @@ const INSURERS = [
   { code: "KAKAOPAY", label: "카카오페이손보" },
 ];
 
+// backend/app/services/insurer_tiers.py의 TIER_LABELS와 반드시 같은 순서로 둔다.
+const PLAN_TIER_LABELS = ["실속", "표준", "고급"];
+
 /**
  * 보험료 비교 — 보험사를 골라 나이·성별에 따른 1일 기준 실제 보험료를 비교한다.
  *
  * 2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
- * 직접 조회한 실제 등급(플랜)별 가격을 쓴다. 목록 행에는 표준 등급 가격만 보이고,
- * 보험사 이름을 누르면 등급 칩·담보 가입금액표(스크롤)를 팝업으로 볼 수 있다
- * (PlanCoverageBoard) — 목록을 담보 표로 길게 늘리지 않으면서도 등급은 자유롭게
- * 바꿔볼 수 있다. 팝업에서 등급을 바꾸면 목록 행의 가격도 그 등급 가격으로 바뀐다.
+ * 직접 조회한 실제 등급(플랜)별 가격을 쓴다. 필터의 "등급" 선택기(실속/표준/고급)로
+ * 목록 전체 가격을 한 번에 바꿀 수 있고, 행마다 보험사 이름을 누르면 그 보험사만 다른
+ * 등급으로 따로 볼 수도 있다(PlanCoverageBoard 팝업) — 전체로 바꾸면 행별 개별 선택은
+ * 초기화된다(둘이 뒤섞이면 헷갈리므로). "N등급 · 6개사 보장금액 한눈에 비교" 버튼은
+ * InsurerComparisonMetric(같은 항목끼리 미리 정리해 둔 비교표)을 보여준다.
  *
  * 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이라, 산출 전제와
  * 출처·수집일을 항상 같이 보여준다(숫자만 떼어 보여주지 않는다).
@@ -51,6 +57,12 @@ export function PremiumCalc() {
   const [planModalFor, setPlanModalFor] = useState<string | null>(null);
   // 부지급률 표는 기본으로 접어 둔다 — 누르면 펼쳐진다.
   const [showNonpayment, setShowNonpayment] = useState(false);
+  // 전체 등급(실속/표준/고급) — 고르면 목록 전체 가격이 그 등급으로 다시 계산된다.
+  // 행마다 따로 고른 등급(planByInsurer)은 여기서 비워서, 전체 등급 선택이 우선하게 한다.
+  const [planTierRank, setPlanTierRank] = useState(1);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparison, setComparison] = useState<InsurerComparisonOut | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   useEffect(() => {
     if (profileAge != null) setAge(profileAge);
@@ -65,7 +77,7 @@ export function PremiumCalc() {
     setLoading(true);
     setError(null);
     api
-      .getPremiumComparison(age, sex, order)
+      .getPremiumComparison(age, sex, order, planTierRank)
       .then((res) => {
         if (!cancelled) setData(res);
       })
@@ -81,7 +93,23 @@ export function PremiumCalc() {
     return () => {
       cancelled = true;
     };
-  }, [age, sex, order]);
+  }, [age, sex, order, planTierRank]);
+
+  // 전체 등급을 바꾸면 행마다 따로 골라 둔 등급은 비운다 — 안 그러면 방금 고른 전체
+  // 등급과 예전에 개별로 고른 등급이 뒤섞여 헷갈린다.
+  useEffect(() => {
+    setPlanByInsurer({});
+    setPlansByInsurer({});
+  }, [planTierRank]);
+
+  useEffect(() => {
+    if (!showComparison) return;
+    setComparisonLoading(true);
+    api.getInsurerComparisonMetrics(planTierRank)
+      .then(setComparison)
+      .catch(() => setComparison(null))
+      .finally(() => setComparisonLoading(false));
+  }, [showComparison, planTierRank]);
 
   function toggle(code: string) {
     setSelected((prev) =>
@@ -146,6 +174,22 @@ export function PremiumCalc() {
         </div>
 
         <div className="calc-filter-group">
+          <span className="calc-filter-group__label">등급</span>
+          <div className="calc-seg">
+            {PLAN_TIER_LABELS.map((label, rank) => (
+              <button
+                key={label}
+                type="button"
+                className={`premium-chip${planTierRank === rank ? " premium-chip--on" : ""}`}
+                onClick={() => setPlanTierRank(rank)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="calc-filter-group">
           <span className="calc-filter-group__label">성별</span>
           <div className="calc-seg">
             {(["M", "F"] as const).map((s) => (
@@ -181,6 +225,65 @@ export function PremiumCalc() {
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className="rank-compare-trigger"
+        onClick={() => setShowComparison(true)}
+      >
+        <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교</span>
+        <span className="rank-compare-trigger__arrow">›</span>
+      </button>
+      <Modal
+        open={showComparison}
+        onClose={() => setShowComparison(false)}
+        title={`${PLAN_TIER_LABELS[planTierRank]} 등급 · 보장금액 비교`}
+        className="modal-card--wide"
+      >
+        {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
+        {!comparisonLoading && comparison && (
+          <>
+            {comparison.categories.map((cat) => (
+              <div key={cat.category} className="compare-category">
+                <p className="compare-category__title">{cat.category}</p>
+                <div className="compare-table-scroll">
+                  <table className="coverage-table compare-table">
+                    <thead>
+                      <tr>
+                        <th>담보</th>
+                        {INSURERS.map((i) => (
+                          <th key={i.code}>{i.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cat.metrics.map((m) => {
+                        const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+                        return (
+                          <tr key={m.metric_label}>
+                            <td>{m.metric_label}</td>
+                            {INSURERS.map((i) => {
+                              const raw = valueByCode.get(i.code);
+                              const display = raw == null
+                                ? "-"
+                                : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
+                              return <td key={i.code}>{display}</td>;
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            <p className="muted plan-board__source">
+              {comparison.source}에서 직접 조회{comparison.collected_at ? ` (${comparison.collected_at})` : ""} — 실제
+              가입 시 금액은 달라질 수 있어요.
+            </p>
+          </>
+        )}
+      </Modal>
 
       {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>보험료 자료를 불러오는 중...</p>}
       {!loading && error && <div className="error-box">{error}</div>}

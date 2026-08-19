@@ -784,8 +784,10 @@ export const api = {
 
   getIncidentTypes: () => request<IncidentTypeOut[]>("/incidents/types"),
 
-  getPremiumComparison: (age: number, sex: string, order: "asc" | "desc") =>
-    request<PremiumComparisonOut>(`/insurers/premiums?age=${age}&sex=${sex}&order=${order}`),
+  getPremiumComparison: (age: number, sex: string, order: "asc" | "desc", planTier?: number) => {
+    const q = planTier != null ? `&plan_tier=${planTier}` : "";
+    return request<PremiumComparisonOut>(`/insurers/premiums?age=${age}&sex=${sex}&order=${order}${q}`);
+  },
 
   /** 한 보험사가 실제로 파는 등급(플랜) 전부와 가격. age·sex를 안 주면 가격 없이
    * 등급 이름만 온다(나이를 아직 모르는 단계에서도 등급은 먼저 보여줄 수 있다). */

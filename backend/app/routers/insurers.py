@@ -65,13 +65,15 @@ def get_premium_comparison(
     sex: str,
     days: int | None = None,
     order: str = "asc",
+    plan_tier: int | None = None,  # 0=실속, 1=표준(기본), 2=고급 — insurer_tiers.TIER_LABELS
     db: Session = Depends(get_db),
 ):
     """해당 나이·성별의 1일 기준 실제 보험료를 보험사별로 돌려준다.
 
     2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
-    사용자가 직접 조회한 실제 등급별 가격을 쓴다. 등급을 고르는 화면이 아직 없어
-    보험사마다 등급(is_standard_tier) 하나만 대표로 내려준다.
+    사용자가 직접 조회한 실제 등급별 가격을 쓴다. plan_tier를 안 주면 보험사마다 표준
+    등급(is_standard_tier) 하나만 대표로 내려준다 — 화면의 "실속/표준/고급" 전체
+    선택기가 이 파라미터로 한 번에 모든 보험사 가격을 바꾼다.
 
     이 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이므로,
     산출 전제(basis)와 출처·수집일을 항상 같이 내려보낸다. 화면에서 숫자만 떼어
@@ -90,15 +92,36 @@ def get_premium_comparison(
         raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
 
     _ = days
-    # 보험사마다 실제로 파는 등급(플랜)이 여럿이라 (나이,성별) 하나에 여러 행이 걸린다 —
-    # 등급을 고르는 화면이 아직 없는 여기서는 보험사마다 표준 등급 하나만 대표로 보여준다.
-    direction = InsurerPremium.premium.desc() if order == "desc" else InsurerPremium.premium.asc()
-    rows = (
-        db.query(InsurerPremium)
-        .filter(InsurerPremium.age == age, InsurerPremium.sex == sex, InsurerPremium.is_standard_tier.is_(True))
-        .order_by(direction)
-        .all()
-    )
+    if plan_tier is not None:
+        if plan_tier not in (0, 1, 2):
+            raise HTTPException(status_code=400, detail="plan_tier는 0~2 사이여야 합니다.")
+        rows = []
+        for insurer in db.query(Insurer).all():
+            plan_name = plan_name_for_tier(insurer.code, plan_tier)
+            if plan_name is None:
+                continue
+            row = (
+                db.query(InsurerPremium)
+                .filter(
+                    InsurerPremium.insurer_id == insurer.insurer_id,
+                    InsurerPremium.age == age, InsurerPremium.sex == sex,
+                    InsurerPremium.plan_name == plan_name,
+                )
+                .first()
+            )
+            if row:
+                rows.append(row)
+        rows.sort(key=lambda r: r.premium, reverse=(order == "desc"))
+    else:
+        # 보험사마다 실제로 파는 등급(플랜)이 여럿이라 (나이,성별) 하나에 여러 행이 걸린다 —
+        # 등급을 안 골랐으면 보험사마다 표준 등급 하나만 대표로 보여준다.
+        direction = InsurerPremium.premium.desc() if order == "desc" else InsurerPremium.premium.asc()
+        rows = (
+            db.query(InsurerPremium)
+            .filter(InsurerPremium.age == age, InsurerPremium.sex == sex, InsurerPremium.is_standard_tier.is_(True))
+            .order_by(direction)
+            .all()
+        )
     if not rows:
         raise HTTPException(status_code=404, detail="해당 나이·성별의 보험료 자료가 없습니다.")
 
