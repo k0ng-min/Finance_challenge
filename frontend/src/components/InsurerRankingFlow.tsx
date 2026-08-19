@@ -255,6 +255,7 @@ export function InsurerRankingFlow({
           open={showComparison}
           onClose={() => setShowComparison(false)}
           title={`${PLAN_TIER_LABELS[planTierRank]} 등급 · 보장금액 비교`}
+          className="modal-card--wide"
         >
           {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
           {!comparisonLoading && comparison && (
@@ -262,28 +263,35 @@ export function InsurerRankingFlow({
               {comparison.categories.map((cat) => (
                 <div key={cat.category} className="compare-category">
                   <p className="compare-category__title">{cat.category}</p>
-                  {cat.metrics.map((m) => {
-                    const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
-                    return (
-                      <div key={m.metric_label} className="compare-metric">
-                        <p className="compare-metric__label">{m.metric_label}</p>
-                        <div className="compare-metric__grid">
-                          {ranking.map((r) => {
-                            const raw = valueByCode.get(r.insurer_code);
-                            const display = raw == null
-                              ? "-"
-                              : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
-                            return (
-                              <div key={r.insurer_code} className="compare-metric__row">
-                                <span className="compare-metric__insurer">{shortInsurerName(r.insurer_code, r.insurer_name)}</span>
-                                <span className="compare-metric__value">{display}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div className="compare-table-scroll">
+                    <table className="coverage-table compare-table">
+                      <thead>
+                        <tr>
+                          <th>담보</th>
+                          {ranking.map((r) => (
+                            <th key={r.insurer_code}>{shortInsurerName(r.insurer_code, r.insurer_name)}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cat.metrics.map((m) => {
+                          const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+                          return (
+                            <tr key={m.metric_label}>
+                              <td>{m.metric_label}</td>
+                              {ranking.map((r) => {
+                                const raw = valueByCode.get(r.insurer_code);
+                                const display = raw == null
+                                  ? "-"
+                                  : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
+                                return <td key={r.insurer_code}>{display}</td>;
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ))}
               <p className="muted plan-board__source">

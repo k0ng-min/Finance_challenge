@@ -6,11 +6,14 @@ export function Modal({
   onClose,
   title,
   children,
+  className,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  /** 기본 폭(360px)보다 넓혀야 할 때(예: 표 비교) 쓴다 — modal-card에 그대로 이어붙인다. */
+  className?: string;
 }) {
   return (
     <AnimatePresence>
@@ -23,7 +26,7 @@ export function Modal({
           onClick={onClose}
         >
           <motion.div
-            className="modal-card"
+            className={`modal-card${className ? ` ${className}` : ""}`}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}

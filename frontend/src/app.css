@@ -863,9 +863,10 @@ button { cursor: pointer; font-family: inherit; }
 }
 .rank-compare-trigger__arrow { font-size: 1.1rem; flex-shrink: 0; }
 
-/* 6개사 보장금액 비교(InsurerComparisonMetric) — 팝업(Modal) 안에서 세로로만 스크롤되게
-   한다. 표로 6개사를 옆으로 나란히 두면 모바일 폭에 하나도 안 들어가 옆스크롤이
-   생겼다 — 그 대신 항목마다 "보험사 : 금액" 줄을 세로로 쌓는다. */
+/* 6개사 보장금액 비교(InsurerComparisonMetric) — 팝업(Modal) 안이라 옆으로 스크롤해도
+   맥락(다른 화면 내용)이 안 끊긴다. 카드로 세로로 쌓으면 같은 보험사 값끼리 눈으로
+   이어보기 어렵다는 피드백을 받아 표로 되돌렸다 — 대신 팝업을 넓혀 쓰고(modal-card--wide),
+   담보명 칸을 고정해 옆으로 스크롤해도 "지금 어느 항목을 보고 있는지"는 계속 보인다. */
 .compare-category { margin-bottom: 18px; }
 .compare-category:last-child { margin-bottom: 0; }
 .compare-category__title {
@@ -876,26 +877,17 @@ button { cursor: pointer; font-family: inherit; }
   padding-bottom: 4px;
   border-bottom: 1.5px solid var(--primary-soft);
 }
-.compare-metric { margin-bottom: 12px; }
-.compare-metric:last-child { margin-bottom: 0; }
-.compare-metric__label { font-size: 0.82rem; font-weight: 700; color: var(--heading); margin-bottom: 6px; }
-.compare-metric__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
+.compare-table-scroll { overflow-x: auto; }
+.compare-table { font-size: 0.76rem; white-space: nowrap; }
+.compare-table th, .compare-table td { padding: 8px 10px; }
+.compare-table th:first-child, .compare-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--card-bg);
+  white-space: normal;
+  min-width: 108px;
+  box-shadow: 1px 0 0 var(--border);
 }
-.compare-metric__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 6px;
-  background: var(--cream-deep);
-  border-radius: var(--radius-sm);
-  padding: 7px 9px;
-  min-width: 0;
-}
-.compare-metric__insurer { font-size: 0.72rem; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.compare-metric__value { font-size: 0.78rem; color: var(--heading); font-weight: 800; flex-shrink: 0; white-space: nowrap; }
 
 .rank-card__head { display: flex; align-items: center; gap: 11px; }
 .rank-badge {
@@ -1726,6 +1718,8 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
 }
+/* 표 비교처럼 가로로 넓은 내용이 들어갈 팝업 — 화면 폭 안에서 최대한 넓게 쓴다. */
+.modal-card--wide { max-width: 560px; }
 .modal-card__head {
   display: flex;
   align-items: center;
