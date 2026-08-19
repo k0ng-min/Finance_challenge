@@ -8,7 +8,7 @@ import { useApp } from "../context/AppContext";
 // 자주 쓰는 핵심 기능만 설명과 함께 크게 보여준다.
 const MAIN_CARDS = [
   { to: "/trip", icon: "suitcase", title: "내 여행 준비", desc: "여행 정보로 딱 맞는 보장을 찾아드려요" },
-  { to: "/incident", icon: "chat-bubble", title: "사고가 발생했어요", desc: "당황하지 마세요, 하나씩 도와드릴게요" },
+  { to: "/incident", icon: "collision", title: "사고가 발생했어요", desc: "당황하지 마세요, 하나씩 도와드릴게요" },
 ];
 
 // 나머지는 아이콘 + 이름만 두고, 들어가서 살펴보게 한다. 4칸을 넘기지 않는다 —
@@ -21,8 +21,8 @@ const QUICK_LOGGED_IN = { to: "/policies", icon: "umbrella", title: "내 보험"
 const QUICK_GUEST = { to: "/premium", icon: "wallet", title: "보험료 비교" };
 const QUICK_REST = [
   { to: "/checklist", icon: "file-text", title: "청구 전 점검" },
-  { to: "/onsite", icon: "map-pin", title: "해외 서류 챙기기" },
-  { to: "/highlights", icon: "notebook", title: "약관 형광펜" },
+  { to: "/onsite", icon: "airplane", title: "해외 서류 챙기기" },
+  { to: "/highlights", icon: "highlighter", title: "약관 형광펜" },
 ];
 
 export function Home() {

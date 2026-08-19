@@ -79,7 +79,7 @@ export function RejectionClauseSearch() {
         </button>
       </div>
 
-      {loading && <LoadingScreen icon="notebook" title="약관 원문에서 찾고 있어요" messages={["보험사 약관 원문에서 일치하는 조항을 찾고 있어요"]} />}
+      {loading && <LoadingScreen icon="highlighter" title="약관 원문에서 찾고 있어요" messages={["보험사 약관 원문에서 일치하는 조항을 찾고 있어요"]} />}
 
       {!loading && results && results.length === 0 && (
         <div className="empty-state">

@@ -47,7 +47,7 @@ export function StandardTermsComparison({ insurerCode }: { insurerCode: string }
   }, [insurerCode]);
 
   if (loading) {
-    return <LoadingScreen icon="notebook" title="표준약관과 대조하고 있어요" messages={["금융감독원 표준약관 조문과 실제 약관 원문을 나란히 대조하고 있어요"]} />;
+    return <LoadingScreen icon="highlighter" title="표준약관과 대조하고 있어요" messages={["금융감독원 표준약관 조문과 실제 약관 원문을 나란히 대조하고 있어요"]} />;
   }
 
   if (error || !data || data.items.length === 0) {

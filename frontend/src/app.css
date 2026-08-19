@@ -360,6 +360,8 @@ body {
 /* margin-top:auto를 쓰지 않는다 — 남는 높이를 전부 푸터 위 한 군데에 몰아버려서
    화면 아래쪽이 통째로 비는 원인이었다. 이제는 밴드들이 비율대로 나눠 갖는다. */
 .home__footer { text-align: center; font-size: 0.68rem; color: var(--muted); margin: 0; flex: none; }
+/* 홈 밖의 모든 화면 맨 아래 — 홈의 것과 같은 문구·같은 톤으로 맞춘다. */
+.app-footer { text-align: center; font-size: 0.68rem; color: var(--muted); margin: 28px 0 4px; }
 .home-quick {
   display: flex;
   flex-direction: column;
@@ -695,8 +697,64 @@ button { cursor: pointer; font-family: inherit; }
   color: var(--text);
   box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.07);
 }
-.social-btn--kakao { background: #fee500; border-color: #fee500; color: #391b1b; }
+.social-btn--kakao { background: #fee500; border-color: #fee500; color: #191600; }
+/* 구글 가이드라인은 흰 바탕 + 연회색 테두리 + 진회색 글자를 기본으로 둔다. 다크 테마에서는
+   카드 배경을 그대로 써서 흰 사각형이 떠 보이지 않게 한다. */
+.social-btn--google { background: var(--card-bg); border-color: var(--border); }
 .social-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.social-btn svg { flex-shrink: 0; }
+
+/* --- 이메일 로그인 칸 (소셜 버튼 위) --- */
+.email-login { display: flex; flex-direction: column; gap: 2px; }
+.email-login__submit { width: 100%; margin-top: 10px; }
+
+/* 이메일 로그인과 소셜 로그인 사이의 "또는" 구분선 */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* --- 계정 화면의 줄 단위 설정 항목(프로필 정보 / 비밀번호) --- */
+.account-row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-family: inherit;
+  text-align: left;
+}
+.account-row-btn > span:first-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.account-row-btn strong { font-size: 0.88rem; color: var(--heading); }
+.account-row-btn em { font-style: normal; font-size: 0.76rem; color: var(--muted); overflow-wrap: anywhere; }
+.account-row-btn__arrow { color: var(--primary); font-weight: 700; flex-shrink: 0; }
+
+.account-inline-form {
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px 14px;
+  margin-top: 8px;
+}
+.account-inline-form__actions { display: flex; gap: 8px; margin-top: 10px; }
+.account-inline-form__actions button { flex: 1; }
 
 .consent-box {
   background: var(--ivory);
@@ -822,11 +880,41 @@ button { cursor: pointer; font-family: inherit; }
 
 /* 카드의 금액이 "내 여행일수로 환산한 견적"이 아니라 1일 표준조건 공시값임을 밝히는 줄
    (보험료 공시 1일 기준 안내). 순위 목록 바로 위에 둔다. */
-.rank-premium-note { margin: -2px 0 12px; font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
+/* 사고 접수에서 "새 여행"을 만들었을 때 그 선택을 되짚어 보여주는 칩 — 기존 여행 선택기와
+   같은 자리에 놓여서, 지금 어느 쪽을 고른 상태인지 한눈에 구분되게 한다. */
+.new-trip-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  text-align: left;
+}
+.new-trip-chip > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.new-trip-chip strong { font-size: 0.86rem; color: var(--heading); }
+.new-trip-chip em { font-style: normal; font-size: 0.76rem; color: var(--muted); }
+.new-trip-chip button {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.rank-premium-note { margin: 12px 0 4px; font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
 
 /* "← 기준 다시 선택" 옆에 붙는 실속/표준/고급 등급 선택기 — 순위 목록 전체 가격이
    이 등급 기준으로 다시 계산된다. */
 .rank-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+/* 옆의 등급 선택기가 완전한 알약 모양이라, 그 옆에 각진 버튼이 붙으면 한 줄이 어긋나 보인다. */
+.rank-toolbar__reselect { border-radius: 999px; padding: 9px 18px; font-size: 0.8rem; }
 .rank-toolbar__tiers { display: flex; gap: 4px; background: var(--cream-deep); border-radius: 999px; padding: 3px; }
 .rank-toolbar__tier {
   font-family: inherit;
@@ -887,6 +975,9 @@ button { cursor: pointer; font-family: inherit; }
   white-space: normal;
   min-width: 108px;
   box-shadow: 1px 0 0 var(--border);
+  /* 팝업 헤더(z-index: 5)보다 반드시 아래 — 가로 스크롤을 위해 고정한 열이지
+     세로로 다른 것을 덮으라는 뜻이 아니다. */
+  z-index: 1;
 }
 
 .rank-card__head { display: flex; align-items: center; gap: 11px; }
@@ -1720,6 +1811,29 @@ button { cursor: pointer; font-family: inherit; }
 }
 /* 표 비교처럼 가로로 넓은 내용이 들어갈 팝업 — 화면 폭 안에서 최대한 넓게 쓴다. */
 .modal-card--wide { max-width: 560px; }
+
+/* 팝업 안 스크롤 막대는 메인 화면 프레임의 막대(.frame-scrollbar__thumb)와 같은 모양으로
+   맞춘다 — 같은 앱 안에서 한쪽은 얇은 알약, 한쪽은 OS 기본 막대가 나오면 팝업만 다른
+   프로그램처럼 보인다. 팝업도 모서리가 둥글어서(radius-lg) 프레임과 같은 이유로 막대를
+   가장자리에서 띄우고 두께를 줄인다. */
+.modal-card { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.modal-card::-webkit-scrollbar { width: 10px; height: 10px; }
+.modal-card::-webkit-scrollbar-track { background: transparent; }
+.modal-card::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+.modal-card::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: padding-box; }
+.compare-table-scroll::-webkit-scrollbar { height: 10px; }
+.compare-table-scroll::-webkit-scrollbar-track { background: transparent; }
+.compare-table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
 .modal-card__head {
   display: flex;
   align-items: center;
@@ -1730,6 +1844,10 @@ button { cursor: pointer; font-family: inherit; }
   position: sticky;
   top: 0;
   background: var(--card-bg);
+  /* 팝업 안에 position:sticky인 표 첫 열이 있으면(비교표) 그쪽이 DOM 뒤에 있어서
+     z-index 없이는 헤더 위로 올라와 제목을 가린다 — 스크롤을 내릴 때 왼쪽 첫 열이
+     제목 줄을 덮고 지나가던 문제. 헤더가 항상 이기게 못 박는다. */
+  z-index: 5;
 }
 .modal-card__head strong { font-size: 1rem; color: var(--heading); }
 .modal-card__close {
@@ -1787,11 +1905,12 @@ button { cursor: pointer; font-family: inherit; }
   border: none;
   background: var(--cream-deep);
   color: var(--muted);
-  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .history-card__delete:hover { background: #f6d6d6; color: #b3392f; }
 
@@ -1829,7 +1948,12 @@ button { cursor: pointer; font-family: inherit; }
   0%, 100% { transform: scale(0.9); opacity: 0.7; }
   50% { transform: scale(1.15); opacity: 1; }
 }
-.loading-screen__icon { position: relative; z-index: 1; margin-bottom: 4px; }
+.loading-screen__icon { position: relative; z-index: 1; margin-bottom: 4px; width: 100%; }
+
+/* 로딩 화면의 손글씨 애니메이션 — 홈 히어로와 같은 그림이지만, 기다리는 화면에서는
+   글자가 화면을 다 차지하면 안내 문구가 밀려나므로 한 단계 작게 쓴다. */
+.pwc--loading { min-height: clamp(44px, 9svh, 96px); padding: 4px 0; }
+.pwc--loading .pwc__text { font-size: clamp(1.7rem, 6.4svh, 3rem); }
 .loading-screen__title { position: relative; z-index: 1; font-size: 1.06rem; color: var(--heading); margin: 0; }
 .loading-screen__msg {
   position: relative;
@@ -1961,6 +2085,69 @@ button { cursor: pointer; font-family: inherit; }
 .sheet__handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }
 .sheet__title { font-family: var(--font-display); font-size: 1.05rem; color: var(--heading); text-align: center; margin-bottom: 4px; }
 .sheet__value { text-align: center; font-size: 0.85rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 14px; }
+
+/* --- 바텀시트 달력 (휠 위) --- */
+.calendar { margin-bottom: 14px; }
+.calendar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.calendar__title { font-weight: 800; font-size: 0.95rem; color: var(--heading); }
+.calendar__nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--cream-deep);
+  color: var(--primary-dark);
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.calendar__nav:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.calendar__weekdays,
+.calendar__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.calendar__weekdays { margin-bottom: 4px; }
+.calendar__weekday { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); padding: 2px 0; }
+.calendar__weekday--sun { color: #c0564a; }
+.calendar__weekday--sat { color: var(--primary-dark); }
+
+.calendar__cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+.calendar__cell--empty { cursor: default; }
+.calendar__cell--sun { color: #c0564a; }
+.calendar__cell--sat { color: var(--primary-dark); }
+.calendar__cell:disabled { opacity: 0.28; cursor: not-allowed; }
+.calendar__cell:not(:disabled):hover { background: var(--cream-deep); }
+/* 고른 날은 어느 요일이든 같은 모양으로 — 요일 색이 남아 있으면 선택 표시가 흐려진다 */
+.calendar__cell--on,
+.calendar__cell--on.calendar__cell--sun,
+.calendar__cell--on.calendar__cell--sat,
+.calendar__cell--on:not(:disabled):hover {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(53, 104, 201, 0.32);
+}
 
 .wheel-row { display: flex; gap: 6px; height: 200px; position: relative; }
 .wheel-row::before, .wheel-row::after { content: ""; position: absolute; left: 0; right: 0; height: 78px; pointer-events: none; z-index: 3; }
@@ -2214,7 +2401,7 @@ button { cursor: pointer; font-family: inherit; }
   .hero__title { font-size: 1.4rem; line-height: 1.35; }
   .hero__subtitle { font-size: 0.88rem; }
 
-  .loading-screen__icon .icon3d { width: 100px !important; height: 100px !important; }
+  .pwc--loading .pwc__text { font-size: clamp(2rem, 7.2svh, 3.4rem); }
   .loading-screen__title { font-size: 1.18rem; }
   .loading-screen__msg { font-size: 0.92rem; }
 

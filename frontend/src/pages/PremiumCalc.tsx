@@ -387,137 +387,6 @@ export function PremiumCalc() {
         )}
       </div>
 
-      <button
-        type="button"
-        className="rank-compare-trigger"
-        onClick={() => setShowComparison(true)}
-      >
-        <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교</span>
-        <span className="rank-compare-trigger__arrow">›</span>
-      </button>
-      <Modal
-        open={showComparison}
-        onClose={() => setShowComparison(false)}
-        title={`${PLAN_TIER_LABELS[planTierRank]} 등급 · 보장금액 비교`}
-        className="modal-card--wide"
-      >
-        {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
-        {!comparisonLoading && comparison && (
-          <>
-            {comparison.categories.map((cat) => (
-              <div key={cat.category} className="compare-category">
-                <p className="compare-category__title">{cat.category}</p>
-                <div className="compare-table-scroll">
-                  <table className="coverage-table compare-table">
-                    <thead>
-                      <tr>
-                        <th>담보</th>
-                        {INSURERS.map((i) => (
-                          <th key={i.code}>{i.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cat.metrics.map((m) => {
-                        const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
-                        return (
-                          <tr key={m.metric_label}>
-                            <td>{m.metric_label}</td>
-                            {INSURERS.map((i) => {
-                              const raw = valueByCode.get(i.code);
-                              const display = raw == null
-                                ? "-"
-                                : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
-                              return <td key={i.code}>{display}</td>;
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ))}
-            <p className="muted plan-board__source">
-              {comparison.source}에서 직접 조회{comparison.collected_at ? ` (${comparison.collected_at})` : ""} — 실제
-              가입 시 금액은 달라질 수 있어요.
-            </p>
-          </>
-        )}
-      </Modal>
-
-      {selected.length > 0 && (
-        <button
-          type="button"
-          className="rank-compare-trigger"
-          onClick={() => { setShareCardError(false); setShowShareCard(true); }}
-        >
-          <span>🖼 비교 결과 공유 카드 만들기</span>
-          <span className="rank-compare-trigger__arrow">›</span>
-        </button>
-      )}
-      <Modal
-        open={showShareCard}
-        onClose={() => setShowShareCard(false)}
-        title="비교 결과 공유 카드"
-        className="modal-card--wide"
-      >
-        {rows.length === 0 ? (
-          <p className="muted" style={{ fontSize: "0.82rem" }}>
-            카드로 만들 보험사가 없어요. 필터를 조정해 주세요.
-          </p>
-        ) : (
-          <>
-            <div ref={shareCardRef} className="share-card">
-              <p className="share-card__eyebrow">TRAVEL INSURANCE</p>
-              <h3 className="share-card__title">
-                만 {age}세 {sex === "M" ? "남성" : "여성"} · {PLAN_TIER_LABELS[planTierRank]} 등급 보험료 비교
-              </h3>
-              <p className="share-card__subtitle">
-                1일 기준 실제 보험료{data?.collected_at ? ` · ${data.collected_at} 조회` : ""}
-              </p>
-              <div className="share-card__list">
-                {rows.map((item, i) => (
-                  <div key={item.insurer_code} className="share-card__row">
-                    <span className="share-card__name">{i + 1}. {item.insurer_name}</span>
-                    <span className="share-card__price">{item.published_premium.toLocaleString()}원</span>
-                  </div>
-                ))}
-              </div>
-              <p className="share-card__footnote">
-                각 보험사 다이렉트 사이트에서 직접 조회한 값이며, 실제 가입조건에 따라 달라질 수 있어요.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="btn-primary share-card__download-btn"
-              disabled={shareCardBusy}
-              onClick={async () => {
-                if (!shareCardRef.current) return;
-                setShareCardBusy(true);
-                setShareCardError(false);
-                try {
-                  const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 2, cacheBust: true });
-                  const a = document.createElement("a");
-                  a.href = dataUrl;
-                  a.download = `보험료비교_${age}세_${PLAN_TIER_LABELS[planTierRank]}등급.png`;
-                  a.click();
-                } catch {
-                  setShareCardError(true);
-                } finally {
-                  setShareCardBusy(false);
-                }
-              }}
-            >
-              {shareCardBusy ? "이미지 만드는 중..." : "이미지로 다운로드"}
-            </button>
-            {shareCardError && (
-              <p className="error-box" style={{ marginTop: 8 }}>이미지 생성에 실패했어요. 다시 시도해 주세요.</p>
-            )}
-          </>
-        )}
-      </Modal>
-
       {loading && <p className="muted" style={{ fontSize: "0.82rem" }}>보험료 자료를 불러오는 중...</p>}
       {!loading && error && <div className="error-box">{error}</div>}
 
@@ -647,16 +516,6 @@ export function PremiumCalc() {
       {!loading && data && selected.length > 0 && rows.length > 0 && (
         <p className="premium-basis">
           <strong>{data.premium_period_days}일 기준으로 조회한 실제 보험료입니다.</strong>
-          <br />
-          {data.basis}
-          <br />
-          여행기간, 담보구성, 가입금액 등 실제 계약조건에 따라 보험료는 달라질 수 있습니다.{" "}
-          {data.source && `(출처: ${data.source}, ${data.collected_at} 조회)`}
-          {data.source_url && (
-            <a href={data.source_url} target="_blank" rel="noreferrer">
-              {" "}실제 가입조건 보험료 확인 →
-            </a>
-          )}
         </p>
       )}
 
@@ -703,16 +562,142 @@ export function PremiumCalc() {
               )}
             </tbody>
           </table>
-          <p className="premium-basis" style={{ marginTop: 8 }}>
-            {nonpayment.period} 공시 · {nonpayment.scope_note}{" "}
-            <a href={nonpayment.source_url} target="_blank" rel="noreferrer">
-              {nonpayment.source}({nonpayment.collected_at} 수집) 원문 확인 →
-            </a>
-          </p>
           </>
           )}
         </div>
       )}
+
+      {/* 보장금액 비교표와 공유 카드는 "가격을 다 본 뒤에 더 파고들 때" 쓰는 도구다.
+          목록 위에 있으면 정작 비교하려고 들어온 가격표보다 먼저 눈에 걸린다 — 화면 맨
+          아래로 내려서 가격 → 안내 문구 → 더 보기 순서로 읽히게 한다. */}
+      <button
+        type="button"
+        className="rank-compare-trigger"
+        onClick={() => setShowComparison(true)}
+      >
+        <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교</span>
+        <span className="rank-compare-trigger__arrow">›</span>
+      </button>
+      <Modal
+        open={showComparison}
+        onClose={() => setShowComparison(false)}
+        title={`${PLAN_TIER_LABELS[planTierRank]} 등급 · 보장금액 비교`}
+        className="modal-card--wide"
+      >
+        {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
+        {!comparisonLoading && comparison && (
+          <>
+            {comparison.categories.map((cat) => (
+              <div key={cat.category} className="compare-category">
+                <p className="compare-category__title">{cat.category}</p>
+                <div className="compare-table-scroll">
+                  <table className="coverage-table compare-table">
+                    <thead>
+                      <tr>
+                        <th>담보</th>
+                        {INSURERS.map((i) => (
+                          <th key={i.code}>{i.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {cat.metrics.map((m) => {
+                        const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+                        return (
+                          <tr key={m.metric_label}>
+                            <td>{m.metric_label}</td>
+                            {INSURERS.map((i) => {
+                              const raw = valueByCode.get(i.code);
+                              const display = raw == null
+                                ? "-"
+                                : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
+                              return <td key={i.code}>{display}</td>;
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+            <p className="muted plan-board__source">
+              {comparison.source}에서 직접 조회한 값이며 — 실제
+              가입 시 금액은 달라질 수 있어요.
+            </p>
+          </>
+        )}
+      </Modal>
+
+      {selected.length > 0 && (
+        <button
+          type="button"
+          className="rank-compare-trigger"
+          onClick={() => { setShareCardError(false); setShowShareCard(true); }}
+        >
+          <span>🖼 비교 결과 공유 카드 만들기</span>
+          <span className="rank-compare-trigger__arrow">›</span>
+        </button>
+      )}
+      <Modal
+        open={showShareCard}
+        onClose={() => setShowShareCard(false)}
+        title="비교 결과 공유 카드"
+        className="modal-card--wide"
+      >
+        {rows.length === 0 ? (
+          <p className="muted" style={{ fontSize: "0.82rem" }}>
+            카드로 만들 보험사가 없어요. 필터를 조정해 주세요.
+          </p>
+        ) : (
+          <>
+            <div ref={shareCardRef} className="share-card">
+              <p className="share-card__eyebrow">TRAVEL INSURANCE</p>
+              <h3 className="share-card__title">
+                만 {age}세 {sex === "M" ? "남성" : "여성"} · {PLAN_TIER_LABELS[planTierRank]} 등급 보험료 비교
+              </h3>
+              <p className="share-card__subtitle">1일 기준 실제 보험료</p>
+              <div className="share-card__list">
+                {rows.map((item, i) => (
+                  <div key={item.insurer_code} className="share-card__row">
+                    <span className="share-card__name">{i + 1}. {item.insurer_name}</span>
+                    <span className="share-card__price">{item.published_premium.toLocaleString()}원</span>
+                  </div>
+                ))}
+              </div>
+              <p className="share-card__footnote">
+                각 보험사 다이렉트 사이트에서 직접 조회한 값이며, 실제 가입조건에 따라 달라질 수 있어요.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary share-card__download-btn"
+              disabled={shareCardBusy}
+              onClick={async () => {
+                if (!shareCardRef.current) return;
+                setShareCardBusy(true);
+                setShareCardError(false);
+                try {
+                  const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 2, cacheBust: true });
+                  const a = document.createElement("a");
+                  a.href = dataUrl;
+                  a.download = `보험료비교_${age}세_${PLAN_TIER_LABELS[planTierRank]}등급.png`;
+                  a.click();
+                } catch {
+                  setShareCardError(true);
+                } finally {
+                  setShareCardBusy(false);
+                }
+              }}
+            >
+              {shareCardBusy ? "이미지 만드는 중..." : "이미지로 다운로드"}
+            </button>
+            {shareCardError && (
+              <p className="error-box" style={{ marginTop: 8 }}>이미지 생성에 실패했어요. 다시 시도해 주세요.</p>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

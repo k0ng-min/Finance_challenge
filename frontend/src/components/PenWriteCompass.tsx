@@ -41,6 +41,10 @@ import {
 // "보험형광펜"을 다 쓰는 데 걸리는 전체 시간(초). 획마다의 상대적인 리듬
 // (긴 획은 오래, 짧은 획은 금방, 글자와 글자 사이는 조금 쉬고)은 원본 그대로
 // 두고, 그 리듬 전체를 이 시간에 딱 맞게 늘려 쓴다.
+//
+// 홈 히어로는 사용자가 머무는 화면이라 천천히 쓰는 편이 보기 좋지만, 로딩 화면은
+// 몇 초 만에 끝나는 기다림이라 같은 속도로 두면 형광펜이 나오기도 전에 화면이
+// 넘어간다. 그래서 화면마다 다르게 줄 수 있도록 props로 뺐다(기본값은 홈 기준).
 const WRITE_DURATION = 15;
 // 원본의 획 하나당 시간(ms) = STROKE_BASE_MS + 길이 × STROKE_LENGTH_MS.
 // 짧은 획도 최소한의 시간은 갖게 하는 상수항이다.
@@ -63,7 +67,18 @@ const HIGHLIGHT_PAD_X = 0.02;
 
 const [VB_X, VB_Y, VB_W, VB_H] = PEN_STROKE_VIEWBOX.split(/\s+/).map(Number);
 
-export function PenWriteCompass() {
+export function PenWriteCompass({
+  writeDuration = WRITE_DURATION,
+  holdDuration = HOLD_DURATION,
+  className,
+}: {
+  /** "보험형광펜"을 다 쓰는 데 걸리는 시간(초). */
+  writeDuration?: number;
+  /** 형광펜을 다 칠한 뒤 그 결과를 그대로 두는 시간(초). 이 시간이 지나면 흐려지며 사라지고 처음부터 다시 쓴다. */
+  holdDuration?: number;
+  /** 크기를 화면에 맞게 줄일 때 쓴다(예: 로딩 화면). */
+  className?: string;
+} = {}) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const wordRef = useRef<SVGGElement>(null);
   // 획 중심선(마스크) — 원본과 같은 필순 순서로 평평하게 담는다.
@@ -132,7 +147,7 @@ export function PenWriteCompass() {
         : 0,
     );
     const rawTotal = rawDurations.reduce((a, b) => a + b, 0) + rawGaps.reduce((a, b) => a + b, 0);
-    const scale = rawTotal > 0 ? (WRITE_DURATION * 1000) / rawTotal : 0;
+    const scale = rawTotal > 0 ? (writeDuration * 1000) / rawTotal : 0;
 
     const ctx = gsap.context(() => {
       // 유지 시간(HOLD_DURATION)을 타임라인 안에 넣고, 타임라인이 끝나면
@@ -201,8 +216,8 @@ export function PenWriteCompass() {
         `${sweepStart}+=${SWEEP_DURATION}`,
       );
 
-      // ③ 다 칠해진 상태로 HOLD_DURATION 동안 그대로 유지된다.
-      tl.to({}, { duration: HOLD_DURATION });
+      // ③ 다 칠해진 상태로 holdDuration 동안 그대로 유지된다.
+      tl.to({}, { duration: holdDuration });
 
       // ④ 유지 시간이 끝나면 갑자기 사라지지 않고 희미하게 흐려지며 사라진다.
       // 이 페이드가 끝난 직후 타임라인이 끝나고, onComplete가 곧바로
@@ -218,13 +233,13 @@ export function PenWriteCompass() {
     }, rootRef);
 
     return () => ctx.revert();
-  }, []);
+  }, [writeDuration, holdDuration]);
 
   // 필순대로 평평하게 매기는 획 번호 — ref 배열의 자리와 맞춘다.
   let strokeIndex = 0;
 
   return (
-    <span className="pwc" ref={rootRef} aria-hidden="true">
+    <span className={`pwc${className ? ` ${className}` : ""}`} ref={rootRef} aria-hidden="true">
       <img className="pwc__highlighter" ref={highlighterRef} src="/3d/highlighter.webp" alt="" />
       <span className="pwc__text" ref={textRef}>
         <svg className="pwc__word" viewBox={PEN_STROKE_VIEWBOX} preserveAspectRatio="xMidYMid meet">

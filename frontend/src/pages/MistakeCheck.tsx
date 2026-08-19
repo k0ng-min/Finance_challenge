@@ -102,7 +102,7 @@ export function MistakeCheck({ embedded = false }: { embedded?: boolean } = {}) 
 
       <NextStepCard
         to="/highlights"
-        icon="notebook"
+        icon="highlighter"
         label="다음 단계"
         title="근거 약관 확인하러 가기"
       />

@@ -188,7 +188,7 @@ export function ClauseHighlight() {
     return (
       <div className="page">
         <TopBar title="약관 형광펜" />
-        <LoadingScreen icon="notebook" title="조항을 불러오고 있어요" />
+        <LoadingScreen icon="highlighter" title="조항을 불러오고 있어요" />
       </div>
     );
   }
@@ -198,7 +198,7 @@ export function ClauseHighlight() {
       <div className="page">
         <TopBar title="약관 형광펜" />
         <PageHero
-          icon="notebook"
+          icon="highlighter"
           eyebrow="CLAUSE"
           title={"이 조항의 실제 원문이에요"}
           subtitle="특정 사고와 대조한 게 아니라, 조항 자체의 원문과 쉬운말 설명이에요."
@@ -222,7 +222,7 @@ export function ClauseHighlight() {
       <div className="page">
         <TopBar title="약관 형광펜" />
         <PageHero
-          icon="notebook"
+          icon="highlighter"
           eyebrow="CLAUSE HIGHLIGHT"
           title={"약관 원문을\n직접 찾아볼 수 있어요"}
           subtitle={'"사고가 발생했어요"에서 사고를 분석하면 관련 조항이 형광펜으로 여기 모여요. 아직 없다면 보험사와 조항 번호로 직접 찾아볼 수 있어요.'}
@@ -254,7 +254,7 @@ export function ClauseHighlight() {
     <div className="page">
       <TopBar title="약관 형광펜" />
       <PageHero
-        icon="notebook"
+        icon="highlighter"
         eyebrow="CLAUSE HIGHLIGHT"
         title={"이 사고와 관련된 부분,\n노란색으로 한눈에"}
         subtitle="이번 사고와 직접 관련된 실제 약관 원문만 노랗게 표시했어요. 관련도가 높은 조항부터 보여드려요."
@@ -306,7 +306,7 @@ export function ClauseHighlight() {
       )}
 
       {loading && (
-        <LoadingScreen icon="notebook" title="이 사고와 관련된 부분을 찾고 있어요" messages={["실제 약관 원문과 사고 상황을 대조하고 있어요"]} />
+        <LoadingScreen icon="highlighter" title="이 사고와 관련된 부분을 찾고 있어요" messages={["실제 약관 원문과 사고 상황을 대조하고 있어요"]} />
       )}
 
       {!loading && !trimmedQuery && items.length > 0 && (

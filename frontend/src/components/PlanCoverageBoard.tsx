@@ -115,7 +115,7 @@ export function PlanCoverageBoard({
             </table>
           </div>
           <p className="muted plan-board__source">
-            {coverage?.source}에서 직접 조회{coverage?.collected_at ? ` (${coverage.collected_at})` : ""} — 실제
+            {coverage?.source}에서 직접 조회한 값이며 — 실제
             가입 시 금액은 달라질 수 있어요.
           </p>
         </>

@@ -94,7 +94,7 @@ export function Onsite() {
     <div className="page">
       <TopBar title="해외 서류 챙기기" />
       <PageHero
-        icon="map-pin"
+        icon="airplane"
         eyebrow="ON SITE"
         title={"귀국하면 못 받는\n서류부터 챙겨요"}
         subtitle="약관이 요구하는 형식을 현지어로 보여드려요. 병원·경찰서 창구에 이 화면을 그대로 보여주세요."
@@ -102,7 +102,7 @@ export function Onsite() {
 
       {offline && pack && (
         <div className="onsite-offline-badge">
-          오프라인 — {new Date(pack.generated_at).toLocaleString("ko-KR")} 기준으로 보고 있어요
+          오프라인 — 마지막으로 받아둔 내용을 보고 있어요
         </div>
       )}
 
@@ -242,7 +242,6 @@ export function Onsite() {
               <strong>비행기모드에서도 열려요</strong>
               <p className="muted" style={{ fontSize: "0.76rem", margin: "4px 0 0" }}>
                 이 화면을 한 번 열어두면 데이터가 없는 곳에서도 그대로 볼 수 있어요.
-                {" "}마지막 동기화: {new Date(pack.generated_at).toLocaleString("ko-KR")}
               </p>
             </div>
           </div>

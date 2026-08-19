@@ -27,18 +27,11 @@ function asAlert(alert: unknown): TravelAlertOut | null {
   return a;
 }
 
-function Source({ alert, row }: { alert: TravelAlertOut; row: TravelAlertRow | null }) {
-  return (
-    <span className="travel-alert__source">
-      외교부 발령{row?.issued_on ? ` · ${row.issued_on}` : ""}
-      {alert.source_url && (
-        <>
-          {" · "}
-          <a href={alert.source_url} target="_blank" rel="noreferrer">확인</a>
-        </>
-      )}
-    </span>
-  );
+/** 출처만 밝힌다. 예전에는 외교부 원문으로 나가는 "확인" 링크와 발령일을 같이 붙였는데,
+ * 배지 한 줄에 정보가 세 겹으로 쌓여 경보 자체가 눈에 안 들어왔다. 어디서 온 값인지만
+ * 남기고 링크와 날짜는 뺀다. */
+function Source(_: { alert: TravelAlertOut; row: TravelAlertRow | null }) {
+  return <span className="travel-alert__source">외교부 발령</span>;
 }
 
 /**
