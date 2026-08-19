@@ -471,6 +471,32 @@ export interface InsurerPlanCoverageOut {
   collected_at: string | null;
 }
 
+export interface ComparisonMetricValueOut {
+  insurer_code: string;
+  value_text: string;
+}
+
+export interface ComparisonMetricOut {
+  metric_label: string;
+  unit: string;
+  values: ComparisonMetricValueOut[];
+}
+
+export interface ComparisonCategoryOut {
+  category: string;
+  metrics: ComparisonMetricOut[];
+}
+
+/** 6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
+export interface InsurerComparisonOut {
+  tier_rank: number;
+  tier_label: string;
+  categories: ComparisonCategoryOut[];
+  source: string | null;
+  source_note: string | null;
+  collected_at: string | null;
+}
+
 export interface AuthUserOut {
   user_id: number;
   nickname: string;
@@ -791,7 +817,9 @@ export const api = {
       activities?: string[];
       coverage_priority?: string[];
     },
-    profile?: { age?: number | null; sex?: string | null }
+    profile?: { age?: number | null; sex?: string | null },
+    /** 0=실속, 1=표준(기본), 2=고급 — insurer_tiers.TIER_LABELS와 같은 순서. */
+    planTier?: number
   ) => {
     const params = new URLSearchParams({ tier });
     if (profile?.age != null) params.set("age", String(profile.age));
@@ -801,8 +829,13 @@ export const api = {
     if (tripContext?.trip_days) params.set("trip_days", String(tripContext.trip_days));
     if (tripContext?.activities?.length) params.set("activities", tripContext.activities.join(","));
     if (tripContext?.coverage_priority?.length) params.set("coverage_priority", tripContext.coverage_priority.join(","));
+    if (planTier != null) params.set("plan_tier", String(planTier));
     return request<InsurerRankingOut>(`/insurers/ranking?${params.toString()}`);
   },
+
+  /** 6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
+  getInsurerComparisonMetrics: (planTier: number) =>
+    request<InsurerComparisonOut>(`/insurers/comparison-metrics?plan_tier=${planTier}`),
 
   getClause: (clauseId: number) => request<ClauseOut>(`/clauses/${clauseId}`),
 

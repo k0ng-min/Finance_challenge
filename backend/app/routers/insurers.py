@@ -5,16 +5,18 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import (
-    Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerPlanCoverage,
-    InsurerPremium, NonpaymentRate, PolicyVersion, Product, StandardClause,
+    Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerComparisonMetric,
+    InsurerPlanCoverage, InsurerPremium, NonpaymentRate, PolicyVersion, Product, StandardClause,
 )
 from app.schemas import (
-    ClauseOut, ClauseTermOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerStandardComparisonOut,
+    ClauseOut, ClauseTermOut, ComparisonCategoryOut, ComparisonMetricOut, ComparisonMetricValueOut,
+    InsurerComparisonOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerStandardComparisonOut,
     InsurerTierOut, InsurerRankingOut, InsurerPlanCoverageOut, InsurerPlanCoverageRowOut, InsurerPlanOut,
     InsurerPlansOut, InsurerPremiumCurveOut, InsurerPremiumOut, NonpaymentRateOut,
     NonpaymentRatesOut, PremiumComparisonOut, PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
 from app.services.insurer_ranking import list_tiers, rank_insurers
+from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
 
 router = APIRouter(prefix="/insurers", tags=["insurers"])
 
@@ -258,16 +260,81 @@ def get_insurer_plan_coverage(insurer_code: str, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/comparison-metrics", response_model=InsurerComparisonOut)
+def get_insurer_comparison_metrics(plan_tier: int = 1, db: Session = Depends(get_db)):
+    """6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합).
+
+    InsurerPlanCoverage(보험사별 원문 담보명)와 달리, 같은 항목끼리 미리 정리해 둔
+    metric_label로 6개사×등급 값이 한 행에 나란히 나온다. plan_tier(0=실속,
+    1=표준, 2=고급)로 등급 하나를 고르면 그 등급의 값만 돌려준다 — 사용자가
+    "기준 다시 선택" 옆의 등급 선택기로 이 파라미터를 바꾼다."""
+    if plan_tier not in (0, 1, 2):
+        raise HTTPException(status_code=400, detail="plan_tier는 0~2 사이여야 합니다.")
+
+    all_insurers = {i.insurer_id: i for i in db.query(Insurer).all()}
+    wanted_plan_by_insurer = {
+        insurer_id: plan_name_for_tier(insurer.code, plan_tier)
+        for insurer_id, insurer in all_insurers.items()
+    }
+
+    rows = (
+        db.query(InsurerComparisonMetric)
+        .order_by(
+            InsurerComparisonMetric.category_order.asc(),
+            InsurerComparisonMetric.sort_order.asc(),
+        )
+        .all()
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="보장비교 자료가 없습니다.")
+
+    categories: dict[str, list] = {}
+    category_order: dict[str, int] = {}
+    metrics_by_key: dict[tuple[str, str], dict] = {}
+    for r in rows:
+        if r.plan_name != wanted_plan_by_insurer.get(r.insurer_id):
+            continue
+        category_order[r.category] = r.category_order
+        key = (r.category, r.metric_label)
+        metric = metrics_by_key.get(key)
+        if metric is None:
+            metric = {"metric_label": r.metric_label, "unit": r.unit or "", "values": []}
+            metrics_by_key[key] = metric
+            categories.setdefault(r.category, []).append(metric)
+        insurer = all_insurers[r.insurer_id]
+        metric["values"].append(ComparisonMetricValueOut(insurer_code=insurer.code, value_text=r.value_text))
+
+    ordered_categories = [
+        ComparisonCategoryOut(
+            category=cat,
+            metrics=[ComparisonMetricOut(**m) for m in metrics],
+        )
+        for cat, metrics in sorted(categories.items(), key=lambda kv: category_order[kv[0]])
+    ]
+
+    first = rows[0]
+    return InsurerComparisonOut(
+        tier_rank=plan_tier, tier_label=TIER_LABELS[plan_tier],
+        categories=ordered_categories,
+        source=first.source, source_note=first.source_note, collected_at=first.collected_at,
+    )
+
+
 def _attach_published_premiums(
     db: Session,
     ranking: list[dict],
     age: int | None,
     sex: str | None,
+    tier_rank: int | None = None,
 ) -> None:
     """랭킹에 공시 원문 값과 근거 메타데이터만 붙인다.
 
     trip_days는 의도적으로 받지 않는다. 공시값을 일할 계산할 근거가 없고, 보험료는
     랭킹 점수에도 섞지 않는다.
+
+    tier_rank(0=실속, 1=표준, 2=고급)를 주면 보험사마다 그 등급의 가격을 붙인다 —
+    화면의 "기준 다시 선택" 옆 등급 선택기가 이걸 쓴다. 안 주면(None) 예전처럼
+    보험사마다 표준 등급(is_standard_tier) 하나만 붙인다.
     """
     if age is None or not sex:
         return
@@ -275,15 +342,33 @@ def _attach_published_premiums(
     if normalized_sex not in ("M", "F"):
         return
 
-    rows = (
-        db.query(InsurerPremium)
-        .filter(
-            InsurerPremium.age == age, InsurerPremium.sex == normalized_sex,
-            InsurerPremium.is_standard_tier.is_(True),
+    if tier_rank is not None:
+        by_id: dict[int, InsurerPremium] = {}
+        for insurer in db.query(Insurer).all():
+            plan_name = plan_name_for_tier(insurer.code, tier_rank)
+            if plan_name is None:
+                continue
+            row = (
+                db.query(InsurerPremium)
+                .filter(
+                    InsurerPremium.insurer_id == insurer.insurer_id,
+                    InsurerPremium.age == age, InsurerPremium.sex == normalized_sex,
+                    InsurerPremium.plan_name == plan_name,
+                )
+                .first()
+            )
+            if row:
+                by_id[insurer.insurer_id] = row
+    else:
+        rows = (
+            db.query(InsurerPremium)
+            .filter(
+                InsurerPremium.age == age, InsurerPremium.sex == normalized_sex,
+                InsurerPremium.is_standard_tier.is_(True),
+            )
+            .all()
         )
-        .all()
-    )
-    by_id = {r.insurer_id: r for r in rows}
+        by_id = {r.insurer_id: r for r in rows}
     all_insurers = db.query(Insurer).all()
     code_to_row = {
         insurer.code: by_id[insurer.insurer_id]
@@ -538,6 +623,7 @@ def get_insurer_ranking(
     coverage_priority: str | None = None,  # 쉼표로 구분된 문자열로 받는다
     age: int | None = None,
     sex: str | None = None,
+    plan_tier: int | None = None,  # 0=실속, 1=표준(기본), 2=고급 — insurer_tiers.TIER_LABELS
     db: Session = Depends(get_db),
 ):
     trip_context = None
@@ -556,7 +642,7 @@ def get_insurer_ranking(
 
     # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,
     # 보험료는 외부 비교공시 값이므로 순위 산정에도 섞지 않는다.
-    _attach_published_premiums(db, ranking, age, sex)
+    _attach_published_premiums(db, ranking, age, sex, plan_tier)
     _attach_plan_coverage_summary(db, ranking)
 
     return InsurerRankingOut(tier_code=tier, ranking=ranking)

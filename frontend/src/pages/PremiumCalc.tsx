@@ -308,11 +308,11 @@ export function PremiumCalc() {
         <div className="card" style={{ marginTop: 16 }}>
           <button
             type="button"
-            className="premium-row__detail-toggle"
-            style={{ marginTop: 0, fontSize: "0.85rem" }}
+            className="collapsible-header"
             onClick={() => setShowNonpayment((v) => !v)}
           >
-            {showNonpayment ? "보험금 부지급률(손보협회 공시) 접기 ⌃" : "보험금 부지급률(손보협회 공시) 보기 ⌄"}
+            <span className="section-label">보험금 부지급률(손보협회 공시)</span>
+            <span className="collapsible-header__chevron">{showNonpayment ? "⌃" : "⌄"}</span>
           </button>
           {showNonpayment && (
           <>

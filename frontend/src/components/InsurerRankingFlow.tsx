@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut, type OverlapReportOut } from "../api";
+import {
+  api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut, type OverlapReportOut,
+  type InsurerComparisonOut,
+} from "../api";
 import { useApp } from "../context/AppContext";
 import { PageHero } from "./PageHero";
 import { InsurerIncidentClauses } from "./InsurerIncidentClauses";
@@ -13,8 +16,12 @@ import { TravelAlertBadge } from "./TravelAlertBadge";
 import { NextStepCard } from "./NextStepCard";
 import { PlanCoverageBoard } from "./PlanCoverageBoard";
 import { Modal } from "./Modal";
+import { shortInsurerName } from "../data/insurers";
 
 type Phase = "tier" | "ranking" | "detail";
+
+// backend/app/services/insurer_tiers.py의 TIER_LABELS와 반드시 같은 순서로 둔다.
+const PLAN_TIER_LABELS = ["실속", "표준", "고급"];
 
 export function InsurerRankingFlow({
   result, initialTier, hasExternalPolicies, externalPoliciesReady,
@@ -51,12 +58,18 @@ export function InsurerRankingFlow({
   // 이 보험사의 어느 등급(플랜)을 염두에 두고 있는지 — 등록할 때 그대로 같이 저장한다.
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const normalizedSex = sex === "F" ? "F" : sex === "M" ? "M" : null;
+  // 순위 목록 전체에 적용하는 등급(실속/표준/고급) — "기준 다시 선택" 옆에서 고른다.
+  // 바뀌면 카드마다 그 등급의 가격으로 다시 불러온다.
+  const [planTierRank, setPlanTierRank] = useState(1);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparison, setComparison] = useState<InsurerComparisonOut | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   useEffect(() => {
     api.getInsurerTiers().then(setTiers).catch(() => {});
   }, []);
 
-  async function fetchRanking(tierCode: string) {
+  async function fetchRanking(tierCode: string, tierRank: number = planTierRank) {
     setLoading(true);
     try {
       const rp = result.risk_profile;
@@ -66,7 +79,7 @@ export function InsurerRankingFlow({
         trip_days: typeof rp.trip_days === "number" ? rp.trip_days : undefined,
         activities: Array.isArray(rp.activities) ? (rp.activities as string[]) : undefined,
         coverage_priority: Array.isArray(rp.coverage_priority) ? (rp.coverage_priority as string[]) : undefined,
-      }, { age, sex });
+      }, { age, sex }, tierRank);
       setRanking(res.ranking);
       setPhase("ranking");
     } finally {
@@ -78,6 +91,22 @@ export function InsurerRankingFlow({
     if (initialTier) fetchRanking(initialTier);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTier]);
+
+  // 등급을 바꾸면(순위 화면에서) 같은 기준으로 다시 불러온다 — 최초 진입 때는 건너뛴다
+  // (그때는 위 initialTier 이펙트나 pickTier가 이미 처리한다).
+  useEffect(() => {
+    if (phase === "ranking" && tier) fetchRanking(tier, planTierRank);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planTierRank]);
+
+  useEffect(() => {
+    if (!showComparison) return;
+    setComparisonLoading(true);
+    api.getInsurerComparisonMetrics(planTierRank)
+      .then(setComparison)
+      .catch(() => setComparison(null))
+      .finally(() => setComparisonLoading(false));
+  }, [showComparison, planTierRank]);
 
   async function pickTier(tierCode: string) {
     setTier(tierCode);
@@ -196,9 +225,82 @@ export function InsurerRankingFlow({
           title={"보험사 순위,\n이렇게 나왔어요"}
           subtitle="근거가 된 약관 조항 항목을 함께 표시했어요. 눌러서 담보 추천 결과를 확인하세요."
         />
-        <button type="button" className="btn-secondary" style={{ marginBottom: 10 }} onClick={() => setPhase("tier")}>
-          ← 기준 다시 선택
+        <div className="rank-toolbar">
+          <button type="button" className="btn-secondary" onClick={() => setPhase("tier")}>
+            ← 기준 다시 선택
+          </button>
+          <div className="rank-toolbar__tiers">
+            {PLAN_TIER_LABELS.map((label, rank) => (
+              <button
+                key={label}
+                type="button"
+                className={`rank-toolbar__tier${planTierRank === rank ? " rank-toolbar__tier--on" : ""}`}
+                onClick={() => setPlanTierRank(rank)}
+                disabled={loading}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="collapsible-header"
+          style={{ marginBottom: 10 }}
+          onClick={() => setShowComparison((v) => !v)}
+        >
+          <span className="section-label">
+            {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교
+          </span>
+          <span className="collapsible-header__chevron">{showComparison ? "⌃" : "⌄"}</span>
         </button>
+        {showComparison && (
+          <div className="card" style={{ marginBottom: 14 }}>
+            {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
+            {!comparisonLoading && comparison && (
+              <>
+                {comparison.categories.map((cat) => (
+                  <div key={cat.category} className="compare-category">
+                    <p className="compare-category__title">{cat.category}</p>
+                    <div className="plan-board__scroll" style={{ maxHeight: 220 }}>
+                      <table className="coverage-table compare-table">
+                        <thead>
+                          <tr>
+                            <th>담보</th>
+                            {ranking.map((r) => (
+                              <th key={r.insurer_code}>{shortInsurerName(r.insurer_code, r.insurer_name)}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cat.metrics.map((m) => {
+                            const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+                            return (
+                              <tr key={m.metric_label}>
+                                <td>{m.metric_label}</td>
+                                {ranking.map((r) => {
+                                  const raw = valueByCode.get(r.insurer_code);
+                                  const display = raw == null
+                                    ? "-"
+                                    : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
+                                  return <td key={r.insurer_code}>{display}</td>;
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+                <p className="muted plan-board__source">
+                  {comparison.source}에서 직접 조회{comparison.collected_at ? ` (${comparison.collected_at})` : ""} — 실제
+                  가입 시 금액은 달라질 수 있어요.
+                </p>
+              </>
+            )}
+          </div>
+        )}
         <a
           className="price-link"
           href="https://www.e-insmarket.or.kr/m/tripIns/tripInsList.knia?prdtSmlClsCd=H001"

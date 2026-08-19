@@ -226,6 +226,35 @@ class InsurerPlanCoverageOut(BaseModel):
     collected_at: Optional[dt.date] = None
 
 
+class ComparisonMetricValueOut(BaseModel):
+    insurer_code: str
+    value_text: str
+
+
+class ComparisonMetricOut(BaseModel):
+    metric_label: str
+    unit: str
+    values: list[ComparisonMetricValueOut]
+
+
+class ComparisonCategoryOut(BaseModel):
+    category: str
+    metrics: list[ComparisonMetricOut]
+
+
+class InsurerComparisonOut(BaseModel):
+    """6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준.
+
+    InsurerPlanCoverageOut과 다른 점: 그건 보험사 하나의 원문 담보명 그대로를 보여주고,
+    이건 6개사를 사람이 재정리한 공통 항목(metric_label)으로 나란히 비교한다."""
+    tier_rank: int
+    tier_label: str
+    categories: list[ComparisonCategoryOut]
+    source: Optional[str] = None
+    source_note: Optional[str] = None
+    collected_at: Optional[dt.date] = None
+
+
 class UserPolicyOut(BaseModel):
     user_policy_id: int
     insurer_name_raw: str

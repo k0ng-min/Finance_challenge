@@ -824,6 +824,33 @@ button { cursor: pointer; font-family: inherit; }
    (보험료 공시 1일 기준 안내). 순위 목록 바로 위에 둔다. */
 .rank-premium-note { margin: -2px 0 12px; font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
 
+/* "← 기준 다시 선택" 옆에 붙는 실속/표준/고급 등급 선택기 — 순위 목록 전체 가격이
+   이 등급 기준으로 다시 계산된다. */
+.rank-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.rank-toolbar__tiers { display: flex; gap: 4px; background: var(--cream-deep); border-radius: 999px; padding: 3px; }
+.rank-toolbar__tier {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.rank-toolbar__tier--on { background: var(--card-bg); color: var(--primary-dark); box-shadow: 0 2px 6px rgba(var(--shadow-tint), 0.12); }
+
+/* 6개사 보장금액 비교표(InsurerComparisonMetric) — 카테고리마다 표를 나눠서 한 번에
+   너무 길어지지 않게 한다. */
+.compare-category { margin-bottom: 16px; }
+.compare-category:last-child { margin-bottom: 0; }
+.compare-category__title { font-size: 0.8rem; font-weight: 800; color: var(--heading); margin-bottom: 6px; }
+.compare-table { font-size: 0.78rem; }
+.compare-table th:first-child, .compare-table td:first-child { position: sticky; left: 0; background: var(--card-bg); }
+.compare-table td, .compare-table th { white-space: nowrap; }
+.compare-table td:first-child, .compare-table th:first-child { white-space: normal; min-width: 110px; }
+
 .rank-card__head { display: flex; align-items: center; gap: 11px; }
 .rank-badge {
   width: 30px;
@@ -1521,20 +1548,53 @@ button { cursor: pointer; font-family: inherit; }
 .muted { color: var(--muted); font-size: 0.88rem; }
 
 .coverage-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; color: var(--text); }
-.coverage-table th, .coverage-table td { text-align: left; padding: 9px 6px; border-bottom: 1px solid var(--border); }
+.coverage-table th, .coverage-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); line-height: 1.4; }
+.coverage-table th { font-size: 0.74rem; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+.coverage-table tbody tr:last-child td { border-bottom: none; }
 .coverage-table select { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 8px; font-family: inherit; background: var(--ivory); color: var(--text); }
 .match-ok { color: #4a9d7e; font-weight: 700; }
 .match-none { color: #c07a3d; }
 
 /* --- 보험사 등급(플랜)·담보한도 카드(PlanCoverageBoard) ---
-   담보 항목이 많은 보험사는 30줄 가까이 되므로, 화면 전체를 늘리는 대신 카드 안에서만
+   등급은 항상 3개뿐이라 flex-wrap 칩 대신 3칸 그리드로 가지런히 맞춘다 — 이름 길이가
+   보험사마다 달라(예: "실속형" vs "고급플랜") flex로는 줄바꿈이 들쭉날쭉했다. */
+.plan-board__tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.plan-board__tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--cream-deep);
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.plan-board__tier strong { font-size: 0.84rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.plan-board__tier span { font-size: 0.72rem; color: var(--muted); font-weight: 700; }
+.plan-board__tier--on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.plan-board__tier--on strong { color: var(--primary-dark); }
+.plan-board__tier--on span { color: var(--primary-dark); }
+
+/* 담보 항목이 많은 보험사는 30줄 가까이 되므로, 화면 전체를 늘리는 대신 카드 안에서만
    세로 스크롤되게 높이를 고정한다. */
 .plan-board__scroll {
   max-height: 260px;
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 0 10px;
+  padding: 0 12px;
 }
 .plan-board__scroll .coverage-table { margin-top: 0; }
 .plan-board__scroll .coverage-table th {
@@ -1543,6 +1603,8 @@ button { cursor: pointer; font-family: inherit; }
   background: var(--card-bg);
   z-index: 1;
 }
+.plan-board__scroll .coverage-table td:last-child,
+.plan-board__scroll .coverage-table th:last-child { text-align: right; white-space: nowrap; }
 .plan-board__source { font-size: 0.74rem; margin-top: 8px; line-height: 1.5; }
 .plan-board--compact .plan-board__scroll { max-height: 160px; }
 
@@ -2221,6 +2283,30 @@ button { cursor: pointer; font-family: inherit; }
   align-items: center;
   gap: 10px;
   width: 100%;
+}
+.collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.collapsible-header__chevron {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream-deep);
+  border-radius: 50%;
+  font-size: 0.86rem;
+  color: var(--muted);
 }
 .premium-row__menu-btn {
   flex-shrink: 0;

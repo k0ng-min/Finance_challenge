@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, type InsurerPlanCoverageOut, type InsurerPlansOut } from "../api";
 
 /**
- * 보험사 한 곳의 등급(플랜)을 고르고, 그 등급의 담보 가입금액표를 스크롤로 훑어보는 카드.
+ * 보험사 한 곳의 등급(플랜)을 고르고, 그 등급의 담보 보장금액표를 스크롤로 훑어보는 카드.
  *
  * 순위 상세(가입 전 등급 비교) · 보험 등록(어느 등급인지 기록) · 사고 접수(청구 전 한도
  * 참고) · 보험료 비교 세부설정, 네 곳에서 같은 컴포넌트를 그대로 쓴다 — 등급·담보한도
@@ -77,17 +77,17 @@ export function PlanCoverageBoard({
   return (
     <div className={`plan-board${compact ? " plan-board--compact" : ""}`}>
       {planNames.length > 0 && (
-        <div className="calc-chips" style={{ marginBottom: 10 }}>
+        <div className="plan-board__tiers">
           {planNames.map((name) => (
             <button
               key={name}
               type="button"
-              className={`premium-chip${selectedPlan === name ? " premium-chip--on" : ""}`}
+              className={`plan-board__tier${selectedPlan === name ? " plan-board__tier--on" : ""}`}
               onClick={() => onSelectPlan(name)}
             >
-              {name}
+              <strong>{name}</strong>
               {priceByPlan.has(name) && (
-                <> · {priceByPlan.get(name)!.toLocaleString()}원{plans?.premium_period_days ?? 1}일</>
+                <span>{priceByPlan.get(name)!.toLocaleString()}원/{plans?.premium_period_days ?? 1}일</span>
               )}
             </button>
           ))}
@@ -101,7 +101,7 @@ export function PlanCoverageBoard({
               <thead>
                 <tr>
                   <th>담보</th>
-                  <th>가입금액</th>
+                  <th>보장금액</th>
                 </tr>
               </thead>
               <tbody>
