@@ -220,8 +220,43 @@ def _ensure_question_bank():
 
 _ensure_doc_requirements()
 _ensure_travel_alerts()
+def _ensure_actual_premiums():
+    """실제 조회 보험료를 시트에 있는 보험사만큼 채워 둔다.
+
+    "빈 테이블이면 채운다"로는 부족하다 — 보험사가 하나씩 늘어나는 자료라서(메리츠가
+    나중에 들어왔다), 이미 다른 보험사 행이 있는 DB에는 새 보험사가 영영 안 들어간다.
+    시트에 있는데 DB에 한 행도 없는 보험사가 하나라도 있으면 다시 적재한다."""
+    from app.database import SessionLocal
+    from app.models.kb import Insurer, InsurerPremium
+    from app.seed_premiums_actual import DEFAULT_PATH, _SHEET_CONFIG, run as seed_premiums
+
+    if not DEFAULT_PATH.exists():
+        return
+    db = SessionLocal()
+    try:
+        have = {
+            code for (code,) in db.query(Insurer.code)
+            .join(InsurerPremium, InsurerPremium.insurer_id == Insurer.insurer_id)
+            .distinct()
+        }
+        missing = {code for code, _vertical, _std in _SHEET_CONFIG.values()} - have
+        if not missing:
+            return
+        print(f"[startup] 보험료 자료가 없는 보험사: {', '.join(sorted(missing))} — 다시 적재합니다")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[startup] 보험료 적재 여부를 확인하지 못했습니다: {exc}")
+        return
+    finally:
+        db.close()
+    try:
+        seed_premiums()
+    except Exception as exc:  # noqa: BLE001 — 어떤 이유든 앱 기동을 막지 않는다
+        print(f"[startup] 보험료 적재를 건너뜁니다: {exc}")
+
+
 _ensure_onsite_and_simulation()
 _ensure_question_bank()
+_ensure_actual_premiums()
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 

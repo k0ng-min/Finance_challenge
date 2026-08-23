@@ -54,6 +54,10 @@ _SHEET_CONFIG: dict[str, tuple[str, bool, str]] = {
     "현대해상": ("HYUNDAI", False, "표준형"),
     "kb": ("KB", False, "표준형"),
     "삼성": ("SAMSUNG", False, "표준플랜"),
+    # 메리츠 시트에는 실속플랜·보장이 큰 플랜 두 등급만 있다(추천플랜은 아직 조회 전).
+    # 대표 등급은 실제 표준인 추천플랜으로 두고, 값이 없으면 그냥 비워 둔다 —
+    # 값이 있는 다른 등급을 대표로 앉히면 대표가격이 실제보다 싸거나 비싸 보인다.
+    "메리츠": ("MERITZ", False, "추천플랜"),
 }
 
 #: 가격표 시트의 등급명 열 헤더가 담보 가입금액표(InsurerPlanCoverage)와 다르게 적힌
@@ -63,6 +67,9 @@ _SHEET_CONFIG: dict[str, tuple[str, bool, str]] = {
 #: 이어 붙여 써야 하므로(PlanCoverageBoard) 여기서 하나로 통일한다.
 _PLAN_NAME_ALIASES: dict[str, dict[str, str]] = {
     "HYUNDAI": {"실속": "실속형", "표준": "표준형", "고급": "고급형"},
+    # 가격 시트는 "보장이 큰 플랜"(띄어쓰기), 보장금액표·등급 매핑은 "보장이큰플랜"이다.
+    # 여기서 맞추지 않으면 등급으로 가격을 못 찾아 메리츠만 조용히 값이 안 뜬다.
+    "MERITZ": {"보장이 큰 플랜": "보장이큰플랜"},
 }
 
 #: 조회 조건 — 보험사마다 산출 전제가 달라 각각 남긴다(근거 없이 숫자만 보여주지 않는다).
@@ -71,6 +78,7 @@ _BASIS: dict[str, str] = {
     "HYUNDAI": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입",
     "KB": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(만19세~만90세 가입 가능)",
     "SAMSUNG": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(항공지연 지수형 특약 2종 기본 포함)",
+    "MERITZ": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(만19세~만79세 조회 가능)",
 }
 _SOURCE = "보험사 다이렉트 홈페이지 보험료 계산기(직접 조회)"
 _COLLECTED_AT = date(2026, 8, 17)
@@ -122,7 +130,10 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
 
     _ensure_new_schema()
 
-    wb = openpyxl.load_workbook(path, data_only=True)
+    # read_only로 연다 — 엑셀에서 다시 저장된 파일은 서식 정의가 어긋나 있을 때가
+    # 있는데(실제로 메리츠 시트가 추가된 판본이 그랬다), 일반 모드는 그 서식을 읽다가
+    # 통째로 실패한다. 값만 읽으면 되므로 서식을 건너뛴다.
+    wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
     db = SessionLocal()
     try:
         code_to_id = {i.code: i.insurer_id for i in db.query(Insurer).all()}

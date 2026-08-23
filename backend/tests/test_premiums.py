@@ -51,3 +51,17 @@ def test_ranking_receives_only_published_premium_and_metadata(db_session):
     assert item["premium_source"] == "보험다모아"
     assert "premium_total" not in item
     assert "premium_days" not in item
+
+
+def test_가격표_등급명이_등급_매핑과_어긋나지_않는다():
+    """가격 시트의 등급명과 실속/표준/고급 매핑이 어긋나면, 등급으로 가격을 못 찾아
+    그 보험사만 조용히 값이 안 뜬다. 실제로 메리츠가 "보장이 큰 플랜"(띄어쓰기)과
+    "보장이큰플랜" 사이에서 이렇게 어긋날 뻔했다."""
+    from app.seed_premiums_actual import _PLAN_NAME_ALIASES, _SHEET_CONFIG
+    from app.services.insurer_tiers import TIER_PLAN_NAMES
+
+    for code, _vertical, standard_plan in _SHEET_CONFIG.values():
+        known = set(TIER_PLAN_NAMES[code])
+        aliased = set(_PLAN_NAME_ALIASES.get(code, {}).values())
+        assert aliased <= known, f"{code}: 별칭이 등급 매핑에 없는 이름을 가리킨다 — {aliased - known}"
+        assert standard_plan in known, f"{code}: 대표 등급 {standard_plan}이 등급 매핑에 없다"
