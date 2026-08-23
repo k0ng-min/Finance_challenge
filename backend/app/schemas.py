@@ -531,6 +531,18 @@ class RankingDimensionOut(BaseModel):
     evidence: list[RankingEvidenceOut] = []
 
 
+class RankingAxisOut(BaseModel):
+    """이번 순위에서 이 축이 몇 점을 얼마나 기여했는지. "왜 이 순서인지"를 화면에서
+    그대로 되짚을 수 있게 점수·비중·기여도를 다 내려보낸다."""
+    code: str          # amount | clause | price | overlap | activity
+    label: str
+    score: float       # 0~1
+    weight: float      # 이 계산에 실제로 쓰인 비중(자료 없는 축을 빼고 재정규화한 값)
+    contribution: float  # score × weight × 100
+    available: bool    # False면 자료가 없어 이 축을 빼고 나머지로 100%를 다시 맞췄다
+    detail: str
+
+
 class InsurerRankOut(BaseModel):
     rank: int
     insurer_code: str
@@ -552,6 +564,9 @@ class InsurerRankOut(BaseModel):
     premium_source_url: Optional[str] = None
     premium_collected_at: Optional[dt.date] = None
     premium_note: Optional[str] = None
+    # 가중치 점수 모델의 결과. plan_tier를 함께 받았을 때만 채워진다.
+    total_score: Optional[float] = None
+    axes: list[RankingAxisOut] = []
     # 등급별 담보 가입금액표(InsurerPlanCoverage)를 볼 수 있는 보험사면 그 담보 항목 수.
     # None이면 아직 자료가 없다는 뜻 — 순위 점수에는 섞이지 않는다(published_premium과 동일 원칙).
     plan_coverage_item_count: Optional[int] = None

@@ -43,6 +43,15 @@ from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
 
 logger = logging.getLogger(__name__)
 
+# 방금 계산에 쓰인 보험사별 원점수. score_ranking이 정렬된 순위를 돌려주는 것과 별개로,
+# 가중치 점수 모델과 섞으려면 점수 자체가 필요하다(순위만으로는 얼마나 앞서는지를 못 쓴다).
+_last_scores: dict[str, dict] = {}
+
+
+def last_scores() -> dict[str, dict]:
+    """직전 score_ranking 호출이 받은 보험사별 점수·이유. 실패했으면 빈 dict."""
+    return dict(_last_scores)
+
 # 같은 입력에는 모델을 다시 부르지 않는다. 등급 버튼(실속/표준/고급)은 사용자가 화면에서
 # 여러 번 왔다갔다 누르는 자리라, 누를 때마다 수 초씩 기다리면 등급 선택기 자체가 못 쓸
 # 물건이 된다. 실패는 담지 않는다 — 일시적 장애를 캐시하면 그 뒤로 영영 규칙 기반
@@ -54,6 +63,7 @@ _cache: "OrderedDict[str, list[dict]]" = OrderedDict()
 def clear_cache() -> None:
     """캐시를 비운다. 약관 KB나 보장금액을 다시 적재했을 때, 그리고 테스트에서 쓴다."""
     _cache.clear()
+    _last_scores.clear()
 
 
 def _cache_key(
@@ -287,6 +297,11 @@ def score_ranking(
         if set(by_code.keys()) != valid_codes:
             logger.warning("Gemini 순위 점수 검증 실패(보험사 코드 불일치) — 규칙 기반 순위 유지")
             return None
+        _last_scores.clear()
+        _last_scores.update({
+            code: {"score": item.score, "reasons": list(item.reasons or [])}
+            for code, item in by_code.items()
+        })
 
         # 점수 내림차순, 동점이면 보험사 코드순 — 같은 입력이면 항상 같은 순서가 나온다.
         ordered = sorted(ranking, key=lambda r: (-by_code[r["insurer_code"]].score, r["insurer_code"]))

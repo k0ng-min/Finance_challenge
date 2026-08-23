@@ -3394,3 +3394,50 @@ button { cursor: pointer; font-family: inherit; }
   mask-image: linear-gradient(180deg, transparent 0, #000 26%, #000 74%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 26%, #000 74%, transparent 100%);
 }
+
+/* --- 순위를 만든 다섯 축의 기여도 ---
+   "왜 이 순서인지"를 숫자로 되짚을 수 있게, 축마다 점수 막대와 이번 총점에 넣은 몫을
+   같이 보여준다. 자료가 없어 계산에서 빠진 축은 흐리게 두고 그 사실을 그대로 적는다. */
+.rank-axes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  background: var(--ivory);
+  border-radius: var(--radius-md);
+}
+.rank-axis {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 72px 56px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.74rem;
+}
+.rank-axis__label {
+  color: var(--muted);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-axis__track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+.rank-axis__track i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+}
+.rank-axis__value {
+  text-align: right;
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-variant-numeric: tabular-nums;
+}
+.rank-axis--na { opacity: 0.5; }
+.rank-axis--na .rank-axis__value { color: var(--muted); font-weight: 700; font-size: 0.68rem; }

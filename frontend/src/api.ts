@@ -389,6 +389,21 @@ export interface RankingDimensionOut {
   evidence: RankingEvidenceOut[];
 }
 
+export interface RankingAxisOut {
+  /** amount | clause | price | overlap | activity */
+  code: string;
+  label: string;
+  /** 0~1 */
+  score: number;
+  /** 자료 없는 축을 빼고 재정규화한 뒤 실제로 쓰인 비중 */
+  weight: number;
+  /** score × weight × 100 — 이번 총점에 이 축이 넣은 몫 */
+  contribution: number;
+  /** false면 자료가 없어 이 축을 빼고 나머지로 100%를 다시 맞췄다 */
+  available: boolean;
+  detail: string;
+}
+
 export interface InsurerRankOut {
   rank: number;
   insurer_code: string;
@@ -409,6 +424,10 @@ export interface InsurerRankOut {
   premium_source_url: string | null;
   premium_collected_at: string | null;
   premium_note: string | null;
+  /** 가중치 점수 모델의 총점(0~100). plan_tier를 함께 넘겼을 때만 채워진다. */
+  total_score: number | null;
+  /** 총점을 만든 다섯 축의 점수·비중·기여도. */
+  axes: RankingAxisOut[];
   /** 등급별 담보 가입금액표를 볼 수 있는 보험사면 그 담보 항목 수(순위 점수에는 섞이지 않는다). */
   plan_coverage_item_count: number | null;
 }
@@ -830,8 +849,10 @@ export const api = {
       trip_days?: number;
       activities?: string[];
       coverage_priority?: string[];
+      companion_type?: string | null;
+      rental_car?: boolean;
     },
-    profile?: { age?: number | null; sex?: string | null },
+    profile?: { age?: number | null; sex?: string | null; user_id?: number | null },
     /** 0=실속, 1=표준(기본), 2=고급 — insurer_tiers.TIER_LABELS와 같은 순서. */
     planTier?: number
   ) => {
@@ -843,6 +864,10 @@ export const api = {
     if (tripContext?.trip_days) params.set("trip_days", String(tripContext.trip_days));
     if (tripContext?.activities?.length) params.set("activities", tripContext.activities.join(","));
     if (tripContext?.coverage_priority?.length) params.set("coverage_priority", tripContext.coverage_priority.join(","));
+    if (tripContext?.companion_type) params.set("companion_type", tripContext.companion_type);
+    if (tripContext?.rental_car) params.set("rental_car", "true");
+    // 등록해 둔 기존보험을 순위(겹침 축)에 반영하기 위해 넘긴다.
+    if (profile?.user_id != null) params.set("user_id", String(profile.user_id));
     if (planTier != null) params.set("plan_tier", String(planTier));
     return request<InsurerRankingOut>(`/insurers/ranking?${params.toString()}`);
   },

@@ -79,7 +79,9 @@ export function InsurerRankingFlow({
         trip_days: typeof rp.trip_days === "number" ? rp.trip_days : undefined,
         activities: Array.isArray(rp.activities) ? (rp.activities as string[]) : undefined,
         coverage_priority: Array.isArray(rp.coverage_priority) ? (rp.coverage_priority as string[]) : undefined,
-      }, { age, sex }, tierRank);
+        companion_type: typeof rp.companion_type === "string" ? rp.companion_type : undefined,
+        rental_car: rp.rental_car === true,
+      }, { age, sex, user_id: userId }, tierRank);
       setRanking(res.ranking);
       setPhase("ranking");
     } finally {
@@ -357,6 +359,28 @@ export function InsurerRankingFlow({
                 </span>
                 <span className="rank-card__arrow">›</span>
               </div>
+
+              {/* 순위를 만든 다섯 축의 기여도. "왜 이 순서인지"를 숫자로 되짚을 수 있게
+                  점수·비중·기여도를 그대로 보여준다. 자료가 없어 빠진 축은 그 사실을 밝힌다. */}
+              {r.axes.length > 0 && (
+                <div className="rank-axes">
+                  {r.axes.map((axis) => (
+                    <div
+                      className={`rank-axis${axis.available ? "" : " rank-axis--na"}`}
+                      key={axis.code}
+                      title={axis.detail}
+                    >
+                      <span className="rank-axis__label">{axis.label}</span>
+                      <span className="rank-axis__track">
+                        <i style={{ width: `${Math.round(axis.score * 100)}%` }} />
+                      </span>
+                      <span className="rank-axis__value">
+                        {axis.available ? `+${axis.contribution.toFixed(1)}` : "자료 없음"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* 네 축 모두 "채워질수록 유리"하게 계산된 값이라, 같은 방향의 게이지로 나란히 읽힌다. */}
               <div className="rank-gauges">

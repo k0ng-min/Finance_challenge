@@ -16,7 +16,9 @@ from app.schemas import (
     NonpaymentRatesOut, PremiumComparisonOut, PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
 from app.services.insurer_ranking import TIERS, list_tiers, rank_insurers
-from app.services.insurer_ranking_score_gemini import score_ranking
+from app.services.insurer_ranking_score_gemini import last_scores, score_ranking
+from app.services import ranking_score
+from app.models.external import ExternalPolicy
 from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
 
 router = APIRouter(prefix="/insurers", tags=["insurers"])
@@ -639,6 +641,14 @@ def get_insurer_standard_comparison(
     )
 
 
+def _external_policy_kinds(db: Session, user_id: int | None) -> list[str]:
+    """이 사용자가 등록해 둔 기존보험 종류. 없으면 빈 목록 — 겹침 축을 중립으로 둔다."""
+    if user_id is None:
+        return []
+    rows = db.query(ExternalPolicy.kind).filter(ExternalPolicy.user_id == user_id).all()
+    return sorted({row[0] for row in rows if row[0]})
+
+
 @router.get("/ranking", response_model=InsurerRankingOut)
 @limiter.limit("20/minute")
 def get_insurer_ranking(
@@ -652,28 +662,48 @@ def get_insurer_ranking(
     age: int | None = None,
     sex: str | None = None,
     plan_tier: int | None = None,  # 0=실속, 1=표준(기본), 2=고급 — insurer_tiers.TIER_LABELS
+    # 등록해 둔 기존보험을 순위에 반영하기 위한 것. 없으면 겹침 축을 중립으로 둔다.
+    user_id: int | None = None,
+    companion_type: str | None = None,
+    rental_car: bool = False,
     db: Session = Depends(get_db),
 ):
     trip_context = None
-    if destination or risk_level or trip_days or activities or coverage_priority:
+    if destination or risk_level or trip_days or activities or coverage_priority or companion_type or rental_car:
         trip_context = {
             "destination": destination,
             "risk_level": risk_level,
             "trip_days": trip_days,
             "activities": [a.strip() for a in activities.split(",") if a.strip()] if activities else [],
             "coverage_priority": [p.strip() for p in coverage_priority.split(",") if p.strip()] if coverage_priority else [],
+            "companion_type": companion_type,
+            "rental_car": rental_car,
         }
     try:
         ranking = rank_insurers(db, tier, trip_context)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # 규칙 기반 순위는 약관 근거 네 축만 보므로 등급(실속/표준/고급)을 바꿔도 결과가 같다.
-    # 등급 사이에서 실제로 갈리는 건 보장금액이라, 그 등급의 실제 보장금액표까지 넣고
-    # Gemini에게 점수를 매기게 해서 다시 정렬한다. 실패하면 규칙 기반 순위를 그대로 쓴다.
+    # 규칙 기반 순위는 약관 근거 네 축만 보므로 사용자가 무엇을 골랐든, 등급을 무엇으로
+    # 바꾸든 결과가 같다. 여행 준비에서 고른 것과 등급별 보장금액·보험료를 다섯 축으로
+    # 점수화해 순위를 다시 매기고(ranking_score), 거기에 Gemini 점수를 8:2로 섞는다.
+    # Gemini가 실패해도 가중치 점수만으로 순위가 그대로 나온다.
     if plan_tier is not None:
+        external_kinds = _external_policy_kinds(db, user_id)
+        weighted = ranking_score.score_insurers(
+            db,
+            tier_code=tier,
+            plan_tier=plan_tier,
+            trip_context=trip_context,
+            ranking=ranking,
+            age=age,
+            sex=sex,
+            external_kinds=external_kinds,
+        )
+
         tier_meta = TIERS.get(tier, {})
-        scored = score_ranking(
+        # Gemini는 순서를 정하지 않는다 — 점수와 이유 문장만 받아 쓴다.
+        score_ranking(
             db,
             tier_code=tier,
             tier_label=tier_meta.get("label", tier),
@@ -682,8 +712,28 @@ def get_insurer_ranking(
             trip_context=trip_context,
             ranking=ranking,
         )
-        if scored:
-            ranking = scored
+        gemini = last_scores()
+
+        by_code = {entry["insurer_code"]: entry for entry in ranking}
+        merged = []
+        for scored in weighted:
+            entry = dict(by_code[scored.insurer_code])
+            gem = gemini.get(scored.insurer_code)
+            entry["total_score"] = round(
+                ranking_score.blend(weighted=scored.total, gemini=gem["score"] if gem else None), 2
+            )
+            entry["axes"] = [vars(axis) for axis in scored.axes]
+            if gem and gem.get("reasons"):
+                entry["reasons"] = gem["reasons"]
+            entry["comparison_basis"] = (
+                f"{tier} 기준 · {TIER_LABELS[plan_tier]} 등급 · 여행 준비 선택 반영"
+            )
+            merged.append(entry)
+
+        merged.sort(key=lambda e: (-e["total_score"], e["insurer_code"]))
+        for index, entry in enumerate(merged, start=1):
+            entry["rank"] = index
+        ranking = merged
 
     # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,
     # 보험료는 외부 비교공시 값이므로 순위 산정에도 섞지 않는다.
