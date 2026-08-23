@@ -641,6 +641,23 @@ def get_insurer_standard_comparison(
     )
 
 
+def _drop_insurers_without_plan(
+    ranking: list[dict], plan_tier: int,
+) -> tuple[list[dict], list[str]]:
+    """그 등급 상품 자체가 없는 보험사를 순위에서 뺀다.
+
+    "자료가 아직 없다"와 "그 등급을 팔지 않는다"는 다르다. 앞은 자료가 채워지면
+    해결되지만, 뒤는 애초에 비교 대상이 아니다. 남겨두면 다른 축 점수만으로 순위가
+    매겨져서 팔지도 않는 등급의 보험사가 목록에 끼어든다(예: 메리츠 고급)."""
+    kept, dropped = [], []
+    for item in ranking:
+        if plan_name_for_tier(item["insurer_code"], plan_tier) is None:
+            dropped.append(item.get("insurer_name") or item["insurer_code"])
+        else:
+            kept.append(item)
+    return kept, dropped
+
+
 def _external_policy_kinds(db: Session, user_id: int | None) -> list[str]:
     """이 사용자가 등록해 둔 기존보험 종류. 없으면 빈 목록 — 겹침 축을 중립으로 둔다."""
     if user_id is None:
@@ -688,7 +705,14 @@ def get_insurer_ranking(
     # 바꾸든 결과가 같다. 여행 준비에서 고른 것과 등급별 보장금액·보험료를 다섯 축으로
     # 점수화해 순위를 다시 매기고(ranking_score), 거기에 Gemini 점수를 8:2로 섞는다.
     # Gemini가 실패해도 가중치 점수만으로 순위가 그대로 나온다.
+    excluded_note = None
     if plan_tier is not None:
+        ranking, dropped = _drop_insurers_without_plan(ranking, plan_tier)
+        if dropped:
+            excluded_note = (
+                f"{', '.join(dropped)}는 {TIER_LABELS[plan_tier]} 등급 상품이 없어 "
+                "이번 비교에서 빠졌어요."
+            )
         external_kinds = _external_policy_kinds(db, user_id)
         weighted = ranking_score.score_insurers(
             db,
@@ -740,4 +764,4 @@ def get_insurer_ranking(
     _attach_published_premiums(db, ranking, age, sex, plan_tier)
     _attach_plan_coverage_summary(db, ranking)
 
-    return InsurerRankingOut(tier_code=tier, ranking=ranking)
+    return InsurerRankingOut(tier_code=tier, ranking=ranking, excluded_note=excluded_note)

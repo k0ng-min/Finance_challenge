@@ -45,6 +45,9 @@ export function InsurerRankingFlow({
   const [tiers, setTiers] = useState<InsurerTierOut[]>([]);
   const [tier, setTier] = useState<string | null>(initialTier ?? null);
   const [ranking, setRanking] = useState<InsurerRankOut[]>([]);
+  // 그 등급 상품이 없어 비교에서 빠진 보험사 안내. 아무 말 없이 목록에서 사라지면
+  // 사용자는 자료가 누락된 걸로 읽는다.
+  const [excludedNote, setExcludedNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(!!initialTier);
   const [selected, setSelected] = useState<InsurerRankOut | null>(null);
   const [registering, setRegistering] = useState(false);
@@ -84,6 +87,7 @@ export function InsurerRankingFlow({
         rental_car: rp.rental_car === true,
       }, { age, sex, user_id: userId }, tierRank);
       setRanking(res.ranking);
+      setExcludedNote(res.excluded_note);
       setPhase("ranking");
     } finally {
       setLoading(false);
@@ -413,6 +417,7 @@ export function InsurerRankingFlow({
 
         {/* 금액에 대한 단서는 카드를 다 읽은 뒤 확인하는 각주라, 목록 위가 아니라 아래에 둔다 —
             위에 있으면 순위를 보기도 전에 회색 글씨부터 읽게 된다. */}
+        {excludedNote && <p className="rank-excluded-note">{excludedNote}</p>}
         <p className="rank-premium-note">
           카드의 금액은 각 보험사 다이렉트 사이트에서 직접 조회한 {ranking[0]?.premium_period_days ?? 1}일 기준
           실제 가격이며, 선택한 여행일수로 환산한 견적이 아닙니다.

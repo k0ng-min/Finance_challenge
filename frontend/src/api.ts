@@ -439,6 +439,8 @@ export interface InsurerRankOut {
 export interface InsurerRankingOut {
   tier_code: string;
   ranking: InsurerRankOut[];
+  /** 그 등급 상품이 없어 비교에서 빠진 보험사가 있으면 그 사실을 알리는 한 줄. */
+  excluded_note: string | null;
 }
 
 export interface InsurerPremiumOut {

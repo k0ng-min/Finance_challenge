@@ -589,6 +589,9 @@ class InsurerRankOut(BaseModel):
 class InsurerRankingOut(BaseModel):
     tier_code: str
     ranking: list[InsurerRankOut]
+    #: 그 등급 상품이 없어 비교에서 빠진 보험사가 있으면 그 사실을 한 줄로 알린다 —
+    #: 아무 말 없이 목록에서 사라지면 사용자는 자료가 누락된 걸로 읽는다.
+    excluded_note: Optional[str] = None
 
 
 class ExternalPolicyLinkItem(BaseModel):

@@ -65,3 +65,32 @@ def test_가격표_등급명이_등급_매핑과_어긋나지_않는다():
         aliased = set(_PLAN_NAME_ALIASES.get(code, {}).values())
         assert aliased <= known, f"{code}: 별칭이 등급 매핑에 없는 이름을 가리킨다 — {aliased - known}"
         assert standard_plan in known, f"{code}: 대표 등급 {standard_plan}이 등급 매핑에 없다"
+
+
+def test_메리츠는_실속_표준만_있고_고급_등급이_없다():
+    """메리츠가 실제로 파는 건 실속플랜과 보장이큰플랜 둘뿐이다. 보장이큰플랜을 표준에
+    두고, 고급 자리는 비운다 — 없는 등급을 있는 척 매핑하면 다른 보험사의 고급과
+    나란히 놓고 비교하게 된다."""
+    from app.services.insurer_tiers import plan_name_for_tier
+
+    assert plan_name_for_tier("MERITZ", 0) == "실속플랜"
+    assert plan_name_for_tier("MERITZ", 1) == "보장이큰플랜"
+    assert plan_name_for_tier("MERITZ", 2) is None
+
+
+def test_그_등급_상품이_없는_보험사는_순위에서_뺀다():
+    """자료가 없는 게 아니라 상품 자체가 없다. 남겨두면 다른 축 점수만으로 순위가
+    매겨져서, 팔지도 않는 등급의 보험사가 목록에 끼어든다."""
+    from app.routers.insurers import _drop_insurers_without_plan
+
+    ranking = [
+        {"insurer_code": "KB", "insurer_name": "KB손해보험"},
+        {"insurer_code": "MERITZ", "insurer_name": "메리츠화재"},
+    ]
+
+    kept, dropped = _drop_insurers_without_plan(ranking, plan_tier=2)
+    assert [r["insurer_code"] for r in kept] == ["KB"]
+    assert dropped == ["메리츠화재"]
+
+    kept, dropped = _drop_insurers_without_plan(ranking, plan_tier=1)
+    assert len(kept) == 2 and dropped == []

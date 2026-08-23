@@ -2,7 +2,7 @@
   "generated_at": "2026-08-23",
   "generated_by": "analysis/ranking_weights.R",
   "source_rows": {
-    "coverage": 293,
+    "coverage": 274,
     "premium": 2062
   },
   "priority_multiplier": 3,
@@ -135,7 +135,7 @@
     "배상책임": {
       "min": 1000,
       "max": 5000,
-      "tier_spread": 0.2667
+      "tier_spread": 0.2
     },
     "상해사망보험금": {
       "min": 10000,

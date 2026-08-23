@@ -3540,3 +3540,13 @@ button { cursor: pointer; font-family: inherit; }
   .rank-scorecard { grid-template-columns: minmax(0, 1fr); }
   .rank-radar-box { margin-top: 4px; }
 }
+
+/* 그 등급 상품이 없어 비교에서 빠진 보험사 안내. 목록에서 조용히 사라지면 사용자는
+   자료가 누락된 걸로 읽는다 — 왜 없는지 한 줄로 밝힌다. */
+.rank-excluded-note {
+  margin: 14px 2px 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: center;
+}
