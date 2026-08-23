@@ -12,6 +12,7 @@ import { StandardTermsComparison } from "./StandardTermsComparison";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 import { OverlapReportView } from "./OverlapReport";
+import { RankingRadar } from "./RankingRadar";
 import { TravelAlertBadge } from "./TravelAlertBadge";
 import { NextStepCard } from "./NextStepCard";
 import { PlanCoverageBoard } from "./PlanCoverageBoard";
@@ -221,6 +222,15 @@ export function InsurerRankingFlow({
   }
 
   if (phase === "ranking") {
+    // 6개사 평균을 축마다 미리 구해 둔다 — 카드마다 다시 세면 같은 값을 여섯 번 계산한다.
+    // 자료가 없어 빠진 축은 평균에서도 뺀다(0으로 세면 평균이 부당하게 내려간다).
+    const axisAverages = [0, 1, 2, 3, 4].map((index) => {
+      const scores = ranking
+        .map((r) => r.axes[index])
+        .filter((axis) => axis && axis.available)
+        .map((axis) => axis.score);
+      return scores.length ? scores.reduce((sum, v) => sum + v, 0) / scores.length : 0;
+    });
     return (
       <div className="result-section">
         <PageHero
@@ -360,53 +370,43 @@ export function InsurerRankingFlow({
                 <span className="rank-card__arrow">›</span>
               </div>
 
-              {/* 순위를 만든 다섯 축의 기여도. "왜 이 순서인지"를 숫자로 되짚을 수 있게
-                  점수·비중·기여도를 그대로 보여준다. 자료가 없어 빠진 축은 그 사실을 밝힌다. */}
-              {r.axes.length > 0 && (
-                <div className="rank-axes">
-                  {r.axes.map((axis) => (
-                    <div
-                      className={`rank-axis${axis.available ? "" : " rank-axis--na"}`}
-                      key={axis.code}
-                      title={axis.detail}
-                    >
-                      <span className="rank-axis__label">{axis.label}</span>
-                      <span className="rank-axis__track">
-                        <i style={{ width: `${Math.round(axis.score * 100)}%` }} />
-                      </span>
-                      <span className="rank-axis__value">
-                        {axis.available ? `+${axis.contribution.toFixed(1)}` : "자료 없음"}
-                      </span>
+              {/* 순위를 만든 다섯 축. 왼쪽은 축마다 점수와 이번 총점에 넣은 몫,
+                  오른쪽은 같은 값을 오각형으로 묶은 그림이다. 막대만으로는 "어느 쪽으로
+                  치우친 보험사인가"가 안 읽히고, 그림만으로는 정확한 값이 안 읽힌다.
+                  6개사 평균선을 겹쳐 그려 앞서는 축과 밀리는 축이 바로 보이게 했다.
+
+                  예전에는 이 아래에 약관 근거 네 축 게이지가 따로 또 있었다. 그 네 축은
+                  여기 clause 축 하나로 이미 들어가 있어서 같은 걸 두 번 보여준 셈이었다. */}
+              {r.axes.length === 5 && (
+                <div className="rank-scorecard">
+                  <div className="rank-axes">
+                    {r.axes.map((axis, index) => (
+                      <div
+                        className={`rank-axis${axis.available ? "" : " rank-axis--na"}`}
+                        key={axis.code}
+                        title={axis.detail}
+                      >
+                        <span className="rank-axis__num">{index + 1}</span>
+                        <span className="rank-axis__label">{axis.label}</span>
+                        <span className="rank-axis__track">
+                          <i style={{ width: `${Math.round(axis.score * 100)}%` }} />
+                        </span>
+                        <span className="rank-axis__value">
+                          {axis.available ? `+${axis.contribution.toFixed(1)}` : "자료 없음"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rank-radar-box">
+                    <RankingRadar axes={r.axes} average={axisAverages} insurerName={r.insurer_name} />
+                    <div className="rank-radar-legend">
+                      <span className="rank-radar-legend__self">이 보험사</span>
+                      <span className="rank-radar-legend__avg">6개사 평균</span>
                     </div>
-                  ))}
+                  </div>
                 </div>
               )}
 
-              {/* 네 축 모두 "채워질수록 유리"하게 계산된 값이라, 같은 방향의 게이지로 나란히 읽힌다. */}
-              <div className="rank-gauges">
-                {r.dimensions.map((dimension) => (
-                  <div
-                    className={`rank-gauge rank-gauge--${dimension.code}`}
-                    key={dimension.code}
-                    title={dimension.summary}
-                  >
-                    <span className="rank-gauge__label">{dimension.label}</span>
-                    {dimension.level > 0 ? (
-                      <span
-                        className="rank-gauge__bar"
-                        role="img"
-                        aria-label={`${dimension.label}: ${dimension.status} (5단계 중 ${dimension.level}단계)`}
-                      >
-                        {Array.from({ length: 5 }, (_, index) => (
-                          <i key={index} className={index < dimension.level ? "is-on" : ""} />
-                        ))}
-                      </span>
-                    ) : (
-                      <span className="rank-gauge__none">아직 근거가 없어요</span>
-                    )}
-                  </div>
-                ))}
-              </div>
             </motion.div>
           ))}
         </div>
