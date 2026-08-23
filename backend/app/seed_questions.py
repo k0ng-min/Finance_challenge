@@ -66,7 +66,14 @@ QUESTIONS = [
 def run():
     db = SessionLocal()
     try:
-        existing_by_field = {q.target_field: q for q in db.query(QuestionBank).all()}
+        # incident_id가 달린 행은 사고 한 건을 위해 그때그때 만들어진 질문이다
+        # (incident_questions_gemini). 프롬프트가 담보 필드 이름(diagnosis 등)을 그대로
+        # 쓰라고 시키므로 여기 target_field가 겹친다 — 공용 행으로 오인하면 공용 질문이
+        # 영영 안 만들어지고, 사고별 행에 공용 태그가 덧칠돼 다른 사고로 새어 나간다.
+        existing_by_field = {
+            q.target_field: q
+            for q in db.query(QuestionBank).filter(QuestionBank.incident_id.is_(None)).all()
+        }
         added = updated = 0
         for context_type, text, target_field, weight, applies_to_l1 in QUESTIONS:
             row = existing_by_field.get(target_field)

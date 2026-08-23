@@ -65,6 +65,7 @@ _add_missing_columns("incident", {
     "type_id": "ALTER TABLE incident ADD COLUMN type_id INTEGER",
     "modifiers": "ALTER TABLE incident ADD COLUMN modifiers TEXT",
     "classify_confidence": "ALTER TABLE incident ADD COLUMN classify_confidence FLOAT",
+    "questions_generated": "ALTER TABLE incident ADD COLUMN questions_generated BOOLEAN DEFAULT 0",
 })
 _add_missing_columns("analysis_finding", {
     "coverage_amount": "ALTER TABLE analysis_finding ADD COLUMN coverage_amount VARCHAR",

@@ -137,6 +137,11 @@ class Incident(Base):
     # 부가 정보(예: 활동=스쿠버다이빙 → 상해 면책 조항 검토)를 유형과 분리해서 담는다.
     modifiers = Column(Text, nullable=True)
     classify_confidence = Column(Float, nullable=True)
+    # 이 사고에 대해 맞춤 질문 생성(incident_questions_gemini)을 한 번이라도 끝냈는지.
+    # "만들어진 질문이 0건"과 "아직 만들어 본 적 없음"을 구분하기 위한 것이다 — 전자는
+    # 모델이 "더 물을 게 없다"고 판단한 결과라 공용 뱅크를 다시 열면 안 되고, 후자는
+    # (Gemini가 없는 환경 등) 공용 뱅크가 유일한 질문 출처다.
+    questions_generated = Column(Boolean, default=False)
 
     user = relationship("AppUser", back_populates="incidents")
     incident_type = relationship("IncidentType")

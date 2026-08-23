@@ -37,6 +37,7 @@ from google.genai import types
 
 from app import config
 from app.models.question import QuestionBank
+from app.models.user import Incident
 
 logger = logging.getLogger(__name__)
 
@@ -128,8 +129,7 @@ def _normalize_field(raw: str, used: set[str]) -> str | None:
 def generate_questions(
     db: Session,
     *,
-    incident_id: int,
-    free_text: str | None,
+    incident: Incident,
     l1_code: str | None,
     merged: dict,
     modifiers: dict | None = None,
@@ -145,7 +145,12 @@ def generate_questions(
     결과 다시 보기)는 세션을 커밋하지 않아서, 거기서 질문을 새로 만들면 저장되지도
     않은 채 요청마다 API만 다시 쓴다.
 
-    실패하거나 만들 게 없으면 None."""
+    반환값 세 가지를 호출부가 서로 다르게 읽는다.
+      · 리스트(비어 있지 않음) — 이 질문들을 쓴다.
+      · 빈 리스트 — 이 사고는 더 물을 게 없다고 판정됐다. 공용 뱅크를 열지 않는다.
+      · None — 생성이 안 됐거나 실패했다. 공용 뱅크로 되돌아간다."""
+    incident_id = incident.incident_id
+    free_text = incident.free_text
     existing = (
         db.query(QuestionBank)
         .filter(QuestionBank.incident_id == incident_id)
@@ -154,6 +159,12 @@ def generate_questions(
     )
     if existing:
         return existing
+
+    if incident.questions_generated:
+        # 생성은 이미 끝났는데 저장된 질문이 0건이다 = "더 물을 게 없다"는 판정이었다.
+        # 이걸 None으로 돌려주면 재방문 때마다 공용 뱅크가 되살아나, 결과 화면까지 갔던
+        # 사고가 질문 화면으로 되돌아간다.
+        return []
 
     if not create or not config.GEMINI_ENABLED or not (free_text or "").strip():
         return None
@@ -185,6 +196,13 @@ def generate_questions(
         logger.exception("Gemini 추가 질문 생성 실패 — 공용 질문 뱅크로 되돌림")
         return None
 
+    if not parsed.items:
+        # 모델이 "사고 내용만으로 충분하다"고 판단한 경우다. 실패가 아니므로 빈 목록을
+        # 준다 — None으로 뭉개면 호출부가 공용 뱅크를 다시 열어서, 프롬프트가 시킨 것과
+        # 정반대로 안 물어도 될 질문을 전부 도로 묻게 된다.
+        incident.questions_generated = True
+        return []
+
     used: set[str] = set()
     rows: list[QuestionBank] = []
     for item in parsed.items[:MAX_GENERATED_QUESTIONS]:
@@ -208,7 +226,10 @@ def generate_questions(
         rows.append(row)
 
     if not rows:
+        # 만들려고는 했는데 하나도 쓸 수 없는 형태였다 — 이건 생성 실패다(위의 빈 목록과
+        # 다르다). 공용 뱅크로 되돌아가는 쪽이 맞다.
         return None
+    incident.questions_generated = True
     db.flush()
     rows.sort(key=lambda r: -(r.impact_weight or 0.0))
     return rows

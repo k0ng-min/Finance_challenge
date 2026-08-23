@@ -25,10 +25,10 @@ def _incident(db, free_text="발목이 부러져서 병원에 갔어요"):
     return incident
 
 
-def _shared_question(db, text="입원하셨나요?", field="hospitalized"):
+def _shared_question(db, text="입원하셨나요?", field="hospitalized", applies_to_l1=None, weight=0.5):
     row = QuestionBank(
         context_type="사고후", question_text=text, target_field=field,
-        impact_weight=0.5, applies_to_l1=None, incident_id=None,
+        impact_weight=weight, applies_to_l1=applies_to_l1, incident_id=None,
     )
     db.add(row)
     db.flush()
@@ -164,7 +164,8 @@ def client(db_session):
 
 def _fake_generator(texts):
     """Gemini 대신 정해진 질문을 만들어 저장하는 스텁."""
-    def generate(db, *, incident_id, free_text, l1_code, merged, modifiers=None, create=True):
+    def generate(db, *, incident, l1_code, merged, modifiers=None, create=True):
+        incident_id = incident.incident_id
         existing = db.query(QuestionBank).filter(QuestionBank.incident_id == incident_id).all()
         if existing:
             return existing
@@ -230,3 +231,102 @@ def test_조회만_하는_경로는_질문을_새로_만들지_않는다(client,
     client.get(f"/incidents/{incident_id}", headers=auth)
 
     assert calls and all(kw["create"] is False for kw in calls)
+
+
+def test_담보판단에_꼭_필요한_질문은_생성질문이_빼먹어도_함께_묻는다(db_session):
+    """item_damage_type은 claim_review가 휴대품 L2(도난/파손/분실)를 가르는 유일한
+    결정적 입력이다(_item_damage_type_id). 분실은 휴대품손해 특약에서 아예 빠지는
+    보험사가 있어, 이걸 모르면 "청구 가능"과 "면책"이 갈리는 자리가 통째로 흐려진다.
+
+    생성 질문은 그 사고에서만 중요한 걸 묻느라 이걸 빠뜨릴 수 있다. 모델의 판단에
+    맡길 수 없는 자리라, 아직 답이 없으면 공용 뱅크에서 이 질문만은 같이 꺼낸다."""
+    _shared_question(
+        db_session, text="도난·파손·분실 중 어느 쪽인가요?", field="item_damage_type",
+        applies_to_l1="PROP",
+    )
+    _shared_question(db_session, text="공통 질문", field="ai_common", applies_to_l1=None)
+    incident = _incident(db_session, free_text="파리에서 휴대폰을 잃어버렸어요")
+    _generated_question(db_session, incident.incident_id)
+
+    questions = claim_review.pending_questions(
+        db_session, "PROP", {}, incident=incident, generate=False,
+    )
+
+    # 공용 뱅크가 통째로 되살아나면 안 된다 — ai_common은 나오지 않아야 한다.
+    assert [q.target_field for q in questions] == ["ai_police_report", "item_damage_type"]
+
+
+def test_생성질문이_이미_그_필드를_물으면_공용_질문을_겹쳐_넣지_않는다(db_session):
+    _shared_question(
+        db_session, text="도난·파손·분실 중 어느 쪽인가요?", field="item_damage_type",
+        applies_to_l1="PROP",
+    )
+    incident = _incident(db_session, free_text="파리에서 휴대폰을 도난당했어요")
+    _generated_question(
+        db_session, incident.incident_id, text="소매치기였나요?", field="item_damage_type",
+    )
+
+    questions = claim_review.pending_questions(
+        db_session, "PROP", {}, incident=incident, generate=False,
+    )
+
+    assert [q.question_text for q in questions] == ["소매치기였나요?"]
+
+
+def test_이미_답이_있으면_필수_질문도_다시_묻지_않는다(db_session):
+    _shared_question(
+        db_session, text="도난·파손·분실 중 어느 쪽인가요?", field="item_damage_type",
+        applies_to_l1="PROP",
+    )
+    incident = _incident(db_session, free_text="파리에서 휴대폰을 도난당했어요")
+    _generated_question(db_session, incident.incident_id)
+
+    merged = {"item_damage_type": ExtractedField(value="도난", confidence=0.9)}
+    questions = claim_review.pending_questions(
+        db_session, "PROP", merged, incident=incident, generate=False,
+    )
+
+    assert [q.target_field for q in questions] == ["ai_police_report"]
+
+
+def test_다른_대분류에서는_휴대품_질문을_끌어오지_않는다(db_session):
+    _shared_question(
+        db_session, text="도난·파손·분실 중 어느 쪽인가요?", field="item_damage_type",
+        applies_to_l1="PROP",
+    )
+    incident = _incident(db_session)
+    _generated_question(db_session, incident.incident_id)
+
+    questions = claim_review.pending_questions(
+        db_session, "INJ", {}, incident=incident, generate=False,
+    )
+
+    assert [q.target_field for q in questions] == ["ai_police_report"]
+
+
+def test_시드는_사고별_생성질문을_공용_질문으로_착각하지_않는다(db_session, monkeypatch):
+    """seed_questions는 target_field로 기존 행을 찾는다. 그런데 생성 질문도 같은 테이블에
+    같은 target_field(diagnosis 등 — 프롬프트가 그 이름을 그대로 쓰라고 시킨다)로 들어온다.
+
+    그걸 공용 행으로 오인하면 두 가지가 한꺼번에 깨진다. 공용 질문이 영영 안 만들어져
+    Gemini가 없는 환경에서는 질문을 하나도 못 받고, 사고별 행에 공용 태그(applies_to_l1)가
+    덧칠돼 그 사고 밖으로 새어 나갈 문이 열린다."""
+    from app import seed_questions
+
+    incident = _incident(db_session)
+    _generated_question(db_session, incident.incident_id, text="진단명이 뭔가요?", field="diagnosis")
+    db_session.commit()
+    monkeypatch.setattr(seed_questions, "SessionLocal", lambda: db_session)
+
+    seed_questions.run()
+
+    shared = db_session.query(QuestionBank).filter(
+        QuestionBank.target_field == "diagnosis",
+        QuestionBank.incident_id.is_(None),
+    ).all()
+    assert len(shared) == 1
+
+    generated = db_session.query(QuestionBank).filter(
+        QuestionBank.incident_id.isnot(None)
+    ).one()
+    assert generated.applies_to_l1 is None

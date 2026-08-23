@@ -351,6 +351,30 @@ def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
     return l1_code in {code.strip() for code in applies_to_l1.split(",")}
 
 
+# 생성 질문이 빼먹어도 공용 뱅크에서 반드시 보충하는 필드.
+#
+# item_damage_type은 이 모듈 자신이 휴대품 L2(도난/파손/분실)를 정하는 유일한 결정적
+# 입력이다(_item_damage_type_id). 그런데 "분실"(본인 부주의)은 휴대품손해 특약에서
+# 통째로 빠지는 보험사가 있어서, 이 한 값에 "청구검토 대상"과 "면책"이 갈린다.
+# 모델이 그 사고에서만 중요한 걸 묻느라 이걸 지나칠 수 있는데, 여기는 모델의 재량에
+# 맡길 자리가 아니다.
+_MUST_ASK_FIELDS = {"item_damage_type"}
+
+
+def _bank_candidates(db: Session, l1_code: str | None) -> list[QuestionBank]:
+    """공용 질문 뱅크(seed_questions.py)에서 이 대분류에 해당하는 질문을 꺼낸다.
+
+    incident_id가 달린 행은 어떤 사고 하나를 위해 만들어진 것이므로 반드시 뺀다 —
+    안 그러면 그 질문이 그 뒤로 모든 사람의 사고에 따라붙는다."""
+    rows = (
+        db.query(QuestionBank)
+        .filter(QuestionBank.context_type == "사고후", QuestionBank.incident_id.is_(None))
+        .order_by(QuestionBank.impact_weight.desc())
+        .all()
+    )
+    return [q for q in rows if _question_applies(q.applies_to_l1, l1_code)]
+
+
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
@@ -377,18 +401,24 @@ def pending_questions(
     candidates = None
     if incident is not None:
         candidates = incident_questions_gemini.generate_questions(
-            db, incident_id=incident.incident_id, free_text=incident.free_text,
-            l1_code=l1_code, merged=merged, modifiers=modifiers, create=generate,
+            db, incident=incident, l1_code=l1_code, merged=merged,
+            modifiers=modifiers, create=generate,
         )
 
     if candidates is None:
-        candidates = (
-            db.query(QuestionBank)
-            .filter(QuestionBank.context_type == "사고후", QuestionBank.incident_id.is_(None))
-            .order_by(QuestionBank.impact_weight.desc())
-            .all()
-        )
-        candidates = [q for q in candidates if _question_applies(q.applies_to_l1, l1_code)]
+        candidates = _bank_candidates(db, l1_code)
+    else:
+        # 생성 질문을 쓰더라도 _MUST_ASK_FIELDS는 공용 뱅크에서 보충한다. 이미 그 필드를
+        # 묻는 생성 질문이 있으면 겹쳐 넣지 않는다.
+        asked = {q.target_field for q in candidates}
+        supplement = [
+            q for q in _bank_candidates(db, l1_code)
+            if q.target_field in _MUST_ASK_FIELDS and q.target_field not in asked
+        ]
+        if supplement:
+            candidates = sorted(
+                candidates + supplement, key=lambda q: -(q.impact_weight or 0.0)
+            )
 
     pending = []
     for q in candidates:
