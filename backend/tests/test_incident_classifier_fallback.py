@@ -4,7 +4,7 @@ from app import config
 from app.models.kb import IncidentType
 from app.models.question import QuestionBank
 from app.routers.incidents import _classify_incident
-from app.services.claim_review import pending_questions
+from app.services.claim_review import pending_questions, resolve_type_ids
 from app.services import incident_classify_gemini as classifier
 from app.services.nlu import ExtractedField
 
@@ -227,3 +227,57 @@ def test_new_type_suggestion_is_not_auto_created_or_marked_confident(db_session,
     assert db_session.query(IncidentType).count() == before
     assert type_id == db_session.query(IncidentType).filter_by(l2_code="PROP").one().type_id
     assert confidence == 0.0
+
+
+def test_L1_루트로_보류된_사고도_그_대분류의_조항을_찾는다(db_session):
+    """조항 매핑(clause_incident_map)은 전부 L2에 달려 있다. L2 분류가 확신이 없어 L1
+    루트에 보류되면 루트 type_id로는 매핑이 하나도 안 걸려서 "관련 약관을 찾지 못했다"가
+    나온다 — KB에 그 대분류 약관이 그대로 있는데도.
+
+    예: "다리를 다쳤어요"가 상해(INJ)까지만 잡히고 세부유형이 안 정해진 경우."""
+    _seed_taxonomy(db_session)
+    root = db_session.query(IncidentType).filter_by(l1_code="INJ", parent_id=None).one()
+    children = db_session.query(IncidentType).filter_by(parent_id=root.type_id).all()
+
+    ids = resolve_type_ids(db_session, root.type_id, {})
+
+    assert ids[0] == root.type_id
+    assert {c.type_id for c in children} <= set(ids), "L1 루트만으로는 세부유형 조항을 못 찾는다"
+
+
+def test_세부유형까지_정해졌으면_형제유형까지_끌어오지_않는다(db_session):
+    """확신 있게 L2가 정해졌는데 같은 대분류의 다른 세부유형 조항까지 붙이면, 이번 사고와
+    상관없는 담보가 "청구검토 후보"로 섞인다."""
+    _seed_taxonomy(db_session)
+    child = db_session.query(IncidentType).filter_by(l2_code="INJ_OVERSEAS_TREATMENT").one()
+
+    assert resolve_type_ids(db_session, child.type_id, {}) == [child.type_id]
+
+
+def test_Gemini가_없어도_사고_내용으로_대분류를_잡는다(monkeypatch):
+    """예전에는 키가 없거나 호출이 실패하면 전부 SPC(특수·기타)로 보류했다. SPC에는
+    상해 약관이 없으니 "다리를 다쳤어요"에도 관련 약관이 한 건도 안 걸렸다. 대분류만이라도
+    사고 내용에서 직접 잡아 두면 그 대분류의 실제 약관 조항을 근거로 보여줄 수 있다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    assert classifier.classify_l1("다리를 다쳤어요")[0] == "INJ"
+    assert classifier.classify_l1("파리에서 휴대폰을 도난당했어요")[0] == "PROP"
+    assert classifier.classify_l1("항공편이 6시간 지연됐어요")[0] == "TRV"
+    assert classifier.classify_l1("배탈이 나서 병원에 갔어요")[0] == "ILL"
+
+
+def test_짚을_단서가_없으면_여전히_SPC로_보류한다(monkeypatch):
+    """근거 없이 아무 대분류나 찍지 않는다 — 못 잡았으면 못 잡았다고 둔다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    assert classifier.classify_l1("그냥 좀 곤란한 일이 있었어요")[0] == "SPC"
+
+
+def test_키워드로_잡은_대분류는_확신을_낮게_둔다(monkeypatch):
+    """키워드 일치는 근거가 약하다. 확신을 높게 주면 세부유형 분류까지 자동으로 밀고
+    들어가고 사용자에게 확인 질문도 안 묻게 된다 — 대분류만 잡고 나머지는 물어야 한다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    _code, confidence, _reason = classifier.classify_l1("다리를 다쳤어요")
+
+    assert 0 < confidence < classifier.DEFAULT_L1_AUTO_THRESHOLD

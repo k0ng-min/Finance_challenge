@@ -78,10 +78,25 @@ def resolve_type_ids(db: Session, incident_type_id: int | None, merged: dict[str
     """이번 사고에서 담보를 찾아야 하는 incident_type_id 목록.
 
     분류된 주 유형(incident_type_id) 하나가 기본이고, item_damage_type이 확인됐는데 주
-    유형이 PROP 계열이 아니면(=상해+휴대품 혼합 사고) 그 유형도 추가한다."""
+    유형이 PROP 계열이 아니면(=상해+휴대품 혼합 사고) 그 유형도 추가한다.
+
+    주 유형이 L1 루트면(=세부유형이 확신 없어 보류된 상태) 그 아래 세부유형을 전부
+    같이 본다. 조항 매핑은 전부 L2에 달려 있어서, 루트 하나만으로는 걸리는 조항이
+    0건이다 — "다리를 다쳤어요"가 상해까지만 잡혔을 때 KB에 상해 약관이 그대로 있는데도
+    "관련 약관을 찾지 못했다"가 나오던 원인이다. 세부유형이 확정된 경우에는 형제 유형을
+    끌어오지 않는다(상관없는 담보가 청구검토 후보로 섞인다)."""
     type_ids: list[int] = []
     if incident_type_id is not None:
         type_ids.append(incident_type_id)
+        node = db.get(IncidentType, incident_type_id)
+        if node is not None and node.parent_id is None:
+            children = (
+                db.query(IncidentType)
+                .filter(IncidentType.parent_id == incident_type_id, IncidentType.is_active.is_(True))
+                .order_by(IncidentType.type_id)
+                .all()
+            )
+            type_ids.extend(c.type_id for c in children)
     item_field = merged.get("item_damage_type")
     item_type_id = _item_damage_type_id(db, item_field.value if item_field else None)
     if item_type_id is not None and item_type_id not in type_ids:

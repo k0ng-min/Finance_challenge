@@ -174,6 +174,40 @@ def _generate_json(client, prompt: str, schema: type[BaseModel]) -> BaseModel:
     return schema.model_validate(_json.loads(response.text))
 
 
+# --- Gemini 없이 대분류만이라도 잡는 키워드 폴백 -------------------------------
+#
+# 예전에는 키가 없거나 호출이 실패하면 무조건 SPC(특수·기타)로 보류했다. 그런데 조항
+# 매핑은 대분류마다 따로 달려 있어서, SPC로 보류되면 "다리를 다쳤어요"에도 관련 약관이
+# 한 건도 안 걸린다 — 사용자에게는 "약관이 없다"로 보이지만 KB에는 상해 약관이 그대로
+# 있다. 그래서 대분류만이라도 사고 내용에서 직접 잡는다.
+#
+# 이건 분류를 지어내는 게 아니라 "어느 서랍을 열지"를 정하는 일이다. 실제로 보여주는
+# 내용은 그 뒤에도 여전히 약관 원문 근거가 있는 것만이다. 근거가 약한 추정이므로 확신은
+# 자동 임계값 아래로 둬서, 세부유형은 반드시 사용자에게 물어 확인하게 한다.
+_FALLBACK_CONFIDENCE = 0.35
+
+# 먼저 걸리는 것이 이긴다 — 위쪽일수록 다른 대분류와 헷갈릴 여지가 적은 단서다.
+_FALLBACK_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("TRV", ("결항", "지연", "수하물", "위탁수하물", "항공편", "비행기", "납치", "환승")),
+    ("CHG", ("여행취소", "여행 취소", "일정취소", "조기귀국", "중단", "취소했")),
+    ("EMG", ("조난", "수색", "구조", "이송", "송환", "유해", "실종")),
+    ("LIA", ("배상", "물어주", "파손시켰", "다치게", "손해를 입혔", "변상")),
+    ("PROP", ("도난", "소매치기", "분실", "잃어버", "훔쳐", "파손", "깨졌", "여권")),
+    ("ILL", ("질병", "병원", "감염", "격리", "발열", "복통", "배탈", "설사", "식중독", "코로나", "몸살", "아파", "아팠")),
+    ("INJ", ("다쳤", "다침", "부상", "골절", "부러", "삐", "염좌", "화상", "찢어", "베였", "타박", "넘어져", "부딪")),
+)
+
+
+def _fallback_l1(text: str) -> tuple[str, float, str] | None:
+    """사고 내용에서 대분류 단서를 찾는다. 못 찾으면 None(=SPC 보류)."""
+    lowered = text.lower()
+    for code, keywords in _FALLBACK_KEYWORDS:
+        for word in keywords:
+            if word in lowered:
+                return code, _FALLBACK_CONFIDENCE, f"사고 내용의 '{word}'로 대분류만 추정(세부유형은 확인 필요)"
+    return None
+
+
 def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, float, str]:
     """자유서술 → (l1_code, confidence, reason).
 
@@ -181,8 +215,10 @@ def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, f
     ``raise_on_error=True``로 원래 예외를 받아 재시도하거나 평가를 중단할 수 있다.
     """
     text = (free_text or "").strip()
-    if not text or not config.GEMINI_ENABLED:
-        return "SPC", 0.0, "분류 근거 없음(자유서술 없음 또는 Gemini 미설정)"
+    if not text:
+        return "SPC", 0.0, "분류 근거 없음(자유서술 없음)"
+    if not config.GEMINI_ENABLED:
+        return _fallback_l1(text) or ("SPC", 0.0, "분류 근거 없음(Gemini 미설정, 짚을 단서도 없음)")
 
     l1_list = "\n".join(f"- {code}: {desc}" for code, desc in L1_DESCRIPTIONS.items())
     try:
@@ -193,8 +229,8 @@ def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, f
     except Exception:
         if raise_on_error:
             raise
-        logger.exception("classify_l1 실패, SPC로 폴백")
-        return "SPC", 0.0, "분류 실패(API 오류)"
+        logger.exception("classify_l1 실패 — 사고 내용의 단서로 대분류만 추정")
+        return _fallback_l1(text) or ("SPC", 0.0, "분류 실패(API 오류, 짚을 단서도 없음)")
 
     if result.l1_code not in L1_DESCRIPTIONS:
         return "SPC", 0.0, f"모델이 알 수 없는 코드 반환({result.l1_code}) — 안전하게 SPC 처리"
