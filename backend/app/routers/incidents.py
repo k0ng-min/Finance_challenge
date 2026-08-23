@@ -15,6 +15,7 @@ from app.models.question import QuestionBank, UserQuestionLog
 from app.routers.auth import get_current_user_optional, verify_owner
 from app.routers.policies import create_policy_for_user
 from app.schemas import (
+    AnswerBatchIn,
     IncidentCreate, IncidentAnalysisOut, PendingQuestionOut, AnswerIn,
     ChecklistOut, ChecklistItemOut, EvidenceIn, ClauseOut, ClauseTermOut, ValidationResultOut,
     IncidentTypeOut, DocVerifyOut, DocCheckOut,
@@ -217,6 +218,7 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
             PendingQuestionOut(
                 question_id=q.question_id, question_text=q.question_text,
                 target_field=q.target_field, impact_weight=q.impact_weight,
+                answer_type=q.answer_type or "text", stage=q.stage,
             ) for q in questions
         ],
         validation_results=validation_out,
@@ -382,6 +384,7 @@ def get_incident(
             PendingQuestionOut(
                 question_id=q.question_id, question_text=q.question_text,
                 target_field=q.target_field, impact_weight=q.impact_weight,
+                answer_type=q.answer_type or "text", stage=q.stage,
             ) for q in questions
         ],
         validation_results=validation_out,
@@ -390,6 +393,38 @@ def get_incident(
         linked_product_name=_linked_policy_names(incident)[2],
         **_trip_context(incident),
     )
+
+
+def _current_explicit(incident: Incident) -> dict:
+    return {
+        "country": incident.country, "cause": incident.cause, "injury_part": incident.injury_part,
+        "diagnosis": incident.diagnosis, "hospitalized": incident.hospitalized, "surgery": incident.surgery,
+        "local_treatment": incident.local_treatment, "returned_home": incident.returned_home,
+        "medical_cost": incident.medical_cost, "item_damage_type": incident.item_damage_type,
+    }
+
+
+def _apply_answer(incident: Incident, question: QuestionBank, answer_text: str, explicit: dict) -> None:
+    """답변 하나를 사고에 반영한다. 단건 답변과 한 페이지 배치 답변이 같은 규칙을 쓴다."""
+    field = question.target_field
+    if field in BOOLEAN_FIELDS:
+        negated = any(m in answer_text for m in _NEGATIVE_MARKERS)
+        explicit[field] = not negated
+    elif field == "item_damage_type":
+        # 자유서술 답변("소매치기당했어요"/"그냥 잃어버렸어요" 등)을 도난/파손/분실 중
+        # 하나로 정규화한다 — 원문 그대로 저장하면 claim_review.py가 정확히 비교할 수 없다.
+        explicit[field] = classify_item_damage_type(answer_text)
+    elif field in _INCIDENT_DRAFT_FIELDS or field == "medical_cost":
+        explicit[field] = answer_text
+        if field == "medical_cost":
+            incident.medical_cost = answer_text
+    else:
+        # IncidentDraft에 없는 필드 — L2 판별 전용 질문(예: flight_delay_hours)이므로
+        # incident.modifiers JSON에 직접 담는다. explicit/merged 경로로는 흐르지 않는다.
+        current_modifiers = _modifiers_dict(incident)
+        current_modifiers[field] = answer_text
+        incident.modifiers = json.dumps(current_modifiers, ensure_ascii=False)
+
 
 
 @router.post("/{incident_id}/answers", response_model=IncidentAnalysisOut)
@@ -418,29 +453,73 @@ def answer_question(
         answer_text=payload.answer_text,
     ))
 
-    field = question.target_field
-    explicit = {
-        "country": incident.country, "cause": incident.cause, "injury_part": incident.injury_part,
-        "diagnosis": incident.diagnosis, "hospitalized": incident.hospitalized, "surgery": incident.surgery,
-        "local_treatment": incident.local_treatment, "returned_home": incident.returned_home,
-        "medical_cost": incident.medical_cost, "item_damage_type": incident.item_damage_type,
-    }
-    if field in BOOLEAN_FIELDS:
-        negated = any(m in payload.answer_text for m in _NEGATIVE_MARKERS)
-        explicit[field] = not negated
-    elif field == "item_damage_type":
-        # 자유서술 답변("소매치기당했어요"/"그냥 잃어버렸어요" 등)을 도난/파손/분실 중
-        # 하나로 정규화한다 — 원문 그대로 저장하면 claim_review.py가 정확히 비교할 수 없다.
-        explicit[field] = classify_item_damage_type(payload.answer_text)
-    elif field in _INCIDENT_DRAFT_FIELDS or field == "medical_cost":
-        explicit[field] = payload.answer_text
-        if field == "medical_cost":
-            incident.medical_cost = payload.answer_text
-    else:
-        # IncidentDraft에 없는 필드 — L2 판별 전용 질문(예: flight_delay_hours)이므로
-        # incident.modifiers JSON에 직접 담는다. explicit/merged 경로로는 흐르지 않는다.
+    explicit = _current_explicit(incident)
+    _apply_answer(incident, question, payload.answer_text, explicit)
+
+    nlu = get_nlu_engine()
+    merged = merge_incident_fields(nlu, "", explicit, classify_text=incident.free_text)
+    _apply_to_incident(incident, merged)
+
+    type_id, classify_confidence, modifiers = _classify_incident(
+        db, incident.free_text, merged,
+        existing_type_id=incident.type_id, existing_modifiers=_modifiers_dict(incident),
+        existing_confidence=incident.classify_confidence,
+    )
+    if type_id is not None:
+        incident.type_id = type_id
+        incident.classify_confidence = classify_confidence
+    if modifiers:
+        incident.modifiers = json.dumps(modifiers, ensure_ascii=False)
+
+    db.flush()
+    db.commit()
+    db.refresh(incident)
+
+    return _run_analysis(db, incident, merged)
+
+
+@router.post("/{incident_id}/answers/batch", response_model=IncidentAnalysisOut)
+@limiter.limit("30/minute")
+def answer_questions_batch(
+    request: Request, incident_id: int, payload: AnswerBatchIn, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """한 페이지에 뜬 질문의 답을 한 번에 받는다.
+
+    사고 접수 질문은 대분류 확인 한 화면, 세부유형 확인 한 화면으로 나뉘어 통째로 뜬다.
+    답마다 따로 저장하면 같은 사고 분석이 답변 수만큼 돌아 응답이 그만큼 느려지고,
+    중간 상태가 섞인 결과가 화면에 스쳐 지나간다. 여기서는 답을 전부 반영한 뒤 분석을
+    딱 한 번 돌린다."""
+    incident = db.get(Incident, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="사고 정보를 찾을 수 없습니다.")
+    verify_owner(incident.user_id, current)
+
+    latest_run = (
+        db.query(AnalysisRun)
+        .filter(AnalysisRun.incident_id == incident_id)
+        .order_by(AnalysisRun.analysis_run_id.desc())
+        .first()
+    )
+    explicit = _current_explicit(incident)
+    for item in payload.answers:
+        question = db.get(QuestionBank, item.question_id)
+        if question is None:
+            # 남의 화면에서 온 질문 id일 수 있다. 통째로 실패시키지 않고 그 답만 버린다.
+            continue
+        db.add(UserQuestionLog(
+            analysis_run_id=latest_run.analysis_run_id if latest_run else None,
+            question_id=question.question_id,
+            answer_text=item.answer_text,
+        ))
+        _apply_answer(incident, question, item.answer_text, explicit)
+
+    note = (payload.extra_note or "").strip()
+    if note:
+        # 예/아니오로 다 담기지 않는 이야기다. 사고 수식자로 남겨 재분류·조항 판단에
+        # 들어가게 한다 — 받아만 두고 버리면 물어본 의미가 없다.
         current_modifiers = _modifiers_dict(incident)
-        current_modifiers[field] = payload.answer_text
+        current_modifiers["user_note"] = note
         incident.modifiers = json.dumps(current_modifiers, ensure_ascii=False)
 
     nlu = get_nlu_engine()

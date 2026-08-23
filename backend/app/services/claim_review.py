@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.models.kb import Clause, ClauseIncidentMap, CoverageDocMap, IncidentType
 from app.models.user import Incident, UserCoverage, UserPolicy
-from app.models.question import QuestionBank
+from app.models.question import QuestionBank, UserQuestionLog
 from app.services import incident_classify_gemini as incident_classify
 from app.services import incident_questions_gemini
 from app.services.incident_context import build_incident_context
@@ -401,6 +401,62 @@ def _bank_candidates(db: Session, l1_code: str | None, l2_code: str | None = Non
     return [q for q in rows if _question_applies(q, l1_code, l2_code)]
 
 
+def _answered(question: QuestionBank, merged: dict[str, ExtractedField], modifiers: dict,
+              confidence_threshold: float) -> bool:
+    """이 질문에 이미 답이 있는지. 자유서술에서 뽑아낸 값도 답으로 친다."""
+    field = question.target_field
+    if field in merged:
+        found = merged[field]
+        return found.value is not None and found.confidence >= confidence_threshold
+    return bool(modifiers.get(field))
+
+
+def _answers_so_far(db: Session, incident_id: int) -> dict[str, str]:
+    """이 사고에서 이미 받은 (질문 문장 → 답) 표.
+
+    2단계 질문을 만들 때 이걸 그대로 넘긴다 — 안 넘기면 모델이 1단계와 똑같은 걸
+    또 묻는다."""
+    rows = (
+        db.query(QuestionBank.question_text, UserQuestionLog.answer_text)
+        .join(UserQuestionLog, UserQuestionLog.question_id == QuestionBank.question_id)
+        .filter(QuestionBank.incident_id == incident_id)
+        .all()
+    )
+    return {text: answer for text, answer in rows if answer}
+
+
+def _staged_candidates(
+    db: Session, incident: Incident, l1_code: str | None,
+    merged: dict[str, ExtractedField], modifiers: dict, generate: bool,
+    confidence_threshold: float,
+) -> list[QuestionBank] | None:
+    """사고별 맞춤 질문을 단계에 맞춰 꺼낸다.
+
+    1단계(대분류 확인)를 다 답하기 전에는 1단계만 보여준다. 다 답하면 그때서야 그
+    답을 읽고 2단계(세부유형) 질문을 만든다 — 두 단계를 한꺼번에 만들면 2단계가
+    1단계 답을 못 보고, 결국 같은 걸 두 번 묻게 된다.
+
+    어느 단계에서든 생성이 실패하면 None을 돌려 공용 뱅크로 되돌아간다."""
+    gen = incident_questions_gemini
+    first = gen.generate_questions(
+        db, incident=incident, stage=gen.STAGE_L1, l1_code=l1_code, merged=merged,
+        modifiers=modifiers, create=generate,
+    )
+    if first is None:
+        return None
+    if any(not _answered(q, merged, modifiers, confidence_threshold) for q in first):
+        return first
+
+    second = gen.generate_questions(
+        db, incident=incident, stage=gen.STAGE_L2, l1_code=l1_code, merged=merged,
+        modifiers=modifiers, answers=_answers_so_far(db, incident.incident_id),
+        create=generate,
+    )
+    if second is None:
+        return None
+    return second
+
+
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
@@ -427,10 +483,8 @@ def pending_questions(
 
     candidates = None
     if incident is not None:
-        candidates = incident_questions_gemini.generate_questions(
-            db, incident=incident, l1_code=l1_code, merged=merged,
-            modifiers=modifiers, create=generate,
-        )
+        candidates = _staged_candidates(db, incident, l1_code, merged, modifiers, generate,
+                                        confidence_threshold)
 
     if candidates is None:
         candidates = _bank_candidates(db, l1_code, l2_code)

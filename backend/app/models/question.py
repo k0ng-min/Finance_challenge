@@ -19,6 +19,12 @@ class QuestionBank(Base):
     # 때만 경찰 신고서를 묻는다. None이면 그 대분류 전체에 해당한다. 세부유형이 아직
     # 안 정해졌으면 이 질문들은 꺼내지 않는다 — 도난·파손·분실 질문이 한꺼번에 쏟아진다.
     applies_to_l2 = Column(String, nullable=True)
+    # "L1" | "L2" — 사고 접수는 질문을 두 번 한다. 1단계는 대분류에서 확인할 것,
+    # 2단계는 1단계 답까지 읽고 세부유형을 가르는 것. None이면 단계 구분 없는 옛 행이다.
+    stage = Column(String, nullable=True)
+    # "yesno" | "text" — 예/아니오 버튼으로 받을지, 한 줄 입력칸으로 받을지.
+    # 진단명·지연 시간·의료비처럼 약관의 금액·시간 조건과 직결되는 값은 text로 받는다.
+    answer_type = Column(String, nullable=False, default="text")
     # 이 질문이 특정 사고 한 건을 위해 그 자리에서 만들어진 것이면 그 사고 id.
     # None이면 미리 심어둔 공용 질문(seed_questions.py)이다.
     #

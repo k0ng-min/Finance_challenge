@@ -222,6 +222,10 @@ export interface PendingQuestionOut {
   question_text: string;
   target_field: string;
   impact_weight: number;
+  /** "yesno"면 예/아니오 버튼, "text"면 한 줄 입력칸으로 그린다. */
+  answer_type: string;
+  /** "L1"(대분류 확인) | "L2"(세부유형 확인). 옛 공용 질문은 null. */
+  stage: string | null;
 }
 
 export interface ValidationResultOut {
@@ -796,6 +800,17 @@ export const api = {
     request<IncidentAnalysisOut>(`/incidents/${incidentId}/answers`, {
       method: "POST",
       body: JSON.stringify({ question_id: questionId, answer_text: answerText }),
+    }),
+
+  /** 한 페이지에 뜬 질문의 답을 한 번에 보낸다 — 답마다 따로 보내면 분석이 그 수만큼 돈다. */
+  answerQuestionsBatch: (
+    incidentId: number,
+    answers: { question_id: number; answer_text: string }[],
+    extraNote?: string,
+  ) =>
+    request<IncidentAnalysisOut>(`/incidents/${incidentId}/answers/batch`, {
+      method: "POST",
+      body: JSON.stringify({ answers, extra_note: extraNote || null }),
     }),
 
   getChecklist: (incidentId: number) => request<ChecklistOut>(`/incidents/${incidentId}/checklist`),

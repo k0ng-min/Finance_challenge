@@ -141,7 +141,10 @@ class Incident(Base):
     # "만들어진 질문이 0건"과 "아직 만들어 본 적 없음"을 구분하기 위한 것이다 — 전자는
     # 모델이 "더 물을 게 없다"고 판단한 결과라 공용 뱅크를 다시 열면 안 되고, 후자는
     # (Gemini가 없는 환경 등) 공용 뱅크가 유일한 질문 출처다.
-    questions_generated = Column(Boolean, default=False)
+    # 사고 접수 질문이 어디까지 진행됐는지. 0=아직 안 만듦, 1=대분류 질문을 만듦,
+    # 2=세부분류 질문까지 만듦. 만든 질문이 0건이어도 단계는 올라간다 — "만들었는데
+    # 물을 게 없었다"와 "아직 안 만들었다"를 구분해야 재방문 때 질문이 되살아나지 않는다.
+    question_stage = Column(Integer, default=0)
 
     user = relationship("AppUser", back_populates="incidents")
     incident_type = relationship("IncidentType")

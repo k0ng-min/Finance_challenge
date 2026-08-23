@@ -3441,3 +3441,60 @@ button { cursor: pointer; font-family: inherit; }
 }
 .rank-axis--na { opacity: 0.5; }
 .rank-axis--na .rank-axis__value { color: var(--muted); font-weight: 700; font-size: 0.68rem; }
+
+/* --- 사고 접수 질문: 한 화면에 통째로 ---
+   예전에는 한 문항씩 넘겼다. 몇 개를 더 물을지 모른 채 계속 넘어가니 끝이 안 보였고,
+   앞 답을 고치려면 처음부터 다시 해야 했다. 한 장에 다 펼쳐 두면 무엇을 묻는지 한눈에
+   보이고 순서와 상관없이 답할 수 있다. */
+.qa-list { display: flex; flex-direction: column; gap: 14px; }
+.qa-item {
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px 14px;
+}
+.qa-item__text {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.45;
+}
+.qa-choice { display: flex; gap: 8px; }
+.qa-choice__btn {
+  flex: 1;
+  padding: 11px 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.qa-choice__btn--on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.qa-item__input,
+.qa-item__note {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.qa-item__note { resize: vertical; line-height: 1.5; }
+.qa-item__input:focus,
+.qa-item__note:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}

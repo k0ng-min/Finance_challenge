@@ -301,6 +301,10 @@ class PendingQuestionOut(BaseModel):
     question_text: str
     target_field: str
     impact_weight: float
+    #: "yesno"면 예/아니오 버튼, "text"면 한 줄 입력칸으로 그린다.
+    answer_type: str = "text"
+    #: "L1"(대분류 확인) | "L2"(세부유형 확인). 옛 공용 질문은 None이다.
+    stage: Optional[str] = None
 
 
 class ValidationResultOut(BaseModel):
@@ -334,6 +338,16 @@ class IncidentAnalysisOut(BaseModel):
 class AnswerIn(BaseModel):
     question_id: int
     answer_text: str
+
+
+class AnswerBatchIn(BaseModel):
+    """한 페이지에 뜬 질문의 답을 한 번에 받는다.
+
+    답마다 따로 저장하면 같은 사고 분석이 답변 수만큼 돌아서, 응답이 그만큼 느려지고
+    중간 상태가 섞인 결과가 나온다."""
+    answers: list[AnswerIn] = []
+    #: 예/아니오로 다 담기지 않는 이야기를 받는 칸. 사고 수식자로 남아 재분류에 쓰인다.
+    extra_note: Optional[str] = None
 
 
 class ChecklistItemOut(BaseModel):

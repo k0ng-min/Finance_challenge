@@ -11,6 +11,7 @@ import pytest
 
 from app.models.user import AppUser, Incident
 from app.models.question import QuestionBank
+from app.routers import incidents as incidents_router
 from app.services import claim_review
 from app.services.nlu import ExtractedField
 
@@ -37,10 +38,12 @@ def _shared_question(db, text="입원하셨나요?", field="hospitalized", appli
     return row
 
 
-def _generated_question(db, incident_id, text="경찰 신고서를 받으셨나요?", field="ai_police_report"):
+def _generated_question(db, incident_id, text="경찰 신고서를 받으셨나요?", field="ai_police_report",
+                        stage="L1", answer_type="yesno"):
     row = QuestionBank(
         context_type="사고후", question_text=text, target_field=field,
         impact_weight=0.9, applies_to_l1=None, incident_id=incident_id,
+        stage=stage, answer_type=answer_type,
     )
     db.add(row)
     db.flush()
@@ -166,9 +169,13 @@ def client(db_session):
 
 def _fake_generator(texts):
     """Gemini 대신 정해진 질문을 만들어 저장하는 스텁."""
-    def generate(db, *, incident, l1_code, merged, modifiers=None, create=True):
+    def generate(db, *, incident, stage, l1_code, merged, modifiers=None, answers=None, create=True):
         incident_id = incident.incident_id
-        existing = db.query(QuestionBank).filter(QuestionBank.incident_id == incident_id).all()
+        existing = (
+            db.query(QuestionBank)
+            .filter(QuestionBank.incident_id == incident_id, QuestionBank.stage == stage)
+            .all()
+        )
         if existing:
             return existing
         if not create:
@@ -177,6 +184,7 @@ def _fake_generator(texts):
             QuestionBank(
                 context_type="사고후", question_text=text, target_field=f"ai_q{i}",
                 impact_weight=0.9 - i * 0.1, applies_to_l1=None, incident_id=incident_id,
+                stage=stage, answer_type="yesno",
             ) for i, text in enumerate(texts)
         ]
         for row in rows:
@@ -360,3 +368,90 @@ def test_세부유형이_아직_없으면_전용_질문은_묻지_않는다(db_s
     questions = claim_review.pending_questions(db_session, "PROP", {})
 
     assert [q.target_field for q in questions] == ["item_damage_type"]
+
+
+def test_한_페이지_답변을_한_번에_저장하고_분석은_한_번만_돈다(client, db_session, monkeypatch):
+    """질문이 한 화면에 다 뜨는 흐름이라, 답도 한 번에 들어온다. 답마다 따로 저장하면
+    같은 사고 분석이 답변 수만큼 돌아 응답이 그만큼 느려지고 결과도 중간 상태가 섞인다."""
+    _shared_question(db_session)
+    db_session.commit()
+    monkeypatch.setattr(
+        claim_review.incident_questions_gemini, "generate_questions",
+        _fake_generator(["경찰 신고서를 받으셨나요?", "가방은 잠겨 있었나요?"]),
+    )
+    body = client.post("/users", json={"nickname": "배치게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+    analysis = client.post("/incidents", json={
+        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+    }, headers=auth).json()
+    incident_id = analysis["incident_id"]
+    questions = analysis["pending_questions"]
+    assert len(questions) == 2
+
+    runs = []
+    original = incidents_router._run_analysis
+    monkeypatch.setattr(
+        incidents_router, "_run_analysis",
+        lambda db, incident, merged: runs.append(1) or original(db, incident, merged),
+    )
+
+    res = client.post(f"/incidents/{incident_id}/answers/batch", json={
+        "answers": [
+            {"question_id": questions[0]["question_id"], "answer_text": "예"},
+            {"question_id": questions[1]["question_id"], "answer_text": "아니오"},
+        ],
+        "extra_note": "지하철에서 당했어요",
+    }, headers=auth)
+
+    assert res.status_code == 200, res.text
+    assert len(runs) == 1, "답변 수만큼 분석이 돌면 안 된다"
+
+    logs = client.get(f"/incidents/{incident_id}", headers=auth)
+    assert logs.status_code == 200
+
+
+def test_기타_자유입력은_사고에_남아_재분류에_쓰인다(client, db_session, monkeypatch):
+    """예/아니오로 다 담기지 않는 이야기를 받는 칸이다. 받아만 두고 버리면 물어본
+    의미가 없다 — 사고 수식자로 남겨 재분류·조항 판단에 들어가야 한다."""
+    from app.models.user import Incident
+
+    _shared_question(db_session)
+    db_session.commit()
+    monkeypatch.setattr(
+        claim_review.incident_questions_gemini, "generate_questions",
+        _fake_generator(["경찰 신고서를 받으셨나요?"]),
+    )
+    body = client.post("/users", json={"nickname": "기타게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+    analysis = client.post("/incidents", json={
+        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+    }, headers=auth).json()
+    incident_id = analysis["incident_id"]
+
+    client.post(f"/incidents/{incident_id}/answers/batch", json={
+        "answers": [],
+        "extra_note": "지하철 4호선에서 당했습니다",
+    }, headers=auth)
+
+    incident = db_session.get(Incident, incident_id)
+    db_session.refresh(incident)
+    assert "지하철 4호선" in (incident.modifiers or "")
+
+
+def test_질문에는_예아니오인지_입력칸인지가_같이_내려온다(client, db_session, monkeypatch):
+    """한 페이지에 버튼과 입력칸을 섞어 그리려면 화면이 그걸 알아야 한다."""
+    _shared_question(db_session)
+    db_session.commit()
+    monkeypatch.setattr(
+        claim_review.incident_questions_gemini, "generate_questions",
+        _fake_generator(["경찰 신고서를 받으셨나요?"]),
+    )
+    body = client.post("/users", json={"nickname": "형태게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+    analysis = client.post("/incidents", json={
+        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+    }, headers=auth).json()
+
+    question = analysis["pending_questions"][0]
+    assert question["answer_type"] == "yesno"
+    assert question["stage"] == "L1"

@@ -41,7 +41,9 @@ export function IncidentReport() {
   const [resuming, setResuming] = useState(!!resumeIncidentId);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<IncidentAnalysisOut | null>(null);
-  const [answerText, setAnswerText] = useState("");
+  // 질문이 한 화면에 통째로 뜨므로 답도 질문 id별로 모아 뒀다가 한 번에 보낸다.
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [extraNote, setExtraNote] = useState("");
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
   const [selectedPolicyId, setSelectedPolicyId] = useState<number | null>(null);
   const [insurerCode, setInsurerCode] = useState("");
@@ -211,13 +213,18 @@ export function IncidentReport() {
   }
 
   async function handleAnswer() {
-    if (!analysis || !answerText.trim()) return;
-    const question = analysis.pending_questions[0];
+    if (!analysis) return;
+    const filled = analysis.pending_questions
+      .map((q) => ({ question_id: q.question_id, answer_text: (answers[q.question_id] ?? "").trim() }))
+      .filter((a) => a.answer_text !== "");
     setLoading(true);
     try {
-      const res = await api.answerQuestion(analysis.incident_id, question.question_id, answerText);
+      const res = await api.answerQuestionsBatch(analysis.incident_id, filled, extraNote.trim());
       setAnalysis(res);
-      setAnswerText("");
+      // 다음 단계 질문은 다른 문항이다 — 앞 단계 답이 남아 있으면 안 고른 항목이
+      // 이미 답한 것처럼 보인다.
+      setAnswers({});
+      setExtraNote("");
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
       setError(userMessage(err));
@@ -272,30 +279,78 @@ export function IncidentReport() {
   }
 
   if (phase === "questions" && analysis && analysis.pending_questions.length > 0) {
-    const q = analysis.pending_questions[0];
-    const icon = QUESTION_ICON[q.target_field] ?? "collision";
+    const questions = analysis.pending_questions;
+    // 질문은 두 번 나온다 — 1단계는 사고의 성격을 가리고, 2단계는 그 답을 딛고
+    // 세부유형을 가른다. 각 단계가 한 화면에 통째로 뜬다.
+    const isSecondStage = questions[0].stage === "L2";
+    const icon = QUESTION_ICON[questions[0].target_field] ?? "collision";
+    const answeredCount = questions.filter((q) => (answers[q.question_id] ?? "").trim() !== "").length;
     return (
       <div className="page">
         <TopBar title="사고가 발생했어요" />
         <StepFlow
           icon={icon}
-          eyebrow={`추가 확인 ${analysis.pending_questions.length}건 남음`}
-          title={q.question_text}
-          stepIndex={0}
+          eyebrow={isSecondStage ? "2단계 · 자세히 확인" : "1단계 · 사고 확인"}
+          title={isSecondStage ? "조금만 더\n여쎙볼게요" : "몇 가지만\n확인할게요"}
+          subtitle={
+            isSecondStage
+              ? "앞선 답변을 보고 이번 사고에 맞춰 다시 골라낸 질문이에요."
+              : "적어주신 내용을 읽고 필요한 것만 골랐어요. 모르는 건 비워두셔도 괜찮아요."
+          }
+          stepIndex={isSecondStage ? 1 : 0}
           onNext={handleAnswer}
-          nextLabel="답변하고 계속하기"
-          nextDisabled={!answerText.trim()}
+          nextLabel={`답변하고 계속하기${answeredCount > 0 ? ` (${answeredCount}/${questions.length})` : ""}`}
           loading={loading}
         >
-          <label>
-            답변
-            <input
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-              placeholder="편하게 답변해주세요"
-              autoFocus
-            />
-          </label>
+          <div className="qa-list">
+            {questions.map((q) => (
+              <div className="qa-item" key={q.question_id}>
+                <p className="qa-item__text">{q.question_text}</p>
+                {q.answer_type === "yesno" ? (
+                  <div className="qa-choice">
+                    {["예", "아니오"].map((choice) => (
+                      <button
+                        key={choice}
+                        type="button"
+                        className={`qa-choice__btn${answers[q.question_id] === choice ? " qa-choice__btn--on" : ""}`}
+                        onClick={() =>
+                          setAnswers((prev) => {
+                            // 고른 걸 다시 누르면 선택이 풀린다 — 잘못 눌렀을 때 비울 방법이 있어야 한다.
+                            const next = { ...prev };
+                            if (next[q.question_id] === choice) delete next[q.question_id];
+                            else next[q.question_id] = choice;
+                            return next;
+                          })
+                        }
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    className="qa-item__input"
+                    value={answers[q.question_id] ?? ""}
+                    onChange={(e) =>
+                      setAnswers((prev) => ({ ...prev, [q.question_id]: e.target.value }))
+                    }
+                    placeholder="편하게 적어주세요"
+                  />
+                )}
+              </div>
+            ))}
+
+            <div className="qa-item">
+              <p className="qa-item__text">그 밖에 더 알려주실 게 있나요? (선택)</p>
+              <textarea
+                className="qa-item__note"
+                value={extraNote}
+                onChange={(e) => setExtraNote(e.target.value)}
+                rows={3}
+                placeholder="위 질문으로 다 담기지 않은 이야기를 적어주세요"
+              />
+            </div>
+          </div>
           {error && <div className="error-box">{error}</div>}
         </StepFlow>
       </div>

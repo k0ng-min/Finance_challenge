@@ -60,8 +60,10 @@ def _incident(db):
     return incident
 
 
-def _generate(db, incident):
-    return qgen.generate_questions(db, incident=incident, l1_code="PROP", merged={})
+def _generate(db, incident, stage=qgen.STAGE_L1, answers=None):
+    return qgen.generate_questions(
+        db, incident=incident, stage=stage, l1_code="PROP", merged={}, answers=answers,
+    )
 
 
 def test_모델이_질문_없음이라고_하면_빈_목록을_돌려준다(db_session, monkeypatch):
@@ -120,7 +122,8 @@ def test_질문_없음으로_끝난_사고는_다시_열어도_빈_목록이다(
 
     monkeypatch.setattr(qgen.genai, "Client", _boom)
     again = qgen.generate_questions(
-        db_session, incident=incident, l1_code="PROP", merged={}, create=False,
+        db_session, incident=incident, stage=qgen.STAGE_L1, l1_code="PROP",
+        merged={}, create=False,
     )
 
     assert again == []
@@ -133,7 +136,8 @@ def test_생성을_한_적_없는_사고는_None으로_공용_뱅크를_연다(d
     monkeypatch.setattr(qgen.genai, "Client", _boom)
 
     result = qgen.generate_questions(
-        db_session, incident=incident, l1_code="PROP", merged={}, create=False,
+        db_session, incident=incident, stage=qgen.STAGE_L1, l1_code="PROP",
+        merged={}, create=False,
     )
 
     assert result is None
@@ -173,7 +177,78 @@ def test_프롬프트에_이_대분류의_세부유형_후보가_들어간다(db
         lambda api_key=None: type("C", (), {"models": _Recording(None)})(),
     )
 
-    qgen.generate_questions(db_session, incident=incident, l1_code="INJ", merged={})
+    qgen.generate_questions(db_session, incident=incident, stage=qgen.STAGE_L1, l1_code="INJ", merged={})
 
     assert "해외상해치료" in captured["prompt"], "세부유형 후보가 프롬프트에 없다"
     assert "귀국후 국내치료" in captured["prompt"]
+
+
+def test_1단계_질문에는_단계와_답변_형태가_붙는다(db_session, monkeypatch):
+    """한 페이지에 예/아니오 버튼과 입력칸을 섞어 그리려면, 질문마다 어느 쪽인지가
+    있어야 한다. 진단명·지연 시간처럼 약관의 금액·시간 조건과 직결되는 값은 예/아니오로
+    받을 수 없다."""
+    incident = _incident(db_session)
+    _install(monkeypatch, payload={"items": [
+        {"question_text": "경찰에 신고하셨나요?", "target_field": "ai_police_report",
+         "impact_weight": 0.9, "answer_type": "yesno"},
+        {"question_text": "도난당한 물건의 구입가가 얼마인가요?", "target_field": "ai_item_price",
+         "impact_weight": 0.7, "answer_type": "text"},
+    ]})
+
+    rows = _generate(db_session, incident)
+
+    assert [r.stage for r in rows] == [qgen.STAGE_L1, qgen.STAGE_L1]
+    assert [r.answer_type for r in rows] == ["yesno", "text"]
+    assert incident.question_stage == 1
+
+
+def test_2단계_프롬프트에_1단계_답이_들어간다(db_session, monkeypatch):
+    """2단계 질문의 존재 이유가 이것이다 — 1단계 답을 읽고 세부유형을 가르는 질문을
+    새로 만든다. 답을 안 넘기면 1단계와 똑같은 걸 또 묻는다."""
+    incident = _incident(db_session)
+    captured = {}
+
+    class _Recording(_FakeModels):
+        def generate_content(self, *, model, contents, config):
+            captured["prompt"] = contents
+            return _FakeResponse({"items": [
+                {"question_text": "잠금장치가 있었나요?", "target_field": "ai_lock",
+                 "impact_weight": 0.8, "answer_type": "yesno"},
+            ]})
+
+    monkeypatch.setattr(config, "GEMINI_ENABLED", True)
+    monkeypatch.setattr(config, "GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(
+        qgen.genai, "Client",
+        lambda api_key=None: type("C", (), {"models": _Recording(None)})(),
+    )
+
+    rows = _generate(db_session, incident, stage=qgen.STAGE_L2,
+                     answers={"경찰에 신고하셨나요?": "아니오"})
+
+    assert "경찰에 신고하셨나요?" in captured["prompt"]
+    assert "아니오" in captured["prompt"]
+    assert [r.stage for r in rows] == [qgen.STAGE_L2]
+    assert incident.question_stage == 2
+
+
+def test_단계마다_저장된_질문만_돌려준다(db_session, monkeypatch):
+    """1단계 질문이 2단계 화면에 다시 나오면 사용자는 같은 걸 두 번 답하게 된다."""
+    incident = _incident(db_session)
+    _install(monkeypatch, payload={"items": [
+        {"question_text": "경찰에 신고하셨나요?", "target_field": "ai_police_report",
+         "impact_weight": 0.9, "answer_type": "yesno"},
+    ]})
+    _generate(db_session, incident)
+
+    _install(monkeypatch, payload={"items": [
+        {"question_text": "잠금장치가 있었나요?", "target_field": "ai_lock",
+         "impact_weight": 0.8, "answer_type": "yesno"},
+    ]})
+    _generate(db_session, incident, stage=qgen.STAGE_L2)
+
+    l1 = qgen.saved_questions(db_session, incident.incident_id, qgen.STAGE_L1)
+    l2 = qgen.saved_questions(db_session, incident.incident_id, qgen.STAGE_L2)
+
+    assert [r.target_field for r in l1] == ["ai_police_report"]
+    assert [r.target_field for r in l2] == ["ai_lock"]

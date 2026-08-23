@@ -65,7 +65,7 @@ _add_missing_columns("incident", {
     "type_id": "ALTER TABLE incident ADD COLUMN type_id INTEGER",
     "modifiers": "ALTER TABLE incident ADD COLUMN modifiers TEXT",
     "classify_confidence": "ALTER TABLE incident ADD COLUMN classify_confidence FLOAT",
-    "questions_generated": "ALTER TABLE incident ADD COLUMN questions_generated BOOLEAN DEFAULT 0",
+    "question_stage": "ALTER TABLE incident ADD COLUMN question_stage INTEGER DEFAULT 0",
 })
 _add_missing_columns("analysis_finding", {
     "coverage_amount": "ALTER TABLE analysis_finding ADD COLUMN coverage_amount VARCHAR",
@@ -80,6 +80,8 @@ _add_missing_columns("question_bank", {
     "applies_to_l1": "ALTER TABLE question_bank ADD COLUMN applies_to_l1 VARCHAR",
     "incident_id": "ALTER TABLE question_bank ADD COLUMN incident_id INTEGER",
     "applies_to_l2": "ALTER TABLE question_bank ADD COLUMN applies_to_l2 VARCHAR",
+    "stage": "ALTER TABLE question_bank ADD COLUMN stage VARCHAR",
+    "answer_type": "ALTER TABLE question_bank ADD COLUMN answer_type VARCHAR DEFAULT 'text'",
 })
 _add_missing_columns("overlap_rule", {
     "anchor_phrase": "ALTER TABLE overlap_rule ADD COLUMN anchor_phrase VARCHAR",
