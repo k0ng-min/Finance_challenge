@@ -45,6 +45,17 @@ def _l1_code_for_type(db: Session, type_id: int | None) -> str | None:
     return type_row.l1_code if type_row else None
 
 
+def _l2_code_for_type(db: Session, type_id: int | None) -> str | None:
+    """확정된 세부유형 코드. L1 루트에 보류된 상태면 None이다 — 그때는 세부유형 전용
+    질문을 꺼내지 않는다(도난·파손·분실 질문이 한꺼번에 쏟아진다)."""
+    if type_id is None:
+        return None
+    type_row = db.get(IncidentType, type_id)
+    if type_row is None or type_row.parent_id is None:
+        return None
+    return type_row.l2_code
+
+
 def _modifiers_dict(incident: Incident) -> dict:
     return json.loads(incident.modifiers) if incident.modifiers else {}
 
@@ -182,6 +193,7 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
     l1_code = _l1_code_for_type(db, incident.type_id)
     questions = pending_questions(
         db, l1_code, merged, _modifiers_dict(incident), incident=incident, generate=True,
+        l2_code=_l2_code_for_type(db, incident.type_id),
     )
 
     validation_specs = run_core_validation(db, incident.user_id, incident.occurred_at, merged, l1_code)
@@ -358,6 +370,7 @@ def get_incident(
     l1_code = _l1_code_for_type(db, incident.type_id)
     questions = pending_questions(
         db, l1_code, merged, _modifiers_dict(incident), incident=incident, generate=False,
+        l2_code=_l2_code_for_type(db, incident.type_id),
     )
 
     return IncidentAnalysisOut(

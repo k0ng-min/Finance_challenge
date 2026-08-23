@@ -137,3 +137,43 @@ def test_생성을_한_적_없는_사고는_None으로_공용_뱅크를_연다(d
     )
 
     assert result is None
+
+
+def test_프롬프트에_이_대분류의_세부유형_후보가_들어간다(db_session, monkeypatch):
+    """질문의 목적은 "무엇이 궁금한지"가 아니라 "약관을 어디까지 추려낼 수 있는지"다.
+    같은 휴대품 사고라도 도난이냐 분실이냐에 따라 걸리는 조항이 통째로 달라지므로,
+    모델이 그 갈림길을 알아야 그걸 가르는 질문을 만든다. 후보를 안 주면 모델은
+    사고 내용만 보고 "언제 그랬나요" 같은, 조항을 하나도 못 가르는 질문을 만든다."""
+    from app.models.kb import IncidentType
+
+    root = IncidentType(l1_code="INJ", l2_code="INJ", name="상해", parent_id=None, is_active=True)
+    db_session.add(root)
+    db_session.flush()
+    for code, name in [("INJ_OVS", "해외상해치료"), ("INJ_DOM", "귀국후 국내치료")]:
+        db_session.add(IncidentType(
+            l1_code="INJ", l2_code=code, name=name, parent_id=root.type_id, is_active=True,
+        ))
+    db_session.flush()
+
+    incident = _incident(db_session)
+    captured = {}
+
+    class _Recording(_FakeModels):
+        def generate_content(self, *, model, contents, config):
+            captured["prompt"] = contents
+            return _FakeResponse({"items": [
+                {"question_text": "경찰 신고서를 받으셨나요?", "target_field": "ai_police_report",
+                 "impact_weight": 0.9},
+            ]})
+
+    monkeypatch.setattr(config, "GEMINI_ENABLED", True)
+    monkeypatch.setattr(config, "GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(
+        qgen.genai, "Client",
+        lambda api_key=None: type("C", (), {"models": _Recording(None)})(),
+    )
+
+    qgen.generate_questions(db_session, incident=incident, l1_code="INJ", merged={})
+
+    assert "해외상해치료" in captured["prompt"], "세부유형 후보가 프롬프트에 없다"
+    assert "귀국후 국내치료" in captured["prompt"]

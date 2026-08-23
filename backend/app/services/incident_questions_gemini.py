@@ -36,6 +36,7 @@ from google import genai
 from google.genai import types
 
 from app import config
+from app.models.kb import IncidentType
 from app.models.question import QuestionBank
 from app.models.user import Incident
 
@@ -64,6 +65,11 @@ _PROMPT = """당신은 여행자보험 청구를 돕는 상담원입니다. 아�
 \"\"\"{free_text}\"\"\"
 
 분류된 사고 대분류: {l1_code}
+
+이 대분류 안에서 아직 어느 세부유형인지 정해지지 않았습니다. 후보는 이렇습니다.
+{l2_candidates}
+세부유형이 갈리면 적용되는 약관 조항이 통째로 달라집니다. **후보를 실제로 갈라낼 수
+있는 질문**을 우선으로 만드세요 — 답을 듣고도 후보가 그대로 남는 질문은 만들지 마세요.
 
 이미 확보된 정보(다시 묻지 마세요):
 {known}
@@ -106,6 +112,29 @@ def _known_summary(merged: dict, modifiers: dict | None) -> str:
         if value:
             lines.append(f"- {name}: {value}")
     return "\n".join(lines) if lines else "- (아직 없음)"
+
+
+def _l2_candidates_text(db: Session, l1_code: str | None) -> str:
+    """이 대분류 아래의 세부유형 후보를 프롬프트에 넣을 줄로 만든다.
+
+    질문의 목적은 "무엇이 궁금한가"가 아니라 "약관을 어디까지 추려낼 수 있는가"다.
+    조항 매핑은 세부유형 단위로 달려 있어서, 세부유형이 갈리면 걸리는 조항이 통째로
+    바뀜다. 후보를 안 알려주면 모델은 사고 내용만 보고 조항을 하나도 못 가르는 질문을
+    만든다(예: "언제 그랬나요")."""
+    if not l1_code:
+        return "   · (대분류가 정해지지 않아 후보를 알 수 없음)"
+    root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
+    if root is None:
+        return "   · (후보 없음)"
+    children = (
+        db.query(IncidentType)
+        .filter(IncidentType.parent_id == root.type_id, IncidentType.is_active.is_(True))
+        .order_by(IncidentType.type_id)
+        .all()
+    )
+    if not children:
+        return "   · (후보 없음)"
+    return "\n".join(f"   · {c.name}" for c in children)
 
 
 def _normalize_field(raw: str, used: set[str]) -> str | None:
@@ -173,6 +202,7 @@ def generate_questions(
     prompt = _PROMPT.format(
         free_text=free_text.strip(),
         l1_code=l1_code or "(분류 안 됨)",
+        l2_candidates=_l2_candidates_text(db, l1_code),
         known=_known_summary(merged, modifiers),
         max_questions=MAX_GENERATED_QUESTIONS,
         field_list=field_list,

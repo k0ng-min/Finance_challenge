@@ -25,10 +25,12 @@ def _incident(db, free_text="발목이 부러져서 병원에 갔어요"):
     return incident
 
 
-def _shared_question(db, text="입원하셨나요?", field="hospitalized", applies_to_l1=None, weight=0.5):
+def _shared_question(db, text="입원하셨나요?", field="hospitalized", applies_to_l1=None, weight=0.5,
+                     applies_to_l2=None):
     row = QuestionBank(
         context_type="사고후", question_text=text, target_field=field,
-        impact_weight=weight, applies_to_l1=applies_to_l1, incident_id=None,
+        impact_weight=weight, applies_to_l1=applies_to_l1, applies_to_l2=applies_to_l2,
+        incident_id=None,
     )
     db.add(row)
     db.flush()
@@ -330,3 +332,31 @@ def test_시드는_사고별_생성질문을_공용_질문으로_착각하지_�
         QuestionBank.incident_id.isnot(None)
     ).one()
     assert generated.applies_to_l1 is None
+
+
+def test_세부유형이_정해지면_그_유형_전용_질문까지_묻는다(db_session):
+    """대분류 질문만 있으면 "휴대품 사고"에 늘 같은 질문이 나온다. 도난이면 경찰
+    신고서를, 분실이면 잃어버린 상황을 물어야 청구에 실제로 쓸 답이 모인다."""
+    _shared_question(db_session, text="도난·파손·분실 중 어느 쪽인가요?", field="item_damage_type",
+                     applies_to_l1="PROP", weight=0.9)
+    _shared_question(db_session, text="도난 신고서를 받으셨나요?", field="prop_police_report",
+                     applies_to_l1="PROP", applies_to_l2="PROP_THEFT", weight=0.8)
+    _shared_question(db_session, text="어디서 잃어버리셨나요?", field="prop_loss_place",
+                     applies_to_l1="PROP", applies_to_l2="PROP_LOSS", weight=0.8)
+
+    questions = claim_review.pending_questions(db_session, "PROP", {}, l2_code="PROP_THEFT")
+
+    assert [q.target_field for q in questions] == ["item_damage_type", "prop_police_report"]
+
+
+def test_세부유형이_아직_없으면_전용_질문은_묻지_않는다(db_session):
+    """어느 세부유형인지 모르는 채로 전용 질문을 다 꺼내면, 도난·파손·분실 질문이
+    한꺼번에 쏟아진다."""
+    _shared_question(db_session, text="도난·파손·분실 중 어느 쪽인가요?", field="item_damage_type",
+                     applies_to_l1="PROP", weight=0.9)
+    _shared_question(db_session, text="도난 신고서를 받으셨나요?", field="prop_police_report",
+                     applies_to_l1="PROP", applies_to_l2="PROP_THEFT", weight=0.8)
+
+    questions = claim_review.pending_questions(db_session, "PROP", {})
+
+    assert [q.target_field for q in questions] == ["item_damage_type"]

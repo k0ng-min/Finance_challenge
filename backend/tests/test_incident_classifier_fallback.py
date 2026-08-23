@@ -59,13 +59,33 @@ def test_gemini_disabled_does_not_force_first_l2(db_session, monkeypatch):
     assert result.confidence == 0.0
 
 
-def test_api_error_abstains_to_l1_root(db_session, monkeypatch):
-    _seed_taxonomy(db_session)
+def _break_api(monkeypatch):
     monkeypatch.setattr(config, "GEMINI_ENABLED", True)
     monkeypatch.setattr(classifier, "_get_client", lambda: object())
-    monkeypatch.setattr(classifier, "_generate_json", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(
+        classifier, "_generate_json",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+
+
+def test_api가_죽어도_단서가_있으면_세부유형까지_좁힌다(db_session, monkeypatch):
+    """예전에는 API 오류면 무조건 L1 루트로 보류했다. 그러면 그 대분류의 조항이 전부
+    딸려와서, 수하물 지연 사고에 항공기납치 조항까지 같이 뜬다. 사고 내용에 단서가
+    뚜렷하면 세부유형까지 좁힌다 — 대신 확신은 낮게 둬서 답변으로 다시 확인한다."""
+    _seed_taxonomy(db_session)
+    _break_api(monkeypatch)
 
     result = classifier.classify_l2(db_session, "TRV", "수하물이 아직 도착하지 않았어요")
+
+    assert result.l2_code == "TRV_BAGGAGE_DELAY"
+    assert result.confidence < classifier.DEFAULT_L2_AUTO_THRESHOLD
+
+
+def test_api가_죽고_단서도_없으면_L1_루트로_보류한다(db_session, monkeypatch):
+    _seed_taxonomy(db_session)
+    _break_api(monkeypatch)
+
+    result = classifier.classify_l2(db_session, "TRV", "여행 중에 좀 곤란한 일이 있었어요")
     root = db_session.query(IncidentType).filter_by(l2_code="TRV").one()
 
     assert result.abstained is True
@@ -281,3 +301,52 @@ def test_키워드로_잡은_대분류는_확신을_낮게_둔다(monkeypatch):
     _code, confidence, _reason = classifier.classify_l1("다리를 다쳤어요")
 
     assert 0 < confidence < classifier.DEFAULT_L1_AUTO_THRESHOLD
+
+
+def test_대분류는_먼저_걸린_단어가_아니라_더_많이_걸린_쪽으로_잡는다(monkeypatch):
+    """예전에는 목록 순서대로 먼저 걸린 하나가 그대로 이겼다. "무릎이 깨졌고 발목도
+    삐었어요"는 '깨졌'(휴대품 파손) 하나 때문에 휴대품 사고가 됐다 — 상해 단서가 둘
+    있는데도. 단서 개수를 세서 더 많이 걸린 쪽을 고른다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    assert classifier.classify_l1("넘어져서 무릎이 깨졌고 발목도 삐었어요")[0] == "INJ"
+
+
+def test_Gemini가_없어도_세부유형까지_좁힌다(db_session, monkeypatch):
+    """대분류만 잡으면 그 대분류의 조항이 전부 딸려온다 — 도난인지 분실인지에 따라
+    보상 여부가 갈리는데도 둘 다 보여준다. 단서가 뚜렷하면 세부유형까지 좁힌다."""
+    _seed_taxonomy(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    theft = classifier.classify_l2(db_session, "PROP", "파리에서 소매치기를 당했어요")
+    loss = classifier.classify_l2(db_session, "PROP", "그냥 어디서 잃어버렸어요")
+
+    assert theft.l2_code == "PROP_THEFT"
+    assert loss.l2_code == "PROP_LOSS"
+
+
+def test_세부유형_단서가_없으면_좁히지_않는다(db_session, monkeypatch):
+    """근거 없이 세부유형을 찍으면 엉뚱한 조항만 보여주고 맞는 조항은 감춘다."""
+    _seed_taxonomy(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    result = classifier.classify_l2(db_session, "PROP", "여행 중에 좀 곤란한 일이 있었어요")
+
+    assert result.l2_code is None and result.abstained
+
+
+def test_남의_물건을_망가뜨린_건_휴대품이_아니라_배상책임이다(monkeypatch):
+    """"깨졌"(내 물건이 깨짐)와 "깨뜨렸"(내가 남의 것을 깨뜨림)은 걸리는 약관이 통째로
+    다르다. 앞은 휴대품손해, 뒤는 배상책임이다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    assert classifier.classify_l1("호텔 객실 유리를 깨뜨렸어요")[0] == "LIA"
+    assert classifier.classify_l1("가방에 넣어둔 카메라가 깨졌어요")[0] == "PROP"
+
+
+def test_띄어쓴_조기_귀국도_여행변경으로_잡는다(monkeypatch):
+    """단서를 한 가지 표기로만 적어두면 띄어쓰기 하나에 대분류가 통째로 어긋난다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    assert classifier.classify_l1("여행 중 조기 귀국했어요")[0] == "CHG"
+    assert classifier.classify_l1("일정을 중단하고 돌아왔어요")[0] == "CHG"

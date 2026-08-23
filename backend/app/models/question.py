@@ -15,6 +15,10 @@ class QuestionBank(Base):
     impact_weight = Column(Float, default=0.0)
     # 이 질문이 어느 사고유형 L1(예: "INJ")의 L2 판별에 쓰이는지. None이면 L1 공통(예: 의료비).
     applies_to_l1 = Column(String, nullable=True)
+    # 그 대분류 안의 특정 세부유형(L2)에서만 묻는 질문. 예: 휴대품 사고라도 "도난"일
+    # 때만 경찰 신고서를 묻는다. None이면 그 대분류 전체에 해당한다. 세부유형이 아직
+    # 안 정해졌으면 이 질문들은 꺼내지 않는다 — 도난·파손·분실 질문이 한꺼번에 쏟아진다.
+    applies_to_l2 = Column(String, nullable=True)
     # 이 질문이 특정 사고 한 건을 위해 그 자리에서 만들어진 것이면 그 사고 id.
     # None이면 미리 심어둔 공용 질문(seed_questions.py)이다.
     #

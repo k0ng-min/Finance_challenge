@@ -79,6 +79,7 @@ _add_missing_columns("incident_type", {
 _add_missing_columns("question_bank", {
     "applies_to_l1": "ALTER TABLE question_bank ADD COLUMN applies_to_l1 VARCHAR",
     "incident_id": "ALTER TABLE question_bank ADD COLUMN incident_id INTEGER",
+    "applies_to_l2": "ALTER TABLE question_bank ADD COLUMN applies_to_l2 VARCHAR",
 })
 _add_missing_columns("overlap_rule", {
     "anchor_phrase": "ALTER TABLE overlap_rule ADD COLUMN anchor_phrase VARCHAR",
@@ -202,9 +203,23 @@ def _ensure_onsite_and_simulation():
             db.close()
 
 
+def _ensure_question_bank():
+    """공용 질문 뱅크를 기동 때마다 맞춰 둔다.
+
+    "빈 테이블이면 채운다"로는 부족하다 — 질문은 계속 늘어나는데(특히 세부유형별 질문),
+    이미 행이 있는 DB에는 새 질문이 영영 안 들어간다. 시드는 target_field 기준으로
+    없는 것만 추가하고 태그만 갱신하므로 몇 번을 돌려도 같은 결과다."""
+    try:
+        from app.seed_questions import run as seed_questions
+        seed_questions()
+    except Exception as exc:  # noqa: BLE001 — 어떤 이유든 앱 기동을 막지 않는다
+        print(f"[startup] question_bank 시드를 건너뜁니다: {exc}")
+
+
 _ensure_doc_requirements()
 _ensure_travel_alerts()
 _ensure_onsite_and_simulation()
+_ensure_question_bank()
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 

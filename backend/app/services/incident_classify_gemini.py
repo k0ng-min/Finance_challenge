@@ -189,23 +189,121 @@ _FALLBACK_CONFIDENCE = 0.35
 # 먼저 걸리는 것이 이긴다 — 위쪽일수록 다른 대분류와 헷갈릴 여지가 적은 단서다.
 _FALLBACK_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("TRV", ("결항", "지연", "수하물", "위탁수하물", "항공편", "비행기", "납치", "환승")),
-    ("CHG", ("여행취소", "여행 취소", "일정취소", "조기귀국", "중단", "취소했")),
+    ("CHG", ("여행취소", "여행 취소", "일정취소", "일정 취소", "조기귀국", "조기 귀국",
+             "중단", "취소했", "여행을 접")),
     ("EMG", ("조난", "수색", "구조", "이송", "송환", "유해", "실종")),
-    ("LIA", ("배상", "물어주", "파손시켰", "다치게", "손해를 입혔", "변상")),
+    # "깨졌"(내 물건이 깨짐)과 "깨뜨렸"(내가 남의 것을 깨뜨림)은 걸리는 약관이 통째로
+    # 다르다 — 앞은 휴대품손해, 뒤는 배상책임이다. 타동사 형태를 여기서 먼저 잡는다.
+    ("LIA", ("배상", "물어주", "변상", "다치게", "손해를 입혔", "파손시",
+             "깨뜨", "깨트", "깨먹", "부숴", "부쉈", "망가뜨", "망가트")),
     ("PROP", ("도난", "소매치기", "분실", "잃어버", "훔쳐", "파손", "깨졌", "여권")),
     ("ILL", ("질병", "병원", "감염", "격리", "발열", "복통", "배탈", "설사", "식중독", "코로나", "몸살", "아파", "아팠")),
     ("INJ", ("다쳤", "다침", "부상", "골절", "부러", "삐", "염좌", "화상", "찢어", "베였", "타박", "넘어져", "부딪")),
 )
 
 
+def _score_keywords(text: str, keywords: tuple[str, ...]) -> tuple[int, str | None]:
+    """본문에 걸린 단서 개수와, 그중 첫 단서를 돌려준다."""
+    hit = None
+    count = 0
+    for word in keywords:
+        if word in text:
+            count += 1
+            if hit is None:
+                hit = word
+    return count, hit
+
+
 def _fallback_l1(text: str) -> tuple[str, float, str] | None:
-    """사고 내용에서 대분류 단서를 찾는다. 못 찾으면 None(=SPC 보류)."""
+    """사고 내용에서 대분류 단서를 찾는다. 못 찾으면 None(=SPC 보류).
+
+    먼저 걸린 하나가 이기게 두면 스쳐 지나가는 단어 하나에 대분류가 끌려간다 —
+    "무릎이 깨졌고 발목도 삐었어요"가 '깨졌'(휴대품 파손) 때문에 휴대품 사고가 됐다.
+    단서 개수를 세서 더 많이 걸린 쪽을 고르고, 같으면 목록 위쪽(=다른 대분류와 헷갈릴
+    여지가 적은 단서)을 쓴다."""
     lowered = text.lower()
-    for code, keywords in _FALLBACK_KEYWORDS:
-        for word in keywords:
-            if word in lowered:
-                return code, _FALLBACK_CONFIDENCE, f"사고 내용의 '{word}'로 대분류만 추정(세부유형은 확인 필요)"
-    return None
+    best: tuple[int, int, str, str] | None = None  # (개수, -순번, 코드, 단서)
+    for order, (code, keywords) in enumerate(_FALLBACK_KEYWORDS):
+        count, hit = _score_keywords(lowered, keywords)
+        if count == 0:
+            continue
+        candidate = (count, -order, code, hit or "")
+        if best is None or candidate > best:
+            best = candidate
+    if best is None:
+        return None
+    _count, _order, code, hit = best
+    return code, _FALLBACK_CONFIDENCE, f"사고 내용의 '{hit}'로 대분류만 추정(세부유형은 확인 필요)"
+
+
+# 대분류 안에서 세부유형까지 좁히는 단서. 대분류만 잡으면 그 대분류의 조항이 전부
+# 딸려온다 — 도난인지 분실인지에 따라 보상 여부가 갈리는데도 둘 다 보여주게 된다.
+# 단서가 뚜렷할 때만 좁히고, 없으면 좁히지 않는다(근거 없이 찍지 않는다).
+_FALLBACK_L2_KEYWORDS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
+    "PROP": (
+        ("PROP_PASSPORT_LOSS", ("여권",)),
+        ("PROP_CASH_SECURITIES", ("현금", "지폐", "수표", "유가증권")),
+        ("PROP_THEFT", ("도난", "소매치기", "훔쳐", "강취", "털렸", "빼앗")),
+        ("PROP_DAMAGE", ("파손", "깨졌", "깨뜨", "부서", "망가")),
+        ("PROP_LOSS", ("분실", "잃어버", "두고 내렸", "놓고 왔")),
+    ),
+    "TRV": (
+        ("TRV_HIJACK", ("납치", "하이재킹")),
+        ("TRV_BAGGAGE_LOSS", ("수하물 분실", "수하물을 잃", "짐을 잃", "수하물 못 찾")),
+        ("TRV_BAGGAGE_DELAY", ("수하물", "짐이 안", "위탁수하물", "캐리어가 안")),
+        ("TRV_FLIGHT_DELAY", ("지연", "결항", "연착", "취소된 항공")),
+    ),
+    "INJ": (
+        ("INJ_DEATH_DISABILITY", ("사망", "후유장해", "장해")),
+        ("INJ_DOMESTIC_TREATMENT", ("귀국 후", "귀국후", "한국에서 치료", "국내에서 치료")),
+        ("INJ_OVERSEAS_TREATMENT", ("현지", "해외에서", "병원", "치료", "입원", "수술")),
+    ),
+    "ILL": (
+        ("ILL_DEATH_DISABILITY", ("사망", "고도후유장해")),
+        ("ILL_INFECTIOUS", ("감염병", "격리", "코로나", "확진", "전염")),
+        ("ILL_DOMESTIC_TREATMENT", ("귀국 후", "귀국후", "국내에서 치료")),
+        ("ILL_OVERSEAS_TREATMENT", ("현지", "해외에서", "병원", "치료", "입원")),
+    ),
+    "LIA": (
+        ("LIA_LODGING", ("호텔", "숙소", "객실", "에어비앤비", "임차")),
+        ("LIA_PERSONAL", ("다치게", "부상을 입혔", "사람을")),
+        ("LIA_PROPERTY", ("물건", "파손시켰", "깨뜨", "변상", "물어주")),
+    ),
+    "CHG": (
+        ("CHG_INTERRUPTION", ("중단", "조기귀국", "조기 귀국", "돌아왔")),
+        ("CHG_CANCELLATION", ("취소",)),
+    ),
+    "EMG": (
+        ("EMG_REPATRIATION", ("유해", "시신", "송환")),
+        ("EMG_RESCUE", ("조난", "수색", "구조", "실종")),
+        ("EMG_MEDICAL_TRANSPORT", ("이송", "후송", "에어앰뷸런스")),
+        ("EMG_FAMILY_VISIT", ("가족 방문", "가족이 와", "보호자 항공")),
+    ),
+    "SPC": (
+        ("SPC_WAR_TERROR", ("전쟁", "테러", "폭동", "내전")),
+        ("SPC_NATURAL_DISASTER", ("지진", "홍수", "태풍", "화산", "천재지변", "쓰나미")),
+        ("SPC_PET_CARE", ("반려동물", "강아지", "고양이", "펫")),
+    ),
+}
+
+
+def _fallback_l2(l1_code: str, text: str) -> tuple[str, str] | None:
+    """(l2_code, 걸린 단서). 단서가 없으면 None."""
+    table = _FALLBACK_L2_KEYWORDS.get(l1_code)
+    if not table:
+        return None
+    lowered = text.lower()
+    best: tuple[int, int, str, str] | None = None
+    for order, (code, keywords) in enumerate(table):
+        count, hit = _score_keywords(lowered, keywords)
+        if count == 0:
+            continue
+        candidate = (count, -order, code, hit or "")
+        if best is None or candidate > best:
+            best = candidate
+    if best is None:
+        return None
+    return best[2], best[3]
 
 
 def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, float, str]:
@@ -237,6 +335,25 @@ def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, f
     return result.l1_code, round(result.confidence, 2), result.reason
 
 
+def _l2_from_keywords(candidates, l1_code: str, free_text: str, root):
+    """Gemini를 못 쓸 때, 사고 내용의 단서로 세부유형까지 좁힌다. 단서가 없으면 None.
+
+    대분류만 잡아두면 그 대분류의 조항이 전부 딸려온다 — 도난인지 분실인지에 따라
+    보상 여부가 갈리는데도 둘 다 보여주게 된다. 단서가 뚜렷할 때만 좁히고, 확신은
+    자동 임계값 아래로 둬서 사용자 답변으로 다시 확인하게 한다."""
+    picked = _fallback_l2(l1_code, (free_text or "").strip())
+    if picked is None:
+        return None
+    code, hit = picked
+    match = next((c for c in candidates if c.l2_code == code), None)
+    if match is None:
+        return None
+    return L2ClassifyResult(
+        type_id=match.type_id, l2_code=match.l2_code, confidence=_FALLBACK_CONFIDENCE,
+        reason=f"사고 내용의 '{hit}'로 세부유형을 좁힘(확인 필요)", abstained=False,
+    )
+
+
 def classify_l2(
     db: Session, l1_code: str, free_text: str, answers: dict[str, str] | None = None,
     *, auto_threshold: float = DEFAULT_L2_AUTO_THRESHOLD, raise_on_error: bool = False,
@@ -260,6 +377,9 @@ def classify_l2(
         )
 
     if not config.GEMINI_ENABLED or not (free_text or "").strip():
+        narrowed = _l2_from_keywords(candidates, l1_code, free_text, root)
+        if narrowed is not None:
+            return narrowed
         return L2ClassifyResult(
             type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
             reason="근거 부족(자유서술 없음 또는 Gemini 미설정) — 추가 정보 필요",
@@ -279,7 +399,10 @@ def classify_l2(
     except Exception:
         if raise_on_error:
             raise
-        logger.exception("classify_l2 실패, L1 루트로 폴백")
+        logger.exception("classify_l2 실패 — 사고 내용의 단서로 세부유형만 추정")
+        narrowed = _l2_from_keywords(candidates, l1_code, free_text, root)
+        if narrowed is not None:
+            return narrowed
         return L2ClassifyResult(
             type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
             reason="분류 실패(API 오류) — L1 루트에서 추가 정보 필요", abstained=True,

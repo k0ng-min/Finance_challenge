@@ -541,7 +541,7 @@ export function InsurerRankingFlow({
       {registered && overlap && (
         <section style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: "1.05rem" }}>기존보험과 겹치거나 비는 담보</h2>
-          <OverlapReportView report={overlap} />
+          <OverlapReportView report={overlap} showUnknown={false} />
         </section>
       )}
     </div>

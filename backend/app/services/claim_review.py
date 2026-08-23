@@ -356,14 +356,25 @@ def generate_claim_findings(
     return findings
 
 
-def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
-    """applies_to_l1=NULL은 모든 L1에서 후보가 되는 완전 공통 질문. 값이 있으면(콤마로 여러
-    L1을 나열 가능, 예: "INJ,ILL") 지금 분류된 l1_code가 그 안에 있을 때만 후보가 된다."""
-    if applies_to_l1 is None:
+def _matches_code(applies_to: str | None, code: str | None) -> bool:
+    """applies_to=NULL이면 제한 없음. 값이 있으면(콤마로 여러 개 나열 가능) 지금 분류된
+    코드가 그 안에 있을 때만 해당한다."""
+    if applies_to is None:
         return True
-    if not l1_code:
+    if not code:
         return False
-    return l1_code in {code.strip() for code in applies_to_l1.split(",")}
+    return code in {c.strip() for c in applies_to.split(",")}
+
+
+def _question_applies(question: "QuestionBank", l1_code: str | None, l2_code: str | None) -> bool:
+    """이 질문을 지금 사고에서 물어도 되는지.
+
+    applies_to_l2가 달린 질문은 그 세부유형으로 확정됐을 때만 묻는다 — 아직 모르는 채로
+    다 꺼내면 도난·파손·분실 질문이 한꺼번에 쏟아진다. applies_to_l1만 달린 질문은 그
+    대분류 전체에서, 둘 다 없으면 모든 사고에서 후보가 된다."""
+    if question.applies_to_l2 is not None:
+        return _matches_code(question.applies_to_l1, l1_code) and _matches_code(question.applies_to_l2, l2_code)
+    return _matches_code(question.applies_to_l1, l1_code)
 
 
 # 생성 질문이 빼먹어도 공용 뱅크에서 반드시 보충하는 필드.
@@ -376,7 +387,7 @@ def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
 _MUST_ASK_FIELDS = {"item_damage_type"}
 
 
-def _bank_candidates(db: Session, l1_code: str | None) -> list[QuestionBank]:
+def _bank_candidates(db: Session, l1_code: str | None, l2_code: str | None = None) -> list[QuestionBank]:
     """공용 질문 뱅크(seed_questions.py)에서 이 대분류에 해당하는 질문을 꺼낸다.
 
     incident_id가 달린 행은 어떤 사고 하나를 위해 만들어진 것이므로 반드시 뺀다 —
@@ -387,13 +398,14 @@ def _bank_candidates(db: Session, l1_code: str | None) -> list[QuestionBank]:
         .order_by(QuestionBank.impact_weight.desc())
         .all()
     )
-    return [q for q in rows if _question_applies(q.applies_to_l1, l1_code)]
+    return [q for q in rows if _question_applies(q, l1_code, l2_code)]
 
 
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
     incident: Incident | None = None, generate: bool = False,
+    l2_code: str | None = None,
 ):
     """이 사고에서 아직 물어볼 게 남은 질문을 impact_weight 순으로 반환한다.
 
@@ -421,13 +433,13 @@ def pending_questions(
         )
 
     if candidates is None:
-        candidates = _bank_candidates(db, l1_code)
+        candidates = _bank_candidates(db, l1_code, l2_code)
     else:
         # 생성 질문을 쓰더라도 _MUST_ASK_FIELDS는 공용 뱅크에서 보충한다. 이미 그 필드를
         # 묻는 생성 질문이 있으면 겹쳐 넣지 않는다.
         asked = {q.target_field for q in candidates}
         supplement = [
-            q for q in _bank_candidates(db, l1_code)
+            q for q in _bank_candidates(db, l1_code, l2_code)
             if q.target_field in _MUST_ASK_FIELDS and q.target_field not in asked
         ]
         if supplement:
