@@ -71,6 +71,9 @@ interface MonthCalendarProps {
   year: number;
   month: number;
   selectedDay: number;
+  /** 기간 선택일 때 칠할 시작·끝. 없으면 한 날짜만 고르는 기존 동작 그대로다. */
+  rangeStart?: Parsed | null;
+  rangeEnd?: Parsed | null;
   /** 선택 가능한 최소/최대 날짜(포함). 없으면 제한 없음. */
   min: Parsed | null;
   max: Parsed | null;
@@ -87,7 +90,13 @@ interface MonthCalendarProps {
  * 것을 쓴다. 휠은 아래에 그대로 남겨서 연·월을 멀리 건너뛸 때 계속 쓸 수 있다 — 둘은
  * 같은 draft를 보고 있어서 어느 쪽으로 골라도 서로 따라 움직인다.
  */
-function MonthCalendar({ year, month, selectedDay, min, max, onSelect, onMoveMonth }: MonthCalendarProps) {
+function MonthCalendar({
+  year, month, selectedDay, rangeStart = null, rangeEnd = null, min, max, onSelect, onMoveMonth,
+}: MonthCalendarProps) {
+  const startKey = rangeStart ? dayKey(rangeStart.y, rangeStart.m, rangeStart.d) : null;
+  const endKey = rangeEnd ? dayKey(rangeEnd.y, rangeEnd.m, rangeEnd.d) : null;
+  const isRange = startKey !== null;
+
   const firstWeekday = new Date(year, month - 1, 1).getDay();
   const dayCount = daysInMonth(year, month);
   // 앞쪽 빈 칸 + 날짜 — 뒤쪽 빈 칸은 격자가 알아서 비우므로 채우지 않는다.
@@ -142,15 +151,35 @@ function MonthCalendar({ year, month, selectedDay, min, max, onSelect, onMoveMon
           day === null ? (
             <span key={`pad-${i}`} className="calendar__cell calendar__cell--empty" />
           ) : (
-            <button
-              key={day}
-              type="button"
-              className={`calendar__cell${day === selectedDay ? " calendar__cell--on" : ""}${i % 7 === 0 ? " calendar__cell--sun" : ""}${i % 7 === 6 ? " calendar__cell--sat" : ""}`}
-              disabled={disabled(day)}
-              onClick={() => onSelect(year, month, day)}
-            >
-              {day}
-            </button>
+            (() => {
+              const key = dayKey(year, month, day);
+              const isStart = startKey !== null && key === startKey;
+              const isEnd = endKey !== null && key === endKey;
+              const inside = startKey !== null && endKey !== null && key > startKey && key < endKey;
+              const on = isRange ? isStart || isEnd : day === selectedDay;
+              // 시작~끝 사이는 한 줄로 이어 보이게 칸 배경을 띠로 깐다. 시작·끝 칸은
+              // 동그라미를 유지하되 안쪽 방향으로만 띠를 이어 붙인다.
+              const bandClass = endKey === null || key < startKey! || key > endKey
+                ? ""
+                : isStart && isEnd
+                  ? ""
+                  : isStart
+                    ? " calendar__cell--band-from"
+                    : isEnd
+                      ? " calendar__cell--band-to"
+                      : " calendar__cell--band";
+              return (
+                <button
+                  key={day}
+                  type="button"
+                  className={`calendar__cell${on ? " calendar__cell--on" : ""}${inside ? " calendar__cell--inside" : ""}${bandClass}${i % 7 === 0 ? " calendar__cell--sun" : ""}${i % 7 === 6 ? " calendar__cell--sat" : ""}`}
+                  disabled={disabled(day)}
+                  onClick={() => onSelect(year, month, day)}
+                >
+                  <span>{day}</span>
+                </button>
+              );
+            })()
           ),
         )}
       </div>
@@ -354,6 +383,208 @@ export function DateTimeField({
             <button type="button" className="btn-primary sheet__confirm" style={{ width: "100%" }} onClick={confirm}>
               확인
             </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* 여행 기간 — 출발일과 도착일을 달력 하나에서 이어서 고른다.           */
+/* ------------------------------------------------------------------ */
+
+function toParsed(value: string): Parsed | null {
+  if (!value) return null;
+  return parseValue(value, "date");
+}
+
+function fmtDate(p: Parsed) {
+  return `${p.y}-${pad2(p.m)}-${pad2(p.d)}`;
+}
+
+function keyOf(p: Parsed) {
+  return dayKey(p.y, p.m, p.d);
+}
+
+function dayCountBetween(a: Parsed, b: Parsed) {
+  const ms = new Date(b.y, b.m - 1, b.d).getTime() - new Date(a.y, a.m - 1, a.d).getTime();
+  return Math.round(ms / 86400000) + 1;
+}
+
+interface DateRangeFieldProps {
+  label?: string;
+  /** YYYY-MM-DD. 둘 다 비어 있으면 아직 안 고른 상태다. */
+  start: string;
+  end: string;
+  onChange: (start: string, end: string) => void;
+  /** 이 날짜(포함) 이전은 고를 수 없다. */
+  minDate?: string;
+  placeholder?: string;
+}
+
+/**
+ * 출발일 → 도착일을 달력 하나에서 이어서 고르는 기간 선택기.
+ *
+ * 예전에는 시작일·종료일 달력이 각각 따로 열렸다. 두 번 열고 두 번 확인해야 했고,
+ * 무엇보다 "며칠짜리 여행인지"가 화면 어디에도 보이지 않았다. 시중 예약 앱들이 그렇듯
+ * 달력 하나에서 두 번 눌러 기간을 칠하는 방식으로 바꾼다.
+ *
+ * 단계는 둘이다.
+ *   1. 출발일 — 달력에서 날짜를 누르거나, 아래 휠로 맞춘 뒤 버튼을 누르면 다음 단계로 간다.
+ *   2. 도착일 — 달력에 출발일이 칠해진 채로 도착일을 고른다. 확인을 누르면 닫힌다.
+ *
+ * 이미 고른 출발일을 다시 누르면 그 선택이 취소되고 1단계로 돌아간다 — 잘못 골랐을 때
+ * 창을 닫았다 다시 열지 않아도 되게.
+ */
+export function DateRangeField({
+  label = "여행 기간", start, end, onChange, minDate, placeholder = "여행 기간을 선택하세요",
+}: DateRangeFieldProps) {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"start" | "end">("start");
+  const [rangeStart, setRangeStart] = useState<Parsed | null>(null);
+  const [rangeEnd, setRangeEnd] = useState<Parsed | null>(null);
+  const [draft, setDraft] = useState<Parsed>(() => parseValue(start, "date"));
+
+  const minParsed = minDate ? parseValue(minDate, "date") : null;
+
+  function openSheet() {
+    const s0 = toParsed(start);
+    const e0 = toParsed(end);
+    setRangeStart(s0);
+    setRangeEnd(e0);
+    setStep(s0 ? "end" : "start");
+    setDraft(s0 ?? parseValue("", "date"));
+    setOpen(true);
+  }
+
+  const years = Array.from({ length: 7 }, (_, i) => draft.y - 3 + i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const days = Array.from({ length: daysInMonth(draft.y, draft.m) }, (_, i) => i + 1);
+  const dClamped = Math.min(draft.d, days.length);
+
+  function pick(y: number, m: number, d: number) {
+    const picked: Parsed = { y, m, d, h: draft.h, min: draft.min };
+    setDraft(picked);
+    if (step === "start" || !rangeStart) {
+      setRangeStart(picked);
+      setRangeEnd(null);
+      setStep("end");
+      return;
+    }
+    const k = keyOf(picked);
+    const sk = keyOf(rangeStart);
+    if (k === sk) {
+      // 고른 출발일을 다시 눌렀다 = 취소하고 처음부터 다시 고른다.
+      setRangeStart(null);
+      setRangeEnd(null);
+      setStep("start");
+      return;
+    }
+    if (k < sk) {
+      // 출발일보다 앞을 눌렀으면 그게 새 출발일이다.
+      setRangeStart(picked);
+      setRangeEnd(null);
+      return;
+    }
+    setRangeEnd(picked);
+  }
+
+  // 휠로 맞춰 둔 날짜도 "아직 확정 안 한 도착일"로 미리 칠해 보여준다.
+  const pendingEnd =
+    rangeEnd ?? (rangeStart && keyOf({ ...draft, d: dClamped }) > keyOf(rangeStart)
+      ? { ...draft, d: dClamped }
+      : null);
+  const canConfirm = step === "start" ? true : !!(rangeStart && pendingEnd);
+
+  function confirm() {
+    if (step === "start") {
+      const picked: Parsed = { ...draft, d: dClamped };
+      setRangeStart(picked);
+      setRangeEnd(null);
+      setStep("end");
+      return;
+    }
+    if (!rangeStart || !pendingEnd) return;
+    onChange(fmtDate(rangeStart), fmtDate(pendingEnd));
+    setOpen(false);
+  }
+
+  const s0 = toParsed(start);
+  const e0 = toParsed(end);
+  const display = s0 && e0
+    ? `${s0.y}년 ${s0.m}월 ${s0.d}일 → ${e0.m}월 ${e0.d}일 · ${dayCountBetween(s0, e0)}일`
+    : null;
+
+  return (
+    <div className="field-block">
+      <span className="field-block__label">{label}</span>
+      <button type="button" className="field-trigger" onClick={openSheet}>
+        <span className={display ? "" : "field-trigger__placeholder"}>{display ?? placeholder}</span>
+        <span className="field-trigger__icon">📅</span>
+      </button>
+
+      {open && (
+        <div className="sheet-overlay sheet-overlay--center" onClick={() => setOpen(false)}>
+          <div className="sheet sheet--range" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="sheet__close" aria-label="닫기" onClick={() => setOpen(false)}>
+              ✕
+            </button>
+            {/* 넓은 화면에서는 달력을 왼쪽에 크게 두고, 단계칸·휠·확인을 오른쪽에 모은다 —
+                세로로만 쌓으면 달력만으로 화면이 차서 확인 버튼이 밖으로 밀려난다. */}
+            <div className="range-layout">
+            <div className="range-layout__cal">
+            <MonthCalendar
+              year={draft.y}
+              month={draft.m}
+              selectedDay={dClamped}
+              rangeStart={rangeStart}
+              rangeEnd={pendingEnd}
+              min={step === "end" && rangeStart ? rangeStart : minParsed}
+              max={null}
+              onSelect={pick}
+              onMoveMonth={(delta) => {
+                setDraft((p) => {
+                  const moved = new Date(p.y, p.m - 1 + delta, 1);
+                  const y = moved.getFullYear();
+                  const m = moved.getMonth() + 1;
+                  return { ...p, y, m, d: Math.min(p.d, daysInMonth(y, m)) };
+                });
+              }}
+            />
+            </div>
+
+            <div className="range-layout__pick">
+            <div className="wheel-row wheel-row--compact">
+              <div className="wheel-highlight" />
+              <WheelCol
+                items={years.map(String)}
+                index={Math.max(0, years.indexOf(draft.y))}
+                onIndex={(i) => setDraft((p) => ({ ...p, y: years[i] }))}
+              />
+              <WheelCol
+                items={months.map((mm) => `${mm}월`)}
+                index={Math.max(0, months.indexOf(draft.m))}
+                onIndex={(i) => setDraft((p) => ({ ...p, m: months[i] }))}
+              />
+              <WheelCol
+                items={days.map((dd) => `${dd}일`)}
+                index={Math.max(0, days.indexOf(dClamped))}
+                onIndex={(i) => setDraft((p) => ({ ...p, d: days[i] }))}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="btn-primary sheet__confirm"
+              style={{ width: "100%" }}
+              disabled={!canConfirm}
+              onClick={confirm}
+            >
+              {step === "start" ? "이 날 출발할게요" : "확인"}
+            </button>
+            </div>
+            </div>
           </div>
         </div>
       )}

@@ -8,7 +8,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { PickerField } from "../components/PickerField";
 import { DeleteButton } from "../components/DeleteButton";
 import { GoogleMark, KakaoMark } from "../components/BrandIcon";
-import { DateTimeField } from "../components/DateTimeField";
+import { DateRangeField } from "../components/DateTimeField";
 import { COUNTRIES } from "../data/countries";
 import { useApp } from "../context/AppContext";
 import { shortInsurerName } from "../data/insurers";
@@ -39,7 +39,7 @@ function googleAuthorizeUrl(clientId: string, redirectUri: string) {
 export function Account() {
   const {
     isLoggedIn, userId, nickname, email, age, logout, deleteAccount,
-    hasPassword, loginWithEmail, setPassword, updateNickname, updateAge,
+    loginWithEmail, updateNickname, updateAge,
   } = useApp();
   const navigate = useNavigate();
   const [providers, setProviders] = useState<ProviderStatusOut | null>(null);
@@ -88,13 +88,6 @@ export function Account() {
   const [profileAge, setProfileAge] = useState("");
   const [profileBusy, setProfileBusy] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const [pwOpen, setPwOpen] = useState(false);
-  const [pwCurrent, setPwCurrent] = useState("");
-  const [pwNext, setPwNext] = useState("");
-  const [pwConfirm, setPwConfirm] = useState("");
-  const [pwBusy, setPwBusy] = useState(false);
-  const [pwError, setPwError] = useState<string | null>(null);
-  const [pwDone, setPwDone] = useState(false);
 
   async function handleEmailLogin() {
     if (!loginEmail.trim() || !loginPassword) return;
@@ -122,31 +115,6 @@ export function Account() {
       setProfileError(userMessage(err, "저장하지 못했어요. 다시 시도해 주세요."));
     } finally {
       setProfileBusy(false);
-    }
-  }
-
-  async function handleSavePassword() {
-    if (pwNext.length < 8) {
-      setPwError("비밀번호는 8자 이상으로 정해주세요.");
-      return;
-    }
-    if (pwNext !== pwConfirm) {
-      setPwError("새 비밀번호가 서로 다릅니다.");
-      return;
-    }
-    setPwBusy(true);
-    setPwError(null);
-    try {
-      await setPassword(pwNext, hasPassword ? pwCurrent : null);
-      setPwCurrent("");
-      setPwNext("");
-      setPwConfirm("");
-      setPwDone(true);
-      setPwOpen(false);
-    } catch (err) {
-      setPwError(userMessage(err, "비밀번호를 저장하지 못했어요."));
-    } finally {
-      setPwBusy(false);
     }
   }
 
@@ -258,53 +226,6 @@ export function Account() {
               <span className="account-row-btn__arrow">›</span>
             </button>
           )}
-
-          {/* 이메일+비밀번호로도 들어올 수 있게 하는 자리. 가입은 여전히 카카오·구글로만 한다. */}
-          {pwOpen ? (
-            <div className="account-inline-form">
-              {hasPassword && (
-                <label>
-                  현재 비밀번호
-                  <input type="password" value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} />
-                </label>
-              )}
-              <label>
-                새 비밀번호 (8자 이상)
-                <input type="password" value={pwNext} onChange={(e) => setPwNext(e.target.value)} />
-              </label>
-              <label>
-                새 비밀번호 확인
-                <input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} />
-              </label>
-              {pwError && <div className="error-box">{pwError}</div>}
-              <div className="account-inline-form__actions">
-                <button type="button" className="btn-secondary" onClick={() => { setPwOpen(false); setPwError(null); }}>
-                  취소
-                </button>
-                <button type="button" className="btn-primary" disabled={pwBusy} onClick={handleSavePassword}>
-                  {pwBusy ? "저장 중..." : "저장"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="account-row-btn"
-              onClick={() => { setPwError(null); setPwDone(false); setPwOpen(true); }}
-            >
-              <span>
-                <strong>{hasPassword ? "비밀번호 변경" : "비밀번호 설정"}</strong>
-                <em>
-                  {pwDone
-                    ? "저장했어요"
-                    : hasPassword
-                      ? "이메일과 비밀번호로도 로그인할 수 있어요"
-                      : "설정하면 이메일과 비밀번호로도 로그인할 수 있어요"}
-                </em>
-              </span>
-              <span className="account-row-btn__arrow">›</span>
-            </button>
-          )}
         </div>
 
         <p className="section-label" style={{ margin: "20px 2px 10px" }}>내 여행 기록</p>
@@ -381,8 +302,12 @@ export function Account() {
                       options={COUNTRIES.map((c) => ({ value: c, label: c }))}
                     />
                   </label>
-                  <DateTimeField label="여행 시작일" value={editStart} onChange={setEditStart} />
-                  <DateTimeField label="여행 종료일" value={editEnd} onChange={setEditEnd} />
+                  <DateRangeField
+                    label="여행 기간"
+                    start={editStart}
+                    end={editEnd}
+                    onChange={(s, e) => { setEditStart(s); setEditEnd(e); }}
+                  />
                   <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
                     <button
                       type="button"
@@ -571,7 +496,6 @@ export function Account() {
                   autoComplete="username"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="가입한 구글·카카오 계정 이메일"
                 />
               </label>
               <label>
@@ -581,7 +505,6 @@ export function Account() {
                   autoComplete="current-password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="계정 화면에서 설정한 비밀번호"
                 />
               </label>
               {loginError && <div className="error-box">{loginError}</div>}
@@ -640,16 +563,15 @@ export function Account() {
         </button>
       </div>
 
-      <div className="account-auth__footer">
-        {authMode === "signup" && (
+      {/* 로그인 모드에서는 안내할 게 없다 — 빈 상자만 남기면 그만큼 페이지가
+          길어져 필요 없는 스크롤이 생긴다. */}
+      {authMode === "signup" && (
+        <div className="account-auth__footer">
           <p className="muted" style={{ fontSize: "0.76rem", textAlign: "center", lineHeight: 1.6 }}>
-            가입 시 닉네임 설정과 함께 이용약관·개인정보 수집 동의를 한 번 받아요.
+            가입 시 닉네임·비밀번호 설정과 함께 이용약관·개인정보 수집 동의를 한 번 받아요.
           </p>
-        )}
-        <p className="muted" style={{ fontSize: "0.78rem", textAlign: "center", marginTop: 8, lineHeight: 1.6 }}>
-          로그인 없이도 게스트로 모든 기능을 그대로 이용할 수 있어요.
-        </p>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,20 +5,12 @@ import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { InsurerRankingFlow } from "../components/InsurerRankingFlow";
-import { DateTimeField } from "../components/DateTimeField";
+import { DateRangeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { PickerField } from "../components/PickerField";
 import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { TravelAlertPicker } from "../components/TravelAlertBadge";
 import { COUNTRIES } from "../data/countries";
-
-/** "YYYY-MM-DD"에 하루를 더한 문자열을 준다 — 종료일이 시작일 다음 날부터 고를 수 있게 하는 데 쓴다. */
-function addDays(dateStr: string, days: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(y, m - 1, d + days);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-}
 
 const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "반려동물 동반"];
 
@@ -275,25 +267,12 @@ export function TripPrep() {
       eyebrow: "기간",
       title: "언제부터 언제까지\n떠나시나요?",
       content: (
-        <>
-          <DateTimeField
-            label="여행 시작일"
-            value={startDate}
-            onChange={(v) => {
-              setStartDate(v);
-              // 시작일을 바꿔서 종료일이 그보다 앞서게 되면(또는 아직 비어있으면) 다음 날로 맞춰준다
-              if (v && (!endDate || endDate <= v)) setEndDate(addDays(v, 1));
-            }}
-            mode="date"
-          />
-          <DateTimeField
-            label="여행 종료일"
-            value={endDate}
-            onChange={setEndDate}
-            mode="date"
-            minDate={startDate ? addDays(startDate, 1) : undefined}
-          />
-        </>
+        <DateRangeField
+          label="여행 기간"
+          start={startDate}
+          end={endDate}
+          onChange={(s, e) => { setStartDate(s); setEndDate(e); }}
+        />
       ),
       canNext: !!startDate && !!endDate && endDate > startDate,
     },

@@ -7,7 +7,7 @@ import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { ResultTabs } from "../components/ResultTabs";
 import { NextStepCard } from "../components/NextStepCard";
-import { DateTimeField } from "../components/DateTimeField";
+import { DateRangeField, DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
 import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
@@ -26,14 +26,6 @@ const QUESTION_ICON: Record<string, string> = {
   medical_cost: "wallet",
   returned_home: "flag",
 };
-
-/** "YYYY-MM-DD"에 하루를 더한 문자열 — 종료일이 시작일보다 앞서지 않게 맞추는 데 쓴다. */
-function addDays(dateStr: string, days: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(y, m - 1, d + days);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-}
 
 export function IncidentReport() {
   const { userId, isLoggedIn, setIncidentId, age: profileAge, updateAge, sex: profileSex, updateSex } = useApp();
@@ -482,19 +474,11 @@ export function IncidentReport() {
                 options={COUNTRIES.map((c) => ({ value: c, label: c }))}
               />
             </label>
-            <DateTimeField
-              label="여행 시작일"
-              value={draftStart}
-              onChange={(v) => {
-                setDraftStart(v);
-                if (v && (!draftEnd || draftEnd <= v)) setDraftEnd(addDays(v, 1));
-              }}
-            />
-            <DateTimeField
-              label="여행 종료일"
-              value={draftEnd}
-              onChange={setDraftEnd}
-              minDate={draftStart ? addDays(draftStart, 1) : undefined}
+            <DateRangeField
+              label="여행 기간"
+              start={draftStart}
+              end={draftEnd}
+              onChange={(s, e) => { setDraftStart(s); setDraftEnd(e); }}
             />
             <p className="muted" style={{ fontSize: "0.76rem" }}>
               이 사고와 함께 여행도 새로 등록해 드려요. 나중에 계정 화면에서 고칠 수 있어요.

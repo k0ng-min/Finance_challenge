@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { Icon3D } from "./Icon3D";
 import { FloatingIcon } from "./FloatingIcon";
@@ -21,6 +21,14 @@ export function StepFlow({
   icon, eyebrow, title, subtitle, children,
   stepIndex, onBack, onNext, nextLabel, nextDisabled, loading,
 }: StepFlowProps) {
+  // 다음 단계로 넘어가면 늘 화면 맨 위부터 보여준다. 예전에는 앞 단계에서 내려둔
+  // 스크롤 위치가 그대로 남아, 새 단계가 열리자마자 맨 아래(버튼 근처)가 보였다.
+  useEffect(() => {
+    const main = document.querySelector(".app-main");
+    if (main) main.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
+  }, [stepIndex]);
+
   return (
     <div className="step">
       <motion.div

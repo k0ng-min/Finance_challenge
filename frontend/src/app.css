@@ -361,7 +361,22 @@ body {
    화면 아래쪽이 통째로 비는 원인이었다. 이제는 밴드들이 비율대로 나눠 갖는다. */
 .home__footer { text-align: center; font-size: 0.68rem; color: var(--muted); margin: 0; flex: none; }
 /* 홈 밖의 모든 화면 맨 아래 — 홈의 것과 같은 문구·같은 톤으로 맞춘다. */
-.app-footer { text-align: center; font-size: 0.68rem; color: var(--muted); margin: 28px 0 4px; }
+/* 어느 화면이든 저작권 줄은 맨 아래에 있어야 한다. 예전에는 본문 바로 밑에 붙어서,
+   내용이 짧은 화면에서는 화면 한가운데에 문구가 떠 있었다. 본문이 남는 높이를 전부
+   먹고, 저작권 줄은 그 아래 자기 띠를 차지한다 — 그 띠에는 아무것도 겹치지 않는다. */
+/* 본문은 남는 높이를 채우되 절대 눌리지 않는다 — 눌리면 카드가 본문 상자 밖으로
+   비어져 나와서 저작권 줄 위에 겹쳐 그려졌다. */
+.app-main > .page { flex: 1 0 auto; }
+.app-footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--muted);
+  padding: 26px 0 6px;
+  position: relative;
+  z-index: 1;
+}
 .home-quick {
   display: flex;
   flex-direction: column;
@@ -514,7 +529,9 @@ body {
 .step__content select,
 .step__content textarea,
 .calc-grid input[type="number"],
-.calc-filter-group input[type="number"] {
+.calc-filter-group input[type="number"],
+.email-login input,
+.account-inline-form input {
   font-size: 0.98rem;
   padding: 12px 14px;
   border: 1.5px solid var(--border);
@@ -527,7 +544,9 @@ body {
 }
 .step__content input:focus, .step__content select:focus, .step__content textarea:focus,
 .calc-grid input:focus,
-.calc-filter-group input:focus {
+.calc-filter-group input:focus,
+.email-login input:focus,
+.account-inline-form input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-soft);
@@ -550,7 +569,9 @@ body {
 }
 .step__content label,
 .calc-grid label,
-.calc-filter-group label {
+.calc-filter-group label,
+.email-login label,
+.account-inline-form label {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -705,7 +726,7 @@ button { cursor: pointer; font-family: inherit; }
 .social-btn svg { flex-shrink: 0; }
 
 /* --- 이메일 로그인 칸 (소셜 버튼 위) --- */
-.email-login { display: flex; flex-direction: column; gap: 2px; }
+.email-login { display: flex; flex-direction: column; gap: 12px; }
 .email-login__submit { width: 100%; margin-top: 10px; }
 
 /* 이메일 로그인과 소셜 로그인 사이의 "또는" 구분선 */
@@ -753,7 +774,8 @@ button { cursor: pointer; font-family: inherit; }
   padding: 12px 14px 14px;
   margin-top: 8px;
 }
-.account-inline-form__actions { display: flex; gap: 8px; margin-top: 10px; }
+.account-inline-form { display: flex; flex-direction: column; gap: 12px; }
+.account-inline-form__actions { display: flex; gap: 8px; margin-top: 2px; }
 .account-inline-form__actions button { flex: 1; }
 
 .consent-box {
@@ -1383,10 +1405,15 @@ button { cursor: pointer; font-family: inherit; }
   overflow: hidden;
   isolation: isolate;
   box-shadow: var(--shadow-soft);
+  /* 세로 flex 화면(.account-auth 등) 안에서는 히어로가 남는 높이에 맞춰 눌려버렸다 —
+     눌리면 overflow:hidden에 위아래가 잘려서 눈썹줄과 설명 끝줄이 사라진다. */
+  flex-shrink: 0;
 }
-.hero__blob { position: absolute; border-radius: 50%; opacity: 0.5; z-index: -1; }
+/* overflow:hidden에 잘리면 원이 아니라 각진 덩어리가 돼서 히어로 아래에 뭔가 낀 것처럼
+   보였다. 흐리게 깔아 경계선을 없앤다 — 잘려도 배경 얼룩으로만 읽힌다. */
+.hero__blob { position: absolute; border-radius: 50%; opacity: 0.5; z-index: -1; filter: blur(22px); }
 .hero__blob--a { width: 120px; height: 120px; background: var(--primary-soft); top: -40px; right: 50px; }
-.hero__blob--b { width: 80px; height: 80px; background: var(--card-bg); bottom: -26px; left: 20%; opacity: 0.6; }
+.hero__blob--b { width: 80px; height: 80px; background: var(--card-bg); bottom: -30px; left: 20%; opacity: 0.35; }
 .hero__text { display: flex; flex-direction: column; gap: 4px; max-width: 62%; }
 .hero__eyebrow {
   font-size: 0.68rem; font-weight: 800; color: var(--primary-dark);
@@ -1801,10 +1828,13 @@ button { cursor: pointer; font-family: inherit; }
   z-index: 300;
 }
 .modal-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 360px;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
@@ -1816,16 +1846,32 @@ button { cursor: pointer; font-family: inherit; }
    맞춘다 — 같은 앱 안에서 한쪽은 얇은 알약, 한쪽은 OS 기본 막대가 나오면 팝업만 다른
    프로그램처럼 보인다. 팝업도 모서리가 둥글어서(radius-lg) 프레임과 같은 이유로 막대를
    가장자리에서 띄우고 두께를 줄인다. */
-.modal-card { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-.modal-card::-webkit-scrollbar { width: 10px; height: 10px; }
-.modal-card::-webkit-scrollbar-track { background: transparent; }
-.modal-card::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border: 3px solid transparent;
-  background-clip: padding-box;
-  border-radius: 999px;
+.modal-card__body { scrollbar-width: none; }
+.modal-card__body::-webkit-scrollbar { width: 0; height: 0; }
+/* 프레임 막대와 같은 모양·같은 규칙(높이 7/8, 가장자리에서 7px)을 팝업 안에서도 쓴다.
+   .frame-scrollbar 본체 정의는 데스크톱 프레임 미디어쿼리 안에 있어서 팝업에는 닿지
+   않는다 — 팝업은 모바일 폭에서도 열리므로 여기서 따로 세워 준다. */
+.modal-card .frame-scrollbar {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  height: 87.5%;
+  width: 6px;
+  pointer-events: none;
+  z-index: 3;
 }
-.modal-card::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: padding-box; }
+.modal-card .frame-scrollbar__thumb {
+  width: 100%;
+  border-radius: 999px;
+  background: var(--border);
+  pointer-events: auto;
+  cursor: grab;
+  transition: background 0.18s ease;
+  will-change: transform;
+}
+.modal-card .frame-scrollbar__thumb:hover { background: var(--muted); }
+.modal-card .frame-scrollbar__thumb:active { cursor: grabbing; background: var(--muted); }
 .compare-table-scroll::-webkit-scrollbar { height: 10px; }
 .compare-table-scroll::-webkit-scrollbar-track { background: transparent; }
 .compare-table-scroll::-webkit-scrollbar-thumb {
@@ -1859,7 +1905,8 @@ button { cursor: pointer; font-family: inherit; }
   line-height: 1;
   padding: 4px;
 }
-.modal-card__body { padding: 16px 18px; }
+/* 스크롤은 본문만 한다 — 제목줄(닫기 버튼)은 늘 같은 자리에 남는다. */
+.modal-card__body { padding: 16px 18px; overflow-y: auto; min-height: 0; }
 
 .history-card {
   display: flex;
@@ -2087,7 +2134,10 @@ button { cursor: pointer; font-family: inherit; }
 .sheet__value { text-align: center; font-size: 0.85rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 14px; }
 
 /* --- 바텀시트 달력 (휠 위) --- */
-.calendar { margin-bottom: 14px; }
+/* aspect-ratio:1인 칸이 7등분 폭을 그대로 따라가서, 시트가 넓은 데스크톱에서는 한 칸이
+   88px까지 커졌다 — 달력 하나가 화면을 다 먹고 휠과 확인 버튼이 밖으로 밀려났다.
+   폭을 묶어 한 칸을 손가락 크기(약 44px)로 두고 가운데 정렬한다. */
+.calendar { margin: 0 auto 14px; max-width: 330px; width: 100%; }
 .calendar__head {
   display: flex;
   align-items: center;
@@ -2144,7 +2194,7 @@ button { cursor: pointer; font-family: inherit; }
 .calendar__cell--on.calendar__cell--sun,
 .calendar__cell--on.calendar__cell--sat,
 .calendar__cell--on:not(:disabled):hover {
-  background: var(--primary);
+  background: none;
   color: #fff;
   box-shadow: 0 4px 12px rgba(53, 104, 201, 0.32);
 }
@@ -2387,6 +2437,8 @@ button { cursor: pointer; font-family: inherit; }
   .step__back { width: 52px; height: 52px; font-size: 1.3rem; }
   .btn-primary { padding: 15px 22px; font-size: 1rem; }
   .btn-secondary { padding: 13px 20px; font-size: 0.94rem; }
+  .email-login input,
+  .account-inline-form input,
   .step__content input[type="text"],
   .step__content input[type="date"],
   .step__content input[type="datetime-local"],
@@ -3163,3 +3215,182 @@ button { cursor: pointer; font-family: inherit; }
 .home-card--compact .home-card__text strong { font-size: 0.92rem; }
 .home-card--compact .home-card__text span { font-size: 0.74rem; }
 .home-card--compact .home-card__arrow { font-size: 1.1rem; }
+
+/* --- 기간(출발일~도착일) 달력 --- */
+
+/* 시작·끝 사이를 한 줄로 이어 보이게 칸 뒤에 띠를 깐다. 칸은 동그라미라 그대로 두면
+   날짜마다 점이 끊겨 보여서 "기간"으로 읽히지 않는다. 띠는 칸 경계를 2px씩 넘겨 옆
+   칸과 맞물리게 하고, 숫자와 동그라미는 그 위에 그려진다. */
+.calendar__cell { position: relative; z-index: 0; background: none; }
+/* 숫자 → 동그라미 → 띠 순으로 위에서부터 쌓는다. */
+.calendar__cell > span { position: relative; z-index: 3; }
+.calendar__cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 2;
+  display: none;
+}
+.calendar__cell--on::after {
+  display: block;
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(53, 104, 201, 0.32);
+}
+.calendar__cell::before {
+  content: "";
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: -2px;
+  right: -2px;
+  background: var(--primary-soft);
+  z-index: 1;
+  display: none;
+}
+.calendar__cell--band::before { display: block; }
+.calendar__cell--band-from::before { display: block; left: 50%; border-radius: 999px 0 0 999px; }
+.calendar__cell--band-to::before { display: block; right: 50%; border-radius: 0 999px 999px 0; }
+/* 줄이 바뀌는 자리에서는 띠 끝을 둥글게 맺는다 — 안 그러면 줄 끝마다 각진 단면이 남는다. */
+.calendar__cell--band.calendar__cell--sun::before,
+.calendar__cell--band-to.calendar__cell--sun::before { left: 0; border-radius: 999px 0 0 999px; }
+.calendar__cell--band.calendar__cell--sat::before,
+.calendar__cell--band-from.calendar__cell--sat::before { right: 0; border-radius: 0 999px 999px 0; }
+.calendar__cell--inside { color: var(--primary-dark); }
+.calendar__cell--inside.calendar__cell--sun { color: #c0564a; }
+
+/* 지금 무엇을 고르는 중인지 보여주는 두 칸(출발일 → 도착일). */
+.range-steps {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 2px 0 14px;
+}
+.range-steps__arrow {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.range-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.range-step em {
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.range-step strong { font-size: 0.95rem; color: var(--heading); }
+.range-step--on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.range-step--on em { color: var(--primary-dark); }
+.range-step--on strong { color: var(--primary-dark); }
+.range-step:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 기간 창은 넓은 화면에서만 가운데 뜨는 창으로 바꾼다 — 달력이 커서 아래에 붙이면
+   화면 위쪽이 통째로 비고 창은 잘린다. 손에 들고 쓰는 화면에서는 아래에서 올라오는
+   기존 방식이 그대로 잘 맞으므로 건드리지 않는다. */
+@media (min-width: 620px) {
+  .sheet-overlay--center { align-items: center; }
+  .sheet-overlay--center .sheet { border-radius: 24px; }
+}
+.sheet__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 4;
+}
+.sheet__close:hover { color: var(--heading); }
+
+/* 기간 시트는 달력 + 휠 + 확인 버튼이 한 번에 들어간다. 휴대폰에서는 딱 맞지만
+   창이 낮은 데스크톱에서는 확인 버튼이 화면 밖으로 밀려났다 — 시트 높이를 화면 안으로
+   묶고, 넘치면 시트 안에서만 스크롤되게 한다. 휠은 그만큼 낮춘다. */
+.sheet--range .range-steps { max-width: 330px; margin-left: auto; margin-right: auto; }
+.sheet--range .wheel-row { max-width: 330px; margin: 0 auto; }
+.sheet--range .sheet__confirm { max-width: 330px; margin: 12px auto 0; display: block; }
+.sheet--range {
+  position: relative;
+  padding-top: 44px;
+  max-height: 94svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.wheel-row--compact { height: 132px; }
+.wheel-row--compact::before,
+.wheel-row--compact::after { height: 44px; }
+.wheel-row--compact .wheel-col { padding: 44px 0; }
+.wheel-row--compact .wheel-item { height: 44px; font-size: 0.95rem; }
+.wheel-row--compact .wheel-item--center { font-size: 1.08rem; }
+
+/* --- 기간 시트: 넓은 화면에서는 달력 왼쪽 / 고르는 칸 오른쪽 --- */
+.range-layout { display: flex; flex-direction: column; gap: 14px; }
+.range-layout__pick { display: flex; flex-direction: column; gap: 22px; }
+
+@media (min-width: 620px) {
+  /* 달력이 왼쪽을 크게 쓰고, 날짜 휠과 확인 버튼이 오른쪽에 쌓인다. 세로로만 쌓으면
+     달력만으로 화면이 차서 확인 버튼이 화면 밖으로 밀려났다. */
+  .range-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 226px;
+    column-gap: 26px;
+    align-items: center;
+  }
+
+  .sheet--range { max-width: 720px; }
+  /* 왼쪽 칸을 통째로 쓰므로 달력 폭 제한을 푼다 — 칸이 커져 날짜를 짚기 쉬워진다. */
+  .range-layout__cal .calendar { max-width: 100%; margin: 0; }
+  .sheet--range .range-steps,
+  .sheet--range .wheel-row,
+  .sheet--range .sheet__confirm { max-width: none; margin-left: 0; margin-right: 0; }
+  .sheet--range .range-steps { flex-direction: column; align-items: stretch; }
+  .sheet--range .range-steps__arrow { display: none; }
+  /* 휠과 확인 버튼은 붙어 있으면 휠을 돌리다 확인을 눌러버린다 — 넉넉히 띄운다. */
+  .range-layout__pick { gap: 40px; }
+  .sheet--range .sheet__confirm { margin-top: 0; }
+}
+
+/* --- 기간 띠를 자연스럽게 잇기 ---
+   띠 높이를 칸 높이에 맞춰야 끝 동그라미와 정확히 맞물린다. 예전에는 띠가 동그라미보다
+   낮아서, 동그라미 옆으로 띠가 삐져나온 초승달 모양이 됐다. */
+.calendar__cell::before { top: 0; bottom: 0; }
+
+/* --- 날짜 휠(년/월/일) 다듬기 ---
+   선택칸이 회색 판이라 값 위에 다른 판이 하나 얹힌 것처럼 보였다. 아주 옅은 반투명 띠와
+   위아래 얇은 선만 남긴다. 위아래 흐려짐도 카드색으로 덮는 대신 실제로 투명해지게
+   마스크를 쓴다 — 덮는 방식은 시트 배경과 색이 조금만 달라도 회색 판처럼 보인다. */
+.wheel-highlight {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 var(--border), inset 0 -1px 0 var(--border);
+}
+.wheel-row::before,
+.wheel-row::after { display: none; }
+.wheel-col {
+  mask-image: linear-gradient(180deg, transparent 0, #000 26%, #000 74%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 26%, #000 74%, transparent 100%);
+}
