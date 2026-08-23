@@ -64,6 +64,11 @@ const FADE_OUT_DURATION = 1.2;
 const HIGHLIGHT_PAD_TOP = 0.1;
 const HIGHLIGHT_PAD_BOTTOM = 0.08;
 const HIGHLIGHT_PAD_X = 0.02;
+// 형광펜이 글자 왼쪽에서 얼마나 앞서 들어와 오른쪽으로 얼마나 지나쳐 나가는지 —
+// 글자 폭 대비 비율이다. 바깥 상자(.pwc) 폭에 대한 고정 비율로 두면, 글씨가 작은
+// 화면(로딩)에서는 글자보다 훨씬 앞에서 시작해 훨씬 뒤까지 지나가 버린다.
+const SWEEP_LEAD_IN = 0.1;
+const SWEEP_LEAD_OUT = 0.06;
 
 const [VB_X, VB_Y, VB_W, VB_H] = PEN_STROKE_VIEWBOX.split(/\s+/).map(Number);
 
@@ -86,6 +91,8 @@ export function PenWriteCompass({
   const highlightBgRef = useRef<HTMLSpanElement>(null);
   const highlighterRef = useRef<HTMLImageElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
+  // 형광펜이 훑을 구간(바깥 상자 .pwc 폭에 대한 %). 실제 글자 위치를 재서 채운다.
+  const sweepRef = useRef({ start: "-8%", end: "94%", exit: "100%" });
 
   // 형광펜 띠를 실제 글자가 차지하는 자리에 맞춘다. 글자를 하나의 svg
   // 좌표계에 그리기 때문에, 띠 위치도 그 좌표계에서 재서 %로 환산해야
@@ -105,6 +112,28 @@ export function PenWriteCompass({
     bg.style.right = `${(1 - right) * 100}%`;
     bg.style.top = `${top * 100}%`;
     bg.style.bottom = `${(1 - bottom) * 100}%`;
+
+    // 형광펜은 글자 상자(.pwc__text)가 아니라 바깥 상자(.pwc) 안에서 움직인다.
+    // 두 상자는 폭이 다르다 — 글씨가 작은 화면에서는 글자 상자가 훨씬 좁다.
+    // 그래서 글자가 실제로 차지하는 구간을 바깥 상자 기준으로 환산해 두고,
+    // 펜이 딱 그 구간만 훑게 한다. 안 그러면 로딩 화면에서 글자보다 한참 앞에서
+    // 시작해 한참 뒤까지 지나간다.
+    const root = rootRef.current;
+    const text = textRef.current;
+    if (!root || !text) return;
+    const rootRect = root.getBoundingClientRect();
+    const textRect = text.getBoundingClientRect();
+    if (!rootRect.width || !textRect.width) return;
+    const textOffset = (textRect.left - rootRect.left) / rootRect.width;
+    const textScale = textRect.width / rootRect.width;
+    const inkLeft = textOffset + left * textScale;
+    const inkRight = textOffset + right * textScale;
+    const inkWidth = inkRight - inkLeft;
+    sweepRef.current = {
+      start: `${(inkLeft - SWEEP_LEAD_IN * inkWidth) * 100}%`,
+      end: `${(inkRight - SWEEP_LEAD_OUT * inkWidth) * 100}%`,
+      exit: `${(inkRight + SWEEP_LEAD_OUT * inkWidth) * 100}%`,
+    };
   }, []);
 
   useEffect(() => {
@@ -161,7 +190,7 @@ export function PenWriteCompass({
         tl.set(el, { strokeDashoffset: lengths[i] }, 0);
       });
       tl.set(highlightBgRef.current, { scaleX: 0, opacity: 0, transformOrigin: "left center" }, 0);
-      tl.set(highlighterRef.current, { left: "-8%", opacity: 0 }, 0);
+      tl.set(highlighterRef.current, { left: sweepRef.current.start, opacity: 0 }, 0);
       tl.set(textRef.current, { opacity: 1, filter: "blur(0px)" }, 0);
 
       // ① 한 획씩 필순대로 그린다 — 한 번에 딱 하나의 획만 진행 중이다.
@@ -193,7 +222,7 @@ export function PenWriteCompass({
       const sweepStart = "pwcSweep";
       tl.addLabel(sweepStart);
       tl.to(highlighterRef.current, { opacity: 1, duration: 0.15 }, sweepStart);
-      tl.to(highlighterRef.current, { left: "94%", duration: SWEEP_DURATION }, sweepStart);
+      tl.to(highlighterRef.current, { left: sweepRef.current.end, duration: SWEEP_DURATION }, sweepStart);
       tl.to(highlightBgRef.current, { scaleX: 1, opacity: 1, duration: SWEEP_DURATION }, sweepStart);
       // 위쪽 끝에서 출발해 아래로 내려갔다 올라오길 반복한다.
       tl.set(highlighterRef.current, { y: -ZIGZAG_AMPLITUDE }, sweepStart);
@@ -212,7 +241,7 @@ export function PenWriteCompass({
       tl.set(highlighterRef.current, { y: 0 }, `${sweepStart}+=${SWEEP_DURATION}`);
       tl.to(
         highlighterRef.current,
-        { left: "100%", opacity: 0, duration: 0.2 },
+        { left: sweepRef.current.exit, opacity: 0, duration: 0.2 },
         `${sweepStart}+=${SWEEP_DURATION}`,
       );
 
