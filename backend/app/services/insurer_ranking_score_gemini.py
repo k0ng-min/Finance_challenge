@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import logging
+from collections import OrderedDict
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -41,6 +42,40 @@ from app.models.kb import Insurer, InsurerComparisonMetric
 from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
 
 logger = logging.getLogger(__name__)
+
+# 같은 입력에는 모델을 다시 부르지 않는다. 등급 버튼(실속/표준/고급)은 사용자가 화면에서
+# 여러 번 왔다갔다 누르는 자리라, 누를 때마다 수 초씩 기다리면 등급 선택기 자체가 못 쓸
+# 물건이 된다. 실패는 담지 않는다 — 일시적 장애를 캐시하면 그 뒤로 영영 규칙 기반
+# 순위만 나온다.
+_CACHE_LIMIT = 64
+_cache: "OrderedDict[str, list[dict]]" = OrderedDict()
+
+
+def clear_cache() -> None:
+    """캐시를 비운다. 약관 KB나 보장금액을 다시 적재했을 때, 그리고 테스트에서 쓴다."""
+    _cache.clear()
+
+
+def _cache_key(
+    *, tier_code: str, plan_tier: int, trip_context: dict | None, ranking: list[dict]
+) -> str:
+    """모델에게 실제로 넘어가는 입력만 키에 담는다.
+
+    보험사 코드와 근거 축 단계가 같으면 프롬프트도 같다 — 표시용 문구(이름·태그)가
+    달라졌다고 다시 물을 이유는 없다."""
+    payload = {
+        "tier_code": tier_code,
+        "plan_tier": plan_tier,
+        "trip": trip_context or {},
+        "ranking": [
+            {
+                "code": item["insurer_code"],
+                "dims": [(d.get("code"), d.get("level")) for d in item["dimensions"]],
+            }
+            for item in ranking
+        ],
+    }
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True, default=str)
 
 
 class _ScoreItem(BaseModel):
@@ -133,6 +168,40 @@ def _coverage_amounts_by_code(db: Session, plan_tier: int) -> dict[str, list[str
     return out
 
 
+def _tier_diff_lines(by_tier: dict[int, dict[str, str]]) -> list[str]:
+    """같은 항목을 실속 → 표준 → 고급 순으로 나란히 놓되, 세 값이 모두 같은 항목은 뺀다.
+
+    선택한 등급의 금액만 넘기면 모델은 그게 다른 등급과 뭐가 다른지 알 도리가 없다.
+    등급을 올려도 그대로인 보험사와 크게 뛰는 보험사를 가르는 건 이 표뿐이다. 값이
+    똑같은 줄까지 넣으면 정작 갈리는 항목이 그 안에 묻힌다."""
+    labels: list[str] = []
+    for tier in (0, 1, 2):
+        for label in by_tier.get(tier, {}):
+            if label not in labels:
+                labels.append(label)
+
+    lines = []
+    for label in labels:
+        values = [by_tier.get(tier, {}).get(label, "-") for tier in (0, 1, 2)]
+        if len(set(values)) == 1:
+            continue
+        lines.append(
+            f"{label}: {TIER_LABELS[0]} {values[0]} → {TIER_LABELS[1]} {values[1]}"
+            f" → {TIER_LABELS[2]} {values[2]}"
+        )
+    return lines
+
+
+def _as_label_map(lines: list[str]) -> dict[str, str]:
+    """"[카테고리] 항목: 값" 한 줄을 {"[카테고리] 항목": "값"}으로 나눈다."""
+    out: dict[str, str] = {}
+    for line in lines:
+        label, sep, value = line.rpartition(": ")
+        if sep:
+            out[label] = value
+    return out
+
+
 def score_ranking(
     db: Session,
     *,
@@ -155,11 +224,20 @@ def score_ranking(
     if len(valid_codes) < 2:
         return None
 
-    amounts = _coverage_amounts_by_code(db, plan_tier)
+    by_tier = {tier: _coverage_amounts_by_code(db, tier) for tier in (0, 1, 2)}
+    amounts = by_tier[plan_tier]
     # 그 등급의 보장금액을 한 곳도 못 구했으면 등급을 반영할 수 없다 — 굳이 모델을
     # 부르지 않고 규칙 기반 순위를 그대로 쓴다(같은 결과를 비싸게 만들 이유가 없다).
     if not any(amounts.get(code) for code in valid_codes):
         return None
+
+    cache_key = _cache_key(
+        tier_code=tier_code, plan_tier=plan_tier, trip_context=trip_context, ranking=ranking
+    )
+    cached = _cache.get(cache_key)
+    if cached is not None:
+        _cache.move_to_end(cache_key)
+        return [dict(row) for row in cached]
 
     blocks = []
     for item in ranking:
@@ -169,10 +247,15 @@ def score_ranking(
             for d in item["dimensions"]
         )
         coverage = "\n".join(f"  - {line}" for line in amounts.get(code, [])) or "  - (이 등급의 보장금액 자료 없음)"
+        diff = _tier_diff_lines(
+            {tier: _as_label_map(by_tier[tier].get(code, [])) for tier in (0, 1, 2)}
+        )
+        diff_text = "\n".join(f"  - {line}" for line in diff) or "  - (등급을 올려도 달라지는 항목이 없음)"
         blocks.append(
             f"[{code}] {item['insurer_name']}\n"
             f"약관 근거 축:\n{dims}\n"
-            f"{TIER_LABELS[plan_tier]} 등급 보장금액:\n{coverage}"
+            f"{TIER_LABELS[plan_tier]} 등급 보장금액:\n{coverage}\n"
+            f"등급에 따라 달라지는 항목:\n{diff_text}"
         )
 
     prompt = _PROMPT.format(
@@ -191,7 +274,9 @@ def score_ranking(
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=_ScoreSchema,
-                temperature=0.2,
+                # 같은 입력에는 늘 같은 순서가 나와야 한다. 등급을 왜왰다갔다 하는 사이
+                # 순서가 흔들리면 사용자는 그걸 버그로 읽는다.
+                temperature=0,
             ),
         )
         parsed: _ScoreSchema | None = response.parsed
@@ -214,6 +299,10 @@ def score_ranking(
                 "reasons": scored.reasons or item["reasons"],
                 "comparison_basis": f"{tier_code} 기준 · {TIER_LABELS[plan_tier]} 등급 보장금액 반영",
             })
+        _cache[cache_key] = [dict(row) for row in out]
+        _cache.move_to_end(cache_key)
+        while len(_cache) > _CACHE_LIMIT:
+            _cache.popitem(last=False)
         return out
     except Exception:
         logger.exception("Gemini 순위 점수 생성 실패 — 규칙 기반 순위 유지")
