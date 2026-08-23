@@ -350,3 +350,21 @@ def test_띄어쓴_조기_귀국도_여행변경으로_잡는다(monkeypatch):
 
     assert classifier.classify_l1("여행 중 조기 귀국했어요")[0] == "CHG"
     assert classifier.classify_l1("일정을 중단하고 돌아왔어요")[0] == "CHG"
+
+
+def test_물건이_망가졌다_고장났다도_휴대품_사고로_잡는다(monkeypatch):
+    """"파손"이라는 낱말을 쓰는 사람은 드물다. 실제로는 "망가졌어요", "고장났어요",
+    "액정이 깨졌어요"라고 적는다. 이걸 못 잡으면 대분류가 SPC(특수·기타)로 떨어져서
+    반려동물·전쟁 같은 엉뚱한 질문이 나오고 관련 약관도 하나도 안 걸린다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    for text in ["휴대폰이 망가졌어요", "휴대폰이 고장났어요", "노트북이 부서졌습니다",
+                 "카메라 액정에 금이 갔어요"]:
+        assert classifier.classify_l1(text)[0] == "PROP", text
+
+
+def test_남의_것을_망가뜨린_건_여전히_배상책임이다(monkeypatch):
+    """"망가졌"(내 것이 망가짐)과 "망가뜨렸"(내가 남의 것을 망가뜨림)은 걸리는 약관이 다르다."""
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+
+    assert classifier.classify_l1("호텔 TV를 망가뜨렸어요")[0] == "LIA"
