@@ -1,0 +1,256 @@
+<meta charset="utf-8">
+<title>2026 금융 AI Challenge 기획서 — 보험펜</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+    font-size: 10pt; line-height: 1.62; color: #111; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .doc-tag { font-size: 10pt; color: #333; margin: 0 0 6px; }
+  h1 { font-size: 17pt; text-align: center; margin: 0 0 14px; letter-spacing: -0.02em; }
+  table { width: 100%; border-collapse: collapse; }
+  .meta td, .meta th {
+    border: 1px solid #444; padding: 7px 9px; font-size: 10pt;
+  }
+  .meta th { background: #f0f0f0; width: 90px; text-align: center; font-weight: 700; }
+  .note { font-size: 9pt; color: #444; margin: 6px 0 12px; }
+  section { border: 1px solid #444; border-top: none; }
+  section:first-of-type { border-top: 1px solid #444; }
+  h2 {
+    font-size: 10.5pt; margin: 0; padding: 7px 10px; background: #eef1f6;
+    border-bottom: 1px solid #444; font-weight: 800;
+  }
+  .body { padding: 10px 12px 12px; }
+  ul { margin: 0 0 8px; padding-left: 16px; }
+  li { margin: 0 0 3px; }
+  li > ul { margin-top: 3px; }
+  p { margin: 0 0 7px; }
+  .sub { font-weight: 800; margin: 9px 0 4px; font-size: 10pt; }
+  .sub:first-child { margin-top: 0; }
+  .tbl { margin: 6px 0 9px; font-size: 9pt; }
+  .tbl th, .tbl td { border: 1px solid #999; padding: 4px 6px; vertical-align: top; }
+  .tbl th { background: #f4f4f4; font-weight: 700; text-align: center; }
+  .tbl td.c { text-align: center; }
+  .kw { font-weight: 800; }
+  .q { background: #fff6b8; padding: 0 2px; }
+  .fill { color: #b00; font-weight: 700; }
+  .small { font-size: 8.8pt; color: #444; }
+  section { break-inside: avoid; }
+</style>
+
+<p class="doc-tag">첨부 1</p>
+<h1>2026 금융 AI Challenge 기획서</h1>
+
+<table class="meta">
+  <tr>
+    <th>팀명</th><td><span class="fill">[등록된 팀명 기재]</span></td>
+    <th>구성원 성명</th><td><span class="fill">[팀장, 팀원 순으로 기재]</span></td>
+  </tr>
+</table>
+<p class="note">( * 필수항목 )</p>
+
+<section>
+  <h2>1. 서비스 명칭*</h2>
+  <div class="body">
+    <p><span class="kw" style="font-size:11.5pt;">보험펜(BohumPen) — 약관을 형광펜으로 짚어주는 여행자보험 AI</span></p>
+    <ul>
+      <li>이름 그대로, 사용자가 받게 될 답의 <span class="kw">근거가 되는 약관 문장에 형광펜을 그어 함께 보여준다</span>는 뜻을 담았다.</li>
+      <li>배포 URL: <span class="kw">https://travel-insurance-web.onrender.com/</span> (로그인 없이 모든 기능 이용 가능)</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>2. 아이디어 기획 핵심내용(요약)*</h2>
+  <div class="body">
+    <ul>
+      <li><span class="kw">한 문장 요약</span> — 여행자보험의 <span class="kw">가입 전 · 여행 중 · 사고 후</span> 전 과정에서, 생성형 AI가 6개 손해보험사의 <span class="kw">실제 약관 원문</span>을 근거로 “무엇을 받을 수 있고, 무엇이 안 되는지”를 조항까지 짚어 알려주는 설명가능 금융 AI 웹서비스.</li>
+      <li><span class="kw">해결 대상</span> — 여행자보험은 가입은 1분, 청구는 미궁이다. 소비자는 ①내게 맞는 상품을 고를 근거가 없고 ②사고가 나면 무엇을 청구할 수 있는지 모르며 ③서류를 놓쳐 청구 자체를 포기한다.</li>
+      <li><span class="kw">핵심 원칙</span> — <span class="q">근거 없는 결과를 내지 않는다.</span> 모든 안내에 약관 조항 원문을 그대로 인용하고, 근거를 못 찾으면 지어내지 않고 “확인불가”라고 답한다. 생성형 AI의 모든 출력은 <span class="kw">인용문이 약관 원문의 부분 문자열인지</span> 대조 검증을 통과해야 화면에 나간다.</li>
+      <li><span class="kw">구현 방식</span> — 6개사 약관 PDF(162~326쪽)를 조항 단위로 분해해 <span class="kw">조항 441건 · 사고유형 매핑 568건 · 수치조건 174건 · 담보별 필요서류 503건</span>의 지식베이스로 정제했다. 생성형 AI(Gemini)는 이 지식베이스 위에서만 판단·설명한다.</li>
+      <li><span class="kw">순위는 수식이, 설명은 AI가</span> — 보험사 추천 순위는 R로 산출한 가중치 모델(5개 축)이 <span class="kw">80%</span>, 생성형 AI 점수가 <span class="kw">20%</span>를 차지한다. 같은 입력이면 언제나 같은 순위가 나오고, 왜 그 순위인지 축별 기여도로 되짚을 수 있다.</li>
+      <li><span class="kw">현재 상태</span> — 10개 화면이 실제로 동작하는 웹서비스로 배포돼 있으며, 백엔드 자동화 테스트 272건이 통과한다.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>3. 문제 정의 및 제안 배경*</h2>
+  <div class="body">
+    <p class="sub">(1) 지금 금융 서비스의 구체적인 문제</p>
+    <ul>
+      <li><span class="kw">가입 단계 — 비교할 근거가 없다.</span> 기존 비교 서비스는 보험료와 보장금액 “숫자”만 나란히 놓는다. 정작 보상 여부를 가르는 것은 약관의 면책·조건 조항인데, 소비자가 200~300쪽 PDF를 읽고 비교할 방법이 없다.</li>
+      <li><span class="kw">사고 단계 — 무엇을 청구할 수 있는지 모른다.</span> “휴대폰을 잃어버렸다”는 사고 하나도 도난이냐 분실이냐에 따라 보상과 면책이 갈린다. 소비자는 그 갈림길이 있다는 사실 자체를 모른 채 청구를 포기하거나, 되지 않을 청구를 넣어 분쟁으로 간다.</li>
+      <li><span class="kw">서류 단계 — 현지에서만 받을 수 있는 서류를 놓친다.</span> 진단서·경찰 신고서·지연 확인서는 귀국 후에는 사실상 재발급이 불가능하다. 그런데 필요 서류를 아는 시점은 대개 귀국 이후다.</li>
+      <li><span class="kw">중복 가입 — 이미 든 보험과 겹치는 줄 모른다.</span> 실손·상해·일상생활배상책임은 여행자보험과 담보가 겹치는 구간이 있다. 겹치는 담보에 다시 보험료를 낸다.</li>
+      <li><span class="kw">설명 불가능한 AI의 한계.</span> 챗봇이 “보상 가능합니다”라고 답해도 근거가 없으면 소비자는 그 말을 믿고 행동할 수 없고, 사업자도 그 답변에 책임질 수 없다.</li>
+    </ul>
+
+    <p class="sub">(2) 대상 고객과 채널을 선택한 배경</p>
+    <ul>
+      <li><span class="kw">고객 — 여행자보험 가입자, 특히 보험 문서 해독 경험이 적은 개인 소비자.</span> 여행자보험은 계약 기간이 짧고 금액이 작아 소비자가 약관을 읽지 않는 대표적인 상품이면서, 동시에 <span class="kw">사고 유형이 가장 다양한</span> 상품이다. “읽지 않는데 갈래는 많은” 구조라 설명가능 AI의 효용이 가장 크다.</li>
+      <li><span class="kw">채널 — 모바일 웹.</span> 사고는 여행지에서, 손에 든 휴대폰으로 접수된다. 앱 설치를 요구하면 정작 필요한 순간에 쓰이지 못한다. 설치 없이 링크로 바로 열리고, 현지에서 통신이 끊겨도 서류 안내를 볼 수 있도록 <span class="kw">오프라인 저장(HTML·이미지)</span>을 함께 제공한다.</li>
+      <li><span class="kw">진입 장벽 제거.</span> 로그인 없이 게스트로 전 기능을 쓸 수 있게 했다. 사고 직후의 사용자에게 회원가입을 먼저 요구하지 않기 위해서다.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>4. 서비스 컨셉 및 차별성*</h2>
+  <div class="body">
+    <p class="sub">핵심 컨셉 — “근거를 함께 주는 보험 안내”</p>
+    <ul>
+      <li>모든 답에 <span class="kw">약관 조항 원문 + 조 번호 + 쪽수</span>를 붙인다. 사용자는 답을 믿을지 스스로 판단할 수 있고, 보험사와 다툴 때 그 문장을 그대로 들고 갈 수 있다.</li>
+    </ul>
+
+    <p class="sub">기존 금융 앱 대비 차별성</p>
+    <table class="tbl">
+      <tr><th style="width:22%">축</th><th style="width:36%">기존 보험 비교·상담 서비스</th><th>보험펜</th></tr>
+      <tr>
+        <td class="c">근거 제시</td>
+        <td>“보상 가능/불가” 결론만 제시</td>
+        <td><span class="kw">조항 원문을 인용</span>하고 관련 구간에 형광펜을 칠해 보여줌. 근거를 못 찾으면 “확인불가”로 정직하게 답함</td>
+      </tr>
+      <tr>
+        <td class="c">비교 기준</td>
+        <td>보험료·보장금액 숫자 나열</td>
+        <td>약관 근거(보장 적합도·조건 명확성·청구 간편성·제한 범위) + 등급별 실제 보장금액 + 실제 보험료 + 기존보험 겹침 + 여행 위험, <span class="kw">5개 축 가중치 점수</span></td>
+      </tr>
+      <tr>
+        <td class="c">개인화</td>
+        <td>연령·성별 정도</td>
+        <td>목적지·기간·동행·활동·렌터카·걱정되는 사고유형·기존 보유 보험까지 <span class="kw">모두 가중치로 반영</span>. 실속/표준/고급 등급마다 순위가 실제로 달라짐</td>
+      </tr>
+      <tr>
+        <td class="c">재현성</td>
+        <td>LLM 답변이 매번 달라짐</td>
+        <td>순위는 <span class="kw">결정적 수식이 80%</span>. 같은 입력이면 언제나 같은 순서, 축별 기여도까지 화면에 공개</td>
+      </tr>
+      <tr>
+        <td class="c">사고 접수</td>
+        <td>고정된 질문지</td>
+        <td>사고 서술을 읽고 <span class="kw">AI가 그 사고에 필요한 질문만 그 자리에서 생성</span>(대분류 확인 → 세부유형 확인 2단계). 이미 적은 내용은 다시 묻지 않음</td>
+      </tr>
+      <tr>
+        <td class="c">사고 이후</td>
+        <td>안내로 종료</td>
+        <td>담보별 <span class="kw">필요 서류 체크리스트</span> + 현지어 서류 요청문 + 오프라인 저장 + 청구 전 누락·모순 점검</td>
+      </tr>
+    </table>
+
+    <p class="sub">전 생애주기 설계</p>
+    <ul>
+      <li><span class="kw">가입 전</span> — 여행 준비 입력 → 6개사 맞춤 순위 → 등급별 보장금액·보험료 비교 → 기존보험 중복·공백 진단</li>
+      <li><span class="kw">여행 중</span> — 여행경보 확인, 「현지에서」 화면에서 현지어 서류 요청문 확보(오프라인 저장 가능)</li>
+      <li><span class="kw">사고 후</span> — 자유서술 접수 → AI 맞춤 질문 → 담보·조항·수치조건·필요서류 안내 → 청구 전 점검 → 약관 형광펜으로 근거 확인</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>5. 활용 데이터 및 생성형 AI 모델 적용 방안*</h2>
+  <div class="body">
+    <p class="sub">(1) 활용 데이터 — 본 대회는 별도 데이터가 제공되지 않아 전량 직접 수집·정제</p>
+    <table class="tbl">
+      <tr><th style="width:26%">데이터</th><th style="width:26%">출처 / 수집 방법</th><th>규모 및 활용</th></tr>
+      <tr>
+        <td>6개 손해보험사 여행자보험 약관 PDF<br><span class="small">(삼성화재·현대해상·메리츠화재·KB손보·DB손보·카카오페이손보)</span></td>
+        <td>각 사가 <span class="kw">일반에 공개한 약관 PDF</span>를 내려받아 사용</td>
+        <td>보험사당 162~326쪽. pdfplumber로 조항 단위 분해 → <span class="kw">조항 441건 / 담보 141건 / 표준담보 45종</span></td>
+      </tr>
+      <tr>
+        <td>사고유형 · 조항 매핑</td>
+        <td>약관 원문을 읽고 직접 매핑(2단계 사전 설계)</td>
+        <td>대분류 8종 · 세부유형 31종, <span class="kw">매핑 568건</span>(직접/조건부/면책)</td>
+      </tr>
+      <tr>
+        <td>수치 조건</td>
+        <td>조항 원문에서 지급한도·자기부담금·지연기준시간 등 추출</td>
+        <td><span class="kw">174건</span>. 근거가 된 원문 조각이 조항 원문의 부분 문자열일 때만 저장</td>
+      </tr>
+      <tr>
+        <td>담보별 필요 서류</td>
+        <td>약관의 서류 조항 → 표준 서류 코드 14종에 연결</td>
+        <td><span class="kw">503건</span>, 전 담보 연결률 100%</td>
+      </tr>
+      <tr>
+        <td>등급별 보장금액</td>
+        <td>각 사 공시·상품설명 자료에서 직접 정리</td>
+        <td><span class="kw">378행</span>(6사 × 3등급 × 21항목)</td>
+      </tr>
+      <tr>
+        <td>실제 보험료</td>
+        <td>각 사 다이렉트 계산기에서 직접 조회</td>
+        <td><span class="kw">2,062행</span>(나이·성별·등급별). 산출 전제·조회 시점을 행마다 함께 저장</td>
+      </tr>
+      <tr>
+        <td>보조 데이터</td>
+        <td>표준약관, 외교부 여행경보, 손해보험협회 공시, 항공 지연 통계</td>
+        <td>표준약관 대조, 여행경보 배지, 통계 참고치</td>
+      </tr>
+    </table>
+    <ul>
+      <li><span class="kw">출처 관리</span> — 외부에서 가져온 모든 값은 <span class="kw">출처·URL·수집일·산출 전제</span>를 행 단위로 저장하고, 별도 출처 대장(source register)을 함께 관리한다. 근거 없이 숫자만 보여주지 않는다는 원칙을 데이터 계층에서 강제한다.</li>
+      <li><span class="kw">개인정보</span> — 서비스가 저장하는 개인정보는 닉네임·나이·성별과 소셜 로그인 식별자뿐이며, <span class="kw">로그인 없이도 전 기능 이용 가능</span>하다. 주민등록번호·계좌·카드번호 등 민감정보는 <span class="kw">수집하지 않는다.</span></li>
+    </ul>
+
+    <p class="sub">(2) 생성형 AI 모델 적용 방안 — Google Gemini</p>
+    <table class="tbl">
+      <tr><th style="width:30%">적용 지점</th><th>수행 역할</th><th style="width:26%">근거 통제 장치</th></tr>
+      <tr><td>사고 자유서술 구조화</td><td>“계단에서 넘어져 발목을 다쳤다” → 부위·입원·수술 등 구조화 필드로 변환</td><td>규칙 기반 추출과 병행, 신뢰도 임계치 미만은 사용자에게 재확인</td></tr>
+      <tr><td>사고유형 2단계 분류</td><td>자유서술로 대분류(8종) 판정 → 답변을 반영해 세부유형(31종) 재분류</td><td>확신이 낮으면 세부유형을 <span class="kw">추정하지 않고</span> 대분류에 보류</td></tr>
+      <tr><td>사고별 확인 질문 생성</td><td>미리 만들어 둔 질문지 대신, 그 사고에 필요한 질문을 <span class="kw">2단계로 생성</span>. 2단계는 1단계 답변을 읽고 세부유형을 가르는 질문만 생성</td><td>담보 판단에 쓰이는 필드명을 강제해 답변이 판단 경로로 흐르게 함</td></tr>
+      <tr><td>조항·서류 상황별 설명</td><td>약관 문장을 이번 사고 맥락에 맞춰 쉬운 말로 풀어 설명</td><td>실패해도 기본 설명으로 대체되어 흐름이 끊기지 않음</td></tr>
+      <tr><td>약관 형광펜 구간 추출</td><td>사고와 직접 관련된 조항 구간을 골라 하이라이트</td><td><span class="kw">인용이 조항 원문의 부분 문자열인지 대조 검증</span> 후에만 표시</td></tr>
+      <tr><td>보험사 순위 점수</td><td>수식이 놓친 맥락을 반영해 보조 점수 산출</td><td>최종 점수의 <span class="kw">20%만</span> 반영. 호출 실패 시 수식 점수만으로 동일하게 동작</td></tr>
+      <tr><td>현지어 서류 요청문</td><td>목적지 언어로 필요 서류 요청 문구 생성(현지어·한국어 병기)</td><td>서류 목록 자체는 약관 기반 결정적 매핑에서 나옴</td></tr>
+    </table>
+    <ul>
+      <li><span class="kw">AI가 하지 않는 일</span> — 보상 여부의 최종 판정, 금액 산정, 약관에 없는 사실의 생성. 이 셋은 결정적 규칙과 약관 원문이 담당한다.</li>
+      <li><span class="kw">가용성 설계</span> — 생성형 AI 호출이 실패해도 서비스는 멈추지 않는다. 각 지점마다 규칙 기반 대체 경로를 두어, 품질은 낮아지되 <span class="kw">근거 없는 답이 나가지 않도록</span> 설계했다.</li>
+      <li><span class="kw">통계 모델(R)</span> — 순위 가중치와 정규화 계수는 R로 실제 데이터 분포를 분석해 산출한다. 예컨대 “상해사망보험금”은 등급 간 격차가 가장 큰 항목(변별력 0.44)이고, “국내 3대 비급여의료비”는 6사 18개 값이 모두 같아 변별력이 0이다. 이런 분석 결과가 가중치에 그대로 반영된다.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>6. 기대 효과 및 확장 가능성*</h2>
+  <div class="body">
+    <p class="sub">(1) 해결되는 문제와 기대 효과</p>
+    <ul>
+      <li><span class="kw">청구 포기·누락 감소</span> — 사고 직후 담보·조항·필요서류를 한 화면에서 확인하고, 현지에서만 받을 수 있는 서류를 <span class="kw">현지에 있는 동안</span> 안내받는다.</li>
+      <li><span class="kw">분쟁 예방</span> — 면책 조항을 사전에 원문으로 보여주어, 되지 않을 청구를 넣었다가 분쟁으로 가는 경로를 줄인다. 사고 상황의 활동(예: 스쿠버다이빙)이 면책 조항 원문에 실제로 언급돼 있으면 보장 조항이 함께 걸려 있어도 <span class="kw">면책을 우선 표시</span>한다.</li>
+      <li><span class="kw">중복 가입 방지</span> — 이미 보유한 실손·상해·일상생활배상책임과 겹치는 담보를 약관 근거와 함께 알려, 같은 보장에 두 번 보험료를 내지 않게 한다.</li>
+      <li><span class="kw">비교 근거의 투명화</span> — 순위가 왜 그렇게 나왔는지 5개 축의 점수·비중·기여도를 그대로 공개한다. 소비자는 결과를 받아들이는 대신 <span class="kw">검증</span>할 수 있다.</li>
+    </ul>
+
+    <p class="sub">(2) 실질적 혜택</p>
+    <ul>
+      <li><span class="kw">금융 소비자</span> — 약관을 읽지 않고도 약관에 근거한 판단을 얻는다. 청구 가능 금액을 놓치지 않고, 필요 없는 중복 보험료를 줄인다.</li>
+      <li><span class="kw">보험사</span> — 청구 요건과 필요 서류를 사전에 정확히 안내받은 고객이 접수하므로, 서류 보완 요청과 반려가 줄어 <span class="kw">처리 비용과 민원</span>이 함께 감소한다.</li>
+      <li><span class="kw">감독·소비자보호 관점</span> — “근거 조항 없이는 결론을 내지 않는다”는 구조는 설명가능성·완전판매 요건과 그대로 맞물린다.</li>
+    </ul>
+
+    <p class="sub">(3) 확장 가능성</p>
+    <ul>
+      <li><span class="kw">상품 확장</span> — 약관을 조항 단위로 분해하고 사고유형에 매핑하는 구조는 상품에 종속되지 않는다. 실손의료보험·운전자보험·펫보험 등으로 <span class="kw">데이터만 추가</span>하면 같은 엔진이 동작한다. 대분류 8종은 고정하고 세부유형만 늘리는 설계라, 담보가 늘어도 판단 로직은 늘지 않는다.</li>
+      <li><span class="kw">고객군 확장</span> — 현지어 병기 구조를 그대로 뒤집으면 <span class="kw">국내 체류 외국인</span>의 보험 이용 지원이 된다. 쉬운 말 설명 기능은 고령층·디지털 취약계층 대상 포용적 금융 서비스로 확장 가능하다.</li>
+      <li><span class="kw">채널 확장</span> — 조항 검색·근거 인용 API를 보험사 상담 채널·설계사 단말에 붙이면 상담 품질을 표준화할 수 있다.</li>
+      <li><span class="kw">금융 외 영역</span> — “긴 규정 문서 + 개별 사례 + 근거 인용 강제”라는 문제 구조는 의료 급여기준, 공공 지원사업 요건, 계약서 검토 등에 그대로 적용된다. 본 서비스의 핵심 자산은 여행자보험 지식이 아니라 <span class="kw">근거 없는 답을 구조적으로 막는 파이프라인</span>이다.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>7. 설계 원칙 — “근거 없는 결과를 내지 않는다”를 코드로 강제한 방법</h2>
+  <div class="body">
+    <ul>
+      <li><span class="kw">인용 검증</span> — AI가 만든 모든 인용문은 약관 원문의 부분 문자열인지 대조한다. 통과하지 못하면 화면에 나가지 않는다.</li>
+      <li><span class="kw">누락 방지</span> — 어느 사고유형에도 맞지 않는 조항을 조용히 버리지 않고 검수 대상으로 표시한다. “근거 없는 결과 금지”의 반대편인 “근거 있는데 누락”도 함께 막는다.</li>
+      <li><span class="kw">결측의 정직한 처리</span> — 자료가 없는 항목은 0점으로 세지 않고 그 축을 빼고 나머지로 다시 100%를 맞춘다. 자료가 없다는 이유로 특정 보험사가 불리해지지 않게 한다. 화면에도 “자료 없음”으로 밝힌다.</li>
+      <li><span class="kw">자동화 검증</span> — 백엔드 자동화 테스트 272건이 통과한다. 인용 검증·데이터 무결성·순위 재현성·결측 처리 규칙이 테스트로 고정돼 있어, 이후 변경이 이 원칙을 깨뜨리면 즉시 드러난다.</li>
+    </ul>
+  </div>
+</section>
