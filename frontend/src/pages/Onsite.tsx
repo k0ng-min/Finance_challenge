@@ -48,18 +48,26 @@ export function Onsite() {
     };
   }, []);
 
-  // 여행이 있으면 그 여행 기준으로, 없으면 고른 나라 기준으로 불러온다.
+  // 기본은 등록한 여행 기준이지만, 나라를 직접 고르면 그 선택이 항상 이긴다.
+  // (경유지에 들렀거나 예전 여행이 남아 있는 경우가 있어서, 여행이 있다고 나라를
+  //  못 바꾸게 잠가 두면 정작 지금 서 있는 나라의 서류를 볼 방법이 없어진다.)
   useEffect(() => {
     if (!tripId && !country) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
-    const load = tripId ? api.getTripOnsitePack(tripId) : api.getOnsitePack(country);
+    const load = country ? api.getOnsitePack(country) : api.getTripOnsitePack(tripId!);
     load
       .then((res) => {
         if (cancelled) return;
         setPack(res);
-        setActiveType((prev) => prev ?? res.incident_types[0]?.type_id ?? null);
+        // 나라를 바꾸면 사고유형 목록도 달라질 수 있다. 앞서 고른 유형이 새 목록에
+        // 없으면 그대로 두면 안 된다 — 서류가 한 장도 없는 빈 화면이 된다.
+        setActiveType((prev) =>
+          prev != null && res.incident_types.some((t) => t.type_id === prev)
+            ? prev
+            : res.incident_types[0]?.type_id ?? null
+        );
       })
       .catch(() => {
         if (!cancelled) {
@@ -109,21 +117,34 @@ export function Onsite() {
         </div>
       )}
 
-      {!tripId && (
-        <div className="card">
-          <p className="section-label" style={{ marginBottom: 8 }}>어느 나라에 계신가요?</p>
-          <PickerField
-            value={country}
-            options={COUNTRIES.map((c) => ({ value: c, label: c }))}
-            placeholder="나라 선택"
-            modalTitle="나라 선택"
-            onChange={setCountry}
-          />
+      {/* 나라 고르기는 여행이 있든 없든 항상 열어 둔다 — 한 번 고르고 나서도, 여행을
+          등록해 둔 뒤에도 언제든 다시 바꿀 수 있어야 한다. */}
+      <div className="card">
+        <p className="section-label" style={{ marginBottom: 8 }}>어느 나라에 계신가요?</p>
+        <PickerField
+          value={country || (tripId ? pack?.country ?? "" : "")}
+          options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+          placeholder="나라 선택"
+          modalTitle="나라 선택"
+          onChange={setCountry}
+        />
+        {tripId && country ? (
+          <p className="muted" style={{ fontSize: "0.76rem", marginTop: 8 }}>
+            고른 나라 기준으로 보고 있어요.{" "}
+            <button type="button" className="link-button" onClick={() => setCountry("")}>
+              등록한 여행 기준으로 되돌리기
+            </button>
+          </p>
+        ) : tripId ? (
+          <p className="muted" style={{ fontSize: "0.76rem", marginTop: 8 }}>
+            등록한 여행 기준으로 보고 있어요. 다른 나라에 계시면 위에서 바꿔 주세요.
+          </p>
+        ) : (
           <p className="muted" style={{ fontSize: "0.76rem", marginTop: 8 }}>
             여행을 등록하면 남은 일정과 등록한 보험사 기준으로 더 정확하게 안내해 드려요.
           </p>
-        </div>
-      )}
+        )}
+      </div>
 
       {loading && <LoadingState label="현지 대응 정보를 준비하고 있어요..." />}
       {!loading && error && <div className="error-box">{error}</div>}

@@ -108,6 +108,19 @@ input, textarea, [contenteditable="true"] {
   -webkit-user-select: text;
 }
 
+/* 모바일 브라우저는 손가락으로 누른 요소 위에 반투명한 파란 사각형을 잠깐 덧칠한다
+   (-webkit-tap-highlight-color 기본값). 이 앱의 버튼·칩·카드는 모서리가 둥근데
+   그 사각형은 요소의 '박스' 모양 그대로 깔려서, 다크모드 토글이나 칸을 누를 때마다
+   둥근 모양 밖으로 네모난 파란 판이 비쳐 레이아웃이 드러나 보였다. 눌린 느낌은 이미
+   :active 트랜지션으로 주고 있으므로 기본 하이라이트는 통째로 끈다. */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* 안드로이드 크롬은 label을 눌러 체크박스를 토글할 때 글자에 파란 선택 블록을 남기기도
+   한다 — 누를 수 있는 요소는 터치 선택 자체를 막는다(위 body 규칙의 보강). */
+button, a, label, summary, [role="button"], [role="tab"] {
+  -webkit-touch-callout: none;
+}
+
 /* select 드롭다운(닫혀있는 상자)에 실제로 스타일을 입힐 수 있는 부분 — OS 네이티브
    화살표 대신 앱 톤에 맞는 화살표를 쓴다. 펼쳐졌을 때의 옵션 목록 자체는 브라우저가
    그리는 부분이라 CSS로 못 바꾸지만, color-scheme(위 :root)이 라이트/다크에 맞춰
@@ -2954,6 +2967,22 @@ button { cursor: pointer; font-family: inherit; }
   .pwc__word-stroke { stroke-dashoffset: 0; visibility: visible; }
   .pwc__highlighter { display: none; }
 }
+
+/* 안내 문장 안에 끼워 넣는 작은 조작 링크 — 버튼처럼 보이면 문장 흐름이 끊기고,
+   그렇다고 <a>로 두면 갈 곳이 없다. 글자 그대로 두되 밑줄로만 누를 수 있음을 알린다. */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link-button:hover { color: var(--primary-dark); }
+.link-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
 
 /* --- 「현지에서」 (/onsite) ------------------------------------------------
    창구에 그대로 보여주는 화면이라, 현지어를 크게 두고 한국어를 그 아래 작게 둔다.
