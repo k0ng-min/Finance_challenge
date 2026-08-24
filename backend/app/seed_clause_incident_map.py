@@ -55,6 +55,13 @@ BASE_RULES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("PERSONAL_EFFECTS", "면책"): [("PROP_LOSS", "면책"), ("PROP_THEFT", "면책"), ("PROP_DAMAGE", "면책")],
     ("PERSONAL_EFFECTS", "제한"): [("PROP_THEFT", "조건부"), ("PROP_DAMAGE", "조건부")],
 
+    # 골프용품손해(신한 2026판에서 처음 들어온 담보). 보험의 목적이 골프채·골프가방 등으로
+    # 휴대품과 따로 정의돼 있지만, 사고의 성격은 같다 — 화재·도난과 파손이다.
+    ("GOLF_EQUIPMENT", "보장정의"): [("PROP_THEFT", "직접"), ("PROP_DAMAGE", "직접")],
+    ("GOLF_EQUIPMENT", "면책"): [("PROP_THEFT", "면책"), ("PROP_DAMAGE", "면책")],
+    ("GOLF_EQUIPMENT", "제한"): [("PROP_THEFT", "조건부"), ("PROP_DAMAGE", "조건부")],
+    ("GOLF_EQUIPMENT", "조건"): [("PROP_THEFT", "조건부"), ("PROP_DAMAGE", "조건부")],
+
     ("ILL_DEATH", "보장정의"): [("ILL_DEATH_DISABILITY", "직접")],
     ("ILL_DEATH", "면책"): [("ILL_DEATH_DISABILITY", "면책")],
     ("ILL_DEATH", "제한"): [("ILL_DEATH_DISABILITY", "조건부")],

@@ -11,10 +11,15 @@ export const INSURERS: InsurerOption[] = [
   { code: "KB", name: "KB손해보험", logo: "/insurers/kb.jpg" },
   { code: "DB", name: "DB손해보험", logo: "/insurers/db.jpg" },
   { code: "KAKAOPAY", name: "카카오페이손해보험", logo: "/insurers/kakaopay.jpg" },
+  { code: "SHINHAN", name: "신한EZ손해보험", logo: "/insurers/shinhan.jpg" },
 ];
 
+/** 화면 문구에 쓰는 비교 대상 보험사 수. 보험사를 추가할 때 문구마다 숫자를 찾아
+ *  고치지 않도록 목록 길이에서 바로 가져다 쓴다. */
+export const INSURER_COUNT = INSURERS.length;
+
 /** 보험사 정식명(예: "삼성화재해상보험")은 목록/드롭다운에서 너무 길어 보이므로,
- * 6개 보험사 공통 짧은 이름으로 통일해서 보여줄 때 쓴다. */
+ * 비교 대상 보험사 공통 짧은 이름으로 통일해서 보여줄 때 쓴다. */
 export function shortInsurerName(code?: string | null, fallback?: string | null): string {
   const found = INSURERS.find((i) => i.code === code);
   return found?.name ?? fallback ?? "보험사 미상";

@@ -243,10 +243,10 @@ class ComparisonCategoryOut(BaseModel):
 
 
 class InsurerComparisonOut(BaseModel):
-    """6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준.
+    """전 보험사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준.
 
     InsurerPlanCoverageOut과 다른 점: 그건 보험사 하나의 원문 담보명 그대로를 보여주고,
-    이건 6개사를 사람이 재정리한 공통 항목(metric_label)으로 나란히 비교한다."""
+    이건 사람이 재정리한 공통 항목(metric_label)으로 나란히 비교한다."""
     tier_rank: int
     tier_label: str
     categories: list[ComparisonCategoryOut]
@@ -278,7 +278,7 @@ class IncidentCreate(BaseModel):
     new_trip_start_date: Optional[dt.date] = None
     new_trip_end_date: Optional[dt.date] = None
     user_policy_id: Optional[int] = None  # 이 사고 청구가 어느 등록 보험을 대상으로 하는지
-    # 게스트(비로그인)는 "내 보험"을 쓸 수 없어 등록된 보험이 없다 — 대신 6개 보험사 중
+    # 게스트(비로그인)는 "내 보험"을 쓸 수 없어 등록된 보험이 없다 — 대신 비교 대상 보험사 중
     # 하나를 바로 고르면, 서버가 그 보험사로 최소한의 보험 기록을 대신 만들어 청구 검토에 쓴다.
     insurer_code: Optional[str] = None
     # insurer_code와 함께 등급도 골랐으면 같이 남긴다(선택값 — 몰라도 접수할 수 있다).

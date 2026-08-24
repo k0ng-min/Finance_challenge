@@ -84,7 +84,7 @@ export function IncidentReport() {
   }, [profileSex]);
 
   // 로그인 계정: 등록된 보험 중 이번 사고를 어느 보험으로 청구할지 고를 수 있게 목록을 준비한다.
-  // 게스트: "내 보험"을 쓸 수 없으니 6개 보험사 중 하나를 바로 고르게 한다(아래 InsurerPicker).
+  // 게스트: "내 보험"을 쓸 수 없으니 비교 대상 보험사 중 하나를 바로 고르게 한다(아래 InsurerPicker).
   useEffect(() => {
     if (!userId || !isLoggedIn) return;
     api.listPolicies(userId).then((list) => {

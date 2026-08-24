@@ -59,6 +59,8 @@ DOC_RULES: dict[str, list[tuple[str, bool]]] = {
     "LIABILITY": [("CLAIM_FORM", True), ("LIABILITY_EVIDENCE", True), ("POLICE_REPORT", False), ("ID_CARD", True)],
 
     "PERSONAL_EFFECTS": [("CLAIM_FORM", True), ("THEFT_LOSS_STATEMENT", True), ("POLICE_REPORT", True), ("ID_CARD", True)],
+    # 골프용품손해도 화재·도난·파손이라 휴대품과 같은 서류를 낸다.
+    "GOLF_EQUIPMENT": [("CLAIM_FORM", True), ("THEFT_LOSS_STATEMENT", True), ("POLICE_REPORT", True), ("ID_CARD", True)],
     "HOME_THEFT": [("CLAIM_FORM", True), ("THEFT_LOSS_STATEMENT", True), ("POLICE_REPORT", True), ("ID_CARD", True)],
     "PASSPORT_LOSS": [("CLAIM_FORM", True), ("PASSPORT_REISSUE_RECEIPT", True), ("POLICE_REPORT", False), ("ID_CARD", True)],
 

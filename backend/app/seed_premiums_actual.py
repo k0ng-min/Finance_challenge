@@ -10,9 +10,9 @@
 등급 3개가 열로 나란한 가로형) — _rows_from_sheet()가 그 차이를 흡수해서 전부
 (나이, 성별, 등급, 보험료) 튜플로 통일한다.
 
-아직 실제 가격을 조회하지 못한 보험사(예: DB손해보험·메리츠화재)는 시트 자체가 없다.
-그 보험사는 이 스크립트를 몇 번을 돌려도 그냥 조용히 건너뛴다 — 나중에 같은 형식의
-시트를 엑셀에 추가해서 다시 돌리기만 하면 코드 변경 없이 채워진다.
+아직 실제 가격을 조회하지 못한 보험사는 시트 자체가 없다. 그 보험사는 이 스크립트를
+몇 번을 돌려도 그냥 조용히 건너뛴다 — 나중에 같은 형식의 시트를 엑셀에 추가하고
+_SHEET_CONFIG·_BASIS에 한 줄씩 더하면 채워진다(DB손해보험이 2026-08-25에 그렇게 들어왔다).
 
 Run from ``backend``::
 
@@ -54,8 +54,9 @@ _SHEET_CONFIG: dict[str, tuple[str, bool, str]] = {
     "현대해상": ("HYUNDAI", False, "표준형"),
     "kb": ("KB", False, "표준형"),
     "삼성": ("SAMSUNG", False, "표준플랜"),
-    # 메리츠는 실속플랜·보장이큰플랜 두 등급만 판다. 보장이큰플랜이 표준 자리다.
-    "메리츠": ("MERITZ", False, "보장이큰플랜"),
+    # 메리츠는 실속플랜·추천플랜·보장이큰플랜 세 등급이고 추천플랜이 표준 자리다.
+    "메리츠": ("MERITZ", False, "추천플랜"),
+    "db": ("DB", False, "표준형"),
 }
 
 #: 가격표 시트의 등급명 열 헤더가 담보 가입금액표(InsurerPlanCoverage)와 다르게 적힌
@@ -67,7 +68,10 @@ _PLAN_NAME_ALIASES: dict[str, dict[str, str]] = {
     "HYUNDAI": {"실속": "실속형", "표준": "표준형", "고급": "고급형"},
     # 가격 시트는 "보장이 큰 플랜"(띄어쓰기), 보장금액표·등급 매핑은 "보장이큰플랜"이다.
     # 여기서 맞추지 않으면 등급으로 가격을 못 찾아 메리츠만 조용히 값이 안 뜬다.
-    "MERITZ": {"보장이 큰 플랜": "보장이큰플랜"},
+    # 가운데 등급도 마찬가지다 — 가격 시트 헤더는 "표준형", 보장금액표는 "추천플랜"이다.
+    # (참고: 이 표준형 열 122행은 전부 실속플랜과 보장이큰플랜의 산술평균이다. 다이렉트에서
+    #  직접 조회한 값이 아니라 두 등급에서 뽑아낸 값이라는 걸 알고 쓰는 것으로 정리됐다.)
+    "MERITZ": {"보장이 큰 플랜": "보장이큰플랜", "표준형": "추천플랜"},
 }
 
 #: 조회 조건 — 보험사마다 산출 전제가 달라 각각 남긴다(근거 없이 숫자만 보여주지 않는다).
@@ -77,9 +81,16 @@ _BASIS: dict[str, str] = {
     "KB": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(만19세~만90세 가입 가능)",
     "SAMSUNG": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(항공지연 지수형 특약 2종 기본 포함)",
     "MERITZ": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(만19세~만79세 조회 가능)",
+    "DB": "다이렉트 사이트 조회, 1일(24시간) 기준, 본인 단독가입(만19세~만79세 조회 가능)",
 }
 _SOURCE = "보험사 다이렉트 홈페이지 보험료 계산기(직접 조회)"
 _COLLECTED_AT = date(2026, 8, 17)
+#: 나중에 따로 조회한 보험사는 조회일이 다르다 — 언제 본 값인지 화면에 그대로 밝히므로
+#: 한 날짜로 뭉뚱그리지 않는다. DB손보는 시트 안내문에 "조회일: 2026-08-18 ~ 2026-08-23"으로
+#: 적혀 있어, 그 구간의 마지막 날을 기준일로 둔다.
+_COLLECTED_AT_BY_CODE: dict[str, date] = {
+    "DB": date(2026, 8, 23),
+}
 
 
 def _find_header_row(rows: list[tuple]) -> int:
@@ -153,6 +164,7 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
             parsed = _rows_from_sheet(sheet_name, rows, vertical)
             aliases = _PLAN_NAME_ALIASES.get(insurer_code, {})
             parsed = [(age, sex, aliases.get(plan_name, plan_name), premium) for age, sex, plan_name, premium in parsed]
+            collected_at = _COLLECTED_AT_BY_CODE.get(insurer_code, _COLLECTED_AT)
             for age, sex, plan_name, premium in parsed:
                 db.add(InsurerPremium(
                     insurer_id=insurer_id, sex=sex, age=age, plan_name=plan_name,
@@ -161,7 +173,7 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
                     product_name=plan_name,
                     age_range=None,
                     basis=_BASIS[insurer_code], source=_SOURCE, source_url=None,
-                    collected_at=_COLLECTED_AT,
+                    collected_at=collected_at,
                 ))
             counts[insurer_code] = len(parsed)
 

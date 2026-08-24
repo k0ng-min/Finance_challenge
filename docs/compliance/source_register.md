@@ -1,6 +1,6 @@
 # 약관 데이터 출처·버전 등록부
 
-이 문서는 서비스 KB에 적재된 6개 보험사 약관의 출처, 버전, 최신성 상태와 데이터 완전성을 한 곳에서 감사하기 위한 등록부다. 기계 판독 원본은 `backend/data/dataset_manifest.json`이며 아래 표는 사람이 검토하기 위한 동일 정보의 요약이다.
+이 문서는 서비스 KB에 적재된 7개 보험사 약관의 출처, 버전, 최신성 상태와 데이터 완전성을 한 곳에서 감사하기 위한 등록부다. 기계 판독 원본은 `backend/data/dataset_manifest.json`이며 아래 표는 사람이 검토하기 위한 동일 정보의 요약이다.
 
 ## 2026-08-18 전면 재구축
 
@@ -38,6 +38,7 @@ SHA-256은 2026-08-18에 사용자가 제공한 PDF 파일 바이트의 지문�
 | KB | KB해외여행보험(다이렉트) | 일반26-15505-1 | 미확정 | (공개 URL 없음) | OFFICIAL_ISSUED_FILE | 2026-08-18 | `49a5ccecdb5cffe5bcf730efedf13322e0719cff8261aebcf47b724cc064e573` | VERIFIED_ISSUED_FILE | 25 | 56 | 66 | 0 | 92 | 표지 표기는 "2026.06"뿐. 실손의료비 특약(p.170-286)은 핵심 보장정의·면책만 반영. clause_term/doc_requirement 미구축 |
 | DB | 프로미 해외여행보험Ⅰ | 프로미Ⅰ_2026수집본 | 미확정 | (공개 URL 없음) | OFFICIAL_ISSUED_FILE | 2026-08-18 | `151c57ec603cad5b5d5dcc4128468e2ac9102d45d842554f1d98fbbecbf3e008` | VERIFIED_ISSUED_FILE | 17 | 94 | 165 | 0 | 68 | 버전 코드·시행일 미인쇄. clause_term/doc_requirement 미구축 |
 | KAKAOPAY | 해외여행보험 | 제2026-0199호 | 2026-05-04 | (공개 URL 없음) | OFFICIAL_ISSUED_FILE | 2026-08-18 | `3ed801afa9c8e930b01aed97f4ba8d67823d9ee7d5e4d2d533a3a80f67b4009c` | VERIFIED_ISSUED_FILE | 18 | 29 | 24 | 0 | 71 | 「함께하는 해외여행보험」·「함께하는 해외여행보험II」 두 파일과 본문 동일 확인 후 통합(각 sha256은 `dataset_manifest.json` 참고). clause_term/doc_requirement 미구축 |
+| SHINHAN | 신한 SOL 처음해외여행보험 | SOL처음해외여행_20260606 | 2026-06-06 | https://www.shinhanez.co.kr/static/pub/PUB2000T021.html | OFFICIAL_ISSUED_FILE | 2026-08-24 | `b3279327a710acb875693eda0c951e9a13ec2f168f7f202db12057015f77f016` | VERIFIED_ISSUED_FILE | 29 | 117 | 143 | 0 | 99 | 7번째 보험사로 2026-08-25 추가. 공시 페이지가 화면에 파일 링크를 그리지 않고 자체 API(POST /shezApi)로 파일을 내려주는 구조라 source_url에는 공시 페이지 주소를 적었다(약관 파일 직접 링크 없음, 재현 절차는 `docs/shinhan_추가_작업메모.md`). 약관 236쪽 전부를 정독해 조항 117개를 뽑았고 원문 대조 100%를 통과한다. 미완: (1) 실제 보험료 미확보 — 순위에서 가격 축을 빼고 재정규화, (2) 실속케어·안심케어 2등급만 판매 — 고급 등급 비교에서 제외, (3) 등급별 보장금액의 출처가 엑셀이 아니라 다이렉트 「보장 비교하기」 화면 캡처, (4) clause_term(정량조건) 미구축 |
 
 ## 무결성 감사 규칙
 
@@ -110,14 +111,14 @@ SHA-256은 2026-08-18에 사용자가 제공한 PDF 파일 바이트의 지문�
 |---|---|---|---|---|---|
 | 해외여행 실손의료보험 | [금감원 게시물](https://www.fss.or.kr/fss/bbs/B0000115/view.do?nttId=218364&menuNo=200504) 첨부 [별표 15] 표준약관(제5-13조제1항관련)(보험업감독업무시행세칙).hwp | OFFICIAL_HWP(금감원 자체 게시, 2차 유통 아님) | 2026-08-12 | `c3ee7c4cb6d0f23ccb71821c9669176bf926bbe0add0fe2b9c523714a219ed9e` | 게시일 2026-06-15, 조항 개정이력상 최신 개정 2026-05-06. HWP 원문을 `backend/data/standard_terms/`에 커밋(정부 공개 행정규칙이라 재배포 문제 없음). 제1~9조만 적재(비교 범위는 `docs/superpowers/specs/2026-08-12-standard-terms-comparison-design.md` 참고) |
 
-**매핑 커버리지**: 표준 9개 조문 × 6개사 = 54칸 중 9칸(제3조 5개사, 제4조 4개사)만
+**매핑 커버리지**: 표준 9개 조문 × 6개사 = 54칸 중 9칸(제3조 5개사, 제4조 4개사)만 (2026-08-25에 추가된 신한EZ손보는 아직 표준약관 대조 대상이 아니다)
 근거를 확보해 채웠다(위 "2026-08-18 재구축에서 새로 만든 파생 데이터" 참고). 나머지는
 대응 조항을 못 찾았거나 애매해 근거 없이 단정하지 않고 비워 뒀다 —
 `backend/app/seed_clause_standard_map.py` 주석 참고.
 
 ## 알려진 최신성 공백
 
-- 6개사 전부 보험사 공식 발행 파일(`VERIFIED_ISSUED_FILE`)이지만 공개 URL이 없어 재현
+- 7개사 전부 보험사 공식 발행 파일(`VERIFIED_ISSUED_FILE`)이지만 공개 URL이 없어 재현
   가능한 재다운로드 검증은 못 한다.
 - 삼성화재·메리츠·KB·DB는 본문에 시행일이 인쇄돼 있지 않아 `effective_date`가 비어
   있다(추정하지 않았다).

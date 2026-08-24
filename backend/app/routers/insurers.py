@@ -87,9 +87,10 @@ def get_premium_comparison(
 
     해당 나이가 가입연령 범위 밖이라 조회 자체가 안 되는 보험사는 unavailable_insurers로
     따로 알려준다 — 조용히 빠뜨리면 "그 보험사는 더 싼가?" 하는 오해를 만든다.
-    아직 가격을 확보하지 못한 보험사(예: DB·메리츠)는 그 보험사에 해당하는 행이 아예
-    없어서 unavailable_insurers에도 잡히지 않는다 — 가격을 준비되는 대로
-    app.seed_premiums_actual만 다시 돌리면 자동으로 나타난다."""
+    아직 가격을 확보하지 못한 보험사는 그 보험사에 해당하는 행이 아예 없어서
+    unavailable_insurers에도 잡히지 않는다 — 가격이 준비되는 대로
+    app.seed_premiums_actual만 다시 돌리면 자동으로 나타난다. (2026-08-25 DB손해보험이
+    들어오면서 지금은 6개사 전부 가격이 있다. 보험사를 새로 추가하면 다시 필요해진다.)"""
     sex = sex.upper()
     if sex not in ("M", "F"):
         raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
@@ -136,7 +137,7 @@ def get_premium_comparison(
     }
     # 이 보험사는 가격 자체를 추적 중인데 이 나이만 범위 밖인 경우(가입연령 초과/미달).
     unavailable = [i.name for i in all_insurers if i.insurer_id not in covered and i.insurer_id in tracked_ids]
-    # 이 보험사는 애초에 가격을 하나도 못 구했다(예: DB·메리츠, 아직 수집 전) — 나이와 무관하다.
+    # 이 보험사는 애초에 가격을 하나도 못 구했다(아직 수집 전) — 나이와 무관하다.
     # 원인이 다르므로 화면 문구도 나눠 보여준다(그렇지 않으면 "가입연령 범위 밖"이라는
     # 틀린 이유를 사용자에게 전달하게 된다).
     no_data = [i.code for i in all_insurers if i.insurer_id not in tracked_ids]
@@ -209,7 +210,7 @@ def get_insurer_plans(
 
     if age is None or not sex:
         # 등급 이름만 필요하면 InsurerPlanCoverage(담보한도표)에서 뽑는다 — 가격 자료가
-        # 아직 없는 보험사(DB·메리츠)도 등급 이름은 여기서 나온다.
+        # 아직 없는 보험사도 등급 이름은 여기서 나온다.
         plan_names = (
             db.query(InsurerPlanCoverage.plan_name)
             .filter(InsurerPlanCoverage.insurer_id == insurer.insurer_id)
@@ -288,10 +289,10 @@ def get_insurer_plan_coverage(insurer_code: str, db: Session = Depends(get_db)):
 
 @router.get("/comparison-metrics", response_model=InsurerComparisonOut)
 def get_insurer_comparison_metrics(plan_tier: int = 1, db: Session = Depends(get_db)):
-    """6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합).
+    """전 보험사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합).
 
     InsurerPlanCoverage(보험사별 원문 담보명)와 달리, 같은 항목끼리 미리 정리해 둔
-    metric_label로 6개사×등급 값이 한 행에 나란히 나온다. plan_tier(0=실속,
+    metric_label로 보험사×등급 값이 한 행에 나란히 나온다. plan_tier(0=실속,
     1=표준, 2=고급)로 등급 하나를 고르면 그 등급의 값만 돌려준다 — 사용자가
     "기준 다시 선택" 옆의 등급 선택기로 이 파라미터를 바꾼다."""
     if plan_tier not in (0, 1, 2):
@@ -402,8 +403,8 @@ def _attach_published_premiums(
         if insurer.insurer_id in by_id
     }
     # 이 나이만 범위 밖인 건지, 이 보험사가 가격 자체를 아직 하나도 못 구한 건지 구분한다
-    # (get_premium_comparison의 no_data_insurer_codes와 같은 원칙) — 안 그러면 DB·메리츠처럼
-    # 가격을 아직 못 구한 보험사도 "가입연령 범위 밖"이라는 틀린 이유로 안내하게 된다.
+    # (get_premium_comparison의 no_data_insurer_codes와 같은 원칙) — 안 그러면 가격을
+    # 아직 못 구한 보험사도 "가입연령 범위 밖"이라는 틀린 이유로 안내하게 된다.
     tracked_codes = {
         insurer.code for insurer in all_insurers
         if db.query(InsurerPremium).filter(InsurerPremium.insurer_id == insurer.insurer_id).first() is not None
@@ -422,7 +423,7 @@ def _attach_published_premiums(
             item["premium_note"] = None
         else:
             item["published_premium"] = None
-            # 가격은 없어도 등급 이름은 안다(DB·메리츠도 InsurerPlanCoverage로 등급명은 있다) —
+            # 가격은 없어도 등급 이름은 안다(InsurerPlanCoverage에 담보한도표가 있다) —
             # 상세 화면에 들어갔을 때 목록에서 고른 등급 그대로 이어지게 채워 둔다.
             item["plan_name"] = plan_name_for_tier(item["insurer_code"], tier_rank) if tier_rank is not None else None
             item["premium_period_days"] = DISPLAY_PREMIUM_PERIOD_DAYS
@@ -544,7 +545,7 @@ def get_insurer_coverages_for_incident_type(insurer_code: str, type_id: int, db:
 
 @router.get("/nonpayment-rates", response_model=NonpaymentRatesOut)
 def get_nonpayment_rates(db: Session = Depends(get_db)):
-    """손해보험협회 공시 — 6개사의 보험금 부지급률·청구이후 해지비율(업계평균과 함께).
+    """손해보험협회 공시 — 비교 대상 보험사의 보험금 부지급률·청구이후 해지비율(업계평균과 함께).
 
     전체 보험종목 기준 공시라 여행자보험만의 수치가 아니다 — "이 보험사가 전반적으로
     보험금을 얼마나 안 주는 편인가"를 보여주는 참고 지표로만 노출한다."""
@@ -658,6 +659,17 @@ def _drop_insurers_without_plan(
     return kept, dropped
 
 
+def _subject_particle(word: str) -> str:
+    """한국어 주격 조사 "은/는"을 앞 글자 받침으로 고른다.
+
+    보험사 이름이 목록에 그대로 들어가므로 "신한EZ손해보험는"처럼 어색해지는 걸 막는다.
+    한글이 아닌 글자로 끝나면(영문 약어 등) 판단할 근거가 없어 "은"으로 둔다."""
+    last = word.strip()[-1:] if word.strip() else ""
+    if "가" <= last <= "힣":
+        return "은" if (ord(last) - 0xAC00) % 28 else "는"
+    return "은"
+
+
 def _external_policy_kinds(db: Session, user_id: int | None) -> list[str]:
     """이 사용자가 등록해 둔 기존보험 종류. 없으면 빈 목록 — 겹침 축을 중립으로 둔다."""
     if user_id is None:
@@ -709,9 +721,10 @@ def get_insurer_ranking(
     if plan_tier is not None:
         ranking, dropped = _drop_insurers_without_plan(ranking, plan_tier)
         if dropped:
+            names = ", ".join(dropped)
             excluded_note = (
-                f"{', '.join(dropped)}는 {TIER_LABELS[plan_tier]} 등급 상품이 없어 "
-                "이번 비교에서 빠졌어요."
+                f"{names}{_subject_particle(dropped[-1])} {TIER_LABELS[plan_tier]} 등급 "
+                "상품이 없어 이번 비교에서 빠졌어요."
             )
         external_kinds = _external_policy_kinds(db, user_id)
         weighted = ranking_score.score_insurers(

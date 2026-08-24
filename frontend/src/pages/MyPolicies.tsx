@@ -267,7 +267,7 @@ export function MyPolicies() {
             onSelectPlan={setPlanName}
           />
         ),
-        // 몰라도 건너뛸 수 있다 — 담보한도 자료가 없는 보험사(DB·메리츠 등)도 등록은 막지 않는다.
+        // 몰라도 건너뛸 수 있다 — 담보한도 자료가 없는 보험사도 등록은 막지 않는다.
         canNext: true,
       },
       {
@@ -355,7 +355,7 @@ export function MyPolicies() {
           <Icon3D src="wallet" size={44} />
           <div className="home-card__text">
             <strong>보험료 비교</strong>
-            <span>6개사 공시 보험료</span>
+            <span>공시 보험료 비교</span>
           </div>
           <span className="home-card__arrow">›</span>
         </motion.button>

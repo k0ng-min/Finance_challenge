@@ -18,6 +18,7 @@ import { NextStepCard } from "./NextStepCard";
 import { PlanCoverageBoard } from "./PlanCoverageBoard";
 import { Modal } from "./Modal";
 import { shortInsurerName } from "../data/insurers";
+import { INSURER_COUNT } from "../data/insurers";
 
 type Phase = "tier" | "ranking" | "detail";
 
@@ -184,7 +185,7 @@ export function InsurerRankingFlow({
             icon="target"
             title="딱 맞는 보험사를 찾고 있어요"
             messages={[
-              "6개 보험사의 실제 약관을 대조하고 있어요",
+              `${INSURER_COUNT}개 보험사의 실제 약관을 대조하고 있어요`,
               "선택하신 기준에 맞춰 우선순위를 매기고 있어요",
               "근거가 되는 조항을 정리하고 있어요",
             ]}
@@ -198,7 +199,7 @@ export function InsurerRankingFlow({
           icon="target"
           eyebrow="보장 유형 선택"
           title={"어떤 기준으로\n비교해 드릴까요?"}
-          subtitle="선택한 기준에 따라 6개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요."
+          subtitle={`선택한 기준에 따라 ${INSURER_COUNT}개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요.`}
         />
         <div className="tier-list">
           {tiers.map((t, i) => (
@@ -226,7 +227,7 @@ export function InsurerRankingFlow({
   }
 
   if (phase === "ranking") {
-    // 6개사 평균을 축마다 미리 구해 둔다 — 카드마다 다시 세면 같은 값을 여섯 번 계산한다.
+    // 비교 대상 평균을 축마다 미리 구해 둔다 — 카드마다 다시 세면 같은 값을 보험사 수만큼 계산한다.
     // 자료가 없어 빠진 축은 평균에서도 뺀다(0으로 세면 평균이 부당하게 내려간다).
     const axisAverages = [0, 1, 2, 3, 4].map((index) => {
       const scores = ranking
@@ -270,7 +271,7 @@ export function InsurerRankingFlow({
           className="rank-compare-trigger"
           onClick={() => setShowComparison(true)}
         >
-          <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교</span>
+          <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · {ranking.length}개사 보장금액 한눈에 비교</span>
           <span className="rank-compare-trigger__arrow">›</span>
         </button>
         <Modal
@@ -377,7 +378,7 @@ export function InsurerRankingFlow({
               {/* 순위를 만든 다섯 축. 왼쪽은 축마다 점수와 이번 총점에 넣은 몫,
                   오른쪽은 같은 값을 오각형으로 묶은 그림이다. 막대만으로는 "어느 쪽으로
                   치우친 보험사인가"가 안 읽히고, 그림만으로는 정확한 값이 안 읽힌다.
-                  6개사 평균선을 겹쳐 그려 앞서는 축과 밀리는 축이 바로 보이게 했다.
+                  비교 대상 평균선을 겹쳐 그려 앞서는 축과 밀리는 축이 바로 보이게 했다.
 
                   예전에는 이 아래에 약관 근거 네 축 게이지가 따로 또 있었다. 그 네 축은
                   여기 clause 축 하나로 이미 들어가 있어서 같은 걸 두 번 보여준 셈이었다. */}
@@ -405,7 +406,7 @@ export function InsurerRankingFlow({
                     <RankingRadar axes={r.axes} average={axisAverages} insurerName={r.insurer_name} />
                     <div className="rank-radar-legend">
                       <span className="rank-radar-legend__self">이 보험사</span>
-                      <span className="rank-radar-legend__avg">6개사 평균</span>
+                      <span className="rank-radar-legend__avg">{ranking.length}개사 평균</span>
                     </div>
                   </div>
                 </div>

@@ -31,7 +31,7 @@ def test_committed_kb_passes_all_hard_integrity_checks():
     assert _check(report, "dataset_freeze")["status"] == "PASS"
 
 
-def test_source_manifest_has_six_insurers_and_enforces_ranking_gate():
+def test_source_manifest_covers_every_insurer_and_enforces_ranking_gate():
     manifest = json.loads(Path(DEFAULT_MANIFEST).read_text(encoding="utf-8"))
     sources = manifest["sources"]
 
@@ -113,5 +113,5 @@ def test_startup_sync_upgrades_existing_database_fingerprints(tmp_path):
         connection.commit()
 
     engine = create_engine(f"sqlite:///{database.as_posix()}")
-    assert synchronize_policy_fingerprints(engine) == 6
+    assert synchronize_policy_fingerprints(engine) == len(EXPECTED_INSURERS)
     assert audit_kb(database, DEFAULT_MANIFEST)["error_count"] == 0

@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-08-23",
+  "generated_at": "2026-08-25",
   "generated_by": "analysis/ranking_weights.R",
   "source_rows": {
-    "coverage": 274,
-    "premium": 2062
+    "coverage": 326,
+    "premium": 2550
   },
   "priority_multiplier": 3,
-  "priced_insurers": ["HYUNDAI", "KAKAOPAY", "KB", "MERITZ", "SAMSUNG"],
+  "priced_insurers": ["DB", "HYUNDAI", "KAKAOPAY", "KB", "MERITZ", "SAMSUNG"],
   "axis_weights": {
     "안정형": {
       "amount": 0.34,
@@ -135,12 +135,12 @@
     "배상책임": {
       "min": 1000,
       "max": 5000,
-      "tier_spread": 0.2
+      "tier_spread": 0.2857
     },
     "상해사망보험금": {
       "min": 10000,
       "max": 60000,
-      "tier_spread": 0.4444
+      "tier_spread": 0.4048
     },
     "상해입원일당": {
       "min": 1,
@@ -150,12 +150,17 @@
     "상해후유장해보험금": {
       "min": 10000,
       "max": 60000,
-      "tier_spread": 0.3611
+      "tier_spread": 0.3333
+    },
+    "수하물/항공편 지연": {
+      "min": 30,
+      "max": 50,
+      "tier_spread": 0.4
     },
     "식중독 보상": {
       "min": 20,
       "max": 30,
-      "tier_spread": 0.1333
+      "tier_spread": 0.1111
     },
     "여권분실 재발급비용": {
       "min": 6,
@@ -165,7 +170,7 @@
     "여행중단 추가비용": {
       "min": 20,
       "max": 30,
-      "tier_spread": 0.2222
+      "tier_spread": 0.1905
     },
     "자택도난손해": {
       "min": 100,
@@ -175,12 +180,12 @@
     "중대사고 구조송환비용": {
       "min": 2000,
       "max": 10000,
-      "tier_spread": 0.2
+      "tier_spread": 0.2429
     },
     "질병사망/고도후유장해": {
       "min": 1000,
       "max": 10000,
-      "tier_spread": 0.3667
+      "tier_spread": 0.3429
     },
     "출국항공기지연(지수형)": {
       "min": 10,
@@ -190,7 +195,7 @@
     "특정전염병 보상금": {
       "min": 20,
       "max": 30,
-      "tier_spread": 0.1667
+      "tier_spread": 0.1429
     },
     "항공기납치위로금": {
       "min": 7,
@@ -200,17 +205,17 @@
     "해외 상해의료비": {
       "min": 2000,
       "max": 10000,
-      "tier_spread": 0.3167
+      "tier_spread": 0.3
     },
     "해외 질병의료비": {
       "min": 2000,
       "max": 10000,
-      "tier_spread": 0.3167
+      "tier_spread": 0.3
     },
     "휴대품손해(분실제외)": {
       "min": 20,
       "max": 300,
-      "tier_spread": 0.3222
+      "tier_spread": 0.3
     }
   },
   "premium_norm": {

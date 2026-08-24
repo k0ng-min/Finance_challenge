@@ -7,6 +7,7 @@ import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 import { LoadingState } from "../components/LoadingState";
+import { INSURER_COUNT } from "../data/insurers";
 
 const VERDICT_CLASS: Record<string, string> = {
   직접: "sim-verdict--direct",
@@ -53,7 +54,7 @@ export function Simulate() {
   const [error, setError] = useState<string | null>(null);
   // 세분화 칩을 누른 "그 카드만" 다시 도는 동안 표시할 로딩 — 카드별로 따로
   // 갖는다. 예전에는 화면 전체가 하나의 loading을 공유해서, 카드 하나의 칩을
-  // 눌러도 나머지 3개 카드까지 6개사분(4×6) 전부 다시 조회되고 그동안 모든
+  // 눌러도 나머지 3개 카드까지 전 보험사분 전부 다시 조회되고 그동안 모든
   // 카드의 칩이 같이 잠겼다 — 이제 바뀐 카드 하나만 다시 조회하고 잠근다.
   const [busyCodes, setBusyCodes] = useState<Set<string>>(new Set());
 
@@ -122,7 +123,7 @@ export function Simulate() {
         icon="target"
         eyebrow="SIMULATION"
         title={"이런 일이 나면\n어떻게 될까요?"}
-        subtitle="같은 사고에 6개사 약관이 어떻게 갈리는지, 조항 원문과 함께 미리 봐요."
+        subtitle={`같은 사고에 ${INSURER_COUNT}개사 약관이 어떻게 갈리는지, 조항 원문과 함께 미리 봐요.`}
       />
 
       {loading && !data && <LoadingState label="약관을 대조하고 있어요..." />}
@@ -198,7 +199,7 @@ function ScenarioCard({
       </div>
       <p className="sim-card__narrative">{scenario.narrative}</p>
 
-      {/* 표를 다 읽기 전에 "6개사가 대체로 어느 쪽인지"를 한 눈에 준다. */}
+      {/* 표를 다 읽기 전에 "전체가 대체로 어느 쪽인지"를 한 눈에 준다. */}
       <div className="sim-summary">
         <div className="sim-summary__bar" role="img"
              aria-label={counts.map((c) => `${c.verdict} ${c.count}개사`).join(", ")}>

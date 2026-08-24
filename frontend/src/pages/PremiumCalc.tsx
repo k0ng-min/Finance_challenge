@@ -10,6 +10,7 @@ import { PageHero } from "../components/PageHero";
 import { Icon3D } from "../components/Icon3D";
 import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
 import { Modal } from "../components/Modal";
+import { INSURER_COUNT } from "../data/insurers";
 
 const INSURERS = [
   { code: "SAMSUNG", label: "삼성화재" },
@@ -18,6 +19,7 @@ const INSURERS = [
   { code: "KB", label: "KB손보" },
   { code: "DB", label: "DB손보" },
   { code: "KAKAOPAY", label: "카카오페이손보" },
+  { code: "SHINHAN", label: "신한EZ손보" },
 ];
 
 // backend/app/services/insurer_tiers.py의 TIER_LABELS와 반드시 같은 순서로 둔다.
@@ -40,7 +42,7 @@ function isCoveredValue(value: string | undefined | null): boolean {
  * 직접 조회한 실제 등급(플랜)별 가격을 쓴다. 필터의 "등급" 선택기(실속/표준/고급)로
  * 목록 전체 가격을 한 번에 바꿀 수 있고, 행마다 보험사 이름을 누르면 그 보험사만 다른
  * 등급으로 따로 볼 수도 있다(PlanCoverageBoard 팝업) — 전체로 바꾸면 행별 개별 선택은
- * 초기화된다(둘이 뒤섞이면 헷갈리므로). "N등급 · 6개사 보장금액 한눈에 비교" 버튼은
+ * 초기화된다(둘이 뒤섞이면 헷갈리므로). "N등급 · N개사 보장금액 한눈에 비교" 버튼은
  * InsurerComparisonMetric(같은 항목끼리 미리 정리해 둔 비교표)을 보여준다.
  *
  * 숫자는 약관에서 뽑은 값이 아니라 각 사 공시 화면에서 가져온 값이라, 무엇을 기준으로
@@ -216,7 +218,7 @@ export function PremiumCalc() {
   }, [data, selected, coveredCodes, priceBounds]);
   // 고른 보험사 중 목록에 안 나온 곳 — 조용히 빼지 않고 이유를 밝힌다. 이유가 둘로
   // 갈린다: (1) 이 나이만 가입연령 범위 밖 (2) 나이와 무관하게 가격 자체를 아직
-  // 못 구함(DB·메리츠) — 서버가 내려주는 no_data_insurer_codes로 구분한다. 하나로
+  // 못 구함 — 서버가 내려주는 no_data_insurer_codes로 구분한다. 하나로
   // 뭉뚱그리면 "아직 못 구함"을 "가입 안 되는 나이"로 잘못 전달하게 된다.
   const missing = useMemo(() => {
     const present = new Set((data?.items ?? []).map((i) => i.insurer_code));
@@ -577,7 +579,7 @@ export function PremiumCalc() {
         className="rank-compare-trigger"
         onClick={() => setShowComparison(true)}
       >
-        <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · 6개사 보장금액 한눈에 비교</span>
+        <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · {INSURER_COUNT}개사 보장금액 한눈에 비교</span>
         <span className="rank-compare-trigger__arrow">›</span>
       </button>
       <Modal

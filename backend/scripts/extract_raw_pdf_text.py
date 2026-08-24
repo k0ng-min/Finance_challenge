@@ -29,6 +29,7 @@ FILES: dict[str, list[tuple[str | None, str]]] = {
     "MERITZ": [(None, "meritz_overseas_2607A.pdf")],
     "KB": [(None, "kb_overseas_26-15505-1.pdf")],
     "DB": [(None, "db_overseas_promi1_2026.pdf")],
+    "SHINHAN": [(None, "shinhan_overseas_sol_20260606.pdf")],
     "KAKAOPAY": [
         ("K1", "kakaopay_overseas_2026-0199_together1.pdf"),
         ("K2", "kakaopay_overseas_2026-0199_together2.pdf"),

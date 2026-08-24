@@ -272,7 +272,7 @@ class TravelAlert(Base):
 class StandardClause(Base):
     """금융감독원 표준약관(보험업감독업무시행세칙 [별표15])의 조항 원문.
 
-    6개사 Clause와 마찬가지로 원문을 한 글자도 바꾸지 않는다. 이 테이블의 text 자체가
+    보험사 Clause와 마찬가지로 원문을 한 글자도 바꾸지 않는다. 이 테이블의 text 자체가
     "근거"이므로 별도 grounding 검증은 필요 없다(ClauseStandardMap의 anchor_phrase가
     이 text의 부분 문자열인지만 검증하면 된다).
     """
@@ -358,9 +358,9 @@ class NonpaymentRate(Base):
     안 주는 편인가"를 보여주는 참고 지표로만 쓴다. 약관 근거가 아니므로 순위 점수에
     넣지 않는다(InsurerPremium과 동일 원칙).
 
-    insurer_id가 NULL이면 업계평균(company_name='업계평균') 행이거나, 우리 6개사 밖의
+    insurer_id가 NULL이면 업계평균(company_name='업계평균') 행이거나, 우리 비교 대상 밖의
     손보사 행이다 — 조용히 버리지 않고 원본 그대로 저장해 두되(company_name), 화면에는
-    6개사 + 업계평균만 노출한다.
+    비교 대상 + 업계평균만 노출한다.
     """
 
     __tablename__ = "nonpayment_rate"
@@ -456,12 +456,12 @@ class InsurerPlanCoverage(Base):
 
 
 class InsurerComparisonMetric(Base):
-    """6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합).
+    """전 보험사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합).
 
     InsurerPlanCoverage는 보험사마다 원문 그대로의 담보명(coverage_label)을 쓰기 때문에
     "이 항목이 저 보험사의 어느 항목과 같은 건지"를 사람이 다시 대조해야 한다. 이 표는
-    사용자가 직접 6개사를 같은 평가기준(metric_label)으로 재정리해서 준 자료라, 같은
-    행에 6개사×등급의 값이 나란히 있어 바로 비교할 수 있다. 다만 사람이 재구성한
+    사용자가 직접 같은 평가기준(metric_label)으로 재정리해서 준 자료라, 같은 행에
+    보험사×등급의 값이 나란히 있어 바로 비교할 수 있다. 다만 사람이 재구성한
     비교표라 각 사 원문 표기와 미묘하게 다를 수 있는 부분(등급 재배열 등)은
     source_note에 그대로 남긴다 — 정확한 원문 대조가 필요하면 InsurerPlanCoverage를
     본다.
@@ -477,7 +477,7 @@ class InsurerComparisonMetric(Base):
     metric_row_id = Column(Integer, primary_key=True)
     category = Column(String, nullable=False)         # 예: "사망 · 후유장해"
     category_order = Column(Integer, nullable=False)  # 화면에 카테고리를 원문 순서로 보여주기 위함
-    metric_label = Column(String, nullable=False)      # 6개사 공통으로 맞춘 항목 이름(예: "상해사망보험금")
+    metric_label = Column(String, nullable=False)      # 보험사 공통으로 맞춘 항목 이름(예: "상해사망보험금")
     sort_order = Column(Integer, nullable=False)       # 카테고리 안에서의 항목 순서
     insurer_id = Column(Integer, ForeignKey("insurer.insurer_id"), nullable=False)
     plan_name = Column(String, nullable=False)          # 이 보험사의 실제 등급명(정규화 — InsurerPlanCoverage와 동일 표기)

@@ -4,6 +4,7 @@ import { Icon3D } from "../components/Icon3D";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { PenWriteCompass } from "../components/PenWriteCompass";
 import { useApp } from "../context/AppContext";
+import { INSURER_COUNT } from "../data/insurers";
 
 // 자주 쓰는 핵심 기능만 설명과 함께 크게 보여준다.
 const MAIN_CARDS = [
@@ -55,7 +56,7 @@ export function Home() {
         </motion.div>
         <h1 className="home__title">안녕하세요!{"\n"}오늘도 든든하게 떠나볼까요?</h1>
         <p className="home__subtitle">
-          6개 보험사의 실제 약관을 근거로, 여행 전 보장 비교부터 사고 후 청구까지 한 곳에서 도와드려요.
+          {INSURER_COUNT}개 보험사의 실제 약관을 근거로, 여행 전 보장 비교부터 사고 후 청구까지 한 곳에서 도와드려요.
         </p>
       </motion.div>
 

@@ -98,7 +98,7 @@ class _ScoreSchema(BaseModel):
     items: list[_ScoreItem]
 
 
-_PROMPT = """당신은 여행자보험 6개 보험사를 실제 자료만 근거로 비교해 순위를 매기는 분석가입니다.
+_PROMPT = """당신은 여행자보험 {insurer_count}개 보험사를 실제 자료만 근거로 비교해 순위를 매기는 분석가입니다.
 
 사용자가 고른 비교 기준: **{tier_label}** — {tier_description}
 사용자가 고른 가입 등급: **{plan_tier_label}**
@@ -269,6 +269,8 @@ def score_ranking(
         )
 
     prompt = _PROMPT.format(
+        # 그 등급 상품이 없는 보험사는 이미 빠진 채로 들어오므로 개수를 고정하지 않는다.
+        insurer_count=len(blocks),
         tier_label=tier_label,
         tier_description=tier_description,
         plan_tier_label=TIER_LABELS[plan_tier],

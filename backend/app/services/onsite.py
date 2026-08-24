@@ -77,10 +77,10 @@ class OnsitePack:
 
 
 def _policy_version_ids(db: Session, user_policy: UserPolicy | None) -> list[int] | None:
-    """대상 보험사 범위. None이면 6개사 전체를 뜻한다.
+    """대상 보험사 범위. None이면 전 보험사를 뜻한다.
 
     등록한 보험이 있으면 그 보험사 하나로 좁힌다 — 실제로 가입한 약관의 요건만 보여주는
-    쪽이 정확하다. 없으면 6개사 합집합을 보여주되, 요건마다 어느 보험사 조항인지 밝힌다
+    쪽이 정확하다. 없으면 전 보험사 합집합을 보여주되, 요건마다 어느 보험사 조항인지 밝힌다
     (근거의 출처를 뭉뚱그리지 않는다).
     """
     if user_policy and user_policy.policy_version_id:

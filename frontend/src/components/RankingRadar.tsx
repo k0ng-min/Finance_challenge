@@ -6,7 +6,7 @@ import type { RankingAxisOut } from "../api";
  * 막대만 보면 "이 보험사가 어느 쪽으로 치우쳤는지"가 안 읽힌다. 다섯 축을 한 도형으로
  * 묶으면 모양 자체가 성향이 된다 — 보장금액 쪽으로 뾰족한지, 고르게 둥근지.
  *
- * 6개사 평균을 같은 그래프에 겹쳐 그린다. 혼자 있는 도형은 "큰지 작은지"를 말해주지
+ * 비교 대상 평균을 같은 그래프에 겹쳐 그린다. 혼자 있는 도형은 "큰지 작은지"를 말해주지
  * 못한다. 평균선이 있어야 이 보험사가 어느 축에서 앞서고 어느 축에서 밀리는지가 보인다.
  *
  * 꼭짓점에는 왼쪽 축 목록과 같은 번호(1~5)만 적는다. 라벨을 그대로 넣으면 글자가 도형을
@@ -41,7 +41,7 @@ export function RankingRadar({
   insurerName,
 }: {
   axes: RankingAxisOut[];
-  /** 같은 순서의 6개사 평균 점수(0~1). */
+  /** 같은 순서의 비교 대상 평균 점수(0~1). */
   average: number[];
   insurerName: string;
 }) {
@@ -56,7 +56,7 @@ export function RankingRadar({
       className="rank-radar"
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       role="img"
-      aria-label={`${insurerName}의 다섯 축 점수와 6개사 평균 비교`}
+      aria-label={`${insurerName}의 다섯 축 점수와 비교 대상 평균 비교`}
     >
       {RINGS.map((ring) => (
         <polygon

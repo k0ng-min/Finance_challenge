@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_version": "travel-kb-2026.08.18-rebuild",
   "frozen_at": "2026-08-18T18:44:20+00:00",
-  "kb_content_sha256": "ba89f908cc140e67736ccfce19665159eb57983d847982c576c3c71bf8fade93",
+  "kb_content_sha256": "ab5f49c5d3d010d3a38c54f11dfee6b6c5429b30e52af3e6cbe94d1c1948f302",
   "fingerprint_scope": [
     "insurer",
     "product",
@@ -128,6 +128,24 @@
       "term_count": 14,
       "doc_map_count": 71,
       "known_gap": "「함께하는 해외여행보험」(f558fafbd3439e91525bea49cb46299d43afcf667deb20c5cf505edde997d16b)과 「함께하는 해외여행보험II」(a4b41ae4d606121188a838e6ebc7838dc579d6324c433253b7c394738866d19a) 두 파일을 함께 읽어 본문이 「해외여행보험」(기준 파일, 위 sha256)과 동일함을 확인하고 하나로 통합했다. file_hash는 기준 파일의 것이다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+    },
+    {
+      "insurer": "SHINHAN",
+      "product_name": "신한 SOL 처음해외여행보험",
+      "policy_version": "SOL처음해외여행_20260606",
+      "effective_date": "2026-06-06",
+      "source_url": "https://www.shinhanez.co.kr/static/pub/PUB2000T021.html",
+      "source_type": "OFFICIAL_ISSUED_FILE",
+      "downloaded_at": "2026-08-24",
+      "sha256": "b3279327a710acb875693eda0c951e9a13ec2f168f7f202db12057015f77f016",
+      "verification_status": "VERIFIED_ISSUED_FILE",
+      "ranking_eligible": true,
+      "coverage_count": 29,
+      "clause_count": 117,
+      "incident_map_count": 143,
+      "term_count": 0,
+      "doc_map_count": 99,
+      "known_gap": "7번째 보험사로 2026-08-25에 추가. 공시 페이지가 화면에 파일 링크를 그리지 않고 자체 API(POST /shezApi)로 내려주는 구조라 source_url은 공시 페이지 주소를 적었다(직접 링크 없음). 약관 원문 236쪽은 전부 정독해 조항을 뽑았고 원문 대조 100%를 통과한다. 다만 (1) 실제 보험료를 아직 확보하지 못해 순위에서 가격 축을 빼고 재정규화한다, (2) 실속케어·안심케어 2등급만 판매해 고급 등급 비교에서는 제외된다, (3) 등급별 보장금액의 출처가 엑셀이 아니라 다이렉트 「보장 비교하기」 화면 캡처다, (4) clause_term(정량조건)은 아직 만들지 않았다."
     }
   ]
 }

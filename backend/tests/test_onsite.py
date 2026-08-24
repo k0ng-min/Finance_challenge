@@ -115,9 +115,14 @@ def test_progress_is_none_without_linked_incident(seeded):
     assert all(doc.status is None for doc in _all_docs(pack))
 
 
-def test_all_six_insurers_are_named_without_a_policy(seeded):
-    """보험 미등록이면 6개사 합집합을 보여주고, 요건마다 출처 보험사를 밝힌다."""
+def test_all_insurers_are_named_without_a_policy(seeded):
+    """보험 미등록이면 전 보험사 합집합을 보여주고, 요건마다 출처 보험사를 밝힌다.
+
+    보험사가 늘 때마다 숫자를 고치지 않도록 EXPECTED_INSURERS를 기준으로 센다 —
+    그쪽이 "이 저장소가 다루는 보험사"의 단일 출처다."""
+    from scripts.validate_kb import EXPECTED_INSURERS
+
     pack = build_onsite_pack(seeded, country="태국")
-    assert len(pack.insurer_names) == 6
+    assert len(pack.insurer_names) == len(EXPECTED_INSURERS)
     for req in _all_requirements(pack):
         assert req.insurer_name

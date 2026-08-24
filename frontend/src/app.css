@@ -2036,8 +2036,8 @@ button { cursor: pointer; font-family: inherit; }
 /* --- 보험사 선택 그리드 (앱스토어 아이콘 + 통일된 프레임) --- */
 .insurer-grid {
   display: grid;
-  /* 3열 고정 — 보험사가 6개라 3×2로 딱 떨어진다. auto-fill로 두면 컨테이너 폭에 따라
-     5+1, 4+2처럼 마지막 줄만 덩그러니 남는 배치가 나와서 균형이 깨진다.
+  /* 3열 고정. auto-fill로 두면 컨테이너 폭에 따라 5+1, 4+2처럼 마지막 줄만 덩그러니
+     남는 배치가 나와서 균형이 깨진다.
      minmax(0, 1fr)이라 좁은 화면에서는 타일이 작아지며 3열을 유지한다. */
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
@@ -2047,6 +2047,14 @@ button { cursor: pointer; font-family: inherit; }
   max-width: 440px;
   margin-inline: auto;
 }
+/* 보험사가 7개가 되면서 마지막 줄에 하나만 남는다(3+3+1). 그대로 두면 그 하나가
+   왼쪽 끝에 덩그러니 붙어 3열의 균형이 깨진다 — 가운데 열로 옮긴다.
+   "3n+1번째이면서 마지막"은 곧 "마지막 줄에 혼자"라는 뜻이라, 보험사 수가 10개·13개로
+   늘어도 같은 규칙이 그대로 맞는다. */
+.insurer-card:last-child:nth-child(3n + 1) {
+  grid-column: 2;
+}
+
 .insurer-card {
   position: relative;
   display: flex;

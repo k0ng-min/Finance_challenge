@@ -462,7 +462,8 @@ export interface PremiumComparisonOut {
   items: InsurerPremiumOut[];
   /** 가격을 추적 중인데 이 나이만 가입연령 범위 밖인 보험사(이름) */
   unavailable_insurers: string[];
-  /** 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드) — 예: DB·메리츠 */
+  /** 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드). 지금은 6개사 전부
+   *  가격이 있어 비어 있지만, 보험사를 새로 추가하면 그 사이 다시 채워진다. */
   no_data_insurer_codes: string[];
 }
 
@@ -515,7 +516,7 @@ export interface ComparisonCategoryOut {
   metrics: ComparisonMetricOut[];
 }
 
-/** 6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
+/** 전 보험사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
 export interface InsurerComparisonOut {
   tier_rank: number;
   tier_label: string;
@@ -889,7 +890,7 @@ export const api = {
     return request<InsurerRankingOut>(`/insurers/ranking?${params.toString()}`);
   },
 
-  /** 6개사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
+  /** 전 보험사를 같은 담보 항목 기준으로 나란히 비교한 표(보장비교 종합), 등급 하나 기준. */
   getInsurerComparisonMetrics: (planTier: number) =>
     request<InsurerComparisonOut>(`/insurers/comparison-metrics?plan_tier=${planTier}`),
 

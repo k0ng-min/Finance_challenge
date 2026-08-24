@@ -11,6 +11,7 @@ import { PickerField } from "../components/PickerField";
 import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { TravelAlertPicker } from "../components/TravelAlertBadge";
 import { COUNTRIES } from "../data/countries";
+import { INSURER_COUNT } from "../data/insurers";
 
 const COMPANION_OPTIONS = ["혼자", "가족", "친구", "연인", "동료", "반려동물 동반"];
 
@@ -332,7 +333,7 @@ export function TripPrep() {
       icon: "target",
       eyebrow: "보장유형",
       title: "어떤 기준으로\n비교해 드릴까요?",
-      subtitle: "선택한 기준에 따라 6개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요.",
+      subtitle: `선택한 기준에 따라 ${INSURER_COUNT}개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요.`,
       content: (
         <div className="tier-list">
           {tiers.map((t) => (
@@ -365,7 +366,7 @@ export function TripPrep() {
       icon: "tick",
       eyebrow: "확인",
       title: "이대로 분석해\n드릴까요?",
-      subtitle: "6개 보험사의 실제 약관 근거와 함께 맞춤 보장을 비교해 드려요.",
+      subtitle: `${INSURER_COUNT}개 보험사의 실제 약관 근거와 함께 맞춤 보장을 비교해 드려요.`,
       content: (
         <div className="card" style={{ textAlign: "left", marginBottom: 0, padding: 16 }}>
           <div className="muted">목적지</div>
