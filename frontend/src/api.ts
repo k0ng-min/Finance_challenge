@@ -451,6 +451,9 @@ export interface InsurerPremiumOut {
   product_name: string | null;
   published_premium: number;
   age_range: string | null;
+  /** 이 보험사의 산출 전제와 조회일 — 보험사마다 다르다(전제·조회일이 갈린다). */
+  basis: string | null;
+  collected_at: string | null;
 }
 
 export interface PremiumComparisonOut {

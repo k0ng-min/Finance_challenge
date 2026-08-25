@@ -89,8 +89,9 @@ def get_premium_comparison(
     따로 알려준다 — 조용히 빠뜨리면 "그 보험사는 더 싼가?" 하는 오해를 만든다.
     아직 가격을 확보하지 못한 보험사는 그 보험사에 해당하는 행이 아예 없어서
     unavailable_insurers에도 잡히지 않는다 — 가격이 준비되는 대로
-    app.seed_premiums_actual만 다시 돌리면 자동으로 나타난다. (2026-08-25 DB손해보험이
-    들어오면서 지금은 6개사 전부 가격이 있다. 보험사를 새로 추가하면 다시 필요해진다.)"""
+    app.seed_premiums_actual만 다시 돌리면 자동으로 나타난다. (2026-08-25 DB손해보험에 이어
+    신한EZ손해보험까지 들어오면서 지금은 7개사 전부 가격이 있다. 보험사를 새로 추가하면
+    다시 필요해진다.)"""
     sex = sex.upper()
     if sex not in ("M", "F"):
         raise HTTPException(status_code=400, detail="성별은 M 또는 F여야 합니다.")
@@ -143,10 +144,15 @@ def get_premium_comparison(
     no_data = [i.code for i in all_insurers if i.insurer_id not in tracked_ids]
 
     first = rows[0]
+    # 조회일은 보험사마다 다르다(최초 6개사 2026-08-17, DB손보 08-23, 신한EZ손보 08-25).
+    # 목록 첫 줄은 "제일 싼 보험사"일 뿐이라 그 값을 대표로 쓰면, 나중에 조회한 보험사가
+    # 섞여 있어도 화면에는 옛 날짜가 뜬다. 가장 최근 조회일을 대표로 쓰고, 정확한 값은
+    # 보험사마다 따로 붙여 보낸다.
+    collected_dates = [r.collected_at for r in rows if r.collected_at]
     return PremiumComparisonOut(
         age=age, sex=sex,
         basis=_display_basis(first.basis), source=first.source, source_url=first.source_url,
-        collected_at=first.collected_at,
+        collected_at=max(collected_dates) if collected_dates else None,
         premium_period_days=DISPLAY_PREMIUM_PERIOD_DAYS,
         no_data_insurer_codes=no_data,
         items=[
@@ -154,6 +160,7 @@ def get_premium_comparison(
                 insurer_code=r.insurer.code, insurer_name=r.insurer.name,
                 product_name=r.product_name, published_premium=r.premium,
                 age_range=r.age_range,
+                basis=_display_basis(r.basis), collected_at=r.collected_at,
             )
             for r in rows
         ],

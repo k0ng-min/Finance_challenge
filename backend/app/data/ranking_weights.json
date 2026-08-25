@@ -3,10 +3,10 @@
   "generated_by": "analysis/ranking_weights.R",
   "source_rows": {
     "coverage": 326,
-    "premium": 2550
+    "premium": 2794
   },
   "priority_multiplier": 3,
-  "priced_insurers": ["DB", "HYUNDAI", "KAKAOPAY", "KB", "MERITZ", "SAMSUNG"],
+  "priced_insurers": ["DB", "HYUNDAI", "KAKAOPAY", "KB", "MERITZ", "SAMSUNG", "SHINHAN"],
   "axis_weights": {
     "안정형": {
       "amount": 0.34,

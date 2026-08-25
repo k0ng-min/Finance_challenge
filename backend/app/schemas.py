@@ -151,6 +151,12 @@ class InsurerPremiumOut(BaseModel):
     product_name: Optional[str] = None  # 대표로 보여주는 등급명(예: "표준형")
     published_premium: int    # 다이렉트 사이트에서 직접 조회한 값. 여행일수로 환산하지 않는다.
     age_range: Optional[str] = None
+    #: 이 보험사의 산출 전제와 조회일. 보험사마다 다르다 — 예를 들어 삼성은 항공지연 지수형
+    #: 특약 2종이 기본 포함된 값이고, 조회일도 2026-08-17(최초 6개사)·08-23(DB)·08-25(신한)로
+    #: 갈린다. 바깥의 basis/collected_at 하나로 뭉뚱그리면 다른 전제로 조회한 값을 같은
+    #: 조건으로 비교한 것처럼 보여주게 된다.
+    basis: Optional[str] = None
+    collected_at: Optional[dt.date] = None
 
 
 class PremiumPointOut(BaseModel):
@@ -176,9 +182,12 @@ class PremiumComparisonOut(BaseModel):
     """보험료는 보험사 다이렉트 사이트에서 직접 조회한 값이라 전제·출처를 항상 함께 내려보낸다."""
     age: int
     sex: str
+    #: 보험사마다 다를 수 있는 값의 대표치다. 정확한 전제·조회일은 items 각각에 붙어 있다.
     basis: Optional[str] = None
     source: Optional[str] = None
     source_url: Optional[str] = None
+    #: 표시된 보험사들 중 **가장 최근** 조회일. 예전에는 목록 첫 줄(=제일 싼 보험사)의 값을
+    #: 그대로 썼는데, 그러면 나중에 조회한 보험사가 섞여 있어도 화면에는 옛 날짜가 뜬다.
     collected_at: Optional[dt.date] = None
     premium_period_days: int = 7
     items: list[InsurerPremiumOut]

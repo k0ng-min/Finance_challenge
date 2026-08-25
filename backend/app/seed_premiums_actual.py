@@ -44,7 +44,17 @@ def _ensure_new_schema() -> None:
         conn.commit()
     Base.metadata.create_all(bind=engine)
 
-DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data" / "source_files" / "insurer_premiums_2026-08.xlsx"
+_SOURCE_DIR = Path(__file__).resolve().parents[1] / "data" / "source_files"
+DEFAULT_PATH = _SOURCE_DIR / "insurer_premiums_2026-08.xlsx"
+
+#: 나중에 따로 받은 보험사는 그 파일을 그대로 둔다. 통합 엑셀에 시트를 옮겨 붙이려면
+#: openpyxl로 다시 저장해야 하는데, 그 파일의 카카오 시트에는 1일 환산 보험료가
+#: `=ROUND(D3/3,0)` 수식으로 들어 있다(486칸). openpyxl은 저장할 때 수식의 **계산된 값**을
+#: 버리므로, 다시 저장하는 순간 카카오 가격이 통째로 빈 값이 된다 — 시트를 합치는 대신
+#: 파일을 나란히 읽는다.
+EXTRA_PATHS: tuple[Path, ...] = (
+    _SOURCE_DIR / "insurer_premiums_shinhan_2026-08.xlsx",
+)
 
 _SEX_MAP = {"남": "M", "여": "F"}
 
@@ -57,6 +67,9 @@ _SHEET_CONFIG: dict[str, tuple[str, bool, str]] = {
     # 메리츠는 실속플랜·추천플랜·보장이큰플랜 세 등급이고 추천플랜이 표준 자리다.
     "메리츠": ("MERITZ", False, "추천플랜"),
     "db": ("DB", False, "표준형"),
+    # 신한EZ손보는 실속케어·안심케어 두 등급만 판다(고급 자리가 없다 — insurer_tiers.py
+    # 참고). 그래서 표준 자리는 두 번째인 안심케어다.
+    "신한": ("SHINHAN", False, "안심케어"),
 }
 
 #: 가격표 시트의 등급명 열 헤더가 담보 가입금액표(InsurerPlanCoverage)와 다르게 적힌
@@ -82,6 +95,7 @@ _BASIS: dict[str, str] = {
     "SAMSUNG": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(항공지연 지수형 특약 2종 기본 포함)",
     "MERITZ": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(만19세~만79세 조회 가능)",
     "DB": "다이렉트 사이트 조회, 1일(24시간) 기준, 본인 단독가입(만19세~만79세 조회 가능)",
+    "SHINHAN": "다이렉트 사이트 조회, 1일(24시간) 기준, 단독가입(만19세~만79세 가입 가능)",
 }
 _SOURCE = "보험사 다이렉트 홈페이지 보험료 계산기(직접 조회)"
 _COLLECTED_AT = date(2026, 8, 17)
@@ -90,6 +104,8 @@ _COLLECTED_AT = date(2026, 8, 17)
 #: 적혀 있어, 그 구간의 마지막 날을 기준일로 둔다.
 _COLLECTED_AT_BY_CODE: dict[str, date] = {
     "DB": date(2026, 8, 23),
+    # 신한 시트에는 조회일 주석이 없다. 지어내지 않고 자료를 건네받은 날을 기준일로 둔다.
+    "SHINHAN": date(2026, 8, 25),
 }
 
 
@@ -142,14 +158,19 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
     # read_only로 연다 — 엑셀에서 다시 저장된 파일은 서식 정의가 어긋나 있을 때가
     # 있는데(실제로 메리츠 시트가 추가된 판본이 그랬다), 일반 모드는 그 서식을 읽다가
     # 통째로 실패한다. 값만 읽으면 되므로 서식을 건너뛴다.
-    wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    workbooks = [openpyxl.load_workbook(path, data_only=True, read_only=True)]
+    workbooks += [
+        openpyxl.load_workbook(extra, data_only=True, read_only=True)
+        for extra in EXTRA_PATHS if extra.exists()
+    ]
     db = SessionLocal()
     try:
         code_to_id = {i.code: i.insurer_id for i in db.query(Insurer).all()}
         counts: dict[str, int] = {}
 
         for sheet_name, (insurer_code, vertical, standard_plan) in _SHEET_CONFIG.items():
-            if sheet_name not in wb.sheetnames:
+            wb = next((w for w in workbooks if sheet_name in w.sheetnames), None)
+            if wb is None:
                 continue
             insurer_id = code_to_id.get(insurer_code)
             if insurer_id is None:
