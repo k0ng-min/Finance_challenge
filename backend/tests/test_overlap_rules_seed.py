@@ -27,27 +27,32 @@ _KEY_PHRASES = {
 
 
 def test_UNKNOWN이_아닌_규칙은_모두_근거조항_조회조건을_갖는다():
-    """근거 없는 판정을 구조적으로 막는다 — 이 테스트가 그 계약을 강제한다."""
+    """근거 없는 판정을 구조적으로 막는다 — 이 테스트가 그 계약을 강제한다.
+
+    2026-08-18 재구축 이후로는 "보험사명+조항 제목 조각" 퍼지 조회(clause_lookup) 대신
+    앵커 문구를 원문 전수 검색으로 먼저 확인한 뒤 그 clause_id를 직접 박아 쓴다 —
+    구판본에서 fuzzy 조회가 엉뚱한 특약을 집어온 적이 있어(PASSPORT_LOSS 사례,
+    seed_overlap_rules.py 주석 참고) 더 안전한 방식으로 바꿨다."""
     for spec in RULE_SPECS:
         if spec["relation"] != "UNKNOWN":
-            assert spec.get("clause_lookup"), f"근거 없는 규칙: {spec}"
+            assert spec.get("clause_id") is not None, f"근거 없는 규칙: {spec}"
 
 
 def test_UNKNOWN이_아닌_규칙은_anchor_phrase도_갖는다():
     """clause_id가 있다고 인용문이 근거를 담는 건 아니다 — note의 핵심 주장을 가리키는
-    anchor_phrase가 있어야 _quote()가 그 문구를 잘라내지 않고 담을 수 있다."""
+    anchor_phrase가 있어야 quote_clause()가 그 문구를 잘라내지 않고 담을 수 있다."""
     for spec in RULE_SPECS:
         if spec["relation"] != "UNKNOWN":
             assert spec.get("anchor_phrase"), f"anchor_phrase 없는 규칙: {spec}"
 
 
-def test_UNKNOWN_규칙은_clause_lookup이_없다():
-    """근거를 못 찾은 규칙은 clause_lookup 자체를 두지 않는다 — clause_id가 실수로도
-    채워지지 않게 하는 구조적 장치다(seed_overlap_rules()가 relation==UNKNOWN이면
-    clause_lookup을 아예 쓰지 않는다)."""
+def test_UNKNOWN_규칙은_clause_id가_없다():
+    """근거를 못 찾은 규칙은 clause_id 자체를 두지 않는다 — 실수로도 채워지지 않게 하는
+    구조적 장치다(seed_overlap_rules()가 relation==UNKNOWN이면 clause_id를 아예 쓰지
+    않는다)."""
     for spec in RULE_SPECS:
         if spec["relation"] == "UNKNOWN":
-            assert "clause_lookup" not in spec, f"UNKNOWN인데 clause_lookup이 있는 규칙: {spec}"
+            assert "clause_id" not in spec, f"UNKNOWN인데 clause_id가 있는 규칙: {spec}"
 
 
 def test_같은_담보_구간_조합이_중복되지_않는다():
@@ -172,10 +177,10 @@ def test_시드된_규칙의_근거조항_원문에_note의_핵심주장이_실�
 
 
 def test_시드된_규칙의_clause_quote에_note의_핵심주장이_실제로_있다():
-    """clause.text 전체에 핵심 문구가 있어도, 화면에 실제로 보여주는 clause_quote(인용문)가
+    """clause.text 전체에 핵심 문구가 있어도, 화면에 실제로 보여주는 clausequote_clause(인용문)가
     그 문구를 잘라버리면 사용자는 근거 없는 주장을 보게 된다 — 이전 리뷰 두 번이 이 간극을
     놓쳤다(PASSPORT_LOSS·OVS_ILL_MED 국내 규칙에서 실제로 발생). clause.text가 아니라
-    _quote()가 만드는 clause_quote 자체를 검증해야 이 결함을 잡는다.
+    quote_clause()가 만드는 clause_quote 자체를 검증해야 이 결함을 잡는다.
     운영 DB가 없는 환경(CI 등)에서는 건너뛴다."""
     if not os.path.exists(_APP_DB_PATH):
         pytest.skip("운영 DB(backend/data/app.db)가 없어 근거 원문 대조를 건너뜁니다")
@@ -185,7 +190,7 @@ def test_시드된_규칙의_clause_quote에_note의_핵심주장이_실제로_�
 
     from app.models.external import OverlapRule as _OverlapRule
     from app.models.kb import Clause, CoverageStd
-    from app.services.coverage_overlap import _quote
+    from app.services.clause_quote import quote_clause
 
     engine = create_engine(f"sqlite:///{_APP_DB_PATH}")
     db = sessionmaker(bind=engine)()
@@ -208,7 +213,7 @@ def test_시드된_규칙의_clause_quote에_note의_핵심주장이_실제로_�
             clause = db.query(Clause).filter(Clause.clause_id == rule.clause_id).first()
             assert clause is not None, f"clause_id={rule.clause_id}가 가리키는 조항이 없음: {key}"
 
-            quote = _quote(clause, rule.anchor_phrase)
+            quote = quote_clause(clause, rule.anchor_phrase)
             assert quote is not None, f"{key} 규칙의 clause_quote가 비어있습니다"
             assert quote in clause.text, f"{key} 규칙의 clause_quote가 원문의 부분 문자열이 아닙니다"
             assert phrase in quote, (

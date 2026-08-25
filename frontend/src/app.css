@@ -36,6 +36,12 @@
   --font-display: "Jua", "Pretendard", sans-serif;
   --font-body: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
 
+  /* 순위 카드 4개 평가축 게이지 색(명도를 맞춰 굵기가 같아 보이게 고른 값) */
+  --gauge-blue: #4b84ec;
+  --gauge-green: #3fb894;
+  --gauge-amber: #eaa53c;
+  --gauge-coral: #ee7d5c;
+
   color-scheme: light;
 }
 
@@ -55,6 +61,12 @@
   --muted: #8b96b0;
   --shadow-tint: 0, 0, 0;
 
+  /* 어두운 배경에서는 같은 색이 가라앉아 보여서 채도·명도를 올려 잡는다. */
+  --gauge-blue: #6fa2ff;
+  --gauge-green: #4fd3a8;
+  --gauge-amber: #f5bb55;
+  --gauge-coral: #ff9370;
+
   color-scheme: dark;
 }
 
@@ -64,11 +76,26 @@ html, body { overflow-x: hidden; max-width: 100%; }
 
 /* 스크롤이 생기는 곳(페이지 전체, 카드 내부 등) 어디서나 기본 굵은 회색 스크롤바 대신
    앱 톤에 맞는 얇고 둥근 스크롤바를 쓴다. */
+/* 스크롤 막대는 스크롤 영역의 '테두리 끝'에 그려진다. 이 앱의 스크롤 상자들은 모서리가
+   둥글어서(.app-frame 32px, .modal-card 28px) 막대가 그 곡선 위에 얹히면 위아래 끝이
+   잘려 튀어나온 것처럼 보였다. 막대 폭 안쪽에 투명 테두리를 둬서 실제로 보이는 두께를
+   4px로 줄이고 가장자리에서 띄운다 — 곡선과 겹치는 면적이 사라진다. */
 * { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--muted); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* 칩이 가로로 넘치는 줄(탭·보험사 칩 등)은 막대를 감춘다 — 손가락·트랙패드로 밀어서
+   보는 줄이라 막대가 늘 떠 있으면 칸 아래에 회색 선 하나가 상시로 남는다. */
+.tabs, .calc-chips { scrollbar-width: none; }
+.tabs::-webkit-scrollbar, .calc-chips::-webkit-scrollbar { display: none; }
 
 /* 앱 전체에서 마우스로 드래그해도 텍스트가 선택되지 않게 한다 — 직접 입력하는
    input·textarea만 예외로 선택 가능하게 둔다. */
@@ -79,6 +106,19 @@ body {
 input, textarea, [contenteditable="true"] {
   user-select: text;
   -webkit-user-select: text;
+}
+
+/* 모바일 브라우저는 손가락으로 누른 요소 위에 반투명한 파란 사각형을 잠깐 덧칠한다
+   (-webkit-tap-highlight-color 기본값). 이 앱의 버튼·칩·카드는 모서리가 둥근데
+   그 사각형은 요소의 '박스' 모양 그대로 깔려서, 다크모드 토글이나 칸을 누를 때마다
+   둥근 모양 밖으로 네모난 파란 판이 비쳐 레이아웃이 드러나 보였다. 눌린 느낌은 이미
+   :active 트랜지션으로 주고 있으므로 기본 하이라이트는 통째로 끈다. */
+* { -webkit-tap-highlight-color: transparent; }
+
+/* 안드로이드 크롬은 label을 눌러 체크박스를 토글할 때 글자에 파란 선택 블록을 남기기도
+   한다 — 누를 수 있는 요소는 터치 선택 자체를 막는다(위 body 규칙의 보강). */
+button, a, label, summary, [role="button"], [role="tab"] {
+  -webkit-touch-callout: none;
 }
 
 /* select 드롭다운(닫혀있는 상자)에 실제로 스타일을 입힐 수 있는 부분 — OS 네이티브
@@ -115,7 +155,12 @@ body {
   transition: background-color 0.25s, color 0.25s;
 }
 
-.app-shell { display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+/* 100vh가 아니라 100dvh를 쓴다 — 모바일 사파리는 100vh를 "주소창이 완전히 사라진"
+   가장 큰 값으로 계산해서, 주소창이 보이는 평소 상태에서는 실제 화면보다 셸이 더 커진다.
+   그러면 .home 내부는 svh(실제 보이는 최소 영역) 기준으로 딱 맞게 줄어들어 있는데도
+   바깥 body가 그 차이만큼 미세하게 스크롤됐다(폰마다 주소창 높이가 달라 증상도 기종마다
+   달랐다). 100dvh는 지금 실제로 보이는 뷰포트를 그대로 따라가므로 이 차이가 없다. */
+.app-shell { display: flex; flex-direction: column; align-items: center; min-height: 100dvh; }
 
 .app-main {
   flex: 1;
@@ -197,20 +242,28 @@ body {
    기본값(모바일·태블릿)은 뷰포트 높이(svh) 기준, 데스크톱 프레임 안에서는 컨테이너 높이(cqh)
    기준으로 아래 미디어쿼리에서 다시 정의한다 — 프레임은 뷰포트보다 작으므로 기준이 달라야 한다. */
 .home {
-  --home-gap: clamp(6px, 1.1svh, 14px);
+  --home-gap: clamp(5px, 1.1svh, 14px);
   --home-pad: clamp(6px, 1svh, 14px);
   --home-icon-hero: clamp(46px, 9svh, 78px);
   --home-icon-card: clamp(32px, 6svh, 52px);
   --home-icon-quick: clamp(24px, 4.4svh, 38px);
-  --home-title: clamp(1.02rem, 2.5svh, 1.42rem);
-  --home-subtitle: clamp(0.72rem, 1.5svh, 0.88rem);
+  --home-title: clamp(0.92rem, 2.5svh, 1.42rem);
+  --home-subtitle: clamp(0.68rem, 1.5svh, 0.88rem);
   --home-card-title: clamp(0.9rem, 1.9svh, 1.08rem);
   --home-card-desc: clamp(0.7rem, 1.45svh, 0.84rem);
   --home-quick-label: clamp(0.62rem, 1.25svh, 0.74rem);
 
-  --home-h-hero: clamp(120px, 22svh, 200px);
-  --home-h-card: clamp(64px, 11svh, 96px);
-  --home-h-quick: clamp(72px, 13svh, 104px);
+  /* 각 밴드의 "이보다 더 줄이면 내용이 상자를 넘친다"는 하한선. clamp의 최솟값과 아래
+     min-height가 같은 값을 쓰도록 이름을 붙여 둔다 — 둘이 어긋나면 창을 낮췄을 때
+     칸끼리 겹쳐 보인다(실제로 겪은 증상). 폴더폰 커버 화면(360x480)처럼 아주 낮은
+     프레임에서도 스크롤 없이 들어가도록 2026-08-19에 한 번 더 낮췄다. */
+  --home-h-hero-min: 100px;
+  --home-h-card-min: 54px;
+  --home-h-quick-min: 60px;
+
+  --home-h-hero: clamp(var(--home-h-hero-min), 22svh, 200px);
+  --home-h-card: clamp(var(--home-h-card-min), 11svh, 96px);
+  --home-h-quick: clamp(var(--home-h-quick-min), 13svh, 104px);
 
   display: flex;
   flex-direction: column;
@@ -252,10 +305,15 @@ body {
   padding: 0 6px;
   /* 기본 크기는 내용만큼(auto), 칸들이 자리를 잡고 남는 높이는 전부 여기로 온다(위 3번). */
   flex: 1 1 auto;
-  min-height: 0;
+  /* 0으로 두면 창이 낮을 때 인사말·아이콘이 상자 밖으로 밀려나 아래 카드와 겹친다. */
+  min-height: var(--home-h-hero-min);
 }
 .home__hero .icon3d { width: var(--home-icon-hero) !important; height: var(--home-icon-hero) !important; }
-.home__title {
+/* .page h1(0,1,1)이 .home__title 단독 클래스(0,1,0)보다 명시도가 높아서, 지금까지
+   이 var(--home-title) 반응형 크기가 항상 .page h1의 고정 1.3rem에 가려져 있었다
+   (화면을 낮춰도 실제로는 안 줄고 있었다) — .home .home__title(0,2,0)로 명시도를
+   올려서 이 규칙이 이기게 한다. */
+.home .home__title {
   font-family: var(--font-display);
   font-size: var(--home-title);
   line-height: 1.32;
@@ -273,7 +331,7 @@ body {
      shrink는 열어둔다. */
   flex: 0 1 auto;
   height: calc(var(--home-h-card) * 2 + var(--home-gap));
-  min-height: 0;
+  min-height: calc(var(--home-h-card-min) * 2 + var(--home-gap));
 }
 .home-card {
   display: flex;
@@ -300,21 +358,38 @@ body {
 .home-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(var(--shadow-tint), 0.16); }
 .home-card__text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .home-card__text strong { font-size: var(--home-card-title, 1.02rem); color: var(--heading); }
-.home-card__text span { font-size: var(--home-card-desc, 0.82rem); color: var(--muted); }
+.home-card__text span { font-size: var(--home-card-desc, 0.82rem); color: var(--muted); overflow-wrap: anywhere; }
 .home-card__arrow { font-size: clamp(1.1rem, 2.4svh, 1.6rem); color: var(--primary); font-weight: 700; }
 
 /* 보조 메뉴 — 아이콘 + 라벨만, 설명 없이 컴팩트하게 */
 .home__quick-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--home-gap);
   flex: 0 1 auto;
   height: var(--home-h-quick);
-  min-height: 0;
+  min-height: var(--home-h-quick-min);
 }
 /* margin-top:auto를 쓰지 않는다 — 남는 높이를 전부 푸터 위 한 군데에 몰아버려서
    화면 아래쪽이 통째로 비는 원인이었다. 이제는 밴드들이 비율대로 나눠 갖는다. */
 .home__footer { text-align: center; font-size: 0.68rem; color: var(--muted); margin: 0; flex: none; }
+/* 홈 밖의 모든 화면 맨 아래 — 홈의 것과 같은 문구·같은 톤으로 맞춘다. */
+/* 어느 화면이든 저작권 줄은 맨 아래에 있어야 한다. 예전에는 본문 바로 밑에 붙어서,
+   내용이 짧은 화면에서는 화면 한가운데에 문구가 떠 있었다. 본문이 남는 높이를 전부
+   먹고, 저작권 줄은 그 아래 자기 띠를 차지한다 — 그 띠에는 아무것도 겹치지 않는다. */
+/* 본문은 남는 높이를 채우되 절대 눌리지 않는다 — 눌리면 카드가 본문 상자 밖으로
+   비어져 나와서 저작권 줄 위에 겹쳐 그려졌다. */
+.app-main > .page { flex: 1 0 auto; }
+.app-footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--muted);
+  padding: 26px 0 6px;
+  position: relative;
+  z-index: 1;
+}
 .home-quick {
   display: flex;
   flex-direction: column;
@@ -331,7 +406,7 @@ body {
   min-height: 0;
 }
 .home-quick .icon3d { width: var(--home-icon-quick) !important; height: var(--home-icon-quick) !important; }
-.home-quick__label { font-size: var(--home-quick-label); font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; }
+.home-quick__label { font-size: var(--home-quick-label); font-weight: 700; color: var(--text); text-align: center; line-height: 1.25; overflow-wrap: anywhere; }
 
 /* --- 스텝 위저드 (세로 중앙 정렬) --- */
 .step {
@@ -466,7 +541,10 @@ body {
 .step__content input:not([type]),
 .step__content select,
 .step__content textarea,
-.calc-grid input[type="number"] {
+.calc-grid input[type="number"],
+.calc-filter-group input[type="number"],
+.email-login input,
+.account-inline-form input {
   font-size: 0.98rem;
   padding: 12px 14px;
   border: 1.5px solid var(--border);
@@ -478,7 +556,10 @@ body {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .step__content input:focus, .step__content select:focus, .step__content textarea:focus,
-.calc-grid input:focus {
+.calc-grid input:focus,
+.calc-filter-group input:focus,
+.email-login input:focus,
+.account-inline-form input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 4px var(--primary-soft);
@@ -486,18 +567,24 @@ body {
 }
 /* 네이티브 숫자칸의 위아래 스피너 화살표는 앱 톤과 안 맞아서 없애고, 텍스트 입력처럼 깔끔하게 둔다. */
 .step__content input[type="number"],
-.calc-grid input[type="number"] {
+.calc-grid input[type="number"],
+.calc-filter-group input[type="number"] {
   -moz-appearance: textfield;
 }
 .step__content input[type="number"]::-webkit-outer-spin-button,
 .step__content input[type="number"]::-webkit-inner-spin-button,
 .calc-grid input[type="number"]::-webkit-outer-spin-button,
-.calc-grid input[type="number"]::-webkit-inner-spin-button {
+.calc-grid input[type="number"]::-webkit-inner-spin-button,
+.calc-filter-group input[type="number"]::-webkit-outer-spin-button,
+.calc-filter-group input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 .step__content label,
-.calc-grid label {
+.calc-grid label,
+.calc-filter-group label,
+.email-login label,
+.account-inline-form label {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -519,6 +606,19 @@ body {
 }
 
 .section-label { font-size: 0.78rem; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+
+.rank-plan-summary {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.rank-plan-summary__label { font-size: 0.78rem; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+.rank-plan-summary__value { font-size: 0.95rem; font-weight: 700; color: var(--primary-dark); }
 
 .form label {
   display: flex;
@@ -631,8 +731,65 @@ button { cursor: pointer; font-family: inherit; }
   color: var(--text);
   box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.07);
 }
-.social-btn--kakao { background: #fee500; border-color: #fee500; color: #391b1b; }
+.social-btn--kakao { background: #fee500; border-color: #fee500; color: #191600; }
+/* 구글 가이드라인은 흰 바탕 + 연회색 테두리 + 진회색 글자를 기본으로 둔다. 다크 테마에서는
+   카드 배경을 그대로 써서 흰 사각형이 떠 보이지 않게 한다. */
+.social-btn--google { background: var(--card-bg); border-color: var(--border); }
 .social-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.social-btn svg { flex-shrink: 0; }
+
+/* --- 이메일 로그인 칸 (소셜 버튼 위) --- */
+.email-login { display: flex; flex-direction: column; gap: 12px; }
+.email-login__submit { width: 100%; margin-top: 10px; }
+
+/* 이메일 로그인과 소셜 로그인 사이의 "또는" 구분선 */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* --- 계정 화면의 줄 단위 설정 항목(프로필 정보 / 비밀번호) --- */
+.account-row-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-top: 8px;
+  font-family: inherit;
+  text-align: left;
+}
+.account-row-btn > span:first-child { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.account-row-btn strong { font-size: 0.88rem; color: var(--heading); }
+.account-row-btn em { font-style: normal; font-size: 0.76rem; color: var(--muted); overflow-wrap: anywhere; }
+.account-row-btn__arrow { color: var(--primary); font-weight: 700; flex-shrink: 0; }
+
+.account-inline-form {
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px 14px;
+  margin-top: 8px;
+}
+.account-inline-form { display: flex; flex-direction: column; gap: 12px; }
+.account-inline-form__actions { display: flex; gap: 8px; margin-top: 2px; }
+.account-inline-form__actions button { flex: 1; }
 
 .consent-box {
   background: var(--ivory);
@@ -734,21 +891,134 @@ button { cursor: pointer; font-family: inherit; }
 
 /* --- 보험사 순위 리스트 --- */
 .rank-list { display: flex; flex-direction: column; gap: 10px; }
+/* --- 보험사 순위 카드 ---
+   네 개 평가축이 이 카드의 주인공이다. 축마다 색을 달리해서 카드를 세로로 훑을 때
+   같은 축끼리 눈으로 이어지게 하고, 나머지 요소(배지·상품명·보험료)는 조용히 둔다. */
 .rank-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  position: relative;
+  display: block;
+  width: 100%;
   background: var(--card-bg);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 14px 16px;
+  padding: 15px 17px 14px;
   text-align: left;
   font-family: inherit;
+  cursor: pointer;
   box-shadow: 0 4px 14px rgba(var(--shadow-tint), 0.07);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
+@media (hover: hover) {
+  .rank-card:hover { border-color: var(--primary); box-shadow: var(--shadow-soft); transform: translateY(-2px); }
+}
+.rank-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+
+/* 카드의 금액이 "내 여행일수로 환산한 견적"이 아니라 1일 표준조건 공시값임을 밝히는 줄
+   (보험료 공시 1일 기준 안내). 순위 목록 바로 위에 둔다. */
+/* 사고 접수에서 "새 여행"을 만들었을 때 그 선택을 되짚어 보여주는 칩 — 기존 여행 선택기와
+   같은 자리에 놓여서, 지금 어느 쪽을 고른 상태인지 한눈에 구분되게 한다. */
+.new-trip-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 11px 14px;
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius-md);
+  background: var(--primary-soft);
+  text-align: left;
+}
+.new-trip-chip > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.new-trip-chip strong { font-size: 0.86rem; color: var(--heading); }
+.new-trip-chip em { font-style: normal; font-size: 0.76rem; color: var(--muted); }
+.new-trip-chip button {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.rank-premium-note { margin: 12px 0 4px; font-size: 0.72rem; line-height: 1.5; color: var(--muted); }
+
+/* "← 기준 다시 선택" 옆에 붙는 실속/표준/고급 등급 선택기 — 순위 목록 전체 가격이
+   이 등급 기준으로 다시 계산된다. */
+.rank-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+/* 옆의 등급 선택기가 완전한 알약 모양이라, 그 옆에 각진 버튼이 붙으면 한 줄이 어긋나 보인다. */
+.rank-toolbar__reselect { border-radius: 999px; padding: 9px 18px; font-size: 0.8rem; }
+.rank-toolbar__tiers { display: flex; gap: 4px; background: var(--cream-deep); border-radius: 999px; padding: 3px; }
+.rank-toolbar__tier {
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.rank-toolbar__tier--on { background: var(--card-bg); color: var(--primary-dark); box-shadow: 0 2px 6px rgba(var(--shadow-tint), 0.12); }
+
+/* 비교표를 여는 카드형 버튼 — 예전엔 작은 접이식 텍스트 링크였는데, 눈에 잘 안 띄고
+   안 예쁘다는 피드백을 받아 다른 안내 카드(.price-link)와 같은 톤의 카드로 바꿨다. */
+.rank-compare-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 13px 16px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.rank-compare-trigger__arrow { font-size: 1.1rem; flex-shrink: 0; }
+
+/* 6개사 보장금액 비교(InsurerComparisonMetric) — 팝업(Modal) 안이라 옆으로 스크롤해도
+   맥락(다른 화면 내용)이 안 끊긴다. 카드로 세로로 쌓으면 같은 보험사 값끼리 눈으로
+   이어보기 어렵다는 피드백을 받아 표로 되돌렸다 — 대신 팝업을 넓혀 쓰고(modal-card--wide),
+   담보명 칸을 고정해 옆으로 스크롤해도 "지금 어느 항목을 보고 있는지"는 계속 보인다. */
+.compare-category { margin-bottom: 18px; }
+.compare-category:last-child { margin-bottom: 0; }
+.compare-category__title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid var(--primary-soft);
+}
+.compare-table-scroll { overflow-x: auto; }
+.compare-table { font-size: 0.76rem; white-space: nowrap; }
+.compare-table th, .compare-table td { padding: 8px 10px; }
+.compare-table th:first-child, .compare-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--card-bg);
+  white-space: normal;
+  min-width: 108px;
+  box-shadow: 1px 0 0 var(--border);
+  /* 팝업 헤더(z-index: 5)보다 반드시 아래 — 가로 스크롤을 위해 고정한 열이지
+     세로로 다른 것을 덮으라는 뜻이 아니다. */
+  z-index: 1;
+}
+
+.rank-card__head { display: flex; align-items: center; gap: 11px; }
 .rank-badge {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--cream-deep);
   color: var(--muted);
@@ -756,80 +1026,383 @@ button { cursor: pointer; font-family: inherit; }
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   flex-shrink: 0;
 }
-.rank-badge--top { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; }
-.rank-card__text { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
-.rank-card__toprow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rank-card__text strong { font-size: 0.96rem; color: var(--heading); }
-.rank-card__meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.rank-card__basis {
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-  padding: 2px 9px;
-  border-radius: 999px;
-  flex-shrink: 0;
+/* 1위만 확실히 다르게 — 2·3위까지 같이 강조하면 "상위권"이 뭉개져 순위가 안 읽힌다. */
+.rank-badge--first {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(var(--shadow-tint), 0.3);
 }
-/* 보험료는 이 화면에서 가장 먼저 눈에 들어와야 하는 값이라 점수보다 확실히 크게 둔다. */
-.rank-card__premium {
-  font-size: 1.02rem;
-  font-weight: 800;
-  color: var(--heading);
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
-}
-.rank-card__premium--none { font-size: 0.72rem; font-weight: 700; color: var(--muted); }
-.rank-card__reason {
-  font-size: 0.8rem;
-  color: var(--muted);
-  line-height: 1.45;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.rank-card__tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
-.rank-tag {
-  font-size: 0.66rem;
+.rank-card__name { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.rank-card__name-btn {
+  font-family: inherit;
   font-weight: 700;
-  color: var(--primary-dark);
-  background: var(--primary-soft);
-  padding: 3px 8px;
-  border-radius: 999px;
+  font-size: 0.97rem;
+  color: var(--heading);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  max-width: 100%;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
 }
-.rank-card__dimensions {
+.rank-card__basis { font-size: 0.68rem; color: var(--muted); }
+/* 보험료는 이 화면에서 가장 먼저 눈에 들어와야 하는 값이라 크게 둔다. */
+.rank-card__price { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex-shrink: 0; }
+.rank-card__price-main { display: flex; align-items: baseline; gap: 1px; }
+.rank-card__price b { font-size: 1.08rem; font-weight: 800; color: var(--heading); letter-spacing: -0.02em; }
+.rank-card__price i { font-size: 0.76rem; font-style: normal; color: var(--muted); font-weight: 700; }
+/* 공시 기준 기간. 금액을 "내 여행 견적"으로 오해하지 않도록 숫자 바로 밑에 붙인다. */
+.rank-card__price small { font-size: 0.62rem; color: var(--muted); white-space: nowrap; }
+.rank-card__price em {
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+  max-width: 120px;
+  line-height: 1.35;
+}
+
+.rank-gauges {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 5px 12px;
-  margin-top: 8px;
+  gap: 11px 14px;
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px dashed var(--border);
 }
-.rank-dimension {
+.rank-gauge { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rank-gauge__label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rank-gauge__bar { display: flex; gap: 3px; }
+.rank-gauge__bar i {
+  flex: 1;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  transition: background 0.2s ease;
+}
+.rank-gauge__bar i.is-on { background: var(--gauge, var(--primary)); }
+.rank-gauge__none { font-size: 0.65rem; color: var(--muted); line-height: 1.6; }
+
+/* 게이지는 팔레트의 장식용 색(--tan 등)을 그대로 쓰지 않고 따로 둔다 — 장식용은 배경에
+   얹으라고 만든 톤이라 7px 막대로 쓰면 축마다 굵기가 달라 보인다. 네 색의 명도를
+   비슷하게 맞춰야 "어느 축이 더 찼나"만 눈에 들어온다. */
+.rank-gauge--coverage_fit { --gauge: var(--gauge-blue); }
+.rank-gauge--condition_clarity { --gauge: var(--gauge-green); }
+.rank-gauge--claim_simplicity { --gauge: var(--gauge-amber); }
+.rank-gauge--restrictions { --gauge: var(--gauge-coral); }
+
+.rank-card__arrow { font-size: 1.15rem; color: var(--primary); font-weight: 700; opacity: 0.5; flex-shrink: 0; }
+@media (max-width: 380px) {
+  .rank-gauges { grid-template-columns: 1fr; gap: 9px; }
+}
+
+/* --- 여행경보 배지 ---
+   외교부가 발령한 자료라 우리가 계산한 위험도와 출처가 다르다. 출처·발령일을 같이 적어
+   어디서 온 값인지 드러낸다. 보상 여부는 여기서 말하지 않는다(제한조건 카드가 조항
+   원문과 함께 따로 한다). */
+.travel-alert {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 0.7rem;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
-.rank-dimension em {
-  color: var(--muted);
-  font-size: 0.65rem;
-  font-style: normal;
-}
-.rank-dimension__dots { display: inline-flex; gap: 2px; }
-.rank-dimension__dots i {
-  width: 6px;
-  height: 6px;
+.travel-alert__level { font-weight: 800; }
+.travel-alert__label { font-weight: 700; }
+.travel-alert__region {
+  font-size: 0.68rem;
+  padding: 1px 7px;
   border-radius: 999px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.55);
 }
-.rank-dimension__dots i.is-active { background: var(--primary); }
-.rank-card__arrow { font-size: 1.3rem; color: var(--primary); font-weight: 700; flex-shrink: 0; }
+.travel-alert__source { margin-left: auto; font-size: 0.68rem; opacity: 0.85; }
+.travel-alert__source a { color: inherit; text-decoration: underline; }
+
+.travel-alert--info { background: var(--primary-soft); color: var(--primary-dark); }
+.travel-alert--warn { background: var(--yellow-soft); color: #96631a; }
+.travel-alert--danger { background: var(--orange-soft); color: var(--orange-dark); font-weight: 700; }
+
+/* 지역 경보의 "어디인지". 경보 배지에서 이 문구가 가장 중요하다 — 일본 3단계가
+   후쿠시마 원전 30km라는 걸 못 보면 도쿄 여행자가 겁을 먹는다. 줄바꿈을 허용해서
+   긴 지역 서술도 잘리지 않게 둔다. */
+.travel-alert__where {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  opacity: 0.95;
+}
+
+.travel-alert-group { display: flex; flex-direction: column; gap: 4px; }
+
+/* --- "이 지역에 가시나요?" ---
+   체크하지 않는 것이 기본값이고 대부분의 사용자가 여기 해당한다. 그래서 눈에 띄되
+   다음 단계를 막는 것처럼 보이지 않게, 경고색 대신 옅은 테두리만 쓴다. */
+.travel-alert-picker { margin-top: 8px; }
+
+.travel-alert-ask {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--cream);
+}
+
+.travel-alert-ask__title {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* .step__content label이 세로 정렬이라(폼 라벨 규칙) 같은 특이도로 눌러써야 한다.
+   .checkbox-label을 그대로 쓰지 않는 이유는 그쪽이 align-items:center라, 지역 설명이
+   두 줄을 넘으면 체크박스가 글 한가운데로 내려오기 때문이다. */
+.step__content .travel-alert-ask__item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.step__content .travel-alert-ask__item input {
+  width: auto;
+  margin: 2px 0 0;
+  flex-shrink: 0;
+}
+
+.travel-alert-ask__hint {
+  margin: 8px 0 0;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* --- 서류 사진 확인 ---
+   상태 선택이 이 칸의 주인공이고 사진은 보조 수단이다. 예전엔 상태 선택과 같은 크기의
+   알약을 한 줄 더 깔아서, 행마다 반복되며 정작 골라야 할 상태보다 더 눈에 띄었다.
+   같은 줄의 작은 원형 아이콘 하나로 줄인다. */
+.doc-photo-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 0 0 4px;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.doc-photo-hint__icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  margin-top: 1px;
+}
+
+.doc-status-cell { display: flex; align-items: center; gap: 6px; }
+.doc-status-cell .picker-field { flex: 1; min-width: 0; }
+
+.doc-photo-btn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  /* 회색으로 두면 비활성처럼 보인다 — 휴대폰에는 hover가 없어서 끝까지 회색으로 남는다. */
+  color: var(--primary);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+@media (hover: hover) {
+  .doc-photo-btn:hover { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+}
+.doc-photo-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.doc-photo-btn:disabled { opacity: 0.7; }
+.doc-photo-btn.is-busy { border-color: var(--primary); }
+.doc-photo-btn__spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  animation: doc-photo-spin 0.7s linear infinite;
+}
+@keyframes doc-photo-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .doc-photo-btn__spin { animation-duration: 2.4s; }
+}
+
+/* 휴대폰에서 "찍기 / 고르기"를 묻는 선택지. */
+.doc-photo-choice { display: flex; flex-direction: column; gap: 9px; }
+.doc-photo-choice button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 15px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--primary);
+  font-family: inherit;
+  text-align: left;
+}
+.doc-photo-choice button:active { border-color: var(--primary); background: var(--primary-soft); }
+.doc-photo-choice span { display: flex; flex-direction: column; gap: 2px; }
+.doc-photo-choice strong { font-size: 0.9rem; color: var(--heading); }
+.doc-photo-choice em { font-size: 0.74rem; font-style: normal; color: var(--muted); }
+
+.doc-verify__message {
+  margin: 0 0 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--heading);
+}
+/* 상태를 바꾸지 않고 사용자에게 되돌린 경우(판독 실패 등)는 확정된 결과처럼 보이면 안 된다. */
+.doc-verify__message--hold { color: var(--orange-dark); }
+.doc-verify__meta { margin: 0 0 12px; font-size: 0.74rem; color: var(--muted); }
+.doc-verify__block { margin-bottom: 16px; }
+.doc-verify__block h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--heading);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+/* 약관 근거가 없는 칸임을 라벨로 못 박는다 — 두 칸을 시각적으로만 나누면 스크린샷 한 장에서
+   구분이 사라진다. */
+.doc-verify__nobasis {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--cream-deep);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.doc-verify__translation {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+.doc-verify__privacy {
+  margin: 14px 0 0;
+  font-size: 0.7rem;
+  line-height: 1.55;
+  color: var(--muted);
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+.doc-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.doc-check-list li { display: flex; gap: 9px; align-items: flex-start; }
+.doc-check-list__mark {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  margin-top: 1px;
+}
+.doc-check-list .is-found .doc-check-list__mark { background: var(--mint-soft); color: #2f8f74; }
+.doc-check-list .is-missing .doc-check-list__mark { background: var(--orange-soft); color: var(--orange-dark); }
+.doc-check-list strong { font-size: 0.8rem; color: var(--heading); }
+.doc-check-list__state { font-size: 0.72rem; color: var(--muted); margin-left: 6px; }
+.doc-check-list__quote,
+.doc-check-list__clause {
+  margin: 3px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.doc-check-list__clause em { font-style: normal; font-weight: 700; margin-right: 5px; color: var(--text); }
+
+/* 단계 안에서 "왜 이걸 묻는지 / 건너뛰어도 되는지"를 알려주는 한두 줄. 카드로 감싸면
+   입력만큼 무거워 보여서 배경 없이 글로만 둔다. */
+.step-note {
+  margin: 10px 2px 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+/* --- 실손 가입시기 ---
+   세대(1~4)를 가르는 유일한 입력이라 다른 선택지와 붙여두지 않고 한 칸 띄워 따로 세운다.
+   "모르면 비워도 된다"를 같이 적어 빈칸으로 두는 것도 정상 선택지임을 알린다. */
+.indemnity-when {
+  margin-top: 4px;
+  padding: 13px 14px 12px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--cream);
+}
+.indemnity-when .field-block { margin-bottom: 0; }
+.indemnity-when__hint {
+  margin: 9px 0 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.indemnity-when__hint strong { color: var(--text); font-weight: 700; }
+.field-trigger__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.field-trigger__clear:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 
 /* --- 페이지 히어로 (리스트/리뷰형 페이지 상단 배너) --- */
 .hero {
@@ -845,10 +1418,15 @@ button { cursor: pointer; font-family: inherit; }
   overflow: hidden;
   isolation: isolate;
   box-shadow: var(--shadow-soft);
+  /* 세로 flex 화면(.account-auth 등) 안에서는 히어로가 남는 높이에 맞춰 눌려버렸다 —
+     눌리면 overflow:hidden에 위아래가 잘려서 눈썹줄과 설명 끝줄이 사라진다. */
+  flex-shrink: 0;
 }
-.hero__blob { position: absolute; border-radius: 50%; opacity: 0.5; z-index: -1; }
+/* overflow:hidden에 잘리면 원이 아니라 각진 덩어리가 돼서 히어로 아래에 뭔가 낀 것처럼
+   보였다. 흐리게 깔아 경계선을 없앤다 — 잘려도 배경 얼룩으로만 읽힌다. */
+.hero__blob { position: absolute; border-radius: 50%; opacity: 0.5; z-index: -1; filter: blur(22px); }
 .hero__blob--a { width: 120px; height: 120px; background: var(--primary-soft); top: -40px; right: 50px; }
-.hero__blob--b { width: 80px; height: 80px; background: var(--card-bg); bottom: -26px; left: 20%; opacity: 0.6; }
+.hero__blob--b { width: 80px; height: 80px; background: var(--card-bg); bottom: -30px; left: 20%; opacity: 0.35; }
 .hero__text { display: flex; flex-direction: column; gap: 4px; max-width: 62%; }
 .hero__eyebrow {
   font-size: 0.68rem; font-weight: 800; color: var(--primary-dark);
@@ -1128,13 +1706,76 @@ button { cursor: pointer; font-family: inherit; }
 
 .policy-card__head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
 .policy-card__head strong { color: var(--heading); }
+.policy-card__plan {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
 .muted { color: var(--muted); font-size: 0.88rem; }
 
 .coverage-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; color: var(--text); }
-.coverage-table th, .coverage-table td { text-align: left; padding: 9px 6px; border-bottom: 1px solid var(--border); }
+.coverage-table th, .coverage-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); line-height: 1.4; }
+.coverage-table th { font-size: 0.74rem; font-weight: 800; color: var(--muted); letter-spacing: 0.02em; }
+.coverage-table tbody tr:last-child td { border-bottom: none; }
 .coverage-table select { border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 8px; font-family: inherit; background: var(--ivory); color: var(--text); }
 .match-ok { color: #4a9d7e; font-weight: 700; }
 .match-none { color: #c07a3d; }
+
+/* --- 보험사 등급(플랜)·담보한도 카드(PlanCoverageBoard) ---
+   등급은 항상 3개뿐이라 flex-wrap 칩 대신 3칸 그리드로 가지런히 맞춘다 — 이름 길이가
+   보험사마다 달라(예: "실속형" vs "고급플랜") flex로는 줄바꿈이 들쭉날쭉했다. */
+.plan-board__tiers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.plan-board__tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--cream-deep);
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.plan-board__tier strong { font-size: 0.84rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.plan-board__tier span { font-size: 0.72rem; color: var(--muted); font-weight: 700; }
+.plan-board__tier--on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.plan-board__tier--on strong { color: var(--primary-dark); }
+.plan-board__tier--on span { color: var(--primary-dark); }
+
+/* 담보 항목이 많은 보험사는 30줄 가까이 되므로, 화면 전체를 늘리는 대신 카드 안에서만
+   세로 스크롤되게 높이를 고정한다. */
+.plan-board__scroll {
+  max-height: 260px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+}
+.plan-board__scroll .coverage-table { margin-top: 0; }
+.plan-board__scroll .coverage-table th {
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  z-index: 1;
+}
+.plan-board__scroll .coverage-table td:last-child,
+.plan-board__scroll .coverage-table th:last-child { text-align: right; white-space: nowrap; }
+.plan-board__source { font-size: 0.74rem; margin-top: 8px; line-height: 1.5; }
+.plan-board--compact .plan-board__scroll { max-height: 160px; }
 
 .question-card { display: flex; align-items: center; gap: 12px; }
 .question-text { font-size: 0.9rem; font-weight: 700; flex: 1; color: var(--heading); }
@@ -1200,13 +1841,57 @@ button { cursor: pointer; font-family: inherit; }
   z-index: 300;
 }
 .modal-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 360px;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+/* 표 비교처럼 가로로 넓은 내용이 들어갈 팝업 — 화면 폭 안에서 최대한 넓게 쓴다. */
+.modal-card--wide { max-width: 560px; }
+
+/* 팝업 안 스크롤 막대는 메인 화면 프레임의 막대(.frame-scrollbar__thumb)와 같은 모양으로
+   맞춘다 — 같은 앱 안에서 한쪽은 얇은 알약, 한쪽은 OS 기본 막대가 나오면 팝업만 다른
+   프로그램처럼 보인다. 팝업도 모서리가 둥글어서(radius-lg) 프레임과 같은 이유로 막대를
+   가장자리에서 띄우고 두께를 줄인다. */
+.modal-card__body { scrollbar-width: none; }
+.modal-card__body::-webkit-scrollbar { width: 0; height: 0; }
+/* 프레임 막대와 같은 모양·같은 규칙(높이 7/8, 가장자리에서 7px)을 팝업 안에서도 쓴다.
+   .frame-scrollbar 본체 정의는 데스크톱 프레임 미디어쿼리 안에 있어서 팝업에는 닿지
+   않는다 — 팝업은 모바일 폭에서도 열리므로 여기서 따로 세워 준다. */
+.modal-card .frame-scrollbar {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  height: 87.5%;
+  width: 6px;
+  pointer-events: none;
+  z-index: 3;
+}
+.modal-card .frame-scrollbar__thumb {
+  width: 100%;
+  border-radius: 999px;
+  background: var(--border);
+  pointer-events: auto;
+  cursor: grab;
+  transition: background 0.18s ease;
+  will-change: transform;
+}
+.modal-card .frame-scrollbar__thumb:hover { background: var(--muted); }
+.modal-card .frame-scrollbar__thumb:active { cursor: grabbing; background: var(--muted); }
+.compare-table-scroll::-webkit-scrollbar { height: 10px; }
+.compare-table-scroll::-webkit-scrollbar-track { background: transparent; }
+.compare-table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
 }
 .modal-card__head {
   display: flex;
@@ -1218,6 +1903,10 @@ button { cursor: pointer; font-family: inherit; }
   position: sticky;
   top: 0;
   background: var(--card-bg);
+  /* 팝업 안에 position:sticky인 표 첫 열이 있으면(비교표) 그쪽이 DOM 뒤에 있어서
+     z-index 없이는 헤더 위로 올라와 제목을 가린다 — 스크롤을 내릴 때 왼쪽 첫 열이
+     제목 줄을 덮고 지나가던 문제. 헤더가 항상 이기게 못 박는다. */
+  z-index: 5;
 }
 .modal-card__head strong { font-size: 1rem; color: var(--heading); }
 .modal-card__close {
@@ -1229,7 +1918,8 @@ button { cursor: pointer; font-family: inherit; }
   line-height: 1;
   padding: 4px;
 }
-.modal-card__body { padding: 16px 18px; }
+/* 스크롤은 본문만 한다 — 제목줄(닫기 버튼)은 늘 같은 자리에 남는다. */
+.modal-card__body { padding: 16px 18px; overflow-y: auto; min-height: 0; }
 
 .history-card {
   display: flex;
@@ -1275,11 +1965,12 @@ button { cursor: pointer; font-family: inherit; }
   border: none;
   background: var(--cream-deep);
   color: var(--muted);
-  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .history-card__delete:hover { background: #f6d6d6; color: #b3392f; }
 
@@ -1317,7 +2008,12 @@ button { cursor: pointer; font-family: inherit; }
   0%, 100% { transform: scale(0.9); opacity: 0.7; }
   50% { transform: scale(1.15); opacity: 1; }
 }
-.loading-screen__icon { position: relative; z-index: 1; margin-bottom: 4px; }
+.loading-screen__icon { position: relative; z-index: 1; margin-bottom: 4px; width: 100%; }
+
+/* 로딩 화면의 손글씨 애니메이션 — 홈 히어로와 같은 그림이지만, 기다리는 화면에서는
+   글자가 화면을 다 차지하면 안내 문구가 밀려나므로 한 단계 작게 쓴다. */
+.pwc--loading { min-height: clamp(44px, 9svh, 96px); padding: 4px 0; }
+.pwc--loading .pwc__text { font-size: clamp(1.7rem, 6.4svh, 3rem); }
 .loading-screen__title { position: relative; z-index: 1; font-size: 1.06rem; color: var(--heading); margin: 0; }
 .loading-screen__msg {
   position: relative;
@@ -1340,8 +2036,8 @@ button { cursor: pointer; font-family: inherit; }
 /* --- 보험사 선택 그리드 (앱스토어 아이콘 + 통일된 프레임) --- */
 .insurer-grid {
   display: grid;
-  /* 3열 고정 — 보험사가 6개라 3×2로 딱 떨어진다. auto-fill로 두면 컨테이너 폭에 따라
-     5+1, 4+2처럼 마지막 줄만 덩그러니 남는 배치가 나와서 균형이 깨진다.
+  /* 3열 고정. auto-fill로 두면 컨테이너 폭에 따라 5+1, 4+2처럼 마지막 줄만 덩그러니
+     남는 배치가 나와서 균형이 깨진다.
      minmax(0, 1fr)이라 좁은 화면에서는 타일이 작아지며 3열을 유지한다. */
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
@@ -1351,6 +2047,14 @@ button { cursor: pointer; font-family: inherit; }
   max-width: 440px;
   margin-inline: auto;
 }
+/* 보험사가 7개가 되면서 마지막 줄에 하나만 남는다(3+3+1). 그대로 두면 그 하나가
+   왼쪽 끝에 덩그러니 붙어 3열의 균형이 깨진다 — 가운데 열로 옮긴다.
+   "3n+1번째이면서 마지막"은 곧 "마지막 줄에 혼자"라는 뜻이라, 보험사 수가 10개·13개로
+   늘어도 같은 규칙이 그대로 맞는다. */
+.insurer-card:last-child:nth-child(3n + 1) {
+  grid-column: 2;
+}
+
 .insurer-card {
   position: relative;
   display: flex;
@@ -1449,6 +2153,72 @@ button { cursor: pointer; font-family: inherit; }
 .sheet__handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 10px auto 14px; }
 .sheet__title { font-family: var(--font-display); font-size: 1.05rem; color: var(--heading); text-align: center; margin-bottom: 4px; }
 .sheet__value { text-align: center; font-size: 0.85rem; color: var(--primary-dark); font-weight: 700; margin-bottom: 14px; }
+
+/* --- 바텀시트 달력 (휠 위) --- */
+/* aspect-ratio:1인 칸이 7등분 폭을 그대로 따라가서, 시트가 넓은 데스크톱에서는 한 칸이
+   88px까지 커졌다 — 달력 하나가 화면을 다 먹고 휠과 확인 버튼이 밖으로 밀려났다.
+   폭을 묶어 한 칸을 손가락 크기(약 44px)로 두고 가운데 정렬한다. */
+.calendar { margin: 0 auto 14px; max-width: 330px; width: 100%; }
+.calendar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.calendar__title { font-weight: 800; font-size: 0.95rem; color: var(--heading); }
+.calendar__nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--cream-deep);
+  color: var(--primary-dark);
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.calendar__nav:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.calendar__weekdays,
+.calendar__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; }
+.calendar__weekdays { margin-bottom: 4px; }
+.calendar__weekday { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); padding: 2px 0; }
+.calendar__weekday--sun { color: #c0564a; }
+.calendar__weekday--sat { color: var(--primary-dark); }
+
+.calendar__cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0;
+}
+.calendar__cell--empty { cursor: default; }
+.calendar__cell--sun { color: #c0564a; }
+.calendar__cell--sat { color: var(--primary-dark); }
+.calendar__cell:disabled { opacity: 0.28; cursor: not-allowed; }
+.calendar__cell:not(:disabled):hover { background: var(--cream-deep); }
+/* 고른 날은 어느 요일이든 같은 모양으로 — 요일 색이 남아 있으면 선택 표시가 흐려진다 */
+.calendar__cell--on,
+.calendar__cell--on.calendar__cell--sun,
+.calendar__cell--on.calendar__cell--sat,
+.calendar__cell--on:not(:disabled):hover {
+  background: none;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(53, 104, 201, 0.32);
+}
 
 .wheel-row { display: flex; gap: 6px; height: 200px; position: relative; }
 .wheel-row::before, .wheel-row::after { content: ""; position: absolute; left: 0; right: 0; height: 78px; pointer-events: none; z-index: 3; }
@@ -1559,7 +2329,10 @@ button { cursor: pointer; font-family: inherit; }
      없이 계산한다 — 상한선이 있으면 뷰포트가 커질수록 여백만 계속 벌어져 버렸다. */
   .app-shell {
     height: calc(100vh - 80px);
-    min-height: 0;
+    /* 창을 세로로 아주 낮추면 프레임이 같이 납작해지면서 안쪽 칸들이 서로 겹쳐 보였다.
+       프레임에 하한을 두고, 그보다 낮은 창에서는 프레임을 줄이는 대신 바깥(body)이
+       스크롤되게 한다 — 겹쳐 보이는 것보다 스크롤이 낫다. */
+    min-height: 560px;
     width: 760px;
     flex: none;
     background: var(--card-bg-translucent);
@@ -1571,7 +2344,38 @@ button { cursor: pointer; font-family: inherit; }
     position: relative;
     z-index: 1;
   }
-  .app-main { max-width: 100%; height: 100%; padding: 0 20px 40px; overflow-y: auto; }
+  /* 네이티브 막대는 감춘다 — 대신 FrameScrollbar가 프레임 높이의 7/8만 쓰는 막대를
+     가운데에 그린다(둥근 모서리와 겹치지 않게). 스크롤 동작 자체는 그대로다. */
+  .app-main {
+    max-width: 100%;
+    height: 100%;
+    padding: 0 20px 40px;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .app-main::-webkit-scrollbar { width: 0; height: 0; }
+
+  .frame-scrollbar {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    transform: translateY(-50%);
+    height: 87.5%;
+    width: 6px;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .frame-scrollbar__thumb {
+    width: 100%;
+    border-radius: 999px;
+    background: var(--border);
+    pointer-events: auto;
+    cursor: grab;
+    transition: background 0.18s ease;
+    will-change: transform;
+  }
+  .frame-scrollbar__thumb:hover { background: var(--muted); }
+  .frame-scrollbar__thumb:active { cursor: grabbing; background: var(--muted); }
 
   /* 홈은 프레임 안에 정확히 들어맞으므로 스크롤을 아예 없앤다. 아래 패딩도 뺀다 —
      남는 높이는 밴드들이 나눠 가지므로 바닥에 따로 여백을 둘 이유가 없다.
@@ -1585,7 +2389,10 @@ button { cursor: pointer; font-family: inherit; }
      오버레이가 없지만 다른 화면에는 있으므로, 셸 전체에 걸면 안 된다. */
   .app-shell--home .app-main {
     padding-bottom: 0;
-    overflow: hidden;
+    /* 원래 hidden이었다. 홈이 프레임에 "정확히 들어맞는다"는 전제였는데, 창을 낮추거나
+       브라우저 글자 크기를 키우면 그 전제가 깨지면서 내용이 잘려 사라졌다. auto면 그런
+       경우에만 막대가 생기고 평소에는 넘치지 않아 그대로 보인다. */
+    overflow-y: auto;
     container-type: size;
     container-name: shell;
   }
@@ -1604,9 +2411,9 @@ button { cursor: pointer; font-family: inherit; }
     --home-card-desc: clamp(0.78rem, 1.7cqh, 0.96rem);
     --home-quick-label: clamp(0.68rem, 1.45cqh, 0.86rem);
     /* 칸 높이 상한도 프레임 높이 기준으로 — 프레임이 커지면 칸도 어느 정도까지는 같이 커진다. */
-    --home-h-hero: clamp(140px, 24cqh, 240px);
-    --home-h-card: clamp(74px, 13.5cqh, 138px);
-    --home-h-quick: clamp(84px, 15.5cqh, 156px);
+    --home-h-hero: clamp(var(--home-h-hero-min), 24cqh, 240px);
+    --home-h-card: clamp(var(--home-h-card-min), 13.5cqh, 138px);
+    --home-h-quick: clamp(var(--home-h-quick-min), 15.5cqh, 156px);
     padding-top: 0;
     padding-bottom: clamp(10px, 2cqh, 26px);
   }
@@ -1625,6 +2432,7 @@ button { cursor: pointer; font-family: inherit; }
     .home__quick-grid {
       grid-template-columns: repeat(2, 1fr);
       height: calc(var(--home-h-quick) * 2 + var(--home-gap));
+      min-height: calc(var(--home-h-quick-min) * 2 + var(--home-gap));
     }
     .home-quick { flex-direction: row; justify-content: center; gap: clamp(8px, 1.6cqh, 16px); }
     .home-quick .icon3d {
@@ -1650,6 +2458,8 @@ button { cursor: pointer; font-family: inherit; }
   .step__back { width: 52px; height: 52px; font-size: 1.3rem; }
   .btn-primary { padding: 15px 22px; font-size: 1rem; }
   .btn-secondary { padding: 13px 20px; font-size: 0.94rem; }
+  .email-login input,
+  .account-inline-form input,
   .step__content input[type="text"],
   .step__content input[type="date"],
   .step__content input[type="datetime-local"],
@@ -1664,7 +2474,7 @@ button { cursor: pointer; font-family: inherit; }
   .hero__title { font-size: 1.4rem; line-height: 1.35; }
   .hero__subtitle { font-size: 0.88rem; }
 
-  .loading-screen__icon .icon3d { width: 100px !important; height: 100px !important; }
+  .pwc--loading .pwc__text { font-size: clamp(2rem, 7.2svh, 3.4rem); }
   .loading-screen__title { font-size: 1.18rem; }
   .loading-screen__msg { font-size: 0.92rem; }
 
@@ -1679,11 +2489,29 @@ button { cursor: pointer; font-family: inherit; }
 }
 
 
-/* --- 보험료 계산기 --- */
+/* --- 1일 표준조건 보험료 비교공시 --- */
 .calc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
 .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.calc-grid--single { grid-template-columns: minmax(0, 1fr); }
 .calc-row { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; margin-top: 16px; }
 .calc-seg { display: flex; gap: 6px; }
+
+/* 필터 항목(나이·성별·정렬)을 한 덩어리로 뭉치지 않고, 각각 자기 이름을 밝힌 채
+   구분선으로 나눠 보여준다 — 예전엔 성별·정렬 칩이 라벨 없이 한 줄에 붙어 있어서
+   어느 칩이 무슨 기준인지 헷갈렸다. */
+.calc-filter-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.calc-filter-group:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+.calc-filter-group__label {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
 .premium-chip {
   font-family: inherit;
   font-size: 0.78rem;
@@ -1726,6 +2554,17 @@ button { cursor: pointer; font-family: inherit; }
   font-weight: 700;
   color: var(--heading);
 }
+.premium-row__name--clickable {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+}
 .premium-row__name em {
   font-style: normal;
   font-size: 0.7rem;
@@ -1736,7 +2575,83 @@ button { cursor: pointer; font-family: inherit; }
   white-space: nowrap;
 }
 .premium-row__cost { font-size: 1rem; font-weight: 800; color: var(--heading); flex-shrink: 0; }
+.premium-row__amount { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+.premium-row__amount small { margin-top: 2px; font-size: 0.62rem; font-weight: 700; color: var(--muted); }
 .premium-row:first-child .premium-row__cost { color: var(--primary-dark); }
+.premium-row__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+/* 접었다 펼치는 조작 — 예전엔 동그란 화살표 아이콘 버튼(수동으로 눌러야 뭔지 알 수
+   있는)이었는데, 라벨 텍스트 자체에 "더 보기/접기"를 담아 한눈에 뭘 하는 버튼인지
+   보이게 바꿨다. 필터 카드(나이만 보이다 눌러야 나머지가 나옴)와 부지급률 표에 쓴다. */
+.calc-more-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border: none;
+  border-top: 1px solid var(--border);
+  background: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  cursor: pointer;
+}
+.calc-more-toggle--plain {
+  justify-content: space-between;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  color: var(--muted);
+  font-weight: 700;
+}
+.calc-filter-summary { font-size: 0.76rem; margin: 6px 0 0; }
+/* 세로 점 세 개(케밥 메뉴) — 예전엔 화살표(⌄)였는데, "펼치기" 아이콘처럼 보여서
+   눌러도 안 펼쳐지고 "비교에서 빼기" 메뉴만 나오는 게 헷갈린다는 피드백을 받았다.
+   점 세 개는 "부가 조작 메뉴"로 통용되는 표시라 그런 오해가 없다. */
+.premium-row__menu-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream-deep);
+  border: none;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.premium-row__menu {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+.premium-row__menu-item {
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #c0453f;
+  background: none;
+  border: none;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+.premium-row__detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
 .premium-basis {
   font-size: 0.74rem;
   line-height: 1.55;
@@ -1744,6 +2659,123 @@ button { cursor: pointer; font-family: inherit; }
   margin: 10px 0 0;
 }
 .premium-basis a { color: var(--primary-dark); font-weight: 700; }
+.premium-basis strong { color: var(--heading); }
+
+.calc-watchlist-hint { font-size: 0.72rem; margin: 8px 0 0; }
+
+/* 담보 유형 필터 드롭다운 — .step__content select와 같은 톤으로 맞춘다. */
+.calc-filter-group select {
+  font-size: 0.9rem;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: inherit;
+  background: var(--ivory);
+  width: 100%;
+}
+.calc-filter-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+  background: var(--card-bg);
+}
+.calc-filter-note { font-size: 0.72rem; margin: 8px 0 0; line-height: 1.5; }
+/* 가격대(최소~최대)처럼 입력 두 칸을 한 줄에 나란히 둘 때 쓴다. */
+.calc-filter-group__row { display: flex; align-items: center; gap: 8px; }
+.calc-filter-group__row input { flex: 1; min-width: 0; }
+.calc-filter-group__tilde { flex-shrink: 0; color: var(--muted); font-weight: 700; }
+
+/* --- 비교 결과 공유 카드 (html-to-image로 캡처) ---
+   테마(라이트/다크)와 무관하게 항상 같은 톤으로 캡처돼야 다른 사람에게 공유했을 때도
+   보기 좋다 — var() 대신 고정된 색을 쓴다. */
+.share-card {
+  width: 480px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 28px 24px;
+  background: #ffffff;
+  border: 1px solid #e2eaf7;
+  border-radius: 20px;
+  margin: 0 auto;
+}
+.share-card__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #4b84ec;
+}
+.share-card__title { margin: 0 0 4px; font-size: 1.2rem; font-weight: 800; color: #1f2a3d; line-height: 1.4; }
+.share-card__subtitle { margin: 0 0 18px; font-size: 0.76rem; color: #8592a8; }
+.share-card__list { display: flex; flex-direction: column; }
+.share-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid #eef4fd;
+}
+.share-card__row:last-child { border-bottom: none; }
+.share-card__name { font-size: 0.88rem; font-weight: 700; color: #1f2a3d; }
+.share-card__price { font-size: 1rem; font-weight: 800; color: #3568c9; flex-shrink: 0; }
+.share-card__footnote { margin: 18px 0 0; font-size: 0.66rem; line-height: 1.55; color: #8592a8; }
+.share-card__download-btn { display: block; width: 100%; margin-top: 14px; }
+
+/* --- 해외 서류 챙기기: 파일로 저장할 카드 ---
+   화면에 보이는 미리보기가 곧 저장되는 그림이라, 테마 변수를 쓰지 않고 흰 배경 기준으로
+   색을 고정한다. 다크 모드에서 저장한 파일이 창구 직원 폰에서 검게 나오면 곤란하다. */
+.onsite-export-card {
+  width: 480px;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 24px 20px;
+  background: #ffffff;
+  border: 1px solid #e2eaf7;
+  border-radius: 18px;
+  color: #1f2a3d;
+}
+.onsite-export-card__eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: #4b84ec;
+}
+.onsite-export-card__title { margin: 0 0 2px; font-size: 1.16rem; font-weight: 800; line-height: 1.4; }
+.onsite-export-card__subtitle { margin: 0 0 16px; font-size: 0.76rem; color: #8592a8; }
+.onsite-export-card__intro-local { margin: 0 0 4px; font-size: 0.96rem; font-weight: 700; line-height: 1.5; }
+.onsite-export-card__intro-ko { margin: 0 0 16px; font-size: 0.8rem; color: #5a6880; line-height: 1.55; }
+.onsite-export-card__doc {
+  padding: 13px 0;
+  border-top: 1px solid #eef4fd;
+}
+.onsite-export-card__doc-local { margin: 0 0 2px; font-size: 0.94rem; font-weight: 700; }
+.onsite-export-card__doc-ko { margin: 0; font-size: 0.78rem; color: #5a6880; }
+.onsite-export-card__note { margin: 6px 0 0; font-size: 0.74rem; color: #5a6880; line-height: 1.5; }
+.onsite-export-card__req { margin-top: 9px; }
+.onsite-export-card__req-local { margin: 0 0 2px; font-size: 0.84rem; font-weight: 600; }
+.onsite-export-card__req-ko { margin: 0; font-size: 0.74rem; color: #5a6880; }
+.onsite-export-card__quote {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  background: #f7faff;
+  border-left: 3px solid #b9d0f5;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.71rem;
+  line-height: 1.55;
+  color: #45536b;
+}
+.onsite-export-card__quote span {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #4b84ec;
+}
+.onsite-export-actions { display: flex; gap: 8px; margin-top: 14px; }
+.onsite-export-actions button { flex: 1; }
 
 /* --- 기존보험 연결 & 중복·공백 진단 --- */
 
@@ -1796,3 +2828,762 @@ button { cursor: pointer; font-family: inherit; }
 .overlap-unknown > summary .overlap-group__title::after { content: "▾"; color: var(--muted); font-size: 0.8rem; }
 .overlap-unknown[open] > summary .overlap-group__title::after { content: "▴"; }
 .overlap-unknown[open] > summary .overlap-group__title { margin-bottom: 10px; }
+
+
+/* ============================================================
+   홈 화면 히어로(나침반 자리) — 펜이 "보험형광펜"을 한 글자씩 쓰고,
+   다 쓰면 노란 형광펜이 훑고 지나가며 배경을 칠하는 2단계 애니메이션
+   (PenWriteCompass.tsx, 참고: 약관형광펜 Writing.mp4). 펜·형광펜은 이 앱의 다른
+   아이콘과 같은 출처(Fluent Emoji 3D, MIT)에서 받은 실제 이미지 에셋이다. 이
+   블록만 지우고 호출부를 원래 Icon3D(compass)로 되돌리면 원래대로 복원된다.
+   ============================================================ */
+.pwc {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 560px;
+  /* 예전엔 130px 고정값이라, 화면이 낮을 때(폴더폰 외부화면 등) 히어로
+     전체의 최소 높이(--home-h-hero-min: 112px)보다 이 한 줄이 더 커서
+     혼자서 화면을 넘치게 만들었다 — svh 기준으로 같이 줄어들게 바꾼다. */
+  min-height: clamp(52px, 12svh, 130px);
+  padding: 10px 0;
+}
+/* 아래 모든 애니메이션(글자 획, 펜, 형광펜, 지우개, 지워지는 clip-path)은
+   CSS keyframes가 아니라 PenWriteCompass.tsx의 GSAP 타임라인
+   (gsap.timeline({repeat:-1}), DrawSVGPlugin + MotionPathPlugin)이 인라인
+   스타일로 직접 찍어준다 — 참고한 CodePen(akshsharma1218, "Animated
+   Handwriting with DrawSVG GSAP3")과 같은 방식. 여기 CSS는 정적인 모양/색만
+   담당한다. */
+.pwc__text {
+  position: relative;
+  display: inline-flex;
+  align-items: flex-end;
+  font-size: clamp(2.4rem, 9.2svh, 4.4rem);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+/* 형광펜이 칠한 자리 — 텍스트 뒤가 아니라 위에 그리고 mix-blend-mode:multiply로
+   섞는다. 실제 형광펜이 이미 쓰인 검은 글자 위에 반투명 잉크를 얹었을 때처럼
+   글자가 노란 배경에 "비쳐서" 보이게 하기 위함(불투명 사각형을 글자 뒤에 까는
+   방식보다 훨씬 실제 형광펜에 가깝다). mask-image로 좌우 끝만 투명하게
+   페이드시켜 형광펜이 힘이 빠지며 스치듯 끝나는 느낌을 내고, 그 위에
+   ① feTurbulence 기반 filter(pwc-marker-rough, PenWriteCompass.tsx의 인라인
+   <svg>에 정의)로 테두리를 종이 결처럼 살짝 울퉁불퉁하게 만들고,
+   ② 배경을 단색이 아니라 진하기가 오르내리는 repeating-linear-gradient로 채워
+   "펜이 빠르게 지나간 자리는 옅고 다시 지나간 자리는 진한" 실제 잉크 농도
+   불균일을 흉내낸다. box-shadow의 부드러운 번짐은 종이에 잉크가 미세하게
+   퍼지는 느낌(bleed)을 낸다. */
+.pwc__highlight-bg {
+  position: absolute;
+  left: -1%;
+  right: -1%;
+  top: 16%;
+  bottom: 10%;
+  background: repeating-linear-gradient(
+    97deg,
+    rgba(253, 224, 71, 0.55) 0%,
+    rgba(253, 224, 71, 0.92) 9%,
+    rgba(253, 224, 71, 0.6) 17%,
+    rgba(253, 224, 71, 0.85) 24%,
+    rgba(253, 224, 71, 0.5) 33%
+  );
+  border-radius: 6px;
+  box-shadow: 0 0 7px 2px rgba(253, 224, 71, 0.4);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+  mix-blend-mode: multiply;
+  filter: url(#pwc-marker-rough);
+  z-index: 1;
+}
+:root[data-theme="dark"] .pwc__highlight-bg {
+  background: repeating-linear-gradient(
+    97deg,
+    rgba(234, 179, 8, 0.55) 0%,
+    rgba(234, 179, 8, 0.92) 9%,
+    rgba(234, 179, 8, 0.6) 17%,
+    rgba(234, 179, 8, 0.85) 24%,
+    rgba(234, 179, 8, 0.5) 33%
+  );
+  box-shadow: 0 0 7px 2px rgba(234, 179, 8, 0.35);
+  mix-blend-mode: screen;
+}
+
+/* 글자는 실제 폰트(학교안심 민들레홀씨 R, KERIS, OFL)의 글리프이고, 획 순서
+   데이터까지 같이 들어 있다(src/generated/penStrokeGlyphs.ts).
+   pwc__word-stroke는 획 하나의 "중심선" — 화면에 직접 보이지 않고 <mask>로만
+   쓰여서, 그 아래 완성된 글자 모양(pwc__char-fill-live)을 붓이 지나간 만큼만
+   드러낸다. 각 중심선은 그 획의 윤곽선(clipPath)으로 잘려 있어서, 붓이 아무리
+   두꺼워도 획 밖으로는 절대 번지지 않는다 — 그래서 삐침처럼 굵기가 변하는
+   끝부분도 폰트 모양 그대로 나온다(PenWriteCompass.tsx). */
+.pwc__word {
+  display: block;
+  /* viewBox가 3895×880 유닛이고 1em = 1000유닛이라, 그대로 em으로 환산해서
+     글꼴 크기(=.pwc__text의 font-size)에 따라 같이 커지고 작아지게 한다. */
+  width: 3.895em;
+  height: 0.88em;
+  overflow: visible;
+}
+.pwc__word-stroke {
+  fill: none;
+  stroke: #fff;
+  /* 아직 안 그려진 획(dash 길이가 0)에서 둥근 캡이 작은 점으로 렌더링되는
+     문제가 있어서 butt로 둔다. 획 끝 모양은 어차피 그 획의 윤곽선(clipPath)이
+     결정하기 때문에 캡 모양은 화면에 아무 영향이 없다. */
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+  /* JS(GSAP)가 실행되기 전 첫 페인트에서 "아직 안 쓴 글자"가 잠깐 다 보이는
+     깜빡임을 막는 기본값 — 실제 길이는 PenWriteCompass.tsx가 마운트 시
+     getTotalLength로 재서 찍고, 그때 visibility도 켠다. */
+  visibility: hidden;
+}
+.pwc__char-fill-live {
+  fill: var(--heading);
+  /* mask 안쪽 획(.pwc__char-mask-stroke)의 stroke-dashoffset을 매 프레임
+     JS로 바꿔도, 크로미움이 이 mask로 가려지는 대상(바로 이 요소)의 래스터
+     캐시를 매 프레임 다시 그리지 않고 몇 프레임씩 묵혀 두는 경우가 있다 —
+     그래서 획이 그려지는 도중에 빈 칸이 살짝 생겼다가, 완전히 무관한 다음
+     자모/글자로 넘어가면서 생기는 다른 DOM 변경이 리페인트를 강제할 때야
+     비로소 그 빈 칸이 메꿔지는 것처럼 보였다. 이 요소를 별도 GPU 합성
+     레이어로 승격시키면 mask 결과가 매 프레임 다시 합성된다. */
+  will-change: transform;
+  transform: translateZ(0);
+}
+/* --- 형광펜: 실제 3D 렌더 이미지 ---
+   z-index를 안 주면 DOM 순서상 뒤에 오는 pwc__text(그 안의
+   pwc__highlight-bg는 z-index:1)에 가려서 형광펜이 글자 "뒤로" 지나가는
+   것처럼 보인다 — 항상 글자보다 위에 그려지게 고정한다. */
+.pwc__highlighter {
+  position: absolute;
+  /* 글자 가운데 높이를 기준으로 위아래로 왕복하며 칠하므로, 기준점 자체를
+     글자 세로 중앙에 둔다(왕복 진폭은 PenWriteCompass.tsx의 ZIGZAG_AMPLITUDE). */
+  top: 50%;
+  margin-top: -29px;
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 8px rgba(53, 104, 201, 0.25));
+  z-index: 5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 애니메이션 없이 완성된 글자만 보여준다 — 기본값이 visibility:hidden이라
+     여기서 다시 보이게 해줘야 한다(안 그러면 글자가 통째로 안 보인다). */
+  .pwc__word-stroke { stroke-dashoffset: 0; visibility: visible; }
+  .pwc__highlighter { display: none; }
+}
+
+/* 안내 문장 안에 끼워 넣는 작은 조작 링크 — 버튼처럼 보이면 문장 흐름이 끊기고,
+   그렇다고 <a>로 두면 갈 곳이 없다. 글자 그대로 두되 밑줄로만 누를 수 있음을 알린다. */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link-button:hover { color: var(--primary-dark); }
+.link-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+
+/* --- 「현지에서」 (/onsite) ------------------------------------------------
+   창구에 그대로 보여주는 화면이라, 현지어를 크게 두고 한국어를 그 아래 작게 둔다.
+   근거 조항 인용은 언제나 한국어 원문이라 인용 블록만 따로 구분해 둔다. */
+.onsite-offline-badge {
+  background: var(--yellow-soft);
+  color: #7a5a12;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.onsite-summary__row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.onsite-summary__country { display: block; font-size: 1.24rem; color: var(--heading); margin-top: 2px; }
+
+.onsite-dday { text-align: right; flex: none; }
+.onsite-dday__num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.onsite-dday__label { font-size: 0.7rem; color: var(--muted); }
+
+.onsite-progress { margin-top: 14px; }
+.onsite-progress__bar {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--primary-soft);
+  overflow: hidden;
+}
+.onsite-progress__fill { height: 100%; border-radius: 99px; background: var(--primary); transition: width 0.3s ease; }
+.onsite-progress__text { display: block; margin-top: 7px; font-size: 0.78rem; color: var(--muted); }
+.onsite-progress__text strong { color: var(--text); }
+
+.onsite-group-label { display: block; margin: 18px 0 8px; }
+
+.onsite-intro { background: var(--primary-soft); border-color: transparent; }
+.onsite-intro__label { font-size: 0.72rem; font-weight: 800; color: var(--primary-dark); }
+.onsite-intro__local {
+  margin: 8px 0 6px;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 700;
+  color: var(--heading);
+  /* 태국어·아랍어 등은 자소 높이가 커서 줄간격을 넉넉히 준다. */
+  word-break: keep-all;
+}
+.onsite-intro__ko { margin: 0; font-size: 0.8rem; color: var(--text); opacity: 0.85; }
+
+/* 귀국하면 못 받는 서류는 왼쪽 테두리로 구분한다 — 이 화면이 막으려는 실패가 그것이다. */
+.onsite-doc--urgent { border-left: 4px solid var(--orange); }
+
+.onsite-doc__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.onsite-doc__names { min-width: 0; }
+.onsite-doc__local {
+  display: block;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  color: var(--heading);
+  word-break: keep-all;
+}
+.onsite-doc__ko { display: block; margin-top: 3px; font-size: 0.8rem; color: var(--muted); }
+.onsite-doc__status {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 99px;
+  background: var(--mint-soft);
+  color: #2f7461;
+}
+.onsite-doc__note { margin: 10px 0 0; font-size: 0.78rem; color: var(--muted); }
+
+.onsite-req-list { margin-top: 12px; border-top: 1px dashed var(--border); padding-top: 12px; }
+.onsite-req-list__label { font-size: 0.72rem; font-weight: 800; color: var(--primary-dark); }
+.onsite-req { margin-top: 10px; }
+.onsite-req__local { margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--heading); word-break: keep-all; }
+.onsite-req__ko { margin: 2px 0 0; font-size: 0.78rem; color: var(--muted); }
+.onsite-req__quote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.onsite-req__source { display: block; font-size: 0.7rem; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+
+.onsite-offline { display: flex; align-items: center; gap: 12px; }
+.onsite-offline strong { font-size: 0.9rem; color: var(--heading); }
+
+/* 휴대폰을 눕히면(가로모드) 세로 높이가 344~393px까지 떨어진다. 세로로 밴드를
+   쌓는 기본 배치는 이 높이대에서 항상 스크롤이 남았다(손글씨 애니메이션 +
+   부제목 + 카드 2단 쌓기가 다 세로 공간을 먹기 때문). 가로모드에서는 세로
+   공간 대신 남는 가로 공간을 쓴다: 손글씨 애니메이션·부제목은 접어 넣고,
+   내 여행 준비/사고 카드 2장은 세로로 쌓지 않고 나란히 놓는다.
+   파일 맨 끝에 두는 이유: .pwc의 기본 정의(위쪽)와 .page h1의 고정 크기
+   규칙이 소스 순서·명시도(specificity)에서 이 규칙을 이길 수 있어서, 항상
+   나중에 오는 이 자리에 두고 선택자 명시도도 그만큼 올려 확실히 이기게 한다. */
+@media (orientation: landscape) and (max-height: 430px) {
+  .home .home__hero { min-height: 0; }
+  .home .pwc,
+  .home .home__subtitle { display: none; }
+  .page h1.home__title { font-size: clamp(0.94rem, 4svh, 1.2rem); }
+  .home .home__grid {
+    flex-direction: row;
+    height: var(--home-h-card, auto);
+    min-height: var(--home-h-card-min, 54px);
+  }
+}
+
+/* --- 「사고 시뮬레이션」 (/simulate) ---------------------------------------- */
+.sim-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin: 0 0 12px;
+}
+.sim-context b { color: var(--heading); }
+
+/* 판정 네 가지의 뜻. "면책"·"확인불가"는 일상어가 아니라서, 뜻이 없으면 색만 보고
+   나쁜 쪽으로 읽힌다. */
+.sim-legend ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.sim-legend li { display: flex; align-items: center; gap: 10px; }
+.sim-legend__meaning { font-size: 0.78rem; color: var(--muted); line-height: 1.45; }
+.sim-legend .sim-verdict { min-width: 60px; text-align: center; }
+
+.sim-card__head { display: flex; align-items: center; gap: 8px; }
+.sim-card__num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sim-card__title { flex: 1; font-size: 1.02rem; color: var(--heading); }
+
+/* 6개사 판정 분포를 표보다 먼저 보여주는 띠. */
+.sim-summary { margin-top: 12px; }
+.sim-summary__bar {
+  display: flex;
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--cream-deep);
+}
+.sim-summary__seg { display: block; height: 100%; }
+.sim-summary__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.sim-summary__counts span { display: inline-flex; align-items: center; gap: 5px; }
+.sim-summary__dot { width: 8px; height: 8px; border-radius: 99px; display: inline-block; }
+/* 띠와 점은 배경색만 쓴다 — 알약(.sim-verdict)의 글자색·패딩까지 물려받으면 안 된다. */
+.sim-summary__seg, .sim-summary__dot { padding: 0; font-size: 0; }
+.sim-card__type {
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  padding: 3px 9px;
+  border-radius: 99px;
+}
+.sim-card__narrative { margin: 8px 0 0; font-size: 0.82rem; line-height: 1.6; color: var(--muted); }
+
+.sim-subtypes { margin-top: 14px; }
+.sim-subtypes__label { display: block; font-size: 0.72rem; font-weight: 800; color: var(--muted); margin-bottom: 7px; }
+
+.sim-results { list-style: none; margin: 14px 0 0; padding: 0; }
+.sim-result { border-top: 1px solid var(--border); padding: 10px 0; }
+.sim-result:first-child { border-top: none; }
+.sim-result__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.sim-result__head:disabled { cursor: default; }
+.sim-result__insurer { flex: 1; font-size: 0.86rem; font-weight: 700; color: var(--text); }
+.sim-result__chevron { flex: none; color: var(--muted); font-size: 0.9rem; }
+.sim-result__coverage { margin: 4px 0 0; font-size: 0.76rem; color: var(--muted); }
+.sim-result__coverage--muted { font-style: italic; }
+.sim-result__quote {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--cream);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+.sim-result__source { display: block; font-size: 0.7rem; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
+
+.sim-verdict {
+  flex: none;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 99px;
+}
+.sim-verdict--direct { background: var(--mint-soft); color: #2f7461; }
+.sim-verdict--conditional { background: var(--yellow-soft); color: #8a6410; }
+.sim-verdict--waived { background: var(--orange-soft); color: var(--orange-dark); }
+/* 확인불가는 경고가 아니라 "근거가 없다"는 사실이라, 색으로 나쁘게 보이지 않게 중립으로 둔다. */
+.sim-verdict--unknown { background: var(--cream-deep); color: var(--muted); }
+
+.sim-disclaimer {
+  font-size: 0.74rem;
+  line-height: 1.6;
+  color: var(--muted);
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 4px 0 20px;
+}
+
+/* 「내 보험 보관함」 상단의 두 버튼(보험 등록 / 보험료 비교). 세로로 쌓으면 정작 봐야 할
+   보험 목록이 화면 밖으로 밀려나서 한 줄에 나란히 둔다. 화면이 좁으면 한 칸씩 접힌다. */
+.policy-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+@media (max-width: 420px) {
+  .policy-actions { grid-template-columns: 1fr; }
+}
+/* 한 줄에 둘이 들어가므로 가로 여백과 글자를 줄인다 — 아이콘 크기는 JSX에서 함께 줄인다. */
+.home-card--compact { padding: 14px 14px; gap: 10px; }
+.home-card--compact .home-card__text strong { font-size: 0.92rem; }
+.home-card--compact .home-card__text span { font-size: 0.74rem; }
+.home-card--compact .home-card__arrow { font-size: 1.1rem; }
+
+/* --- 기간(출발일~도착일) 달력 --- */
+
+/* 시작·끝 사이를 한 줄로 이어 보이게 칸 뒤에 띠를 깐다. 칸은 동그라미라 그대로 두면
+   날짜마다 점이 끊겨 보여서 "기간"으로 읽히지 않는다. 띠는 칸 경계를 2px씩 넘겨 옆
+   칸과 맞물리게 하고, 숫자와 동그라미는 그 위에 그려진다. */
+.calendar__cell { position: relative; z-index: 0; background: none; }
+/* 숫자 → 동그라미 → 띠 순으로 위에서부터 쌓는다. */
+.calendar__cell > span { position: relative; z-index: 3; }
+.calendar__cell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  z-index: 2;
+  display: none;
+}
+.calendar__cell--on::after {
+  display: block;
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgba(53, 104, 201, 0.32);
+}
+.calendar__cell::before {
+  content: "";
+  position: absolute;
+  top: 8%;
+  bottom: 8%;
+  left: -2px;
+  right: -2px;
+  background: var(--primary-soft);
+  z-index: 1;
+  display: none;
+}
+.calendar__cell--band::before { display: block; }
+.calendar__cell--band-from::before { display: block; left: 50%; border-radius: 999px 0 0 999px; }
+.calendar__cell--band-to::before { display: block; right: 50%; border-radius: 0 999px 999px 0; }
+/* 줄이 바뀌는 자리에서는 띠 끝을 둥글게 맺는다 — 안 그러면 줄 끝마다 각진 단면이 남는다. */
+.calendar__cell--band.calendar__cell--sun::before,
+.calendar__cell--band-to.calendar__cell--sun::before { left: 0; border-radius: 999px 0 0 999px; }
+.calendar__cell--band.calendar__cell--sat::before,
+.calendar__cell--band-from.calendar__cell--sat::before { right: 0; border-radius: 0 999px 999px 0; }
+.calendar__cell--inside { color: var(--primary-dark); }
+.calendar__cell--inside.calendar__cell--sun { color: #c0564a; }
+
+/* 지금 무엇을 고르는 중인지 보여주는 두 칸(출발일 → 도착일). */
+.range-steps {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin: 2px 0 14px;
+}
+.range-steps__arrow {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.range-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.range-step em {
+  font-style: normal;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.range-step strong { font-size: 0.95rem; color: var(--heading); }
+.range-step--on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+.range-step--on em { color: var(--primary-dark); }
+.range-step--on strong { color: var(--primary-dark); }
+.range-step:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 기간 창은 넓은 화면에서만 가운데 뜨는 창으로 바꾼다 — 달력이 커서 아래에 붙이면
+   화면 위쪽이 통째로 비고 창은 잘린다. 손에 들고 쓰는 화면에서는 아래에서 올라오는
+   기존 방식이 그대로 잘 맞으므로 건드리지 않는다. */
+@media (min-width: 620px) {
+  .sheet-overlay--center { align-items: center; }
+  .sheet-overlay--center .sheet { border-radius: 24px; }
+}
+.sheet__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: var(--cream-deep);
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 4;
+}
+.sheet__close:hover { color: var(--heading); }
+
+/* 기간 시트는 달력 + 휠 + 확인 버튼이 한 번에 들어간다. 휴대폰에서는 딱 맞지만
+   창이 낮은 데스크톱에서는 확인 버튼이 화면 밖으로 밀려났다 — 시트 높이를 화면 안으로
+   묶고, 넘치면 시트 안에서만 스크롤되게 한다. 휠은 그만큼 낮춘다. */
+.sheet--range .range-steps { max-width: 330px; margin-left: auto; margin-right: auto; }
+.sheet--range .wheel-row { max-width: 330px; margin: 0 auto; }
+.sheet--range .sheet__confirm { max-width: 330px; margin: 12px auto 0; display: block; }
+.sheet--range {
+  position: relative;
+  padding-top: 44px;
+  max-height: 94svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.wheel-row--compact { height: 132px; }
+.wheel-row--compact::before,
+.wheel-row--compact::after { height: 44px; }
+.wheel-row--compact .wheel-col { padding: 44px 0; }
+.wheel-row--compact .wheel-item { height: 44px; font-size: 0.95rem; }
+.wheel-row--compact .wheel-item--center { font-size: 1.08rem; }
+
+/* --- 기간 시트: 넓은 화면에서는 달력 왼쪽 / 고르는 칸 오른쪽 --- */
+.range-layout { display: flex; flex-direction: column; gap: 14px; }
+.range-layout__pick { display: flex; flex-direction: column; gap: 22px; }
+
+@media (min-width: 620px) {
+  /* 달력이 왼쪽을 크게 쓰고, 날짜 휠과 확인 버튼이 오른쪽에 쌓인다. 세로로만 쌓으면
+     달력만으로 화면이 차서 확인 버튼이 화면 밖으로 밀려났다. */
+  .range-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 226px;
+    column-gap: 26px;
+    align-items: center;
+  }
+
+  .sheet--range { max-width: 720px; }
+  /* 왼쪽 칸을 통째로 쓰므로 달력 폭 제한을 푼다 — 칸이 커져 날짜를 짚기 쉬워진다. */
+  .range-layout__cal .calendar { max-width: 100%; margin: 0; }
+  .sheet--range .range-steps,
+  .sheet--range .wheel-row,
+  .sheet--range .sheet__confirm { max-width: none; margin-left: 0; margin-right: 0; }
+  .sheet--range .range-steps { flex-direction: column; align-items: stretch; }
+  .sheet--range .range-steps__arrow { display: none; }
+  /* 휠과 확인 버튼은 붙어 있으면 휠을 돌리다 확인을 눌러버린다 — 넉넉히 띄운다. */
+  .range-layout__pick { gap: 40px; }
+  .sheet--range .sheet__confirm { margin-top: 0; }
+}
+
+/* --- 기간 띠를 자연스럽게 잇기 ---
+   띠 높이를 칸 높이에 맞춰야 끝 동그라미와 정확히 맞물린다. 예전에는 띠가 동그라미보다
+   낮아서, 동그라미 옆으로 띠가 삐져나온 초승달 모양이 됐다. */
+.calendar__cell::before { top: 0; bottom: 0; }
+
+/* --- 날짜 휠(년/월/일) 다듬기 ---
+   선택칸이 회색 판이라 값 위에 다른 판이 하나 얹힌 것처럼 보였다. 아주 옅은 반투명 띠와
+   위아래 얇은 선만 남긴다. 위아래 흐려짐도 카드색으로 덮는 대신 실제로 투명해지게
+   마스크를 쓴다 — 덮는 방식은 시트 배경과 색이 조금만 달라도 회색 판처럼 보인다. */
+.wheel-highlight {
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 var(--border), inset 0 -1px 0 var(--border);
+}
+.wheel-row::before,
+.wheel-row::after { display: none; }
+.wheel-col {
+  mask-image: linear-gradient(180deg, transparent 0, #000 26%, #000 74%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 26%, #000 74%, transparent 100%);
+}
+
+
+/* --- 사고 접수 질문: 한 화면에 통째로 ---
+   예전에는 한 문항씩 넘겼다. 몇 개를 더 물을지 모른 채 계속 넘어가니 끝이 안 보였고,
+   앞 답을 고치려면 처음부터 다시 해야 했다. 한 장에 다 펼쳐 두면 무엇을 묻는지 한눈에
+   보이고 순서와 상관없이 답할 수 있다. */
+.qa-list { display: flex; flex-direction: column; gap: 14px; }
+.qa-item {
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px 14px;
+}
+.qa-item__text {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--heading);
+  line-height: 1.45;
+}
+.qa-choice { display: flex; gap: 8px; }
+.qa-choice__btn {
+  flex: 1;
+  padding: 11px 0;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.qa-choice__btn--on {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.qa-item__input,
+.qa-item__note {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 11px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.qa-item__note { resize: vertical; line-height: 1.5; }
+.qa-item__input:focus,
+.qa-item__note:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+/* --- 순위를 만든 다섯 축: 왼쪽 목록 + 오른쪽 오각형 ---
+   막대만으로는 "어느 쪽으로 치우친 보험사인가"가 안 읽히고, 그림만으로는 정확한 값이
+   안 읽힌다. 둘을 나란히 두고, 왼쪽 번호와 꼭짓점 번호를 맞춰 서로 짚어 보게 한다. */
+.rank-scorecard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 168px;
+  gap: 14px;
+  align-items: center;
+  margin: 10px 0 12px;
+  padding: 12px;
+  background: var(--ivory);
+  border-radius: var(--radius-md);
+}
+.rank-axes { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.rank-axis {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 60px 52px;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+}
+.rank-axis__num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 0.64rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rank-axis__label {
+  color: var(--muted);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rank-axis__track { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.rank-axis__track i { display: block; height: 100%; border-radius: 999px; background: var(--primary); }
+.rank-axis__value {
+  text-align: right;
+  font-weight: 800;
+  color: var(--primary-dark);
+  font-variant-numeric: tabular-nums;
+}
+.rank-axis--na { opacity: 0.5; }
+.rank-axis--na .rank-axis__value { color: var(--muted); font-weight: 700; font-size: 0.66rem; }
+
+.rank-radar-box { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rank-radar { width: 168px; height: 168px; overflow: visible; }
+.rank-radar__ring { fill: none; stroke: var(--border); stroke-width: 1; }
+.rank-radar__spoke { stroke: var(--border); stroke-width: 1; }
+.rank-radar__num { fill: var(--muted); font-size: 9px; font-weight: 800; }
+/* 이 보험사는 채운 도형, 평균은 점선 테두리만 — 겹쳐도 서로를 가리지 않는다. */
+.rank-radar__self {
+  fill: color-mix(in srgb, var(--primary) 24%, transparent);
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.rank-radar__avg {
+  fill: none;
+  stroke: #e08a3c;
+  stroke-width: 1.6;
+  stroke-dasharray: 4 3;
+  stroke-linejoin: round;
+}
+.rank-radar-legend { display: flex; gap: 10px; font-size: 0.66rem; font-weight: 700; }
+.rank-radar-legend span { display: inline-flex; align-items: center; gap: 4px; }
+.rank-radar-legend span::before {
+  content: "";
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+}
+.rank-radar-legend__self { color: var(--primary-dark); }
+.rank-radar-legend__self::before { background: var(--primary); }
+.rank-radar-legend__avg { color: #b06a22; }
+.rank-radar-legend__avg::before { background: #e08a3c; }
+
+@media (max-width: 480px) {
+  /* 폭이 좁으면 오각형을 목록 아래로 내린다 — 옆에 두면 둘 다 읽을 수 없게 작아진다. */
+  .rank-scorecard { grid-template-columns: minmax(0, 1fr); }
+  .rank-radar-box { margin-top: 4px; }
+}
+
+/* 그 등급 상품이 없어 비교에서 빠진 보험사 안내. 목록에서 조용히 사라지면 사용자는
+   자료가 누락된 걸로 읽는다 — 왜 없는지 한 줄로 밝힌다. */
+.rank-excluded-note {
+  margin: 14px 2px 0;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: center;
+}

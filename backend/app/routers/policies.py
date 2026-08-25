@@ -28,6 +28,7 @@ def _to_out(policy: UserPolicy) -> UserPolicyOut:
         user_policy_id=policy.user_policy_id,
         insurer_name_raw=policy.insurer_name_raw,
         product_name_raw=policy.product_name_raw,
+        plan_name=policy.plan_name,
         subscriber_age=policy.subscriber_age,
         period_start=policy.period_start,
         period_end=policy.period_end,
@@ -40,7 +41,7 @@ def _to_out(policy: UserPolicy) -> UserPolicyOut:
 
 def create_policy_for_user(
     db: Session, *, user_id: int, insurer_name_raw: str, product_name_raw: str | None = None,
-    subscriber_age: int | None = None, period_start, period_end,
+    plan_name: str | None = None, subscriber_age: int | None = None, period_start, period_end,
 ) -> UserPolicy:
     """보험 등록의 실제 로직 — 담보는 사용자가 직접 고르지 않고, 매칭된 상품이 실제로
     파는 담보 목록(Coverage 테이블, 실제 약관 기준)을 그대로 채워 넣는다. 자기신고 방식
@@ -57,6 +58,7 @@ def create_policy_for_user(
         policy_version_id=policy_version.policy_version_id if policy_version else None,
         insurer_name_raw=insurer_name_raw,
         product_name_raw=product_name_raw,
+        plan_name=plan_name,
         subscriber_age=subscriber_age,
         period_start=period_start,
         period_end=period_end,
@@ -96,7 +98,8 @@ def register_policy(
 
     policy = create_policy_for_user(
         db, user_id=user_id, insurer_name_raw=payload.insurer_name_raw,
-        product_name_raw=payload.product_name_raw, subscriber_age=payload.subscriber_age,
+        product_name_raw=payload.product_name_raw, plan_name=payload.plan_name,
+        subscriber_age=payload.subscriber_age,
         period_start=payload.period_start, period_end=payload.period_end,
     )
 

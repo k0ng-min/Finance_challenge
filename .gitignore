@@ -8,8 +8,12 @@ frontend/dist/
 
 # 원본 약관 PDF와 그 전체 텍스트 추출본은 재배포하지 않는다(docs/compliance/source_register.md 참조).
 # 형광펜 근거로 인용하는 조항 발췌는 backend/app/seed_*.py 에만 코드로 남긴다.
-data/raw_pdfs/
-data/processed/
+backend/data/raw_pdfs/
+backend/data/processed/
+# 보험사가 발행한 상품요약서도 같은 이유로 재배포하지 않는다(출처·SHA-256만 기록).
+# 다이렉트 「보장 비교하기」 화면 캡처는 커밋한다 — 공개 비교 화면이고, 등급별 보장금액
+# 숫자의 유일한 근거라 커밋된 값과 함께 남아 있어야 한다.
+backend/data/source_files/*_product_summary_*.pdf
 
 # Claude Code 로컬 세션/도구 상태(설정, 락 파일 등) — 프로젝트 소스가 아니라 개인 개발환경 상태라 통째로 제외
 .claude/

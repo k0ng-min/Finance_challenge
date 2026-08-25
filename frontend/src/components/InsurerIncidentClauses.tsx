@@ -63,7 +63,7 @@ export function InsurerIncidentClauses({ insurerCode, typeCodes }: { insurerCode
         ))}
       </div>
 
-      {loading && <LoadingScreen icon="notebook" title="관련 약관을 찾고 있어요" messages={["실제 약관 원문에서 이 사고유형과 관련된 조항을 찾고 있어요"]} />}
+      {loading && <LoadingScreen icon="highlighter" title="관련 약관을 찾고 있어요" messages={["실제 약관 원문에서 이 사고유형과 관련된 조항을 찾고 있어요"]} />}
 
       {!loading && coverages.length === 0 && (
         <div className="empty-state">

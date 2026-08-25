@@ -1,0 +1,712 @@
+<meta charset="utf-8">
+<title>2026 금융 AI Challenge 기능 명세서 — 보험펜</title>
+<style>
+  @page { size: A4; margin: 15mm 13mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", sans-serif;
+    font-size: 10pt; line-height: 1.64; color: #111; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    word-break: keep-all;
+  }
+  .doc-tag { font-size: 10pt; color: #333; margin: 0 0 6px; }
+  h1 { font-size: 17pt; text-align: center; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .sub-title { text-align: center; font-size: 10.5pt; color: #333; margin: 0 0 14px; }
+  table { width: 100%; border-collapse: collapse; }
+  .meta td, .meta th { border: 1px solid #444; padding: 7px 9px; font-size: 10pt; }
+  .meta th { background: #f0f0f0; width: 88px; text-align: center; font-weight: 700; }
+  .note { font-size: 9pt; color: #444; margin: 6px 0 12px; }
+  section { border: 1px solid #444; border-top: none; break-inside: auto; }
+  section:first-of-type { border-top: 1px solid #444; }
+  h2 {
+    font-size: 10.5pt; margin: 0; padding: 7px 10px; background: #eef1f6;
+    border-bottom: 1px solid #444; font-weight: 800;
+  }
+  .body { padding: 11px 13px 13px; }
+  p { margin: 0 0 8px; text-align: left; }
+  ul { margin: 0 0 8px; padding-left: 17px; }
+  li { margin: 0 0 4px; }
+  li > ul { margin-top: 4px; }
+  .sub { font-weight: 800; margin: 12px 0 5px; font-size: 10pt; color: #14315f; }
+  .sub:first-child { margin-top: 0; }
+  .tbl { margin: 8px 0 10px; font-size: 8.9pt; break-inside: avoid; }
+  .tbl th, .tbl td { border: 1px solid #999; padding: 5px 6px; vertical-align: top; line-height: 1.5; }
+  .tbl th { background: #f4f4f4; font-weight: 700; text-align: center; }
+  .tbl td.c { text-align: center; }
+  .tbl caption {
+    caption-side: top; text-align: left; font-size: 9pt; font-weight: 700;
+    color: #14315f; padding: 0 0 3px;
+  }
+  .kw { font-weight: 800; }
+  .ok { color: #146c2e; font-weight: 800; }
+  .fill { color: #b00; font-weight: 700; }
+  .small { font-size: 8.8pt; color: #444; }
+  .step {
+    margin: 0 0 8px; padding: 8px 11px; border-left: 3px solid #1f4e9c;
+    background: #f4f7fc; font-size: 9.6pt; text-align: left;
+  }
+  figure { margin: 10px 0 12px; break-inside: avoid; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { font-size: 8.8pt; color: #333; text-align: center; margin-top: 5px; font-weight: 700; }
+  svg text { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; }
+  svg .h  { font-size: 11.5px; font-weight: 700; fill: #0f2c5c; }
+  svg .t  { font-size: 10.5px; fill: #16181c; }
+  svg .b  { font-size: 10.5px; font-weight: 700; fill: #0f2c5c; }
+  svg .s  { font-size: 9.5px;  fill: #4a4a4a; }
+  svg .sb { font-size: 9.5px;  font-weight: 700; fill: #0f2c5c; }
+  svg .n  { font-size: 9.5px;  font-weight: 700; fill: #ffffff; }
+  svg .g  { font-size: 9.5px;  font-weight: 700; fill: #146c2e; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,1 L9,5 L0,9 z" fill="#4a4a4a"/>
+  </marker>
+</defs></svg>
+
+<p class="doc-tag">첨부 2</p>
+<h1>2026 금융 AI Challenge 기능 명세서</h1>
+<p class="sub-title">보험펜(BohumPen) — 약관을 형광펜으로 짚어주는 여행자보험 AI</p>
+
+<table class="meta">
+  <tr>
+    <th>팀명</th><td><span class="fill">[등록된 팀명 기재]</span></td>
+    <th>구성원 성명</th><td><span class="fill">[팀장, 팀원 순으로 기재]</span></td>
+  </tr>
+</table>
+<p class="note">( * 필수항목 ) &nbsp;|&nbsp; 배포 URL: <span class="kw">https://travel-insurance-web.onrender.com/</span> &nbsp;|&nbsp; 별도 계정 없이 게스트로 전 기능 확인 가능</p>
+
+<section>
+  <h2>1. MVP 구현 범위*</h2>
+  <div class="body">
+    <p>아래에 적은 내용은 모두 <span class="kw">배포 URL에서 실제로 동작하는 범위</span>입니다. 계획 중이거나 아직 구현하지
+    않은 기능은 포함하지 않았으며, 자료가 비어 있는 자리도 숨기지 않고 5항 (6)에 그대로 밝혀 두었습니다.</p>
+
+    <p class="sub">(1) 시스템 구성</p>
+
+    <p>MVP의 범위를 정할 때 기준으로 삼은 것은 “보여 주기 좋은 기능”이 아니라 <span class="kw">“근거 없이는 답하지 않는다”는
+    원칙이 실제로 끝까지 지켜지는가</span>였습니다. 화면을 많이 만드는 대신, 하나의 사고가 접수되어 청구 서류 체크리스트가
+    나오기까지의 경로를 <span class="kw">중간에 끊기는 곳 없이</span> 완성하는 데 집중했습니다. 그 결과 비교(가입 전),
+    현지 대응(여행 중), 청구 준비(사고 후)의 세 경로가 모두 끝까지 동작하며, 각 경로의 마지막에는 반드시 약관 조항 원문이
+    인용되어 나옵니다. 반대로 실제 보험 가입, 청구 접수 대행, 보험금 산정처럼 제도적 자격이 필요한 영역은
+    <span class="kw">의도적으로 범위에서 제외</span>했습니다.</p>
+
+    <p>서비스는 React 19 기반의 모바일 웹 클라이언트와 FastAPI 기반의 백엔드, 그리고 약관 지식베이스를 담은
+    SQLite로 구성됩니다. 생성형 AI는 백엔드의 AI 어댑터 계층을 통해서만 호출되며, 이 계층에는 호출이 실패했을 때
+    동작하는 <span class="kw">규칙 기반 대체 경로</span>가 지점마다 준비되어 있습니다. 화면은 어떤 경우에도 근거 없는 답을
+    받지 않으며, AI가 없으면 세부 분류 정확도와 설명 품질만 낮아집니다.</p>
+
+    <figure>
+      <svg viewBox="0 0 620 336" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="보험펜 시스템 아키텍처">
+        <rect x="8" y="8" width="604" height="60" rx="6" fill="#f7f9fc" stroke="#1f4e9c"/>
+        <text class="b" x="20" y="27">클라이언트 — React 19 · TypeScript · Vite (모바일 웹, 설치 불필요)</text>
+        <rect x="20" y="36" width="138" height="22" rx="11" fill="#dbe6f7"/><text class="s" x="89" y="51" text-anchor="middle">화면 10종</text>
+        <rect x="166" y="36" width="150" height="22" rx="11" fill="#dbe6f7"/><text class="s" x="241" y="51" text-anchor="middle">오프라인 저장·열람</text>
+        <rect x="324" y="36" width="138" height="22" rx="11" fill="#dbe6f7"/><text class="s" x="393" y="51" text-anchor="middle">게스트 이용 가능</text>
+        <rect x="470" y="36" width="130" height="22" rx="11" fill="#dbe6f7"/><text class="s" x="535" y="51" text-anchor="middle">라이트·다크 테마</text>
+
+        <line x1="310" y1="68" x2="310" y2="86" stroke="#4a4a4a" stroke-width="1.4" marker-end="url(#ar)"/>
+        <text class="s" x="322" y="82">HTTPS · REST API 63종</text>
+
+        <rect x="8" y="88" width="604" height="104" rx="6" fill="#ffffff" stroke="#1f4e9c"/>
+        <text class="b" x="20" y="107">서버 — FastAPI · SQLAlchemy 2.0 · Pydantic 2</text>
+        <rect x="20" y="116" width="186" height="66" rx="4" fill="#f7f9fc" stroke="#9aa4b2"/>
+        <text class="sb" x="113" y="134" text-anchor="middle">라우터 계층</text>
+        <text class="s" x="113" y="150" text-anchor="middle">여행 · 사고 · 보험사 · 조항</text>
+        <text class="s" x="113" y="166" text-anchor="middle">현지 대응 · 계정 · 인증</text>
+
+        <rect x="214" y="116" width="192" height="66" rx="4" fill="#dbe6f7" stroke="#1f4e9c"/>
+        <text class="sb" x="310" y="134" text-anchor="middle">서비스 계층 — 결정적 규칙</text>
+        <text class="s" x="310" y="150" text-anchor="middle">담보 매칭 · 순위 산출</text>
+        <text class="s" x="310" y="166" text-anchor="middle">누락·모순 검증 · 중복 진단</text>
+
+        <rect x="414" y="116" width="186" height="66" rx="4" fill="#fff9db" stroke="#c9b23f"/>
+        <text class="sb" x="507" y="134" text-anchor="middle">AI 어댑터 계층</text>
+        <text class="s" x="507" y="150" text-anchor="middle">Gemini 호출 + 인용 검증</text>
+        <text class="s" x="507" y="166" text-anchor="middle">실패 시 규칙 기반 폴백</text>
+
+        <line x1="150" y1="192" x2="150" y2="214" stroke="#4a4a4a" stroke-width="1.4" marker-end="url(#ar)"/>
+        <line x1="470" y1="192" x2="470" y2="214" stroke="#4a4a4a" stroke-width="1.4" marker-end="url(#ar)"/>
+
+        <rect x="8" y="216" width="290" height="62" rx="6" fill="#eef1f6" stroke="#1f4e9c"/>
+        <text class="b" x="153" y="236" text-anchor="middle">SQLite 약관 지식베이스</text>
+        <text class="s" x="153" y="253" text-anchor="middle">조항 · 담보 · 사고유형 매핑 · 수치조건</text>
+        <text class="s" x="153" y="269" text-anchor="middle">필요서류 · 보장금액 · 실제 보험료</text>
+
+        <rect x="322" y="216" width="290" height="62" rx="6" fill="#fffdf2" stroke="#c9b23f"/>
+        <text class="b" x="467" y="236" text-anchor="middle">Google Gemini API</text>
+        <text class="s" x="467" y="253" text-anchor="middle">구조화 · 분류 · 질문 생성 · 설명</text>
+        <text class="s" x="467" y="269" text-anchor="middle">형광펜 구간 · 순위 보조 · 현지어</text>
+
+        <line x1="150" y1="300" x2="150" y2="280" stroke="#4a4a4a" stroke-width="1.4" marker-end="url(#ar)"/>
+        <rect x="8" y="300" width="290" height="30" rx="5" fill="#ffffff" stroke="#9aa4b2"/>
+        <text class="s" x="153" y="319" text-anchor="middle">약관 PDF · 공시자료 · 외교부 자료 → 시딩 스크립트</text>
+        <text class="g" x="612" y="308" text-anchor="end">※ 계정 정보(이메일·로그인 식별자)는</text>
+        <text class="g" x="612" y="324" text-anchor="end">외부 AI로 전송하지 않는다</text>
+      </svg>
+      <figcaption>[그림 1] 시스템 아키텍처 — 결정적 규칙 계층과 AI 계층의 분리</figcaption>
+    </figure>
+
+    <p class="sub">(2) 적재 완료된 약관 지식베이스</p>
+
+    <p>7개 손해보험사(삼성화재·현대해상·메리츠화재·KB손해보험·DB손해보험·카카오페이손해보험·신한EZ손해보험)의 여행자보험 약관을
+    조항 단위로 정제해 적재를 마쳤습니다. 서비스가 화면에 내놓는 모든 근거는 예외 없이 이 지식베이스에서 나옵니다.</p>
+
+    <figure>
+      <svg viewBox="0 0 620 258" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="약관 지식베이스 적재 현황 막대그래프">
+        <text class="b" x="8" y="18">약관 지식베이스 적재 현황 (단위: 건)</text>
+
+        <text class="t" x="140" y="48" text-anchor="end">조항–사고유형 매핑</text>
+        <rect x="148" y="36" width="380" height="16" fill="#1f4e9c"/><text class="sb" x="536" y="48">711</text>
+
+        <text class="t" x="140" y="72" text-anchor="end">담보–필요서류 매핑</text>
+        <rect x="148" y="60" width="322" height="16" fill="#2f5fae"/><text class="sb" x="478" y="72">602</text>
+
+        <text class="t" x="140" y="96" text-anchor="end">약관 조항</text>
+        <rect x="148" y="84" width="298" height="16" fill="#3d6fbd"/><text class="sb" x="454" y="96">558</text>
+
+        <text class="t" x="140" y="120" text-anchor="end">수치 조건</text>
+        <rect x="148" y="108" width="93" height="16" fill="#5c8ed0"/><text class="sb" x="249" y="120">174</text>
+
+        <text class="t" x="140" y="144" text-anchor="end">담보(특약)</text>
+        <rect x="148" y="132" width="91" height="16" fill="#7ba7de"/><text class="sb" x="247" y="144">170</text>
+
+        <text class="t" x="140" y="168" text-anchor="end">표준 담보</text>
+        <rect x="148" y="156" width="25" height="16" fill="#9cc0ea"/><text class="sb" x="181" y="168">46</text>
+
+        <text class="t" x="140" y="192" text-anchor="end">사고유형(L1 8 + L2 31)</text>
+        <rect x="148" y="180" width="21" height="16" fill="#9cc0ea"/><text class="sb" x="177" y="192">39</text>
+
+        <text class="t" x="140" y="216" text-anchor="end">표준 서류 코드</text>
+        <rect x="148" y="204" width="7" height="16" fill="#c3d8f2"/><text class="sb" x="163" y="216">14</text>
+
+        <text class="s" x="8" y="236">※ 이 밖에 등급별 보장금액 420행(6사 × 3등급 + 신한EZ손보 2등급, × 21항목), 담보–서류 연결률 100%.</text>
+        <text class="s" x="8" y="250">　 실제 조회 보험료 2,550행(나이·성별·등급별)은 6개사분이며, 신한EZ손보는 아직 확보하지 못했습니다.</text>
+      </svg>
+      <figcaption>[그림 2] 약관 지식베이스 적재 현황</figcaption>
+    </figure>
+
+    <p>이 수치들은 한 번에 만들어진 것이 아닙니다. 약관 PDF에서 텍스트를 뽑는 일 자체는 어렵지 않지만, 그 텍스트를
+    <span class="kw">조항 단위로 정확히 자르고 사고유형에 연결하는 일</span>은 대부분 사람이 원문을 읽으면서 결정해야 했습니다.
+    표 레이아웃 때문에 열 라벨이 문장 중간에 끼어드는 경우만 제거하고 나머지 원문은 한 글자도 바꾸지 않았는데, 이는 나중에
+    인용문이 원문의 부분 문자열인지 대조하는 검증이 성립하려면 <span class="kw">원문이 손대지 않은 상태로 남아 있어야</span>
+    하기 때문입니다. 원문을 조금이라도 정리해 두면 검증 자체가 무의미해집니다.</p>
+
+    <p>수치 조건 174건도 같은 원칙으로 적재했습니다. 지급한도·자기부담금·지연기준시간 같은 숫자는 그 값의 근거가 된
+    원문 조각을 함께 저장하는데, 그 조각이 <span class="kw">조항 원문의 부분 문자열이 아니면 저장 자체를 거부</span>합니다.
+    사람이 실수로 숫자를 잘못 옮겨 적는 일까지 데이터 계층에서 막기 위한 장치이며, 이 규칙은 자동화 테스트로도 고정되어 있습니다.
+    담보와 필요 서류의 연결률이 100%인 것도 우연이 아니라, 연결되지 않은 담보가 하나라도 남으면 테스트가 실패하도록
+    만들어 두었기 때문입니다.</p>
+
+    <p class="sub">(3) 그 밖의 구현 범위</p>
+
+    <ul>
+      <li><span class="kw">화면</span> — 홈, 내 여행 준비, 내 보험, 사고 접수, 청구 전 점검, 보험료 비교, 약관 형광펜,
+      해외 서류 챙기기, 사고 시뮬레이션, 계정까지 <span class="kw">총 10개 화면</span>이 동작합니다.</li>
+      <li><span class="kw">인증</span> — 카카오·구글 소셜 로그인, 이메일+비밀번호 로그인, 로그인이 필요 없는 게스트 이용이
+      모두 동작합니다. 게스트도 기능 제한이 없습니다.</li>
+      <li><span class="kw">생성형 AI</span> — 사고 자유서술 구조화, 사고유형 2단계 분류, 사고별 확인 질문 2단계 생성,
+      조항·서류 상황별 설명, 약관 형광펜 구간 추출, 순위 보조 점수, 현지어 서류 요청문 생성이 실제로 호출됩니다.</li>
+      <li><span class="kw">검증</span> — 백엔드 자동화 테스트 <span class="kw">274건</span>이 통과합니다. 인용 검증,
+      데이터 무결성, 순위 재현성, 결측 처리 규칙이 모두 테스트로 고정되어 있습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>2. 주요 기능 목록*</h2>
+  <div class="body">
+    <p>기능은 크게 <span class="kw">비교(가입 전)</span>, <span class="kw">현지 대응(여행 중)</span>,
+    <span class="kw">청구 준비(사고 후)</span>의 세 묶음으로 나뉩니다. 아래 표는 각 기능이 어느 화면에서 동작하는지와
+    현재 구현 상태를 정리한 것입니다. 표에 적힌 기능은 모두 배포 URL에서 직접 확인할 수 있습니다.</p>
+
+    <table class="tbl">
+      <caption>[표 1] 주요 기능 목록</caption>
+      <tr>
+        <th style="width:18%">기능명</th><th style="width:50%">기능 설명</th>
+        <th style="width:17%">관련 화면</th><th style="width:9%">구현 상태</th>
+      </tr>
+      <tr>
+        <td>여행 준비 입력</td>
+        <td>목적지·기간·동행·활동·렌터카 이용·나이·성별·걱정되는 사고유형·기존 보유 보험을 단계별로 입력한다. 기간은 달력에서 출발일과 도착일을 이어서 선택하며, 여행경보가 발령된 나라를 고른 경우에만 경보 확인 단계가 하나 추가된다</td>
+        <td>내 여행 준비</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>맞춤 보험사 순위</td>
+        <td>입력한 모든 선택을 가중치로 반영해 7개사를 5개 축(보장금액 적합도·약관 근거·보험료·기존보험 겹침·여행 위험)으로 점수화한다. 실속/표준/고급 등급마다 순위가 실제로 달라지며, 축별 점수·비중·기여도와 오각형 방사형 그래프(비교 대상 평균 대비)를 함께 표시한다</td>
+        <td>내 여행 준비</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>등급별 보장금액 비교</td>
+        <td>7개사 × 등급 × 21개 보장항목을 한 표로 비교한다(신한EZ손보는 2등급만 판매). 선택한 등급은 화면 전체에 그대로 이어진다</td>
+        <td>내 여행 준비 / 보험료 비교</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>보험료 비교</td>
+        <td>나이·성별·등급별로 실제 조회한 보험료를 비교한다. 담보 유형·가격대 필터, 비교함 담기, 결과 이미지 저장을 지원한다</td>
+        <td>보험료 비교</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>기존보험 중복·공백 진단</td>
+        <td>보유한 실손·상해·일상생활배상책임과 여행자보험이 겹치는 담보, 그리고 비어 있는 담보를 약관 근거와 함께 제시한다. 근거를 찾지 못하면 “확인불가”로 표시한다</td>
+        <td>내 여행 준비 / 내 보험</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>사고 자유서술 접수</td>
+        <td>사고 상황을 문장으로 입력하면 AI가 대분류(8종)를 판정하고 부위·진단·입원·수술 등 구조화 필드를 추출한다</td>
+        <td>사고 접수</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>AI 맞춤 확인 질문(2단계)</td>
+        <td>미리 만든 질문지가 아니라, 사고 내용을 읽고 필요한 질문을 그 자리에서 생성한다. 1단계(대분류 확인) 답변을 읽고 2단계(세부유형 확인) 질문을 새로 만든다. 각 단계는 한 화면에 표시되며 예/아니오 버튼과 입력칸이 섞여 있고, 맨 아래에 자유 입력칸이 함께 있다</td>
+        <td>사고 접수</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>담보·조항 매칭</td>
+        <td>확정된 사고유형에 직접·조건부·면책으로 매핑된 조항 중, 사용자가 등록한 실제 담보에 해당하는 것만 추린다. 사고 상황에 등장한 활동이 면책 조항 원문에 실제로 언급돼 있으면 면책을 우선 표시한다</td>
+        <td>사고 접수 결과</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>필요 서류 안내·체크</td>
+        <td>담보별 필요 서류를 표준 서류 코드로 제시하고 확보 여부를 체크한다. 서류 사진을 올리면 형식을 점검한다</td>
+        <td>청구 전 점검</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>청구 전 누락·모순 점검</td>
+        <td>LLM을 쓰지 않는 결정적 규칙으로 보험기간 불일치, 정보 누락, 입력값 모순(예: 수술은 받았는데 입원은 아니오)을 점검한다</td>
+        <td>청구 전 점검</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>약관 형광펜</td>
+        <td>사고와 직접 관련된 조항 구간을 노란색으로 표시한다. 인용이 조항 원문의 부분 문자열인지 검증한 뒤에만 표시하며, 표준약관과의 대조도 함께 제공한다</td>
+        <td>약관 형광펜</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>해외 서류 챙기기</td>
+        <td>목적지 언어로 필요 서류 요청 문구를 현지어·한국어 병기로 만들어 창구에 그대로 보여줄 수 있게 한다. 등록한 여행이 있으면 그 여행 기준으로 자동 표시되고, 나라를 직접 골라 언제든 바꿀 수 있다. HTML 파일 또는 이미지로 저장해 통신 없이 열람할 수 있다</td>
+        <td>해외 서류 챙기기</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>사고 시뮬레이션</td>
+        <td>가입 전에 “이런 사고가 나면 어떻게 되는지”를 7개사 기준으로 미리 확인한다(직접/조건부/면책/확인불가)</td>
+        <td>사고 시뮬레이션</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>여행경보 안내</td>
+        <td>목적지의 외교부 여행경보 단계를 표시하고, 해당 지역을 방문한다고 체크한 경우에만 관련 면책 안내를 노출한다</td>
+        <td>내 여행 준비</td><td class="c ok">완료</td>
+      </tr>
+      <tr>
+        <td>계정·기록 관리</td>
+        <td>카카오·구글·이메일 로그인, 게스트 이용, 여행/사고/보험 기록 조회·수정·삭제, 회원 탈퇴를 지원한다</td>
+        <td>계정</td><td class="c ok">완료</td>
+      </tr>
+    </table>
+
+    <p>표를 묶음별로 다시 읽으면 각 묶음이 무엇을 책임지는지가 분명해집니다. <span class="kw">비교 묶음</span>은
+    “어떤 상품을 고를 것인가”에 답합니다. 여행 준비 입력에서 받은 아홉 가지 항목이 전부 순위 계산의 입력으로 쓰이며,
+    결과 화면은 순위만 보여 주고 끝나지 않고 <span class="kw">왜 그 순위인지를 다섯 축의 점수와 기여도로 함께</span> 보여 줍니다.
+    여기에 등급별 보장금액 비교와 실제 보험료 비교가 붙어, 같은 회사 안에서도 실속·표준·고급 중 어느 등급을 고를지까지
+    이어서 판단할 수 있습니다. 기존보험 중복·공백 진단은 이 묶음의 마지막 단계로, 새로 드는 보험이 이미 든 보험과
+    겹치는지를 약관 근거와 함께 알려 줍니다.</p>
+
+    <p><span class="kw">현지 대응 묶음</span>은 “지금 여기서 무엇을 받아 두어야 하는가”에 답합니다. 이 화면의 핵심은
+    서류 목록을 보여 주는 것이 아니라, <span class="kw">귀국하면 못 받는 서류를 먼저 따로 묶어</span> 보여 주는 데 있습니다.
+    진단서와 경찰 신고서는 귀국 후 재발급이 사실상 불가능하므로, 사용자가 현지에 있는 동안 이 목록을 보는 것과 보지 않는 것의
+    차이가 곧 청구 가능 여부의 차이가 됩니다. 서류 요청 문구는 목적지 언어와 한국어를 항상 병기합니다. 창구 직원에게 보여 주는
+    물건이라 번역이 필요하지만, 사용자가 자기가 무엇을 보여 주고 있는지 모르는 상태로 두어서는 안 되기 때문입니다.</p>
+
+    <p><span class="kw">청구 준비 묶음</span>은 “무엇을 받을 수 있고, 그 근거는 무엇인가”에 답합니다. 사고 접수는
+    자유서술 한 문장에서 시작해 AI가 생성한 확인 질문 두 단계를 거치고, 그 결과로 담보·조항·수치조건·필요서류가 한 번에 나옵니다.
+    이어지는 청구 전 점검은 <span class="kw">LLM을 전혀 쓰지 않는 결정적 규칙</span>으로 보험기간 불일치나 입력값 모순
+    (예: 수술은 받았다고 하면서 입원은 아니라고 답한 경우)을 찾아냅니다. 판단이 아니라 대조에 가까운 일이므로 규칙이 더 정확하고
+    설명하기도 쉽기 때문입니다. 마지막으로 약관 형광펜 화면이 근거 조항의 원문으로 사용자를 데려갑니다.</p>
+
+    <p>화면 사이의 이동은 사용자가 매번 처음부터 다시 시작하지 않도록 설계했습니다. 여행 준비에서 입력한 정보는
+    해외 서류 안내와 사고 접수로 이어지고, 사고 접수에서 확정된 사고유형은 필요 서류 체크리스트와 약관 형광펜으로
+    다시 이어집니다.</p>
+
+    <figure>
+      <svg viewBox="0 0 620 312" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="화면 구성과 화면 사이의 이동 흐름">
+        <rect x="250" y="6" width="120" height="30" rx="15" fill="#1f4e9c"/>
+        <text class="n" x="310" y="25" text-anchor="middle">홈</text>
+        <line x1="270" y1="36" x2="120" y2="56" stroke="#9aa4b2" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="310" y1="36" x2="310" y2="56" stroke="#9aa4b2" stroke-width="1.2" marker-end="url(#ar)"/>
+        <line x1="350" y1="36" x2="500" y2="56" stroke="#9aa4b2" stroke-width="1.2" marker-end="url(#ar)"/>
+
+        <rect x="8" y="58" width="194" height="156" rx="6" fill="#f7f9fc" stroke="#1f4e9c"/>
+        <text class="b" x="105" y="78" text-anchor="middle">가입 전 · 비교</text>
+        <rect x="20" y="88" width="170" height="26" rx="4" fill="#dbe6f7"/><text class="t" x="105" y="105" text-anchor="middle">내 여행 준비</text>
+        <rect x="20" y="120" width="170" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/><text class="t" x="105" y="137" text-anchor="middle">보험료 비교</text>
+        <rect x="20" y="152" width="170" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/><text class="t" x="105" y="169" text-anchor="middle">내 보험</text>
+        <rect x="20" y="184" width="170" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/><text class="t" x="105" y="201" text-anchor="middle">사고 시뮬레이션</text>
+
+        <rect x="213" y="58" width="194" height="156" rx="6" fill="#f7f9fc" stroke="#1f4e9c"/>
+        <text class="b" x="310" y="78" text-anchor="middle">여행 중 · 현지 대응</text>
+        <rect x="225" y="88" width="170" height="26" rx="4" fill="#dbe6f7"/><text class="t" x="310" y="105" text-anchor="middle">해외 서류 챙기기</text>
+        <text class="s" x="310" y="132" text-anchor="middle">· 나라를 언제든 바꿀 수 있음</text>
+        <text class="s" x="310" y="150" text-anchor="middle">· 현지어·한국어 병기 카드</text>
+        <text class="s" x="310" y="168" text-anchor="middle">· HTML·이미지로 저장</text>
+        <text class="s" x="310" y="192" text-anchor="middle">여행경보 확인은 ‘내 여행</text>
+        <text class="s" x="310" y="206" text-anchor="middle">준비’ 안의 단계로 제공</text>
+
+        <rect x="418" y="58" width="194" height="156" rx="6" fill="#f7f9fc" stroke="#1f4e9c"/>
+        <text class="b" x="515" y="78" text-anchor="middle">사고 후 · 청구 준비</text>
+        <rect x="430" y="88" width="170" height="26" rx="4" fill="#dbe6f7"/><text class="t" x="515" y="105" text-anchor="middle">사고 접수</text>
+        <line x1="515" y1="114" x2="515" y2="124" stroke="#4a4a4a" stroke-width="1.2" marker-end="url(#ar)"/>
+        <rect x="430" y="126" width="170" height="26" rx="4" fill="#dbe6f7"/><text class="t" x="515" y="143" text-anchor="middle">청구 전 점검</text>
+        <line x1="515" y1="152" x2="515" y2="162" stroke="#4a4a4a" stroke-width="1.2" marker-end="url(#ar)"/>
+        <rect x="430" y="164" width="170" height="26" rx="4" fill="#dbe6f7"/><text class="t" x="515" y="181" text-anchor="middle">약관 형광펜</text>
+        <text class="s" x="515" y="204" text-anchor="middle">근거 조항 원문으로 되돌아감</text>
+
+        <path d="M105,214 L105,234 L310,234 L310,218" fill="none" stroke="#1f4e9c" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <text class="sb" x="207" y="229" text-anchor="middle">여행 정보가 그대로 이어짐</text>
+
+        <path d="M105,234 L105,266 L515,266 L515,218" fill="none" stroke="#1f4e9c" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+        <text class="sb" x="310" y="261" text-anchor="middle">여행·보험 정보가 사고 접수로 이어짐</text>
+
+        <rect x="8" y="278" width="140" height="26" rx="4" fill="#ffffff" stroke="#9aa4b2"/>
+        <text class="t" x="78" y="295" text-anchor="middle">계정 · 기록 관리</text>
+        <text class="s" x="160" y="295">모든 화면에서 접근 가능 — 여행·사고·보험 기록 조회·수정·삭제, 회원 탈퇴</text>
+      </svg>
+      <figcaption>[그림 3] 10개 화면의 구성과 화면 사이의 정보 이동</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section>
+  <h2>3. 사용자 이용 흐름*</h2>
+  <div class="body">
+    <p>사용자는 세 가지 상황 중 하나로 서비스에 들어옵니다. 아직 보험을 고르는 중이거나, 이미 여행지에 있거나,
+    사고가 난 뒤입니다. 세 흐름 모두 <span class="kw">로그인 없이</span> 처음부터 끝까지 진행됩니다.</p>
+
+    <p class="sub">A. 가입 전 — 나에게 맞는 보험 찾기</p>
+    <p class="step">① 배포 URL 접속(로그인 불필요) → ② 홈에서 <span class="kw">‘내 여행 준비’</span> 선택 →
+    ③ 목적지·기간(달력에서 출발일→도착일)·동행·나이·성별 입력 → ④ 여행경보가 있는 나라라면 방문 지역 확인 단계가 추가됨 →
+    ⑤ 여행 목적과 예정 활동, 걱정되는 사고유형 선택 → ⑥ 비교 기준(안정형/실속형/최대보장형/간편청구형/균형형) 선택 →
+    ⑦ 기존 보유 보험 입력(건너뛰어도 진행됨) → ⑧ <span class="kw">‘보험사 순위 확인하기’</span> →
+    ⑨ 7개사 순위와 5개 축 기여도·오각형 그래프 확인 → ⑩ 상단에서 <span class="kw">실속/표준/고급 등급을 바꾸면
+    순위가 다시 계산</span>됨 → ⑪ 보험사 카드를 눌러 담보 추천과 약관 근거 확인 → ⑫ 기존보험 중복·공백 진단 확인</p>
+
+    <p>A 흐름에서 사용자가 가장 많이 확인하는 지점은 ⑩번, 즉 등급을 바꾸는 순간입니다. 실속·표준·고급은 단순히 보험료만
+    다른 것이 아니라 보장금액의 구성 자체가 달라지므로, 등급을 바꾸면 <span class="kw">순위가 실제로 재계산됩니다.</span>
+    등급 간 금액 차이가 큰 보험사는 순위가 눈에 띄게 오르내리고, 세 등급의 금액이 동일한 항목은 순위에 아무 영향을 주지 않습니다.
+    이 동작은 “순위가 그냥 정해져 있는 것이 아니라 입력에 따라 계산된다”는 사실을 사용자가 스스로 확인할 수 있는
+    가장 빠른 방법이기도 합니다. 또한 여행경보가 발령된 나라를 고른 경우에만 ④번 단계가 추가되는데, 경보 자료가 없는 대다수의
+    나라에서 빈 화면이 하나 늘어나는 일을 막기 위해 <span class="kw">보여 줄 내용이 있을 때만 단계를 만드는</span> 방식으로
+    처리했습니다.</p>
+
+    <p class="sub">B. 사고 후 — 무엇을 받을 수 있는지 확인하기</p>
+    <p class="step">① 홈에서 <span class="kw">‘사고가 발생했어요’</span> 선택 → ② 청구할 보험과 여행 선택(없으면 그 자리에서
+    새 여행 등록) → ③ 사고 상황을 문장으로 입력 → ④ <span class="kw">1단계 확인 질문</span>(한 화면에 예/아니오·입력칸·자유 입력)
+    답변 → ⑤ <span class="kw">2단계 확인 질문</span> 답변 → ⑥ 결과 화면에서 청구검토 담보·근거 조항·수치 조건·필요 서류 확인 →
+    ⑦ <span class="kw">‘필요 서류 체크하러 가기’</span>로 이동해 서류 확보 여부 점검 → ⑧ 조항 카드에서
+    <span class="kw">약관 형광펜</span>으로 근거 원문 확인</p>
+
+    <p>이 B 흐름의 내부 처리는 화면에 보이는 것보다 여러 단계를 거칩니다. 아래 [그림 4]는 사용자가 문장 하나를
+    입력한 뒤부터 결과가 화면에 나오기까지, 각 단계를 <span class="kw">누가 담당하는지</span>를 함께 표시한 것입니다.
+    노란색은 생성형 AI, 파란색은 결정적 규칙, 초록색은 검증 단계입니다.</p>
+
+    <figure>
+      <svg viewBox="0 0 620 380" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="사고 접수 처리 흐름과 단계별 담당 주체">
+        <rect x="8" y="8" width="52" height="34" rx="4" fill="#eef1f6" stroke="#9aa4b2"/>
+        <text class="s" x="34" y="30" text-anchor="middle">사용자</text>
+        <rect x="68" y="8" width="330" height="34" rx="4" fill="#ffffff" stroke="#9aa4b2"/>
+        <text class="t" x="80" y="30">사고 상황을 문장 하나로 입력</text>
+        <text class="s" x="408" y="24">“파리에서 휴대폰을</text>
+        <text class="s" x="408" y="38">소매치기당했어요”</text>
+        <line x1="233" y1="42" x2="233" y2="52" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="54" width="52" height="34" rx="4" fill="#fff9db" stroke="#c9b23f"/>
+        <text class="s" x="34" y="76" text-anchor="middle">AI</text>
+        <rect x="68" y="54" width="330" height="34" rx="4" fill="#fffdf2" stroke="#c9b23f"/>
+        <text class="t" x="80" y="76">자유서술 구조화 + 대분류(L1 8종) 판정</text>
+        <text class="s" x="408" y="70">규칙 기반 추출과 병행,</text>
+        <text class="s" x="408" y="84">실패 시 규칙 폴백</text>
+        <line x1="233" y1="88" x2="233" y2="98" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="100" width="52" height="34" rx="4" fill="#fff9db" stroke="#c9b23f"/>
+        <text class="s" x="34" y="122" text-anchor="middle">AI</text>
+        <rect x="68" y="100" width="330" height="34" rx="4" fill="#fffdf2" stroke="#c9b23f"/>
+        <text class="t" x="80" y="122">1단계 확인 질문 생성 → 사용자 응답</text>
+        <text class="s" x="408" y="116">담보 판단에 쓰이는</text>
+        <text class="s" x="408" y="130">필드명을 강제</text>
+        <line x1="233" y1="134" x2="233" y2="144" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="146" width="52" height="34" rx="4" fill="#fff9db" stroke="#c9b23f"/>
+        <text class="s" x="34" y="168" text-anchor="middle">AI</text>
+        <rect x="68" y="146" width="330" height="34" rx="4" fill="#fffdf2" stroke="#c9b23f"/>
+        <text class="t" x="80" y="168">답변을 반영해 세부유형(L2 31종) 재분류</text>
+        <text class="s" x="408" y="162">확신이 낮으면 추정하지</text>
+        <text class="s" x="408" y="176">않고 대분류에 보류</text>
+        <line x1="233" y1="180" x2="233" y2="190" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="192" width="52" height="34" rx="4" fill="#fff9db" stroke="#c9b23f"/>
+        <text class="s" x="34" y="214" text-anchor="middle">AI</text>
+        <rect x="68" y="192" width="330" height="34" rx="4" fill="#fffdf2" stroke="#c9b23f"/>
+        <text class="t" x="80" y="214">2단계 확인 질문 생성 → 사용자 응답</text>
+        <text class="s" x="408" y="208">앞 단계에서 이미 물은</text>
+        <text class="s" x="408" y="222">항목은 다시 묻지 않음</text>
+        <line x1="233" y1="226" x2="233" y2="236" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="238" width="52" height="34" rx="4" fill="#dbe6f7" stroke="#1f4e9c"/>
+        <text class="s" x="34" y="260" text-anchor="middle">규칙</text>
+        <rect x="68" y="238" width="330" height="34" rx="4" fill="#f4f7fc" stroke="#1f4e9c"/>
+        <text class="t" x="80" y="260">담보·조항 매칭 (직접 / 조건부 / 면책)</text>
+        <text class="s" x="408" y="254">사용자가 등록한 담보와의</text>
+        <text class="s" x="408" y="268">교집합만 추림</text>
+        <line x1="233" y1="272" x2="233" y2="282" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="284" width="52" height="34" rx="4" fill="#dbe6f7" stroke="#1f4e9c"/>
+        <text class="s" x="34" y="306" text-anchor="middle">규칙</text>
+        <rect x="68" y="284" width="330" height="34" rx="4" fill="#f4f7fc" stroke="#1f4e9c"/>
+        <text class="t" x="80" y="306">면책 우선 판정 + 수치조건·필요서류 결합</text>
+        <text class="s" x="408" y="298">사고 활동이 면책 원문에</text>
+        <text class="s" x="408" y="312">있으면 면책을 우선 표시</text>
+        <line x1="233" y1="318" x2="233" y2="328" stroke="#4a4a4a" stroke-width="1.3" marker-end="url(#ar)"/>
+
+        <rect x="8" y="330" width="52" height="34" rx="4" fill="#e7f2e9" stroke="#7fae8b"/>
+        <text class="g" x="34" y="352" text-anchor="middle">검증</text>
+        <rect x="68" y="330" width="330" height="34" rx="4" fill="#f2f9f4" stroke="#7fae8b"/>
+        <text class="t" x="80" y="352">결과 표시 — 조항 원문·조 번호·쪽수 인용</text>
+        <text class="s" x="408" y="344">부분 문자열 검증을 통과한</text>
+        <text class="s" x="408" y="358">인용만 화면에 나감</text>
+      </svg>
+      <figcaption>[그림 4] 사고 접수 처리 흐름 — 노랑=생성형 AI, 파랑=결정적 규칙, 초록=근거 검증</figcaption>
+    </figure>
+
+    <p class="sub">C. 여행 중 — 현지에서 서류 챙기기</p>
+    <p class="step">① 홈에서 <span class="kw">‘해외 서류 챙기기’</span> 선택 → ② 등록한 여행이 있으면 그 여행 기준으로 바로
+    표시되고, 없으면 나라를 고름(등록한 여행이 있어도 <span class="kw">나라를 직접 골라 언제든 바꿀 수 있음</span>) →
+    ③ 무슨 일이 있었는지 사고유형 선택 → ④ <span class="kw">귀국하면 못 받는 서류</span>가 먼저, 귀국 후에도 준비할 수 있는
+    서류가 나중에 표시됨 → ⑤ 현지어·한국어 병기 서류 요청 카드를 병원·경찰서 창구에 그대로 보여줌 →
+    ⑥ <span class="kw">HTML 파일 또는 이미지로 저장</span>해 통신이 끊긴 상태에서도 열람</p>
+
+    <p>C 흐름은 다른 두 흐름과 사용 환경이 다릅니다. 사용자는 앉아서 화면을 읽는 것이 아니라 창구 앞에 서 있고,
+    한 손으로 휴대폰을 들고 있으며, 종종 그 휴대폰을 직원에게 건네야 합니다. 그래서 이 화면은 <span class="kw">글을 읽게 하는
+    대신 보여 주게</span> 만들었습니다. 현지어 문장을 위에 크게, 한국어를 그 아래 작게 배치해 직원이 먼저 읽고 사용자가 뒤이어
+    확인할 수 있게 했고, 근거 조항 인용문은 번역하지 않고 한국어 원문 그대로 남겨 두었습니다. 인용은 사용자가 확인해야 할
+    근거이지 창구에 보여 줄 문장이 아니기 때문입니다.</p>
+
+    <p>또한 이 화면은 등록한 여행이 있어도 <span class="kw">나라 선택을 잠그지 않습니다.</span> 경유지에 들렀거나 예전 여행 기록이
+    남아 있는 경우가 있어서, 여행이 등록돼 있다는 이유로 나라를 고정하면 정작 지금 서 있는 나라의 서류를 볼 방법이 없어지기
+    때문입니다. 나라를 바꾸면 그 나라 기준으로 서류와 문구가 다시 만들어지고, 등록한 여행 기준으로 되돌리는 버튼도 함께
+    표시됩니다.</p>
+  </div>
+</section>
+
+<section>
+  <h2>4. AI 및 데이터 처리 방식*</h2>
+  <div class="body">
+    <p class="sub">(1) AI가 수행하는 역할과 입력·출력</p>
+
+    <p>생성형 AI는 일곱 개 지점에 적용되어 있습니다. 각 지점에서 AI가 받는 입력과 내놓는 출력, 그리고 그 출력에
+    걸어 둔 근거 통제 장치는 아래와 같습니다. 표의 마지막 열이 이 서비스의 핵심입니다. AI의 출력은 그대로 화면에
+    나가지 않고, 반드시 한 번 걸러집니다.</p>
+
+    <table class="tbl">
+      <caption>[표 2] 생성형 AI 적용 지점별 입력·출력·근거 통제</caption>
+      <tr><th style="width:22%">적용 지점</th><th style="width:27%">입력</th><th style="width:25%">출력</th><th style="width:26%">근거 통제</th></tr>
+      <tr><td>사고 자유서술 구조화</td><td>사고 서술 문장</td><td>부위·진단·입원·수술·의료비 등 구조화 필드와 신뢰도</td><td>신뢰도가 임계치에 못 미치면 사용자에게 다시 확인</td></tr>
+      <tr><td>사고유형 분류(2단계)</td><td>사고 서술, 확인 질문 답변, 세부유형 후보 목록</td><td>대분류 코드 → 세부유형 코드와 신뢰도</td><td>확신이 낮으면 세부유형을 추정하지 않고 대분류에 보류</td></tr>
+      <tr><td>확인 질문 생성(2단계)</td><td>사고 서술, 이미 확보된 값, 1단계 답변, 세부유형 후보</td><td>질문 3~6개(질문문·대상 필드·답변 형태·중요도)</td><td>담보 판단에 쓰이는 필드명을 강제하고, 앞 단계에서 물은 항목은 제외</td></tr>
+      <tr><td>조항·서류 설명</td><td>약관 조항 원문, 이번 사고의 맥락</td><td>쉬운 말로 풀어 쓴 설명 문장</td><td>설명이 실패해도 기본 문구로 대체되어 흐름이 끊기지 않음</td></tr>
+      <tr><td>약관 형광펜</td><td>조항 원문, 사고 맥락</td><td>하이라이트할 구간</td><td><span class="kw">원문 부분 문자열 검증을 통과한 경우에만 표시</span></td></tr>
+      <tr><td>보험사 순위 보조 점수</td><td>약관 근거 축, 등급별 보장금액, 여행 정보</td><td>보험사별 0~100 점수와 이유 문장</td><td>최종 점수의 20%만 반영하고, 실패 시 수식 점수만으로 동작</td></tr>
+      <tr><td>현지어 서류 요청문</td><td>목적지 언어, 필요 서류 목록</td><td>현지어·한국어 병기 요청 문구</td><td>서류 목록 자체는 약관 기반 결정적 매핑에서 나옴</td></tr>
+    </table>
+
+    <p>보상 여부의 최종 판정, 금액 산정, 약관에 없는 사실의 생성은 <span class="kw">AI가 하지 않습니다.</span>
+    이 셋은 결정적 규칙과 약관 원문이 담당합니다. 보험사 순위 역시 R로 산출한 가중치 모델이 80%를 차지하므로
+    <span class="kw">같은 입력에는 항상 같은 결과</span>가 나옵니다.</p>
+
+    <p>AI 호출이 실패하거나 응답이 규격에 맞지 않을 때 어떻게 되는지도 명세의 일부입니다. 일곱 개 지점에는 각각
+    <span class="kw">규칙 기반 대체 경로</span>가 준비되어 있습니다. 자유서술 구조화는 키워드·패턴 매칭으로 대체되고,
+    사고유형 분류는 키워드 사전으로 대분류까지만 판정하며, 확인 질문은 대분류별로 미리 마련해 둔 질문 세트를 사용합니다.
+    조항 설명은 기본 문구로 대체되고, 형광펜은 하이라이트 없이 조항 원문만 표시하며, 순위는 결정적 점수만으로 계산됩니다.
+    현지어 문구는 국가별로 저장해 둔 표준 문구를 사용합니다. 이 경우 세부 분류 정확도와 설명의 자연스러움은 낮아지지만,
+    <span class="kw">사용자가 받는 근거의 정확성은 달라지지 않습니다.</span> 근거는 애초에 AI가 아니라 지식베이스에서 나오기
+    때문입니다.</p>
+
+    <p>신뢰도 임계치를 둔 이유도 같은 맥락입니다. AI가 낮은 확신으로 내놓은 세부 분류를 그대로 받아들이면, 잘못된 조항이
+    불려 나오고 사용자는 그것을 근거로 잘못된 행동을 하게 됩니다. 그래서 임계치에 못 미치면 서비스는 세부유형을 비워 둔 채
+    <span class="kw">대분류 수준의 안내</span>만 하거나, 사용자에게 한 번 더 확인을 요청합니다. 덜 구체적인 답을 주는 것이
+    틀린 답을 주는 것보다 낫다는 판단이며, 이 판단은 금융 영역에서 특히 중요하다고 보았습니다.</p>
+
+    <p class="sub">(2) 사용 데이터</p>
+
+    <table class="tbl">
+      <caption>[표 3] 사용 데이터와 성격</caption>
+      <tr><th style="width:22%">구분</th><th>내용</th><th style="width:22%">성격</th></tr>
+      <tr>
+        <td>약관 지식베이스</td>
+        <td>7개사 공개 약관 PDF에서 정제한 조항·담보·사고유형 매핑·수치조건·필요서류(1항 [그림 2] 수치 참조). 서비스가 제시하는 모든 근거가 여기에서 나온다</td>
+        <td>공개 자료 기반 · 저장소에 포함</td>
+      </tr>
+      <tr>
+        <td>등급별 보장금액 · 실제 보험료</td>
+        <td>각 사 공시 자료 및 다이렉트 계산기에서 직접 조회. 출처·URL·수집일·산출 전제를 행 단위로 저장한다</td>
+        <td>공개 자료 기반 · 출처 대장 관리</td>
+      </tr>
+      <tr>
+        <td>보조 데이터</td>
+        <td>표준약관, 외교부 여행경보, 손해보험협회 공시, 항공 지연 통계, 국가·언어 매핑</td>
+        <td>공공·협회 공개 자료</td>
+      </tr>
+      <tr>
+        <td>사용자 입력 데이터</td>
+        <td>여행 정보(목적지·기간·동행·활동), 사고 서술과 확인 질문 답변, 보유 보험 종류</td>
+        <td>사용자가 직접 입력 · 삭제 가능</td>
+      </tr>
+    </table>
+
+    <p class="sub">(3) 개인정보·민감정보 처리 여부</p>
+
+    <p>서비스는 <span class="kw">로그인 없이도 전 기능을 사용할 수 있으므로</span>, 개인정보를 전혀 남기지 않고 이용하는 것이
+    가능합니다. 로그인을 선택한 경우에도 저장하는 항목은 최소한으로 제한했습니다.</p>
+
+    <ul>
+      <li><span class="kw">수집 항목</span> — 닉네임, 나이, 성별, 이메일(소셜 로그인 시 제공자에서 전달), 소셜 로그인 식별자,
+      그리고 사용자가 직접 입력한 여행·사고·보유 보험 정보.</li>
+      <li><span class="kw">수집하지 않는 항목</span> — 주민등록번호, 계좌·카드번호, 실제 증권번호, 의료기록 원본 등
+      <span class="kw">민감정보는 수집하지 않습니다.</span> 서류 사진 업로드는 형식 점검용으로만 쓰이며 외부로 전송하지 않습니다.</li>
+      <li><span class="kw">외부 전송</span> — 생성형 AI를 호출할 때는 사고 서술·답변·약관 조항 등
+      <span class="kw">판단에 필요한 텍스트만</span> 전달하며, 이메일이나 로그인 식별자 같은 계정 정보는 전달하지 않습니다.</li>
+      <li><span class="kw">동의·삭제</span> — 이메일 회원가입 시 이용약관, 개인정보 수집·이용, 만 14세 이상 확인 동의를 받습니다.
+      가입 도중 이탈하면 그때까지 만들어진 계정을 삭제합니다. 계정 화면에서 여행·사고·보험 기록을 개별 삭제하거나
+      회원 탈퇴로 일괄 삭제할 수 있습니다. 게스트 데이터는 새 사고를 접수할 때 정리됩니다.</li>
+      <li><span class="kw">보안</span> — 비밀번호는 bcrypt로 해시해 저장하고, 요청 빈도 제한과 보안 HTTP 헤더를 적용했습니다.
+      소유자 검증을 거치므로 다른 사용자의 여행·사고 기록에는 접근할 수 없습니다.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>5. MVP 검증 방법*</h2>
+  <div class="body">
+    <p>검증은 “화면이 뜬다”가 아니라 <span class="kw">“근거 없이는 답하지 않는다는 원칙이 실제로 지켜지는가”</span>를
+    확인하는 방향으로 설계했습니다. 그래서 아래 세 시나리오에는 기능이 잘 동작하는 장면뿐 아니라, 서비스가 답을 만들어 내지
+    못하고 “확인불가”라고 물러서는 장면을 함께 확인하실 수 있는 절차를 넣었습니다. 셋 다 로그인 없이 진행되며, 전체를
+    이어서 확인하시는 데 <span class="kw">약 7분</span>이면 충분합니다.</p>
+
+    <p class="sub">(1) 접속 및 계정</p>
+    <ul>
+      <li>배포 URL: <span class="kw">https://travel-insurance-web.onrender.com/</span></li>
+      <li><span class="kw">별도 계정이 필요 없습니다.</span> 로그인 없이 게스트 상태로 아래 모든 기능을 그대로 확인하실 수 있습니다.
+      (로그인 동작을 확인하시려면 카카오·구글 로그인 또는 이메일 회원가입을 이용해 주세요.)</li>
+      <li><span class="kw">첫 접속 시 30~60초</span> 정도 로딩될 수 있습니다. 무료 호스팅 특성상 일정 시간 접속이 없으면
+      서버가 대기 상태로 전환되며, 첫 요청이 들어오면 다시 기동됩니다. 화면에 손글씨 로딩 애니메이션이 표시되는 동안
+      기다려 주시면 정상 진입합니다.</li>
+    </ul>
+
+    <p class="sub">(2) 확인 절차 — 시나리오 A: 맞춤 보험사 순위 (약 3분)</p>
+    <ul>
+      <li>홈 → <span class="kw">‘내 여행 준비’</span> → 목적지 <span class="kw">일본</span>, 동행 <span class="kw">혼자</span>,
+      성별·나이 <span class="kw">남 / 30</span> 입력 → 다음</li>
+      <li>여행 기간: 달력에서 <span class="kw">출발일을 누르고 이어서 도착일</span>을 누르면 두 날짜 사이가 띠로 이어집니다
+      (예: 8월 5일 → 8월 9일)</li>
+      <li>예정 활동에 <span class="kw">스키</span> 입력 → 걱정되는 사고유형에서 <span class="kw">상해·휴대품</span> 선택 →
+      비교 기준 <span class="kw">균형형</span> 선택 → <span class="kw">‘보험사 순위 확인하기’</span></li>
+      <li><span class="kw">예상 결과</span> — 7개사 순위가 나오고, 각 카드에 5개 축(고른 사고에 보장금액이 커요 /
+      약관 근거가 탄탄해요 / 보험료가 합리적이에요 / 이미 든 보험과 안 겹쳐요 / 이번 여행 위험에 맞아요)의 점수·기여도와
+      오각형 방사형 그래프(주황 점선 = 비교 대상 평균)가 표시됩니다.</li>
+      <li><span class="kw">핵심 확인 포인트</span> — 상단의 <span class="kw">실속 / 표준 / 고급</span>을 번갈아 누르면
+      <span class="kw">순위가 실제로 바뀝니다.</span> 등급 간 보장금액 차이가 큰 보험사는 순위가 오르내리고, 세 등급 금액이
+      같은 항목은 순위에 영향을 주지 않습니다. 같은 조건을 다시 선택하면 <span class="kw">항상 같은 순서</span>가 나옵니다.</li>
+    </ul>
+
+    <p class="sub">(3) 확인 절차 — 시나리오 B: 사고 접수와 약관 근거 (약 3분)</p>
+    <ul>
+      <li>홈 → <span class="kw">‘사고가 발생했어요’</span> → 청구할 보험사와 여행 선택</li>
+      <li>사고 내용에 <span class="kw">“파리에서 휴대폰을 소매치기당했어요”</span> 입력 → 다음</li>
+      <li><span class="kw">1단계 확인 질문</span>이 한 화면에 표시됩니다(예/아니오 버튼과 입력칸이 섞여 있고, 맨 아래에
+      자유 입력칸이 있습니다). 답한 뒤 계속하면 <span class="kw">2단계 질문</span>이 이어집니다. 이 질문들은 미리 만들어 둔
+      것이 아니라 입력한 사고 내용을 읽고 그 자리에서 생성된 것이므로, 다른 사고를 입력하면 질문도 달라집니다.</li>
+      <li><span class="kw">예상 결과</span> — 청구검토 담보와 함께 <span class="kw">약관 조항 원문·조 번호·쪽수</span>가
+      인용되어 표시되고, 담보별 필요 서류가 나옵니다. 조항 카드를 누르면 <span class="kw">약관 형광펜</span> 화면에서
+      관련 구간이 노란색으로 표시됩니다.</li>
+      <li><span class="kw">근거 없는 답을 내지 않는 것</span>을 확인하시려면, 등록한 보험이 다루지 않는 사고를 입력해 보세요.
+      “청구 가능”이라고 말하는 대신 <span class="kw">관련 약관을 찾지 못했다</span>고 답합니다.</li>
+      <li>다른 입력 예시: <span class="kw">“계단에서 넘어져 발목이 부러졌어요”</span>(상해),
+      <span class="kw">“항공편이 6시간 지연됐어요”</span>(운송), <span class="kw">“호텔 객실 유리를 깨뜨렸어요”</span>(배상책임)</li>
+    </ul>
+
+    <p class="sub">(4) 확인 절차 — 시나리오 C: 해외 서류 챙기기 (약 1분)</p>
+    <ul>
+      <li>홈 → <span class="kw">‘해외 서류 챙기기’</span> → 나라(예: 베트남) 선택 → 사고유형 선택 →
+      현지어·한국어 병기 서류 요청 카드 확인</li>
+      <li>등록한 여행이 있으면 그 여행 기준으로 먼저 표시되며, <span class="kw">나라를 다시 골라 언제든 바꿀 수 있습니다.</span>
+      (여행 기준으로 되돌리는 버튼도 함께 표시됩니다.)</li>
+      <li><span class="kw">예상 결과</span> — <span class="kw">귀국하면 못 받는 서류</span>가 먼저 묶여 나오고, 그 아래에
+      귀국 후에도 준비할 수 있는 서류가 표시됩니다. HTML 파일 또는 이미지로 저장할 수 있으며, 저장한 파일은
+      <span class="kw">외부 리소스를 참조하지 않아</span> 통신이 끊긴 상태에서도 열립니다.</li>
+    </ul>
+
+    <p class="sub">(5) 실행 환경 · 브라우저</p>
+    <ul>
+      <li>최신 <span class="kw">Chrome / Edge / Safari</span>(데스크톱·모바일)에서 동작을 확인했습니다.
+      별도 설치나 확장 프로그램이 필요 없습니다.</li>
+      <li>데스크톱과 모바일 화면 폭에 모두 대응합니다(달력은 넓은 화면에서 2단, 좁은 화면에서 하단 시트로 표시됩니다).</li>
+      <li>라이트·다크 테마를 지원하며, 기기 설정을 따라가거나 화면 좌측 상단에서 직접 전환할 수 있습니다.</li>
+      <li>Internet Explorer는 지원하지 않습니다.</li>
+    </ul>
+
+    <p class="sub">(6) MVP 단계의 제한사항</p>
+
+    <p>아래는 현재 단계에서 채우지 못한 부분입니다. 서비스의 원칙상 이런 자리를 추정으로 메우지 않고,
+    <span class="kw">비어 있다는 사실을 화면에도 그대로 밝힙니다.</span></p>
+
+    <table class="tbl">
+      <caption>[표 4] MVP 단계의 제한사항과 서비스의 대응</caption>
+      <tr><th style="width:30%">제한사항</th><th>서비스의 대응</th></tr>
+      <tr>
+        <td>정보 제공에 한정 — 실제 보험 가입·청구 접수는 수행하지 않음</td>
+        <td>최종 보상 여부는 보험사 심사에 따른다는 점을 화면에 명시한다</td>
+      </tr>
+      <tr>
+        <td>비교 대상이 7개 손해보험사의 여행자보험으로 한정됨</td>
+        <td>비교 화면에 대상 보험사를 명시하고, 확장은 로드맵 Phase 1로 계획되어 있다</td>
+      </tr>
+      <tr>
+        <td>카카오페이손해보험의 배상책임·운송·여행변경 조항이 확보한 약관 원문에 수록되어 있지 않음</td>
+        <td>해당 담보의 근거 조항을 제시하지 않고, 지어내지 않는다</td>
+      </tr>
+      <tr>
+        <td>보험사마다 가입연령이 달라, 어떤 나이에서는 일부 보험사의 보험료를 조회할 수 없음
+        (KB손해보험·DB손해보험·메리츠화재는 만 19세부터, 현대해상은 만 78세까지)</td>
+        <td>순위에서 그 보험사의 보험료 축을 제외하고 나머지 축으로 재정규화한다(자료가 없다는 이유로
+        불리해지지 않도록 설계). 보험료 비교 화면에서는 <span class="kw">“가입연령 범위 밖”과 “아직 자료를
+        확보하지 못함”을 서로 다른 문구로</span> 구분해 표시한다</td>
+      </tr>
+      <tr>
+        <td>무료 호스팅 사용 — 첫 접속 대기, 재배포 시 사용자 데이터 초기화 가능</td>
+        <td>이용 중 생성된 계정·여행·사고 기록은 초기화될 수 있으나,
+        <span class="kw">약관 지식베이스는 저장소에 포함되어 항상 동일하게 유지</span>된다</td>
+      </tr>
+      <tr>
+        <td>생성형 AI 호출이 일시적으로 실패할 수 있음</td>
+        <td>지점마다 준비된 규칙 기반 대체 경로로 동작한다. 이때도 근거 없는 답은 나가지 않으며,
+        세부 분류 정확도와 설명 품질만 낮아진다</td>
+      </tr>
+    </table>
+
+    <p class="sub">(7) 자동화 검증</p>
+
+    <p>기능이 “동작한다”는 주장을 사람이 매번 눌러 보며 확인하지 않도록, 핵심 규칙은 모두 테스트로 고정했습니다.
+    백엔드 자동화 테스트 <span class="kw">274건</span>이 통과하며, 그 안에는 다음이 포함됩니다.</p>
+
+    <ul>
+      <li><span class="kw">인용 검증</span> — AI가 만든 인용문이 조항 원문의 부분 문자열인지 확인하는 규칙</li>
+      <li><span class="kw">데이터 무결성</span> — 담보–서류 연결률, 조항–사고유형 매핑의 누락 여부, 출처 정보의 존재 여부</li>
+      <li><span class="kw">순위 재현성</span> — 같은 입력에 대해 항상 같은 순서와 같은 축 점수가 나오는지</li>
+      <li><span class="kw">결측 처리</span> — 자료가 없는 축을 0점으로 세지 않고 재정규화하는지, 화면에 “자료 없음”이 표시되는지</li>
+    </ul>
+
+    <p>이 테스트들이 있기 때문에, 이후 누가 코드를 수정하더라도 “근거 없는 결과를 내지 않는다”는 원칙이 깨지면
+    즉시 드러납니다. 원칙을 문서가 아니라 <span class="kw">실행 가능한 형태</span>로 남겨 둔 것이 이 MVP의 마지막 구성 요소입니다.</p>
+  </div>
+</section>

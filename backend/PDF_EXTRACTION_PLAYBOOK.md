@@ -1,5 +1,12 @@
 # PDF 조항 추출 공통 지침 (임시 작업 문서 — 6개사 전체 딥다이브용)
 
+> **2026-08-18 갱신**: 이 문서가 가리키는 원본 PDF와 `seed_*_full_chunk*.py` 등은
+> 전면 재구축으로 교체·삭제됐다. 현재 원본은 `backend/data/raw_pdfs/`(162~326쪽,
+> 카카오는 3파일 통합), 시드는 `seed_<insurer>_2026_<a|b|c...>.py`다. 설계 배경은
+> `docs/superpowers/specs/2026-08-18-terms-rebuild-2026-design.md`, 최신 출처는
+> `docs/compliance/source_register.md` 참고. 아래 grounding 원칙(지어내지 마라,
+> 빠짐없이 넣어라, 표 라벨만 지워라)은 그대로 유효하다.
+
 여행자보험 청구 도우미 서비스. 6개 보험사 약관을 DB(backend/data/app.db, SQLite)에 시딩하고
 incident_type(사고유형, backend/app/seed_incident_types.py의 L1 8개+L2)으로 조항을 매핑한다.
 삼성화재는 이미 252쪽 전체를 다 읽고 분류 완료(21개 담보, 68개 조항). 이제 같은 방식으로

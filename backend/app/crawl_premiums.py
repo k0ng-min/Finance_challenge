@@ -31,6 +31,7 @@ TIMEOUT = 40.0
 MAX_RETRY = 3
 
 # 보험료 산출 전제 — 페이지 상단 "가입 기준"에 명시된 문구를 그대로 옮긴다.
+PREMIUM_PERIOD_DAYS = 7
 PREMIUM_BASIS = "상해1급(사무직 종사자 등) / 보험기간 7일 / 일시납, 표준보장 담보 기준"
 
 # 보험다모아 표기명 → 이 프로젝트 DB의 insurer.code
@@ -129,6 +130,7 @@ def crawl(ages: list[int], sexes: list[str], out_path: Path) -> dict:
         "source": "보험다모아(손해보험협회 온라인 보험슈퍼마켓)",
         "source_url": LIST_REFERER,
         "collected_at": date.today().isoformat(),
+        "premium_period_days": PREMIUM_PERIOD_DAYS,
         "premium_basis": PREMIUM_BASIS,
         "note": ("표준보장 담보 기준 예시 보험료로, 실제 가입조건(여행지·기간·담보 구성)에 따라 "
                  "달라질 수 있습니다. 목록에 나오지 않는 나이는 해당 상품의 가입연령 범위 밖입니다."),

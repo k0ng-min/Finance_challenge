@@ -16,7 +16,9 @@ export function InsurerPicker({ value, onChange }: InsurerPickerProps) {
             key={ins.code}
             type="button"
             className={`insurer-card${active ? " insurer-card--active" : ""}`}
-            onClick={() => onChange(ins.name)}
+            // 고른 보험사를 다시 누르면 선택이 풀린다 — 이 칸은 "모르면 비워두세요"인데
+            // 한 번 누르면 비울 방법이 없어서 창을 닫았다 다시 열어야 했다.
+            onClick={() => onChange(active ? "" : ins.name)}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}

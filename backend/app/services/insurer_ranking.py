@@ -31,15 +31,26 @@ from app.models.kb import (
     PolicyVersion,
     Product,
 )
+# NOTE: kb_provenance.ranking_eligible_insurer_codes()는 아직 여기서 쓰지 않는다.
+# 처음 이 주석을 달 때는 출처 검증이 끝난 곳이 6개사 중 3곳뿐이라 필터를 걸면 비교
+# 대상이 절반으로 줄었다. 2026-08-18 재구축과 2026-08-25 신한 추가를 거치며 지금은
+# 7개사 전부 VERIFIED_ISSUED_FILE(ranking_eligible=True)이라 걸어도 빠지는 곳이 없다.
+# 그래도 켜지 않는 이유는 달라졌다 — 지금 켜면 아무 효과가 없고, 나중에 검증이 덜 끝난
+# 보험사가 들어오는 순간 화면에서 조용히 사라지는 변화가 되기 때문이다. 그때는 빠진
+# 사유를 함께 보여줄지(_drop_insurers_without_plan처럼) 먼저 정해야 한다.
 
 
 _L1_CODES = {"INJ", "ILL", "PROP", "LIA", "TRV", "CHG", "EMG", "SPC"}
 _DIMENSION_ORDER = ("coverage_fit", "condition_clarity", "claim_simplicity", "restrictions")
+# 화면에 그대로 나가는 문구다. 네 축 모두 "단계가 높을수록 사용자에게 유리"하게 계산되므로
+# (restrictions는 1-제한비율, claim_simplicity는 필수서류 수의 부호를 뒤집은 값), 라벨도
+# 유리한 방향을 그대로 읽어주는 말로 쓴다 — "제한조건 5단계"처럼 좋은 건지 나쁜 건지
+# 되짚어야 하는 표현을 쓰지 않는다.
 _DIMENSION_LABELS = {
-    "coverage_fit": "관심사고 보장",
-    "condition_clarity": "조건 명확성",
-    "claim_simplicity": "청구 편의",
-    "restrictions": "제한조건",
+    "coverage_fit": "걱정한 사고를 챙겨줘요",
+    "condition_clarity": "조건이 숫자로 또렷해요",
+    "claim_simplicity": "청구가 간단해요",
+    "restrictions": "막히는 조건이 적어요",
 }
 
 
@@ -356,8 +367,10 @@ def rank_insurers(db: Session, tier_code: str, trip_context: dict | None = None)
     ranking: list[dict] = []
     for index, evaluation in enumerate(evaluations, start=1):
         dimensions = [evaluation.dimensions[code].as_dict() for code in _DIMENSION_ORDER]
+        # 라벨이 이미 "~해요"로 끝나는 문장이라 등급을 뒤에 붙이면 말이 어색해진다.
+        # 가장 잘하는 축만 부사로 세기를 구분해 강점 한 줄로 쓴다(단계 자체는 막대로 보여준다).
         tags = [
-            f"{dimension['label']} {dimension['status']}"
+            f"{'특히 ' if dimension['level'] == 5 else ''}{dimension['label']}"
             for dimension in dimensions
             if dimension["level"] >= 4
         ]

@@ -1,0 +1,369 @@
+{
+  "source": "한국공항공사_보험사용 항공기 출도착 지연 시간 대용량 학습 데이터_20250531",
+  "source_url": "https://www.data.go.kr/data/15152006/fileData.do",
+  "source_type": "OFFICIAL_CSV",
+  "collected_at": "2026-08-12",
+  "sha256": "0c050c7634a6c5bb367b8df4ec208da8c354316cf911168dc32fcc75bac1006a",
+  "coverage_period": "2017-01 ~ 2025-05",
+  "scope_note": "인천국제공항을 제외한 전국공항(한국공항공사 운영) 기준. 원본에 '지연' 판정 기준(예: 몇 분 이상 지연을 지연으로 집계하는지)과 총 운항편수가 포함돼 있지 않아 '지연 발생 확률(%)'은 계산할 수 없다 — 지연 건수·평균 지연시간 등 규모만 제공한다. 약관의 지연기준시간과 나란히 보여줄 때 확률·발동 가능성을 주장하지 않고 크기 비교(예: '평균 지연시간이 이 정도였다')까지만 쓴다.",
+  "overall_by_kind_direction": [
+    {
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 158750,
+      "total_delay_minutes": 7064877,
+      "avg_delay_minutes": 44.5,
+      "passengers_affected": 27797442
+    },
+    {
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 249662,
+      "total_delay_minutes": 11253028,
+      "avg_delay_minutes": 45.1,
+      "passengers_affected": 44326003
+    },
+    {
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 25713,
+      "total_delay_minutes": 1566228,
+      "avg_delay_minutes": 60.9,
+      "passengers_affected": 4368618
+    },
+    {
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 23752,
+      "total_delay_minutes": 1483231,
+      "avg_delay_minutes": 62.4,
+      "passengers_affected": 3978699
+    }
+  ],
+  "yearly": [
+    {
+      "year": 2017,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 12548,
+      "total_delay_minutes": 724409,
+      "avg_delay_minutes": 57.7,
+      "passengers_affected": 2193714
+    },
+    {
+      "year": 2017,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 33079,
+      "total_delay_minutes": 1664222,
+      "avg_delay_minutes": 50.3,
+      "passengers_affected": 5855441
+    },
+    {
+      "year": 2017,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 1382,
+      "total_delay_minutes": 160764,
+      "avg_delay_minutes": 116.3,
+      "passengers_affected": 205339
+    },
+    {
+      "year": 2017,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 1544,
+      "total_delay_minutes": 174008,
+      "avg_delay_minutes": 112.7,
+      "passengers_affected": 244110
+    },
+    {
+      "year": 2018,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 14665,
+      "total_delay_minutes": 889866,
+      "avg_delay_minutes": 60.7,
+      "passengers_affected": 2556969
+    },
+    {
+      "year": 2018,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 36018,
+      "total_delay_minutes": 1903081,
+      "avg_delay_minutes": 52.8,
+      "passengers_affected": 6385785
+    },
+    {
+      "year": 2018,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 1654,
+      "total_delay_minutes": 211530,
+      "avg_delay_minutes": 127.9,
+      "passengers_affected": 267464
+    },
+    {
+      "year": 2018,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 1973,
+      "total_delay_minutes": 229880,
+      "avg_delay_minutes": 116.5,
+      "passengers_affected": 326368
+    },
+    {
+      "year": 2019,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 11932,
+      "total_delay_minutes": 662568,
+      "avg_delay_minutes": 55.5,
+      "passengers_affected": 2142427
+    },
+    {
+      "year": 2019,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 32066,
+      "total_delay_minutes": 1601746,
+      "avg_delay_minutes": 50.0,
+      "passengers_affected": 5855143
+    },
+    {
+      "year": 2019,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 1640,
+      "total_delay_minutes": 209478,
+      "avg_delay_minutes": 127.7,
+      "passengers_affected": 257484
+    },
+    {
+      "year": 2019,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 1980,
+      "total_delay_minutes": 224144,
+      "avg_delay_minutes": 113.2,
+      "passengers_affected": 318433
+    },
+    {
+      "year": 2020,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 3303,
+      "total_delay_minutes": 196341,
+      "avg_delay_minutes": 59.4,
+      "passengers_affected": 550048
+    },
+    {
+      "year": 2020,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 9879,
+      "total_delay_minutes": 489808,
+      "avg_delay_minutes": 49.6,
+      "passengers_affected": 1694934
+    },
+    {
+      "year": 2020,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 174,
+      "total_delay_minutes": 21793,
+      "avg_delay_minutes": 125.2,
+      "passengers_affected": 21672
+    },
+    {
+      "year": 2020,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 235,
+      "total_delay_minutes": 29055,
+      "avg_delay_minutes": 123.6,
+      "passengers_affected": 34798
+    },
+    {
+      "year": 2021,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 6717,
+      "total_delay_minutes": 424474,
+      "avg_delay_minutes": 63.2,
+      "passengers_affected": 1100995
+    },
+    {
+      "year": 2021,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 19571,
+      "total_delay_minutes": 983366,
+      "avg_delay_minutes": 50.2,
+      "passengers_affected": 3358839
+    },
+    {
+      "year": 2021,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 4,
+      "total_delay_minutes": 317,
+      "avg_delay_minutes": 79.2,
+      "passengers_affected": 472
+    },
+    {
+      "year": 2021,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 9,
+      "total_delay_minutes": 948,
+      "avg_delay_minutes": 105.3,
+      "passengers_affected": 1051
+    },
+    {
+      "year": 2022,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 7466,
+      "total_delay_minutes": 409457,
+      "avg_delay_minutes": 54.8,
+      "passengers_affected": 1353867
+    },
+    {
+      "year": 2022,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 24162,
+      "total_delay_minutes": 1142631,
+      "avg_delay_minutes": 47.3,
+      "passengers_affected": 4462290
+    },
+    {
+      "year": 2022,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 106,
+      "total_delay_minutes": 14588,
+      "avg_delay_minutes": 137.6,
+      "passengers_affected": 14833
+    },
+    {
+      "year": 2022,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 115,
+      "total_delay_minutes": 13398,
+      "avg_delay_minutes": 116.5,
+      "passengers_affected": 16190
+    },
+    {
+      "year": 2023,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 46103,
+      "total_delay_minutes": 1702051,
+      "avg_delay_minutes": 36.9,
+      "passengers_affected": 8146331
+    },
+    {
+      "year": 2023,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 42239,
+      "total_delay_minutes": 1549722,
+      "avg_delay_minutes": 36.7,
+      "passengers_affected": 7503394
+    },
+    {
+      "year": 2023,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 6382,
+      "total_delay_minutes": 295142,
+      "avg_delay_minutes": 46.2,
+      "passengers_affected": 1098907
+    },
+    {
+      "year": 2023,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 5501,
+      "total_delay_minutes": 251322,
+      "avg_delay_minutes": 45.7,
+      "passengers_affected": 931678
+    },
+    {
+      "year": 2024,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 42253,
+      "total_delay_minutes": 1545267,
+      "avg_delay_minutes": 36.6,
+      "passengers_affected": 7406574
+    },
+    {
+      "year": 2024,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 39118,
+      "total_delay_minutes": 1423669,
+      "avg_delay_minutes": 36.4,
+      "passengers_affected": 6883402
+    },
+    {
+      "year": 2024,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 10156,
+      "total_delay_minutes": 470787,
+      "avg_delay_minutes": 46.4,
+      "passengers_affected": 1757506
+    },
+    {
+      "year": 2024,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 8939,
+      "total_delay_minutes": 396186,
+      "avg_delay_minutes": 44.3,
+      "passengers_affected": 1526778
+    },
+    {
+      "year": 2025,
+      "kind": "국내",
+      "direction": "도착",
+      "delayed_flights": 13763,
+      "total_delay_minutes": 510444,
+      "avg_delay_minutes": 37.1,
+      "passengers_affected": 2346517
+    },
+    {
+      "year": 2025,
+      "kind": "국내",
+      "direction": "출발",
+      "delayed_flights": 13530,
+      "total_delay_minutes": 494783,
+      "avg_delay_minutes": 36.6,
+      "passengers_affected": 2326775
+    },
+    {
+      "year": 2025,
+      "kind": "국제",
+      "direction": "도착",
+      "delayed_flights": 4215,
+      "total_delay_minutes": 181829,
+      "avg_delay_minutes": 43.1,
+      "passengers_affected": 744941
+    },
+    {
+      "year": 2025,
+      "kind": "국제",
+      "direction": "출발",
+      "delayed_flights": 3456,
+      "total_delay_minutes": 164290,
+      "avg_delay_minutes": 47.5,
+      "passengers_affected": 579293
+    }
+  ]
+}

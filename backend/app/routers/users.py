@@ -1,12 +1,14 @@
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.user import AppUser, Trip, Incident
+from app.models.user import AppUser, Trip, Incident, UserPremiumWatchlist
+from app.limiter import limiter
 from app.routers.auth import get_current_user_optional, verify_owner
+from app.services.auth import issue_session
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -18,9 +20,9 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     user_id: int
     nickname: str
-
-    class Config:
-        from_attributes = True
+    # 게스트도 이 토큰으로 본인을 증명한다. 예전에는 토큰 없이 user_id만으로 조회가 돼서,
+    # 순차 정수인 user_id를 훑으면 남의 여행·보험·사고를 전부 볼 수 있었다.
+    token: str
 
 
 class TripSummaryOut(BaseModel):
@@ -42,14 +44,28 @@ class IncidentSummaryOut(BaseModel):
     linked_insurer_name: str | None = None
 
 
+class PremiumWatchlistIn(BaseModel):
+    insurer_codes: list[str]
+
+
+class PremiumWatchlistOut(BaseModel):
+    insurer_codes: list[str]
+
+
 @router.post("", response_model=UserOut)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)):
-    """개인정보 최소수집 원칙(ne.md 14)에 따라 닉네임만 받는다."""
+@limiter.limit("30/hour")
+def create_user(request: Request, payload: UserCreate, db: Session = Depends(get_db)):
+    """개인정보 최소수집 원칙에 따라 닉네임만 받는다.
+
+    세션 토큰을 함께 발급한다 — 게스트도 본인 데이터를 다시 꺼내려면 소유권을 증명해야
+    하기 때문이다. 계정을 무제한으로 찍어내지 못하도록 생성 자체에도 한도를 둔다.
+    """
     user = AppUser(nickname=payload.nickname)
+    token = issue_session(user)
     db.add(user)
     db.commit()
     db.refresh(user)
-    return user
+    return UserOut(user_id=user.user_id, nickname=user.nickname, token=token)
 
 
 @router.get("/{user_id}/trips", response_model=list[TripSummaryOut])
@@ -116,3 +132,41 @@ def list_incidents(
             linked_insurer_name=linked_insurer_name,
         ))
     return out
+
+
+@router.get("/{user_id}/premium-watchlist", response_model=PremiumWatchlistOut)
+def get_premium_watchlist(
+    user_id: int, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """보험료 비교(PremiumCalc)에서 담아 둔 보험사 목록("비교함"). 게스트는 서버에 저장하지
+    않으므로(로그인해야만 나중에 다시 찾을 수 있다) 로그인 계정만 부를 수 있다."""
+    verify_owner(user_id, current)
+    rows = (
+        db.query(UserPremiumWatchlist)
+        .filter(UserPremiumWatchlist.user_id == user_id)
+        .all()
+    )
+    return PremiumWatchlistOut(insurer_codes=[r.insurer_code for r in rows])
+
+
+@router.put("/{user_id}/premium-watchlist", response_model=PremiumWatchlistOut)
+def set_premium_watchlist(
+    user_id: int, payload: PremiumWatchlistIn, db: Session = Depends(get_db),
+    current: AppUser | None = Depends(get_current_user_optional),
+):
+    """비교함 전체를 통째로 갈아끼운다(추가/삭제를 화면에서 미리 합친 최종 목록을 그대로
+    받는다) — 항목 하나하나를 추가/삭제 API로 나누면 화면 쪽 상태와 서버 쪽 상태가
+    어긋날 여지가 생긴다."""
+    verify_owner(user_id, current)
+    db.query(UserPremiumWatchlist).filter(UserPremiumWatchlist.user_id == user_id) \
+        .delete(synchronize_session=False)
+    seen: set[str] = set()
+    for code in payload.insurer_codes:
+        code = code.upper().strip()
+        if not code or code in seen:
+            continue
+        seen.add(code)
+        db.add(UserPremiumWatchlist(user_id=user_id, insurer_code=code))
+    db.commit()
+    return PremiumWatchlistOut(insurer_codes=sorted(seen))

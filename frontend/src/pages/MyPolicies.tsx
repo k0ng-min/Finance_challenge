@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { api, type UserPolicyOut, type ExternalPolicyOut, type OverlapReportOut } from "../api";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { api, type UserPolicyOut, type ExternalPolicyOut, type OverlapReportOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { Icon3D } from "../components/Icon3D";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { InsurerPicker } from "../components/InsurerPicker";
+import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
 import { DateTimeField } from "../components/DateTimeField";
 import { ExternalPolicyPicker, KIND_LABELS, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { OverlapReportView } from "../components/OverlapReport";
@@ -38,6 +39,7 @@ function PolicyCard({
             ›
           </span>
           <strong>{shortInsurerName(policy.matched_insurer_code, policy.matched_insurer_name ?? policy.insurer_name_raw)} 여행자보험</strong>
+          {policy.plan_name && <span className="policy-card__plan">{policy.plan_name}</span>}
         </button>
         <button type="button" className="history-card__delete" title="삭제" onClick={onDelete}>
           🗑
@@ -77,7 +79,8 @@ function PolicyCard({
 }
 
 export function MyPolicies() {
-  const { userId, isLoggedIn, age: profileAge, updateAge } = useApp();
+  const { userId, isLoggedIn, age: profileAge, sex: profileSex, updateAge } = useApp();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefillInsurer = INSURERS.find((i) => i.code === searchParams.get("insurer"))?.name;
   const [mode, setMode] = useState<"list" | "add">(searchParams.get("mode") === "add" ? "add" : "list");
@@ -88,6 +91,7 @@ export function MyPolicies() {
 
   const [insurerName, setInsurerName] = useState(prefillInsurer ?? "");
   const [productName, setProductName] = useState("");
+  const [planName, setPlanName] = useState<string | null>(null);
   const [age, setAge] = useState("");
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
@@ -149,6 +153,7 @@ export function MyPolicies() {
     setStep(0);
     setInsurerName("");
     setProductName("");
+    setPlanName(null);
     setAge("");
     setPeriodStart("");
     setPeriodEnd("");
@@ -165,6 +170,7 @@ export function MyPolicies() {
       await api.registerPolicy(userId, {
         insurer_name_raw: insurerName,
         product_name_raw: productName || null,
+        plan_name: planName,
         subscriber_age: age ? Number(age) : null,
         period_start: periodStart,
         period_end: periodEnd,
@@ -173,7 +179,7 @@ export function MyPolicies() {
       resetForm();
       setMode("list");
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
@@ -196,7 +202,7 @@ export function MyPolicies() {
       setPicking(false);
       await refresh();
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
@@ -233,7 +239,13 @@ export function MyPolicies() {
         title: "어느 보험사에\n가입하셨나요?",
         content: (
           <>
-            <InsurerPicker value={insurerName} onChange={setInsurerName} />
+            <InsurerPicker
+              value={insurerName}
+              onChange={(name) => {
+                setInsurerName(name);
+                setPlanName(null);
+              }}
+            />
             <label style={{ marginTop: 16 }}>
               상품명 (알고 있으면)
               <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="예: 해외여행보험" />
@@ -243,8 +255,24 @@ export function MyPolicies() {
         canNext: insurerName.trim().length > 0,
       },
       {
+        icon: "shield",
+        eyebrow: "STEP 2 · 등급",
+        title: "어느 등급으로\n가입하셨나요?",
+        content: (
+          <PlanCoverageBoard
+            insurerCode={INSURERS.find((i) => i.name === insurerName)?.code ?? ""}
+            age={Number(age) || profileAge}
+            sex={profileSex === "F" ? "F" : profileSex === "M" ? "M" : null}
+            selectedPlan={planName}
+            onSelectPlan={setPlanName}
+          />
+        ),
+        // 몰라도 건너뛸 수 있다 — 담보한도 자료가 없는 보험사도 등록은 막지 않는다.
+        canNext: true,
+      },
+      {
         icon: "calendar",
-        eyebrow: "STEP 2 · 가입 정보",
+        eyebrow: "STEP 3 · 가입 정보",
         title: "나이와 보험기간을\n알려주세요",
         content: (
           <>
@@ -299,20 +327,39 @@ export function MyPolicies() {
         불러와요. 매칭된 담보만 사고 후 청구 검토 대상이 됩니다.
       </p>
 
-      <motion.button
-        type="button"
-        className="home-card"
-        style={{ marginBottom: 16 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => setMode("add")}
-      >
-        <Icon3D src="gift" size={56} />
-        <div className="home-card__text">
-          <strong>새 보험 등록하기</strong>
-          <span>2단계면 충분해요</span>
-        </div>
-        <span className="home-card__arrow">›</span>
-      </motion.button>
+      {/* 두 버튼은 성격이 같다 — "보험을 들이는 일"과 "얼마인지 보는 일". 세로로 쌓으면
+          목록(보험 카드)이 화면 아래로 밀려나므로 한 줄에 나란히 둔다.
+          보험료 비교가 여기 있는 이유: 홈의 작은 칸은 4개를 넘기지 않고, 비로그인
+          상태에서는 이 화면 자체를 못 보므로 그때만 홈 첫 칸이 보험료 비교로 바뀐다. */}
+      <div className="policy-actions">
+        <motion.button
+          type="button"
+          className="home-card home-card--compact"
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setMode("add")}
+        >
+          <Icon3D src="gift" size={44} />
+          <div className="home-card__text">
+            <strong>새 보험 등록하기</strong>
+            <span>2단계면 충분해요</span>
+          </div>
+          <span className="home-card__arrow">›</span>
+        </motion.button>
+
+        <motion.button
+          type="button"
+          className="home-card home-card--compact"
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/premium")}
+        >
+          <Icon3D src="wallet" size={44} />
+          <div className="home-card__text">
+            <strong>보험료 비교</strong>
+            <span>공시 보험료 비교</span>
+          </div>
+          <span className="home-card__arrow">›</span>
+        </motion.button>
+      </div>
 
       {policies.length === 0 && (
         <div className="empty-state">

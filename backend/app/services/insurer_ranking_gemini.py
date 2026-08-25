@@ -5,7 +5,7 @@
 확정한 상대 순위를 그대로 받아서, 그 근거(신호)와 실제 약관 원문을 Gemini에게 주고
 "왜 이 순위인지"를 사람이 읽기 좋은 문장으로 다듬어달라고만 요청한다.
 
-검증: Gemini 응답에 6개 보험사 코드가 정확히 한 번씩만 있는지 확인하고, 하나라도
+검증: Gemini 응답에 이번 비교 대상 보험사 코드가 정확히 한 번씩만 있는지 확인하고, 하나라도
 어긋나면 응답 전체를 버리고 None을 반환한다 — 이 경우 호출부는 규칙 기반 reasons를
 그대로 쓴다(자연어만 덜 매끄러울 뿐 근거 자체는 항상 실제 신호에서 나온다).
 """
@@ -57,7 +57,7 @@ class _ExplainSchema(BaseModel):
     items: list[_ExplainItem]
 
 
-_EXPLAIN_PROMPT = """당신은 여행자보험 6개 보험사를 실제 약관 원문 근거로 비교 설명하는 분석가입니다.
+_EXPLAIN_PROMPT = """당신은 여행자보험 {insurer_count}개 보험사를 실제 약관 원문 근거로 비교 설명하는 분석가입니다.
 
 아래는 "{tier_label}"({tier_description}) 기준으로 이미 코드로 확정된 상대 순위와 그 근거 신호입니다.
 당신의 역할은 **순위를 바꾸는 것이 아니라**, 각 보험사별로 주어진 신호와 실제 약관
@@ -68,7 +68,7 @@ _EXPLAIN_PROMPT = """당신은 여행자보험 6개 보험사를 실제 약관 �
 1. 상대 순위는 이미 정해져 있습니다. 절대 다른 순서를 암시하지 마세요.
 2. 아래 제공된 신호와 실제 약관 원문 안에서만 근거를 찾으세요. 원문에 없는 내용을 추측하거나
    지어내지 마세요.
-3. 6개 보험사를 반드시 모두 포함하세요. 하나도 빠뜨리면 안 됩니다.
+3. {insurer_count}개 보험사를 반드시 모두 포함하세요. 하나도 빠뜨리면 안 됩니다.
 4. insurer_code는 아래 대괄호 안에 주어진 코드를 정확히 그대로 사용하세요.
 
 {insurer_blocks}
@@ -120,6 +120,9 @@ def explain_ranking(
     )
 
     prompt = _EXPLAIN_PROMPT.format(
+        # 보험사 수는 고정이 아니다 — 그 등급 상품이 없는 보험사는 이미 빠진 채로 들어온다
+        # (예: 고급 등급에서는 2등급만 파는 신한EZ손보가 빠져 하나 줄어든다).
+        insurer_count=len(ranking),
         tier_label=tier_label,
         tier_description=tier_description,
         trip_context=_trip_context_text(trip_context),

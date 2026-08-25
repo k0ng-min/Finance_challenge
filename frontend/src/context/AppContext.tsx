@@ -17,8 +17,20 @@ interface AppState {
   /** "M" | "F" — 보험료가 나이와 함께 성별로도 갈려서 같이 들고 다닌다. */
   sex: string | null;
   isLoggedIn: boolean;
+  /** 닉네임·나이·필수동의까지 마친 계정인지. 소셜 콜백에서 계정 행이 먼저 만들어지는
+   * 구조라 "계정은 있는데 프로필이 빈" 중간 상태가 생기는데, 이 값이 false인 동안에는
+   * App이 어느 화면에 있든 가입 마무리 화면으로 되돌린다. */
+  signupCompleted: boolean;
+  /** 이메일+비밀번호로도 로그인할 수 있게 비밀번호를 정해 뒀는지. */
+  hasPassword: boolean;
   loginWithKakao: (code: string, intent: "login" | "signup") => Promise<boolean>;
   loginWithGoogle: (code: string, intent: "login" | "signup") => Promise<boolean>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  setPassword: (newPassword: string, currentPassword?: string | null) => Promise<void>;
+  /** 가입 마무리를 끝냈다고 표시한다(약관 동의 응답을 그대로 반영). */
+  applyAuthUser: (res: AuthUserOut) => void;
+  /** 가입 마무리 전에 되돌아 나갈 때 — 아직 완료되지 않은 계정을 지우고 게스트로 되돌린다. */
+  cancelPendingSignup: () => Promise<void>;
   updateNickname: (nickname: string) => Promise<void>;
   updateAge: (age: number) => Promise<void>;
   updateSex: (sex: string) => Promise<void>;
@@ -34,6 +46,9 @@ const LS_INCIDENT = "travel_ai_incident_id";
 const LS_TOKEN = "travel_ai_token";
 const LS_NICKNAME = "travel_ai_nickname";
 const LS_EMAIL = "travel_ai_email";
+// 게스트도 서버에서 토큰을 받아 자기 데이터를 꺼내므로, "토큰이 있다 = 로그인했다"가
+// 아니다 — 실제로 로그인한 계정과 자동 생성된 게스트를 구분하는 표시.
+const LS_GUEST = "travel_ai_is_guest";
 // 나이·성별은 게스트도 다시 묻지 않도록 로컬에도 남긴다(로그인 계정은 서버 프로필이 우선).
 const LS_AGE = "travel_ai_age";
 const LS_SEX = "travel_ai_sex";
@@ -52,19 +67,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [age, setAge] = useState<number | null>(() => Number(localStorage.getItem(LS_AGE)) || null);
   const [sex, setSex] = useState<string | null>(() => localStorage.getItem(LS_SEX));
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [signupCompleted, setSignupCompleted] = useState(true);
+  const [hasPassword, setHasPassword] = useState(false);
 
   async function bootstrapGuest() {
     const existing = Number(localStorage.getItem(LS_USER));
-    if (existing) {
+    // 예전에 만든 게스트는 토큰이 없다. 서버가 이제 소유권 증명을 요구하므로(익명 접근
+    // 차단) 토큰이 없으면 자기 데이터를 못 꺼낸다 — 계정을 새로 만들어 토큰을 받는다.
+    if (existing && localStorage.getItem(LS_TOKEN)) {
       setUserId(existing);
       return;
     }
     const u = await api.createUser("guest");
     localStorage.setItem(LS_USER, String(u.user_id));
+    localStorage.setItem(LS_TOKEN, u.token);
+    localStorage.setItem(LS_GUEST, "1");
     setUserId(u.user_id);
   }
 
   function applyAuthResult(res: AuthUserOut) {
+    localStorage.removeItem(LS_GUEST);
     localStorage.setItem(LS_TOKEN, res.token);
     localStorage.setItem(LS_USER, String(res.user_id));
     localStorage.setItem(LS_NICKNAME, res.nickname);
@@ -74,6 +96,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setEmail(res.email);
     setAge(res.age);
     setSex(res.sex ?? null);
+    setSignupCompleted(res.signup_completed);
+    setHasPassword(res.has_password);
     setIsLoggedIn(true);
   }
 
@@ -83,15 +107,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (token) {
         try {
           const me = await api.getMe();
+          // 게스트는 토큰이 있어도 "로그인한 사용자"가 아니다 — 로그인한 적이
+          // 없는데 상단에 게스트 닉네임이 로그인 계정처럼 뜨던 원인이 여기였다.
+          // 표시가 없는 예전 세션은 이메일 유무로 판별한다(게스트는 이메일이 없다).
+          const guestFlag = localStorage.getItem(LS_GUEST);
+          const isGuest = guestFlag === "1" || (guestFlag === null && !me.email);
           localStorage.setItem(LS_USER, String(me.user_id));
-          localStorage.setItem(LS_NICKNAME, me.nickname);
-          if (me.email) localStorage.setItem(LS_EMAIL, me.email);
           setUserId(me.user_id);
-          setNickname(me.nickname);
-          setEmail(me.email);
           setAge(me.age);
           setSex(me.sex ?? null);
-          setIsLoggedIn(true);
+          if (isGuest) {
+            // 게스트는 그대로 쓰되(데이터 접근은 토큰으로 계속 된다) 로그인
+            // 상태로는 취급하지 않는다.
+            localStorage.setItem(LS_GUEST, "1");
+            localStorage.removeItem(LS_NICKNAME);
+            localStorage.removeItem(LS_EMAIL);
+            setNickname(null);
+            setEmail(null);
+            setSignupCompleted(true);
+            setHasPassword(false);
+            setIsLoggedIn(false);
+          } else {
+            localStorage.setItem(LS_NICKNAME, me.nickname);
+            if (me.email) localStorage.setItem(LS_EMAIL, me.email);
+            setNickname(me.nickname);
+            setEmail(me.email);
+            setSignupCompleted(me.signup_completed);
+            setHasPassword(me.has_password);
+            setIsLoggedIn(true);
+          }
           setLoading(false);
           return;
         } catch {
@@ -165,6 +209,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return res.is_new_user;
   }
 
+  async function loginWithEmail(email: string, password: string) {
+    clearTripAndIncident();
+    const res = await api.loginWithEmail(email, password);
+    applyAuthResult(res);
+  }
+
+  async function setPassword(newPassword: string, currentPassword?: string | null) {
+    const res = await api.setPassword(newPassword, currentPassword);
+    setHasPassword(res.has_password);
+  }
+
+  /** 약관 동의 응답처럼 계정 상태 전체가 담긴 응답을 그대로 반영한다(토큰은 그대로 유지). */
+  function applyAuthUser(res: AuthUserOut) {
+    localStorage.setItem(LS_NICKNAME, res.nickname);
+    if (res.email) localStorage.setItem(LS_EMAIL, res.email);
+    setNickname(res.nickname);
+    setEmail(res.email);
+    setAge(res.age);
+    setSex(res.sex ?? null);
+    setSignupCompleted(res.signup_completed);
+    setHasPassword(res.has_password);
+  }
+
+  async function cancelPendingSignup() {
+    try {
+      await api.cancelPendingSignup();
+    } catch {
+      // 이미 지워졌거나 세션이 끊긴 경우 — 아래 뒷정리는 그대로 진행한다.
+    }
+    await logout();
+  }
+
   async function updateNickname(newNickname: string) {
     const res = await api.updateNickname(newNickname);
     localStorage.setItem(LS_NICKNAME, res.nickname);
@@ -194,10 +270,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(LS_NICKNAME);
     localStorage.removeItem(LS_EMAIL);
     localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_GUEST);
     clearTripAndIncident();
     setNickname(null);
     setEmail(null);
     setAge(null);
+    setSignupCompleted(true);
+    setHasPassword(false);
     setIsLoggedIn(false);
     setUserId(null);
     setLoading(true);
@@ -215,10 +294,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(LS_NICKNAME);
     localStorage.removeItem(LS_EMAIL);
     localStorage.removeItem(LS_USER);
+    localStorage.removeItem(LS_GUEST);
     clearTripAndIncident();
     setNickname(null);
     setEmail(null);
     setAge(null);
+    setSignupCompleted(true);
+    setHasPassword(false);
     setIsLoggedIn(false);
     setUserId(null);
     setLoading(true);
@@ -230,7 +312,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppCtx.Provider
       value={{
         userId, tripId, incidentId, setTripId, setIncidentId, loading,
-        nickname, email, age, sex, isLoggedIn, loginWithKakao, loginWithGoogle,
+        nickname, email, age, sex, isLoggedIn, signupCompleted, hasPassword,
+        loginWithKakao, loginWithGoogle, loginWithEmail, setPassword,
+        applyAuthUser, cancelPendingSignup,
         updateNickname, updateAge, updateSex, deleteAccount, logout,
       }}
     >

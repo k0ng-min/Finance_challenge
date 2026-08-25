@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
-import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut, type OverlapReportOut } from "../api";
+import { useSearchParams } from "react-router-dom";
+import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut, type OverlapReportOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { shortInsurerName } from "../data/insurers";
 import { TopBar } from "../components/TopBar";
 import { StepFlow } from "../components/StepFlow";
 import { ResultTabs } from "../components/ResultTabs";
 import { NextStepCard } from "../components/NextStepCard";
-import { DateTimeField } from "../components/DateTimeField";
+import { DateRangeField, DateTimeField } from "../components/DateTimeField";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { InsurerPicker } from "../components/InsurerPicker";
+import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
+import { Modal } from "../components/Modal";
 import { PickerField } from "../components/PickerField";
 import { ExternalPolicyPicker, type PickedPolicy } from "../components/ExternalPolicyPicker";
 import { OverlapReportView } from "../components/OverlapReport";
@@ -25,17 +27,8 @@ const QUESTION_ICON: Record<string, string> = {
   returned_home: "flag",
 };
 
-/** "YYYY-MM-DD"에 하루를 더한 문자열 — 종료일이 시작일보다 앞서지 않게 맞추는 데 쓴다. */
-function addDays(dateStr: string, days: number): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const dt = new Date(y, m - 1, d + days);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
-}
-
 export function IncidentReport() {
   const { userId, isLoggedIn, setIncidentId, age: profileAge, updateAge, sex: profileSex, updateSex } = useApp();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resultOfParam = searchParams.get("resultOf");
   const resumeIncidentId = resultOfParam ? Number(resultOfParam) : null;
@@ -48,30 +41,38 @@ export function IncidentReport() {
   const [resuming, setResuming] = useState(!!resumeIncidentId);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<IncidentAnalysisOut | null>(null);
-  const [answerText, setAnswerText] = useState("");
+  // 질문이 한 화면에 통째로 뜨므로 답도 질문 id별로 모아 뒀다가 한 번에 보낸다.
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [extraNote, setExtraNote] = useState("");
   const [policies, setPolicies] = useState<UserPolicyOut[]>([]);
   const [selectedPolicyId, setSelectedPolicyId] = useState<number | null>(null);
   const [insurerCode, setInsurerCode] = useState("");
+  // 등록된 보험이 없을 때 보험사만 고르는 경우, 그 보험사의 어느 등급으로 청구할지도
+  // 같이 받는다(참고용 — 담보한도를 보고 청구 전에 감을 잡게 해준다).
+  const [incidentPlanName, setIncidentPlanName] = useState<string | null>(null);
+  const [showIncidentPlanModal, setShowIncidentPlanModal] = useState(false);
   const [trips, setTrips] = useState<TripSummaryOut[]>([]);
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null);
   const [age, setAge] = useState("");
   const [sex, setSex] = useState<"M" | "F" | "">("");
-  // 등록된 여행이 하나도 없으면(=사고만 단독 접수) 어느 나라에서 있었던 일인지 이 화면에서
-  // 바로 물어본다 — 안 그러면 이 사고가 서류체크/실수방지/약관형광펜 화면에서 아무 여행
-  // 맥락 없이 뜨게 된다.
-  const [destination, setDestination] = useState("");
-  // 연결할 여행이 없을 때 여기서 여행도 같이 등록한다 — 사고만 덩그러니 남지 않게.
-  const [newTripStart, setNewTripStart] = useState("");
-  const [newTripEnd, setNewTripEnd] = useState("");
+  // 이번 사고를 어느 여행에 붙일지. 등록된 여행 중에서 고르거나(selectedTripId), 이
+  // 자리에서 새 여행을 만들어 붙일 수 있다(newTrip).
+  //
+  // 예전에는 등록된 여행이 딱 하나면 선택기 자체를 안 띄우고 그 여행으로 못박았다.
+  // 그래서 지난달 유럽 여행이 하나 남아 있으면, 이번 홍콩에서 난 사고까지 유럽 여행
+  // 기록에 들어갔다 — 여행이 하나뿐일 때가 오히려 "새 여행"일 확률이 높은데도.
+  // 이제는 여행이 몇 개든 항상 고르게 하고, 그 옆에 새 여행을 만드는 팝업을 둔다.
+  const [newTrip, setNewTrip] = useState<{ destination: string; start: string; end: string } | null>(null);
+  const [showNewTripModal, setShowNewTripModal] = useState(false);
+  const [draftDestination, setDraftDestination] = useState("");
+  const [draftStart, setDraftStart] = useState("");
+  const [draftEnd, setDraftEnd] = useState("");
   // 이번 접수에서 기존보험을 골랐을 때만 중복·공백 진단을 시도한다(안 골랐으면 빈 결과만
   // 온다). linkExternalPolicies는 fire-and-forget이라 저장이 실제로 끝났는지 알 수 없는데,
   // 진단은 그 저장이 끝난 뒤 DB에서 다시 읽어야 의미가 있다 — 그래서 그 Promise를 들고
   // 있다가 진단 조회 직전에 기다린다(핸들러 자체는 여전히 안 기다리고 화면을 바로 넘긴다).
   const [hasPickedExternal, setHasPickedExternal] = useState(false);
   const externalLinkReadyRef = useRef<Promise<unknown>>(Promise.resolve());
-  // 서버가 오래된 응답을 돌려주더라도 방금 제출한 question_id를 같은 화면에 다시
-  // 렌더링하지 않는 마지막 방어선. 정상 경로에서는 백엔드가 이미 답변 이력으로 제거한다.
-  const answeredQuestionIdsRef = useRef<Set<number>>(new Set());
   const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
 
   // 한 번 입력한 나이·성별은 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
@@ -83,7 +84,7 @@ export function IncidentReport() {
   }, [profileSex]);
 
   // 로그인 계정: 등록된 보험 중 이번 사고를 어느 보험으로 청구할지 고를 수 있게 목록을 준비한다.
-  // 게스트: "내 보험"을 쓸 수 없으니 6개 보험사 중 하나를 바로 고르게 한다(아래 InsurerPicker).
+  // 게스트: "내 보험"을 쓸 수 없으니 비교 대상 보험사 중 하나를 바로 고르게 한다(아래 InsurerPicker).
   useEffect(() => {
     if (!userId || !isLoggedIn) return;
     api.listPolicies(userId).then((list) => {
@@ -97,11 +98,17 @@ export function IncidentReport() {
     if (!userId) return;
     api.listTrips(userId).then((list) => {
       setTrips(list);
-      setSelectedTripId((prev) => prev ?? (list.length > 0 ? list[0].trip_id : null));
+      // 자동으로 첫 여행을 고르지 않는다 — 사용자가 직접 고르거나 새로 만들게 한다.
+      setSelectedTripId((prev) => (prev != null && list.some((t) => t.trip_id === prev) ? prev : null));
     }).catch(() => {});
   }, [userId]);
 
-  const selectedTrip = trips.find((t) => t.trip_id === selectedTripId) ?? null;
+  // 사고 일시의 선택 범위·안내 문구는 "고른 기존 여행"이든 "방금 만든 새 여행"이든
+  // 똑같이 필요하다 — 두 경우를 같은 모양으로 맞춰 아래에서 한 번만 다룬다.
+  const selectedTrip = newTrip
+    ? { destination: newTrip.destination, start_date: newTrip.start, end_date: newTrip.end }
+    : trips.find((t) => t.trip_id === selectedTripId) ?? null;
+  const hasTripContext = newTrip !== null || selectedTripId !== null;
 
   // 결과 화면에 진입했고, 이번에 기존보험을 골랐을 때만 중복·공백 진단을 조회한다.
   // (기존보험 저장을 기다렸다가 조회 — 위 externalLinkReadyRef 주석 참고.)
@@ -124,7 +131,6 @@ export function IncidentReport() {
     if (resumeIncidentId) {
       setResuming(true);
       setIncidentId(resumeIncidentId);
-      answeredQuestionIdsRef.current.clear();
       api.getIncident(resumeIncidentId).then((res) => {
         setAnalysis(res);
         setPhase(res.pending_questions.length > 0 ? "questions" : "result");
@@ -137,7 +143,7 @@ export function IncidentReport() {
     return (
       <div className="page">
         <TopBar title="사고가 발생했어요" />
-        <LoadingScreen icon="chat-bubble" title="이전 접수 내역을 불러오고 있어요" messages={["예전에 접수했던 사고를 찾고 있어요"]} />
+        <LoadingScreen icon="collision" title="이전 접수 내역을 불러오고 있어요" messages={["예전에 접수했던 사고를 찾고 있어요"]} />
       </div>
     );
   }
@@ -147,7 +153,7 @@ export function IncidentReport() {
       <div className="page">
         <TopBar title="사고가 발생했어요" />
         <LoadingScreen
-          icon="chat-bubble"
+          icon="collision"
           title="사고 내용을 분석하고 있어요"
           messages={[
             "입력하신 사고 상황을 정리하고 있어요",
@@ -161,7 +167,6 @@ export function IncidentReport() {
 
   async function handleStart() {
     if (!userId || !freeText.trim()) return;
-    answeredQuestionIdsRef.current.clear();
     setLoading(true);
     setError(null);
     try {
@@ -169,16 +174,20 @@ export function IncidentReport() {
       if (sex && sex !== profileSex) await updateSex(sex).catch(() => {});
       const res = await api.createIncident({
         user_id: userId,
-        trip_id: selectedTripId,
-        user_policy_id: isLoggedIn ? selectedPolicyId : null,
-        insurer_code: isLoggedIn ? null : insurerCode || null,
+        trip_id: newTrip ? null : selectedTripId,
+        // 등록된 보험을 골랐으면 그걸 쓰고, 없으면(비로그인이거나 등록 전이거나) 고른
+        // 보험사 코드로 검토한다 — 백엔드는 user_policy_id가 없을 때 insurer_code를 본다.
+        user_policy_id: selectedPolicyId,
+        insurer_code: selectedPolicyId ? null : insurerCode || null,
+        plan_name: selectedPolicyId ? null : incidentPlanName,
         free_text: freeText,
         occurred_at: occurredAt ? new Date(occurredAt).toISOString() : null,
-        country: trips.length === 0 ? destination || null : null,
-        // 여행이 하나도 없으면 방금 입력한 목적지·기간으로 여행도 같이 만든다.
-        new_trip_destination: trips.length === 0 ? destination || null : null,
-        new_trip_start_date: trips.length === 0 ? newTripStart || null : null,
-        new_trip_end_date: trips.length === 0 ? newTripEnd || null : null,
+        country: newTrip ? newTrip.destination : null,
+        // 새 여행을 고른 경우 백엔드가 이 값들로 여행을 만들어 사고에 붙인다
+        // (trip_id를 비워 보내야 이 경로가 탄다).
+        new_trip_destination: newTrip ? newTrip.destination : null,
+        new_trip_start_date: newTrip ? newTrip.start : null,
+        new_trip_end_date: newTrip ? newTrip.end : null,
       });
       setAnalysis(res);
       setIncidentId(res.incident_id);
@@ -197,31 +206,28 @@ export function IncidentReport() {
       }
       setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   async function handleAnswer() {
-    if (!analysis || !answerText.trim()) return;
-    const question = analysis.pending_questions[0];
+    if (!analysis) return;
+    const filled = analysis.pending_questions
+      .map((q) => ({ question_id: q.question_id, answer_text: (answers[q.question_id] ?? "").trim() }))
+      .filter((a) => a.answer_text !== "");
     setLoading(true);
-    setError(null);
     try {
-      const res = await api.answerQuestion(analysis.incident_id, question.question_id, answerText);
-      answeredQuestionIdsRef.current.add(question.question_id);
-      const next = {
-        ...res,
-        pending_questions: res.pending_questions.filter(
-          (q) => !answeredQuestionIdsRef.current.has(q.question_id),
-        ),
-      };
-      setAnalysis(next);
-      setAnswerText("");
-      setPhase(next.pending_questions.length > 0 ? "questions" : "result");
+      const res = await api.answerQuestionsBatch(analysis.incident_id, filled, extraNote.trim());
+      setAnalysis(res);
+      // 다음 단계 질문은 다른 문항이다 — 앞 단계 답이 남아 있으면 안 고른 항목이
+      // 이미 답한 것처럼 보인다.
+      setAnswers({});
+      setExtraNote("");
+      setPhase(res.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setLoading(false);
     }
@@ -273,30 +279,78 @@ export function IncidentReport() {
   }
 
   if (phase === "questions" && analysis && analysis.pending_questions.length > 0) {
-    const q = analysis.pending_questions[0];
-    const icon = QUESTION_ICON[q.target_field] ?? "chat-bubble";
+    const questions = analysis.pending_questions;
+    // 질문은 두 번 나온다 — 1단계는 사고의 성격을 가리고, 2단계는 그 답을 딛고
+    // 세부유형을 가른다. 각 단계가 한 화면에 통째로 뜬다.
+    const isSecondStage = questions[0].stage === "L2";
+    const icon = QUESTION_ICON[questions[0].target_field] ?? "collision";
+    const answeredCount = questions.filter((q) => (answers[q.question_id] ?? "").trim() !== "").length;
     return (
       <div className="page">
         <TopBar title="사고가 발생했어요" />
         <StepFlow
           icon={icon}
-          eyebrow={`추가 확인 ${analysis.pending_questions.length}건 남음`}
-          title={q.question_text}
-          stepIndex={0}
+          eyebrow={isSecondStage ? "2단계 · 자세히 확인" : "1단계 · 사고 확인"}
+          title={isSecondStage ? "조금만 더\n여쎙볼게요" : "몇 가지만\n확인할게요"}
+          subtitle={
+            isSecondStage
+              ? "앞선 답변을 보고 이번 사고에 맞춰 다시 골라낸 질문이에요."
+              : "적어주신 내용을 읽고 필요한 것만 골랐어요. 모르는 건 비워두셔도 괜찮아요."
+          }
+          stepIndex={isSecondStage ? 1 : 0}
           onNext={handleAnswer}
-          nextLabel="답변하고 계속하기"
-          nextDisabled={!answerText.trim()}
+          nextLabel={`답변하고 계속하기${answeredCount > 0 ? ` (${answeredCount}/${questions.length})` : ""}`}
           loading={loading}
         >
-          <label>
-            답변
-            <input
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-              placeholder="편하게 답변해주세요"
-              autoFocus
-            />
-          </label>
+          <div className="qa-list">
+            {questions.map((q) => (
+              <div className="qa-item" key={q.question_id}>
+                <p className="qa-item__text">{q.question_text}</p>
+                {q.answer_type === "yesno" ? (
+                  <div className="qa-choice">
+                    {["예", "아니오"].map((choice) => (
+                      <button
+                        key={choice}
+                        type="button"
+                        className={`qa-choice__btn${answers[q.question_id] === choice ? " qa-choice__btn--on" : ""}`}
+                        onClick={() =>
+                          setAnswers((prev) => {
+                            // 고른 걸 다시 누르면 선택이 풀린다 — 잘못 눌렀을 때 비울 방법이 있어야 한다.
+                            const next = { ...prev };
+                            if (next[q.question_id] === choice) delete next[q.question_id];
+                            else next[q.question_id] = choice;
+                            return next;
+                          })
+                        }
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <input
+                    className="qa-item__input"
+                    value={answers[q.question_id] ?? ""}
+                    onChange={(e) =>
+                      setAnswers((prev) => ({ ...prev, [q.question_id]: e.target.value }))
+                    }
+                    placeholder="편하게 적어주세요"
+                  />
+                )}
+              </div>
+            ))}
+
+            <div className="qa-item">
+              <p className="qa-item__text">그 밖에 더 알려주실 게 있나요? (선택)</p>
+              <textarea
+                className="qa-item__note"
+                value={extraNote}
+                onChange={(e) => setExtraNote(e.target.value)}
+                rows={3}
+                placeholder="위 질문으로 다 담기지 않은 이야기를 적어주세요"
+              />
+            </div>
+          </div>
           {error && <div className="error-box">{error}</div>}
         </StepFlow>
       </div>
@@ -314,55 +368,198 @@ export function IncidentReport() {
         <>
           {isLoggedIn ? (
             policies.length > 0 ? (
-              <label>
-                어느 보험으로 청구하시나요?
-                <PickerField
-                  value={String(selectedPolicyId ?? "")}
-                  onChange={(v) => setSelectedPolicyId(Number(v))}
-                  modalTitle="청구할 보험"
-                  placeholder="보험을 선택하세요"
-                  options={policies.map((p) => ({
-                    value: String(p.user_policy_id),
-                    label: `${shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험`,
-                  }))}
-                />
-              </label>
+              <>
+                <label>
+                  어느 보험으로 청구하시나요?
+                  <PickerField
+                    value={String(selectedPolicyId ?? "")}
+                    onChange={(v) => setSelectedPolicyId(Number(v))}
+                    modalTitle="청구할 보험"
+                    placeholder="보험을 선택하세요"
+                    options={policies.map((p) => ({
+                      value: String(p.user_policy_id),
+                      label: `${shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험`,
+                    }))}
+                  />
+                </label>
+                {(() => {
+                  const chosen = policies.find((p) => p.user_policy_id === selectedPolicyId);
+                  return chosen?.matched_insurer_code ? (
+                    <button
+                      type="button"
+                      className="rank-compare-trigger"
+                      style={{ marginTop: 12 }}
+                      onClick={() => setShowIncidentPlanModal(true)}
+                    >
+                      <span>📋 이 보험의 등급·담보한도 보기 (참고용)</span>
+                      <span className="rank-compare-trigger__arrow">›</span>
+                    </button>
+                  ) : null;
+                })()}
+              </>
             ) : (
-              <div className="card" style={{ marginBottom: 14 }}>
-                <p className="muted" style={{ marginTop: 0 }}>등록된 보험이 없어요. 먼저 등록하면 어느 보험으로 청구할지 고를 수 있어요.</p>
-                <button type="button" className="btn-secondary" onClick={() => navigate("/policies?mode=add")}>
-                  내 보험 등록하러 가기
-                </button>
-              </div>
+              // 등록된 보험이 없어도 여기서 흐름을 끊지 않는다. 예전에는 "내 보험 등록하러
+              // 가기"로 내보내서 사고 접수가 통째로 중단됐다. 보험사만 고르면 그 회사 약관으로
+              // 대조할 수 있고(백엔드는 insurer_code만으로도 검토한다), 그마저 건너뛰어도 된다.
+              <>
+                <label style={{ marginBottom: 8 }}>어느 보험사로 청구하시나요?</label>
+                <InsurerPicker
+                  value={INSURERS.find((i) => i.code === insurerCode)?.name ?? ""}
+                  onChange={(name) => {
+                    setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "");
+                    setIncidentPlanName(null);
+                  }}
+                />
+                <p className="step-note">
+                  아직 등록한 보험이 없네요. 보험사만 골라두면 그 회사 약관으로 맞춰 볼게요.
+                  <br />
+                  지금 모르겠으면 그냥 넘어가도 괜찮아요.
+                </p>
+                {insurerCode && (
+                  <button
+                    type="button"
+                    className="rank-compare-trigger"
+                    style={{ marginTop: 12 }}
+                    onClick={() => setShowIncidentPlanModal(true)}
+                  >
+                    <span>📋 어느 등급인가요? (알고 있으면, 담보한도 참고용)</span>
+                    <span className="rank-compare-trigger__arrow">›</span>
+                  </button>
+                )}
+              </>
             )
           ) : (
             <>
               <label style={{ marginBottom: 8 }}>어느 보험사로 청구하시나요?</label>
               <InsurerPicker
                 value={INSURERS.find((i) => i.code === insurerCode)?.name ?? ""}
-                onChange={(name) => setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "")}
+                onChange={(name) => {
+                  setInsurerCode(INSURERS.find((i) => i.name === name)?.code ?? "");
+                  setIncidentPlanName(null);
+                }}
               />
+              {insurerCode && (
+                <button
+                  type="button"
+                  className="rank-compare-trigger"
+                  style={{ marginTop: 12 }}
+                  onClick={() => setShowIncidentPlanModal(true)}
+                >
+                  <span>📋 어느 등급인가요? (알고 있으면, 담보한도 참고용)</span>
+                  <span className="rank-compare-trigger__arrow">›</span>
+                </button>
+              )}
             </>
           )}
+          {(() => {
+            const chosenPolicy = policies.length > 0
+              ? policies.find((p) => p.user_policy_id === selectedPolicyId)
+              : null;
+            const activeInsurerCode = chosenPolicy?.matched_insurer_code ?? (insurerCode || null);
+            if (!activeInsurerCode) return null;
+            return (
+              <Modal
+                open={showIncidentPlanModal}
+                onClose={() => setShowIncidentPlanModal(false)}
+                title="등급·담보한도"
+              >
+                <PlanCoverageBoard
+                  insurerCode={activeInsurerCode}
+                  age={Number(age) || profileAge}
+                  sex={(sex || profileSex) === "F" ? "F" : (sex || profileSex) === "M" ? "M" : null}
+                  selectedPlan={incidentPlanName ?? chosenPolicy?.plan_name ?? null}
+                  onSelectPlan={setIncidentPlanName}
+                />
+              </Modal>
+            );
+          })()}
 
-          {trips.length > 1 && (
-            <label style={{ marginTop: 14 }}>
-              어느 여행에서 있었던 일인가요?
+          {/* 어느 여행에서 난 사고인지는 서류체크·실수방지·약관형광펜까지 따라다니는
+              맥락이라 반드시 정하고 넘어간다. 등록된 여행이 없거나, 있어도 이번 사고가
+              그중 어느 것도 아닐 수 있으므로 새 여행을 만드는 길을 항상 같이 둔다. */}
+          <label style={{ marginTop: 14 }}>어느 여행에서 있었던 일인가요?</label>
+          {trips.length > 0 && (
+            <PickerField
+              value={newTrip ? "" : String(selectedTripId ?? "")}
+              onChange={(v) => { setNewTrip(null); setSelectedTripId(Number(v)); }}
+              modalTitle="여행 선택"
+              placeholder="여행을 선택하세요"
+              options={trips.map((t) => ({
+                value: String(t.trip_id),
+                label: `${t.destination} · ${t.start_date} ~ ${t.end_date}`,
+              }))}
+            />
+          )}
+          {newTrip && (
+            <div className="new-trip-chip">
+              <span>
+                <strong>새 여행 · {newTrip.destination}</strong>
+                <em>{newTrip.start} ~ {newTrip.end}</em>
+              </span>
+              <button type="button" onClick={() => setNewTrip(null)} aria-label="새 여행 취소">✕</button>
+            </div>
+          )}
+          <button
+            type="button"
+            className="rank-compare-trigger"
+            style={{ marginTop: 10 }}
+            onClick={() => {
+              setDraftDestination(newTrip?.destination ?? "");
+              setDraftStart(newTrip?.start ?? "");
+              setDraftEnd(newTrip?.end ?? "");
+              setShowNewTripModal(true);
+            }}
+          >
+            <span>＋ 목록에 없어요 · 새 여행 등록하기</span>
+            <span className="rank-compare-trigger__arrow">›</span>
+          </button>
+
+          <Modal
+            open={showNewTripModal}
+            onClose={() => setShowNewTripModal(false)}
+            title="새 여행 등록"
+          >
+            <label>
+              여행 국가
               <PickerField
-                value={String(selectedTripId ?? "")}
-                onChange={(v) => setSelectedTripId(Number(v))}
-                modalTitle="여행 선택"
-                placeholder="여행을 선택하세요"
-                options={trips.map((t) => ({
-                  value: String(t.trip_id),
-                  label: `${t.destination} · ${t.start_date} ~ ${t.end_date}`,
-                }))}
+                value={draftDestination}
+                onChange={setDraftDestination}
+                placeholder="국가를 선택하세요"
+                modalTitle="여행 국가"
+                options={COUNTRIES.map((c) => ({ value: c, label: c }))}
               />
             </label>
-          )}
+            <DateRangeField
+              label="여행 기간"
+              start={draftStart}
+              end={draftEnd}
+              onChange={(s, e) => { setDraftStart(s); setDraftEnd(e); }}
+            />
+            <p className="muted" style={{ fontSize: "0.76rem" }}>
+              이 사고와 함께 여행도 새로 등록해 드려요. 나중에 계정 화면에서 고칠 수 있어요.
+            </p>
+            <button
+              type="button"
+              className="btn-primary"
+              style={{ width: "100%" }}
+              disabled={!draftDestination || !draftStart || !draftEnd || draftEnd <= draftStart}
+              onClick={() => {
+                setNewTrip({ destination: draftDestination, start: draftStart, end: draftEnd });
+                setSelectedTripId(null);
+                setOccurredAt("");
+                setShowNewTripModal(false);
+              }}
+            >
+              이 여행으로 등록하기
+            </button>
+          </Modal>
         </>
       ),
-      canNext: isLoggedIn ? (policies.length === 0 || selectedPolicyId !== null) : !!insurerCode,
+      // 등록된 보험이 있으면 그중 하나를 골라야 하고, 없으면 보험사 선택은 선택사항이다
+      // (사고 상황부터 적고 나중에 보험을 붙여도 되게 둔다).
+      canNext:
+        hasTripContext &&
+        (policies.length > 0 ? selectedPolicyId !== null : (isLoggedIn ? true : !!insurerCode)),
     },
     {
       icon: "umbrella",
@@ -372,7 +569,7 @@ export function IncidentReport() {
       canNext: true,
     },
     {
-      icon: "chat-bubble",
+      icon: "collision",
       eyebrow: "STEP 2 · 사고 내용",
       title: "당황하지 마세요,\n하나씩 도와드릴게요",
       content: (
@@ -403,37 +600,6 @@ export function IncidentReport() {
               </button>
             ))}
           </div>
-          {trips.length === 0 && (
-            <>
-              <label>
-                여행 국가
-                <PickerField
-                  value={destination}
-                  onChange={setDestination}
-                  placeholder="국가를 선택하세요"
-                  modalTitle="여행 국가"
-                  options={COUNTRIES.map((c) => ({ value: c, label: c }))}
-                />
-              </label>
-              <DateTimeField
-                label="여행 시작일"
-                value={newTripStart}
-                onChange={(v) => {
-                  setNewTripStart(v);
-                  if (v && (!newTripEnd || newTripEnd <= v)) setNewTripEnd(addDays(v, 1));
-                }}
-              />
-              <DateTimeField
-                label="여행 종료일"
-                value={newTripEnd}
-                onChange={setNewTripEnd}
-                minDate={newTripStart ? addDays(newTripStart, 1) : undefined}
-              />
-              <p className="muted" style={{ fontSize: "0.76rem", marginTop: -8 }}>
-                등록된 여행이 없어서 이 사고와 함께 여행도 등록해 드려요. 나중에 계정 화면에서 고칠 수 있어요.
-              </p>
-            </>
-          )}
           <label>
             사고 상황 (자유롭게 작성)
             <textarea
@@ -460,7 +626,7 @@ export function IncidentReport() {
           {error && <div className="error-box">{error}</div>}
         </>
       ),
-      canNext: !!freeText.trim() && !!age && !!sex && (trips.length > 0 || (!!destination && !!newTripStart && !!newTripEnd)),
+      canNext: !!freeText.trim() && !!age && !!sex,
     },
   ];
 

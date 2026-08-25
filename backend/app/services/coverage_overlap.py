@@ -11,9 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.models.external import ExternalPolicy, OverlapRule
 from app.models.kb import Clause, CoverageStd
-
-#: 인용문 최대 길이. 화면에 넣기 좋은 만큼만 자른다.
-_QUOTE_LIMIT = 200
+from app.services.clause_quote import quote_clause
 
 
 @dataclass
@@ -37,33 +35,6 @@ class OverlapReport:
     gaps: list[OverlapFinding] = field(default_factory=list)
     fixed_ok: list[OverlapFinding] = field(default_factory=list)
     unknown: list[OverlapFinding] = field(default_factory=list)
-
-
-def _quote(clause: Clause | None, anchor_phrase: str | None = None) -> str | None:
-    """조항 원문을 인용용으로 자른다. 자르기만 하므로 결과는 항상 원문의 부분 문자열이고
-    말줄임표는 붙이지 않는다.
-
-    note가 근거로 삼는 문구(anchor_phrase)가 조항 뒷부분에 있으면, 앞에서부터 무조건
-    자르는 방식은 그 문구를 통째로 잘라버려 "인용은 있는데 근거는 없는" 상태가 된다.
-    anchor_phrase가 주어지면 그 문구를 포함하는 창(window)을 대신 잘라낸다.
-    """
-    if clause is None or not clause.text:
-        return None
-    text = clause.text.strip()
-    if len(text) <= _QUOTE_LIMIT:
-        return text
-
-    if anchor_phrase:
-        idx = text.find(anchor_phrase)
-        if idx != -1:
-            anchor_len = len(anchor_phrase)
-            # anchor가 창 안에서 가운데쯤 오도록 시작점을 잡되, 텍스트 경계를 넘지 않게 보정한다.
-            start = max(0, idx - (_QUOTE_LIMIT - anchor_len) // 2)
-            end = min(len(text), start + _QUOTE_LIMIT)
-            start = max(0, end - _QUOTE_LIMIT)
-            return text[start:end]
-
-    return text[:_QUOTE_LIMIT]
 
 
 def diagnose(
@@ -119,7 +90,7 @@ def diagnose(
             note=rule.note,
             clause_id=rule.clause_id,
             clause_article_no=clause.article_no if clause else None,
-            clause_quote=_quote(clause, rule.anchor_phrase),
+            clause_quote=quote_clause(clause, rule.anchor_phrase),
         )
         if rule.relation in ("DUPLICATE_PRORATA", "PARTIAL"):
             report.duplicates.append(finding)

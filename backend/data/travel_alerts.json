@@ -1,0 +1,1885 @@
+{
+  "source": "외교부 국가·지역별 여행경보 (공공데이터포털)",
+  "source_url": "https://www.data.go.kr/data/15076237/openapi.do",
+  "collected_at": "2026-08-11",
+  "levels": {
+    "1": "여행유의",
+    "2": "여행자제",
+    "3": "출국권고",
+    "4": "여행금지"
+  },
+  "alerts": [
+    {
+      "country_name": "가나",
+      "country_en": "Ghana",
+      "iso_code": "GH",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "가봉",
+      "country_en": "Gabon",
+      "iso_code": "GA",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "가이아나",
+      "country_en": "Guyana",
+      "iso_code": "GY",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "감비아",
+      "country_en": "Gambia",
+      "iso_code": "GM",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "과테말라",
+      "country_en": "Guatemala",
+      "iso_code": "GT",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "그리스",
+      "country_en": "Greece",
+      "iso_code": "GR",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "기니",
+      "country_en": "Guinea",
+      "iso_code": "GN",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "기니비사우",
+      "country_en": "Guinea-Bissau",
+      "iso_code": "GW",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "나미비아",
+      "country_en": "Namibia",
+      "iso_code": "NA",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "나우루",
+      "country_en": "Nauru",
+      "iso_code": "NR",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "나이지리아",
+      "country_en": "Nigeria",
+      "iso_code": "NG",
+      "level": 3,
+      "region_type": "일부",
+      "note": "2단계를 제외한 전지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "나이지리아",
+      "country_en": "Nigeria",
+      "iso_code": "NG",
+      "level": 2,
+      "region_type": "일부",
+      "note": "주(에보니,에키티,에누구,라고스,오군,온도,오순,오요,베누에)",
+      "issued_on": null
+    },
+    {
+      "country_name": "남수단",
+      "country_en": "South Sudan",
+      "iso_code": "SS",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "남아프리카공화국",
+      "country_en": "South Africa",
+      "iso_code": "ZA",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "니제르",
+      "country_en": "Niger",
+      "iso_code": "NE",
+      "level": 4,
+      "region_type": "일부",
+      "note": "수도 니아메 제외 전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "니제르",
+      "country_en": "Niger",
+      "iso_code": "NE",
+      "level": 3,
+      "region_type": "일부",
+      "note": "니아메",
+      "issued_on": null
+    },
+    {
+      "country_name": "니카라과",
+      "country_en": "Nicaragua",
+      "iso_code": "NI",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "덴마크",
+      "country_en": "Denmark",
+      "iso_code": "DK",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "도미니카공화국",
+      "country_en": "Dominican Republic",
+      "iso_code": "DO",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "동티모르",
+      "country_en": "Timor-Leste",
+      "iso_code": "TL",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "라오스",
+      "country_en": "Laos",
+      "iso_code": "LA",
+      "level": 4,
+      "region_type": "일부",
+      "note": "골든트라이앵글 경제특구",
+      "issued_on": null
+    },
+    {
+      "country_name": "라오스",
+      "country_en": "Laos",
+      "iso_code": "LA",
+      "level": 1,
+      "region_type": "일부",
+      "note": "4단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "라이베리아",
+      "country_en": "Liberia",
+      "iso_code": "LR",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "러시아",
+      "country_en": "Russia",
+      "iso_code": "RU",
+      "level": 4,
+      "region_type": "일부",
+      "note": "우크라이나 접경지역(쿠르스크주 전체 및 로스토프·벨고로드·보로네시·브랸스크 지역 내 우크라이나 국경에서 30km 구간)",
+      "issued_on": null
+    },
+    {
+      "country_name": "러시아",
+      "country_en": "Russia",
+      "iso_code": "RU",
+      "level": 3,
+      "region_type": "일부",
+      "note": "북카프카즈 지역(체첸/다게스탄/세베로오세티아/카바르디노발카르/잉귀시/까라차예보체르케스카야/아디게이) 및 우크라이나 접경지역(4단계 제외 로스토프, 벨고로드, 보로네시, 브랸스크 주 및 오룔 주 일부(샤블리키노, 드미트롭스크, 사스코보, 크로믜, 트로스나 5개 지역))",
+      "issued_on": null
+    },
+    {
+      "country_name": "레바논",
+      "country_en": "Lebanon",
+      "iso_code": "LB",
+      "level": 4,
+      "region_type": "일부",
+      "note": "남부 이스라엘 접경 지역(블루라인으로부터 5km 포함), 남부주, 나바티예주, 다히예의 일부 지역(베이루트 공항 및 M51 도로 제외),바알벡헤르멜주,베카주(서베카구,라샤야구)",
+      "issued_on": null
+    },
+    {
+      "country_name": "레바논",
+      "country_en": "Lebanon",
+      "iso_code": "LB",
+      "level": 3,
+      "region_type": "일부",
+      "note": "4단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "레소토",
+      "country_en": "Lesotho",
+      "iso_code": "LS",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "루마니아",
+      "country_en": "Romania",
+      "iso_code": "RO",
+      "level": 2,
+      "region_type": "일부",
+      "note": "우크라이나 접경 20KM지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "르완다",
+      "country_en": "Rwanda",
+      "iso_code": "RW",
+      "level": 3,
+      "region_type": "일부",
+      "note": "루바부 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "르완다",
+      "country_en": "Rwanda",
+      "iso_code": "RW",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "리비아",
+      "country_en": "Libya",
+      "iso_code": "LY",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "리투아니아",
+      "country_en": "Lithuania",
+      "iso_code": "LT",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "리히텐슈타인",
+      "country_en": "Liechtenstein",
+      "iso_code": "LI",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "마다가스카르",
+      "country_en": "Madagascar",
+      "iso_code": "MG",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "마셜제도",
+      "country_en": "Marshall Islands",
+      "iso_code": "MH",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "마이크로네시아연방",
+      "country_en": "Federated States of Micronesia",
+      "iso_code": "FM",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "말라위",
+      "country_en": "Malawi",
+      "iso_code": "MW",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "말레이시아",
+      "country_en": "Malaysia",
+      "iso_code": "MY",
+      "level": 3,
+      "region_type": "일부",
+      "note": "사바주 동부도서 지역 및 동부해안",
+      "issued_on": null
+    },
+    {
+      "country_name": "말레이시아",
+      "country_en": "Malaysia",
+      "iso_code": "MY",
+      "level": 2,
+      "region_type": "일부",
+      "note": "사바주 동부 해안",
+      "issued_on": null
+    },
+    {
+      "country_name": "말레이시아",
+      "country_en": "Malaysia",
+      "iso_code": "MY",
+      "level": 1,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "말리",
+      "country_en": "Mali",
+      "iso_code": "ML",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "멕시코",
+      "country_en": "Mexico",
+      "iso_code": "MX",
+      "level": 3,
+      "region_type": "일부",
+      "note": "치아파스주, 시날로아주",
+      "issued_on": null
+    },
+    {
+      "country_name": "멕시코",
+      "country_en": "Mexico",
+      "iso_code": "MX",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "모로코",
+      "country_en": "Morocco",
+      "iso_code": "MA",
+      "level": 3,
+      "region_type": "일부",
+      "note": "서사하라 내 모래방어벽 동쪽",
+      "issued_on": null
+    },
+    {
+      "country_name": "모로코",
+      "country_en": "Morocco",
+      "iso_code": "MA",
+      "level": 2,
+      "region_type": "일부",
+      "note": "서사하라 내 모래방어벽 서쪽",
+      "issued_on": null
+    },
+    {
+      "country_name": "모로코",
+      "country_en": "Morocco",
+      "iso_code": "MA",
+      "level": 1,
+      "region_type": "일부",
+      "note": "서사하라 이외 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "모리타니아",
+      "country_en": "Mauritania",
+      "iso_code": "MR",
+      "level": 3,
+      "region_type": "일부",
+      "note": "2단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "모리타니아",
+      "country_en": "Mauritania",
+      "iso_code": "MR",
+      "level": 2,
+      "region_type": "일부",
+      "note": "누악쇼트, 누아디브, 인시리, 트라르자 및 아다르(우아단까지 일부지역)",
+      "issued_on": null
+    },
+    {
+      "country_name": "모잠비크",
+      "country_en": "Mozambique",
+      "iso_code": "MZ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "카보델가도 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "모잠비크",
+      "country_en": "Mozambique",
+      "iso_code": "MZ",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 및 특별여행주의보 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "몰디브",
+      "country_en": "Maldives",
+      "iso_code": "MV",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "몰타",
+      "country_en": "Malta",
+      "iso_code": "MT",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "몽골",
+      "country_en": "Mongolia",
+      "iso_code": "MN",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "미얀마",
+      "country_en": "Myanmar",
+      "iso_code": "MM",
+      "level": 4,
+      "region_type": "일부",
+      "note": "샨주 북부 및 동부, 까야주, 라카인주, 미야와디 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "미얀마",
+      "country_en": "Myanmar",
+      "iso_code": "MM",
+      "level": 3,
+      "region_type": "일부",
+      "note": "4단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "미합중국",
+      "country_en": "United States of America",
+      "iso_code": "US",
+      "level": 1,
+      "region_type": "일부",
+      "note": "하와이 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "바누아투",
+      "country_en": "Vanuatu",
+      "iso_code": "VU",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "바레인",
+      "country_en": "Bahrain",
+      "iso_code": "BH",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "방글라데시",
+      "country_en": "Bangladesh",
+      "iso_code": "BD",
+      "level": 3,
+      "region_type": "일부",
+      "note": "동남부 치타공 힐 트랙스 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "방글라데시",
+      "country_en": "Bangladesh",
+      "iso_code": "BD",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "베냉",
+      "country_en": "Benin",
+      "iso_code": "BJ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "북부 부르키나파소 접경지역(Pendjari 국립공원 및 W 국립공원)",
+      "issued_on": null
+    },
+    {
+      "country_name": "베냉",
+      "country_en": "Benin",
+      "iso_code": "BJ",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "베네수엘라볼리바르",
+      "country_en": "Venezuela",
+      "iso_code": "VE",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "베트남",
+      "country_en": "Vietnam",
+      "iso_code": "VN",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "벨기에",
+      "country_en": "Belgium",
+      "iso_code": "BE",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "벨라루스",
+      "country_en": "Belarus",
+      "iso_code": "BY",
+      "level": 4,
+      "region_type": "일부",
+      "note": "벨라루스 브레스트 고멜 지역 내 우크라이나 국경에서 30km",
+      "issued_on": null
+    },
+    {
+      "country_name": "벨라루스",
+      "country_en": "Belarus",
+      "iso_code": "BY",
+      "level": 3,
+      "region_type": "일부",
+      "note": "4단계, 특별여행주의보 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "벨리즈",
+      "country_en": "Belize",
+      "iso_code": "BZ",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "보스니아헤르체고비나",
+      "country_en": "Bosnia-Herzegovina",
+      "iso_code": "BA",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "보츠와나",
+      "country_en": "Botswana",
+      "iso_code": "BW",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "볼리비아",
+      "country_en": "Bolivia",
+      "iso_code": "BO",
+      "level": 3,
+      "region_type": "일부",
+      "note": "라파스 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "부룬디",
+      "country_en": "Burundi",
+      "iso_code": "BI",
+      "level": 3,
+      "region_type": "일부",
+      "note": "2단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "부룬디",
+      "country_en": "Burundi",
+      "iso_code": "BI",
+      "level": 2,
+      "region_type": "일부",
+      "note": "부줌부라시",
+      "issued_on": null
+    },
+    {
+      "country_name": "부르키나파소",
+      "country_en": "Burkina Faso",
+      "iso_code": "BF",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "부탄",
+      "country_en": "Bhutan",
+      "iso_code": "BT",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "브라질",
+      "country_en": "Brazil",
+      "iso_code": "BR",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "사우디아라비아",
+      "country_en": "Saudi Arabia",
+      "iso_code": "SA",
+      "level": 3,
+      "region_type": "일부",
+      "note": "사우디-예멘 국경 인근 180km 지역(지잔 주, 아브하(Abha), 카미스 무샤이트(Khamis Mushait)시 포함),샤이바 유전,프린스술탄 공군기지,라스 타누라,얀부, 주베일",
+      "issued_on": null
+    },
+    {
+      "country_name": "사이프러스",
+      "country_en": "Cyprus",
+      "iso_code": "CY",
+      "level": 3,
+      "region_type": "일부",
+      "note": "파마구스타 내 바로샤 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "사이프러스",
+      "country_en": "Cyprus",
+      "iso_code": "CY",
+      "level": 2,
+      "region_type": "일부",
+      "note": "1, 3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "사이프러스",
+      "country_en": "Cyprus",
+      "iso_code": "CY",
+      "level": 1,
+      "region_type": "일부",
+      "note": "남부 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "산마리노",
+      "country_en": "San Marino",
+      "iso_code": "SM",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "상투메프린시페",
+      "country_en": "Sâo Tomé & Principe",
+      "iso_code": "ST",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "세네갈",
+      "country_en": "Senegal",
+      "iso_code": "SN",
+      "level": 1,
+      "region_type": "일부",
+      "note": "특별여행주의보를 제외한 전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "소말리아",
+      "country_en": "Somalia",
+      "iso_code": "SO",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "솔로몬제도",
+      "country_en": "Solomon Islands",
+      "iso_code": "SB",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "수단",
+      "country_en": "Sudan",
+      "iso_code": "SD",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "수리남",
+      "country_en": "Suriname",
+      "iso_code": "SR",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "스리랑카",
+      "country_en": "Sri Lanka",
+      "iso_code": "LK",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "스위스",
+      "country_en": "Swiss",
+      "iso_code": "CH",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "스페인",
+      "country_en": "Spain",
+      "iso_code": "ES",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "슬로베니아",
+      "country_en": "Slovenia",
+      "iso_code": "SI",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "시리아",
+      "country_en": "Syria",
+      "iso_code": "SY",
+      "level": 4,
+      "region_type": "일부",
+      "note": "3단계를 제외한 전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "시리아",
+      "country_en": "Syria",
+      "iso_code": "SY",
+      "level": 3,
+      "region_type": "일부",
+      "note": "골란고원 일부(레바논 접경 및 UNDOF 분리선 4km 이내 지역 제외)",
+      "issued_on": null
+    },
+    {
+      "country_name": "시에라리온",
+      "country_en": "Sierra Leone",
+      "iso_code": "SL",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아랍에미리트",
+      "country_en": "United Arab Emirates : UAE",
+      "iso_code": "AE",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아르메니아",
+      "country_en": "Armenia",
+      "iso_code": "AM",
+      "level": 4,
+      "region_type": "일부",
+      "note": "아제르바이잔 접경 5km 구간",
+      "issued_on": null
+    },
+    {
+      "country_name": "아르메니아",
+      "country_en": "Armenia",
+      "iso_code": "AM",
+      "level": 2,
+      "region_type": "일부",
+      "note": "아라라트주, 게가쿠니크주, 바요츠조르주, 슈니크주, 타부시주",
+      "issued_on": null
+    },
+    {
+      "country_name": "아르메니아",
+      "country_en": "Armenia",
+      "iso_code": "AM",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2, 4단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아르헨티나",
+      "country_en": "Argentina",
+      "iso_code": "AR",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아이슬란드",
+      "country_en": "Iceland",
+      "iso_code": "IS",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아이티",
+      "country_en": "Haiti",
+      "iso_code": "HT",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아제르바이잔",
+      "country_en": "Azerbaijan",
+      "iso_code": "AZ",
+      "level": 4,
+      "region_type": "일부",
+      "note": "아르메니아 접경 5km 구간",
+      "issued_on": null
+    },
+    {
+      "country_name": "아제르바이잔",
+      "country_en": "Azerbaijan",
+      "iso_code": "AZ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "아르메니아와 인접한 아제르바이잔 서남부 지역(아그담(Aghdam), 피줄리(Fizuli), 자브라일(Jabrayil), 장길란(Zanglian), 구바들리(Guabadly), 라친(Lachin), 켈바자르(Kelbajar)), 나흐치반 아르메니아 접경지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아제르바이잔",
+      "country_en": "Azerbaijan",
+      "iso_code": "AZ",
+      "level": 1,
+      "region_type": "일부",
+      "note": "3, 4, 특별여행주의보 단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "아프가니스탄",
+      "country_en": "Afghanistan",
+      "iso_code": "AF",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "알바니아",
+      "country_en": "Albania",
+      "iso_code": "AL",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "알제리",
+      "country_en": "Algeria",
+      "iso_code": "DZ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "국경지역(튀니지(테베사, 엘웨드 동부, 오아글라 동부), 리비아(일리지 동부), 니제르ㆍ말리ㆍ모리타니(타만라셋 남부, 아드라르 남서부, 틴두프 남서부))",
+      "issued_on": null
+    },
+    {
+      "country_name": "알제리",
+      "country_en": "Algeria",
+      "iso_code": "DZ",
+      "level": 2,
+      "region_type": "일부",
+      "note": "카빌리 지역 6개주 산악지역(부메르데스, 부아라, 티지 우주, 베자이아, 보르즈부아레리즈, 지젤) 포함 3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "알제리",
+      "country_en": "Algeria",
+      "iso_code": "DZ",
+      "level": 1,
+      "region_type": "일부",
+      "note": "알제주",
+      "issued_on": null
+    },
+    {
+      "country_name": "앙골라",
+      "country_en": "Angola",
+      "iso_code": "AO",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "에리트레아",
+      "country_en": "Eritrea",
+      "iso_code": "ER",
+      "level": 3,
+      "region_type": "일부",
+      "note": "에티오피아 수단 지부티 국경 25Km 이내",
+      "issued_on": null
+    },
+    {
+      "country_name": "에리트레아",
+      "country_en": "Eritrea",
+      "iso_code": "ER",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "에스와티니",
+      "country_en": "Eswatini",
+      "iso_code": "SZ",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "에콰도르",
+      "country_en": "Ecuador",
+      "iso_code": "EC",
+      "level": 3,
+      "region_type": "일부",
+      "note": "과야스 주, 아수아이 주, 로스리오스 주, 산타엘레나 주, 엘오로 주, 마니비 주, 에스메랄다 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "에콰도르",
+      "country_en": "Ecuador",
+      "iso_code": "EC",
+      "level": 2,
+      "region_type": "일부",
+      "note": "출국권고를 제외한 전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "에티오피아",
+      "country_en": "Ethiopia",
+      "iso_code": "ET",
+      "level": 3,
+      "region_type": "일부",
+      "note": "암하라 주, 티그라이 주, 소말리 주, 베니샹굴-구무즈 주, 감벨라 주, 오로미아 주 일부(East Welega, West Welega, Kelam Welega, Guji, Borena 지역), 수단 및 에리트리아 국경 10km 접경지역, 아파르주에서 티그라이주 10km 접경지역, △케냐 및 남수단 국경 10km 접경 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "영국",
+      "country_en": "United Kingdom",
+      "iso_code": "GB",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "예멘",
+      "country_en": "Yemen",
+      "iso_code": "YE",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "오만",
+      "country_en": "Oman",
+      "iso_code": "OM",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "오스트리아",
+      "country_en": "Austria",
+      "iso_code": "AT",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "온두라스",
+      "country_en": "Honduras",
+      "iso_code": "HN",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "요르단",
+      "country_en": "Jordan",
+      "iso_code": "JO",
+      "level": 3,
+      "region_type": "일부",
+      "note": "자르카 시 동편 경계선의 동부 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "우크라이나",
+      "country_en": "Ukraine",
+      "iso_code": "UA",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "이라크",
+      "country_en": "Iraq",
+      "iso_code": "IQ",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "이란",
+      "country_en": "Iran",
+      "iso_code": "IR",
+      "level": 4,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "이스라엘",
+      "country_en": "Israel",
+      "iso_code": "IL",
+      "level": 4,
+      "region_type": "일부",
+      "note": "이스라엘 북부 레바논 접경지역(국경으로부터 4km), 가자지구",
+      "issued_on": null
+    },
+    {
+      "country_name": "이스라엘",
+      "country_en": "Israel",
+      "iso_code": "IL",
+      "level": 3,
+      "region_type": "일부",
+      "note": "4단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "이집트",
+      "country_en": "Egypt",
+      "iso_code": "EG",
+      "level": 3,
+      "region_type": "일부",
+      "note": "중•북부 시나이 반도(1,2단계 지역 제외), 리비아 국경으로부터 30km까지",
+      "issued_on": null
+    },
+    {
+      "country_name": "이집트",
+      "country_en": "Egypt",
+      "iso_code": "EG",
+      "level": 2,
+      "region_type": "일부",
+      "note": "서부사막, 시나이반도 남부 일부지역(성캐더린•타바)",
+      "issued_on": null
+    },
+    {
+      "country_name": "이집트",
+      "country_en": "Egypt",
+      "iso_code": "EG",
+      "level": 1,
+      "region_type": "일부",
+      "note": "다합•샴엘셰이크지역, 카이로 등 나일강 유역 도시지역, 마르트루~지중해 유역",
+      "issued_on": null
+    },
+    {
+      "country_name": "이탈리아",
+      "country_en": "Italia",
+      "iso_code": "IT",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "인도",
+      "country_en": "India",
+      "iso_code": "IN",
+      "level": 3,
+      "region_type": "일부",
+      "note": "카슈미르, 카르길 시",
+      "issued_on": null
+    },
+    {
+      "country_name": "인도",
+      "country_en": "India",
+      "iso_code": "IN",
+      "level": 1,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "인도네시아",
+      "country_en": "Indonesia",
+      "iso_code": "ID",
+      "level": 2,
+      "region_type": "일부",
+      "note": "서파루아, 파푸아, 말루쿠, 아체",
+      "issued_on": null
+    },
+    {
+      "country_name": "인도네시아",
+      "country_en": "Indonesia",
+      "iso_code": "ID",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "일본",
+      "country_en": "Japan",
+      "iso_code": "JP",
+      "level": 3,
+      "region_type": "일부",
+      "note": "후쿠시마 원전 반경 30km 이내 및 일본 정부 지정 피난지시구역",
+      "issued_on": null
+    },
+    {
+      "country_name": "자메이카",
+      "country_en": "Jamaica",
+      "iso_code": "JM",
+      "level": 3,
+      "region_type": "일부",
+      "note": "킹스턴, 세인트앤드류, 세인트캐서린",
+      "issued_on": null
+    },
+    {
+      "country_name": "자메이카",
+      "country_en": "Jamaica",
+      "iso_code": "JM",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "잠비아",
+      "country_en": "Zambia",
+      "iso_code": "ZM",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "적도기니",
+      "country_en": "Equatorial Guinea",
+      "iso_code": "GQ",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "조지아",
+      "country_en": "Georgia",
+      "iso_code": "GE",
+      "level": 3,
+      "region_type": "일부",
+      "note": "남 오세티아, 압하지아",
+      "issued_on": null
+    },
+    {
+      "country_name": "조지아",
+      "country_en": "Georgia",
+      "iso_code": "GE",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "중국",
+      "country_en": "China",
+      "iso_code": "CN",
+      "level": 1,
+      "region_type": "일부",
+      "note": "특별여행주의보 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "중앙아프리카",
+      "country_en": "Central African Republic",
+      "iso_code": "CF",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "지부티",
+      "country_en": "Djibouti",
+      "iso_code": "DJ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "에리트레아•에티오피아•소말리아 국경 10km 이내 접경지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "지부티",
+      "country_en": "Djibouti",
+      "iso_code": "DJ",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "짐바브웨",
+      "country_en": "Zimbabwe",
+      "iso_code": "ZW",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "차드",
+      "country_en": "Chad",
+      "iso_code": "TD",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "칠레",
+      "country_en": "Chile",
+      "iso_code": "CL",
+      "level": 2,
+      "region_type": "일부",
+      "note": "발파라이소주(이스터섬 제외), 산티아고 수도주, 비오비오주",
+      "issued_on": null
+    },
+    {
+      "country_name": "칠레",
+      "country_en": "Chile",
+      "iso_code": "CL",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "카메룬",
+      "country_en": "Cameroon",
+      "iso_code": "CM",
+      "level": 3,
+      "region_type": "일부",
+      "note": "노르드 주, 아다모와 주, 북서부 주, 남서부 주, 최북부 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "카메룬",
+      "country_en": "Cameroon",
+      "iso_code": "CM",
+      "level": 2,
+      "region_type": "전체",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "카타르",
+      "country_en": "Qatar",
+      "iso_code": "QA",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "캄보디아",
+      "country_en": "Cambodia",
+      "iso_code": "KH",
+      "level": 3,
+      "region_type": "일부",
+      "note": "캄보디아-태국 국경 50km 이내,시하누크빌 시 ,캄폿 주 보코산 지역, 바벳 시, 포이펫 시,",
+      "issued_on": null
+    },
+    {
+      "country_name": "캄보디아",
+      "country_en": "Cambodia",
+      "iso_code": "KH",
+      "level": 2,
+      "region_type": "일부",
+      "note": "시하누크빌 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "캄보디아",
+      "country_en": "Cambodia",
+      "iso_code": "KH",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2․3 단계 발령 지역 외 전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "케냐",
+      "country_en": "Kenya",
+      "iso_code": "KE",
+      "level": 3,
+      "region_type": "일부",
+      "note": "만데라주, 와지르주, 가리사주, 라무주 전체, 타나강주 및 킬리피주 일부지역, 나이로비 북부 이스트레이 지역, 에티오피아 및 남수단 접경 25km 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "케냐",
+      "country_en": "Kenya",
+      "iso_code": "KE",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "코모로",
+      "country_en": "Comoros",
+      "iso_code": "KM",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "코소보",
+      "country_en": "Kosovo",
+      "iso_code": "XK",
+      "level": 3,
+      "region_type": "일부",
+      "note": "미트로비차 북부(Zubin Potok, Zveçan, Leposaviq)",
+      "issued_on": null
+    },
+    {
+      "country_name": "코소보",
+      "country_en": "Kosovo",
+      "iso_code": "XK",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "코스타리카",
+      "country_en": "Costa Rica",
+      "iso_code": "CR",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "코트디부아르",
+      "country_en": "Côte D'Ivoire",
+      "iso_code": "CI",
+      "level": 3,
+      "region_type": "일부",
+      "note": "라이베리아ㆍ기니와 국경을 접한 서부 지역(뎅겔레 주, 몽타뉴 주, 바핑 주), 초로고(Tchologo), 붕카니(Bounkani) 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "코트디부아르",
+      "country_en": "Côte D'Ivoire",
+      "iso_code": "CI",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "콜롬비아",
+      "country_en": "Colombia",
+      "iso_code": "CO",
+      "level": 3,
+      "region_type": "일부",
+      "note": "베네수엘라 국경지역 20km/ 나리뇨 주(뚜마코)/ 바예델카우카 주(깔리 시 제외)/ 아라우카 주, 카우카 주/(*는 일부: 안티오키아 주*, 초코 주*/ 카케타 주*)  / 노르떼 데 산딴데르(Norte de Santander) 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "콜롬비아",
+      "country_en": "Colombia",
+      "iso_code": "CO",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "콩고",
+      "country_en": "Congo",
+      "iso_code": "CG",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "콩고민주공화국",
+      "country_en": "Democratic Republic of Congo",
+      "iso_code": "CD",
+      "level": 4,
+      "region_type": "일부",
+      "note": "북키부주, 남키부주,이투리주",
+      "issued_on": null
+    },
+    {
+      "country_name": "콩고민주공화국",
+      "country_en": "Democratic Republic of Congo",
+      "iso_code": "CD",
+      "level": 3,
+      "region_type": "일부",
+      "note": "중앙아프리카공화국과의 국경 50km 이내 지역/ 바우엘레주, 오트우엘레주, 마니에마주, 카사이주, 카사이상트랄주, 카사이오리앙탈주,탕가니카주,오트로마미주",
+      "issued_on": null
+    },
+    {
+      "country_name": "쿠웨이트",
+      "country_en": "Kuwait",
+      "iso_code": "KW",
+      "level": 3,
+      "region_type": "전체",
+      "note": "전지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "키리바시",
+      "country_en": "Kiribati",
+      "iso_code": "KI",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "타지키스탄",
+      "country_en": "Tajikistan",
+      "iso_code": "TJ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "아프가니스탄 접경지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "타지키스탄",
+      "country_en": "Tajikistan",
+      "iso_code": "TJ",
+      "level": 1,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "탄자니아",
+      "country_en": "Tanzania",
+      "iso_code": "TZ",
+      "level": 3,
+      "region_type": "일부",
+      "note": "음트와라(Mtwara) 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "탄자니아",
+      "country_en": "Tanzania",
+      "iso_code": "TZ",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "태국",
+      "country_en": "Thailand",
+      "iso_code": "TH",
+      "level": 3,
+      "region_type": "일부",
+      "note": "송클라 주 남부 말레이시아 접경지역, 파타니 주, 나라티왓 주, 얄라 주, 태국-캄보디아 국경 50km 이내",
+      "issued_on": null
+    },
+    {
+      "country_name": "태국",
+      "country_en": "Thailand",
+      "iso_code": "TH",
+      "level": 2,
+      "region_type": "일부",
+      "note": "딱 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "태국",
+      "country_en": "Thailand",
+      "iso_code": "TH",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2.3단계 및 특별여행주의보 발령 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "토고",
+      "country_en": "Togo",
+      "iso_code": "TG",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "투르크메니스탄",
+      "country_en": "Turkmenistan",
+      "iso_code": "TM",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "튀니지",
+      "country_en": "Tunisia",
+      "iso_code": "TN",
+      "level": 3,
+      "region_type": "일부",
+      "note": "알제리 접경지역(까세린주 샴비산 일대 포함), 리비아 접경지역 및 크사르 길랜 이남 사막지역 전역",
+      "issued_on": null
+    },
+    {
+      "country_name": "튀니지",
+      "country_en": "Tunisia",
+      "iso_code": "TN",
+      "level": 2,
+      "region_type": "일부",
+      "note": "1, 3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "튀니지",
+      "country_en": "Tunisia",
+      "iso_code": "TN",
+      "level": 1,
+      "region_type": "일부",
+      "note": "튀니스와 수도권 지역/비제르트 주/나불 주/수스 주/모나스티르 주 마흐디아 주/스팍스 주/제르바 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "튀르키예공화국",
+      "country_en": "Republic of Turkiye",
+      "iso_code": "TR",
+      "level": 3,
+      "region_type": "일부",
+      "note": "빙괼, 바트만, 시이르트, 시르나크, 하카리, 시리아의 국경 10km 이내 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "튀르키예공화국",
+      "country_en": "Republic of Turkiye",
+      "iso_code": "TR",
+      "level": 2,
+      "region_type": "일부",
+      "note": "마르딘, 샨르우르파, 비틀리스, 반, 엘라지즈, 툰젤리, 디야르바키르",
+      "issued_on": null
+    },
+    {
+      "country_name": "튀르키예공화국",
+      "country_en": "Republic of Turkiye",
+      "iso_code": "TR",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2,3단계 및 특별여행주의보 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "트리니다드토바고",
+      "country_en": "Trinidad & Tobago",
+      "iso_code": "TT",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "파나마",
+      "country_en": "Panama",
+      "iso_code": "PA",
+      "level": 3,
+      "region_type": "일부",
+      "note": "콜롬비아 국경지역 40Km 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "파나마",
+      "country_en": "Panama",
+      "iso_code": "PA",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "파라과이",
+      "country_en": "Paraguay",
+      "iso_code": "PY",
+      "level": 2,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "파키스탄",
+      "country_en": "Pakistan",
+      "iso_code": "PK",
+      "level": 3,
+      "region_type": "일부",
+      "note": "2단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "파키스탄",
+      "country_en": "Pakistan",
+      "iso_code": "PK",
+      "level": 2,
+      "region_type": "일부",
+      "note": "이슬라마바드, 페이살라바드, 라왈핀디, 라호르, 훈자, 길깃, 스카루드",
+      "issued_on": null
+    },
+    {
+      "country_name": "파푸아뉴기니",
+      "country_en": "Papua New Guinea : PNG",
+      "iso_code": "PG",
+      "level": 3,
+      "region_type": "일부",
+      "note": "서던 하일랜즈 주, 헬라 주",
+      "issued_on": null
+    },
+    {
+      "country_name": "파푸아뉴기니",
+      "country_en": "Papua New Guinea : PNG",
+      "iso_code": "PG",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "팔레스타인",
+      "country_en": "Palestine",
+      "iso_code": "PS",
+      "level": 4,
+      "region_type": "일부",
+      "note": "이스라엘 북부 레바논 접경지역(국경으로부터 4km), 가자지구",
+      "issued_on": null
+    },
+    {
+      "country_name": "팔레스타인",
+      "country_en": "Palestine",
+      "iso_code": "PS",
+      "level": 3,
+      "region_type": "일부",
+      "note": "4단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "페루",
+      "country_en": "Peru",
+      "iso_code": "PE",
+      "level": 3,
+      "region_type": "일부",
+      "note": "아야쿠초 주 : 라 마르, 우안타 지역/ 우앙카벨리카 주 : 츄르캄파, 타야카하 지역/ 쿠스코 주 : 라 콘벤시온 지역/ 후닌 주 : 사티포, 우안카요, 콘셉시온 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "페루",
+      "country_en": "Peru",
+      "iso_code": "PE",
+      "level": 2,
+      "region_type": "일부",
+      "note": "3단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "폴란드",
+      "country_en": "Poland",
+      "iso_code": "PL",
+      "level": 2,
+      "region_type": "일부",
+      "note": "우크라이나 접경 30KM지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "폴란드",
+      "country_en": "Poland",
+      "iso_code": "PL",
+      "level": 1,
+      "region_type": "일부",
+      "note": "2단계 지정 지역을 제외한 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "프랑스",
+      "country_en": "France",
+      "iso_code": "FR",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "피지",
+      "country_en": "Fiji",
+      "iso_code": "FJ",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    },
+    {
+      "country_name": "필리핀",
+      "country_en": "Philippines",
+      "iso_code": "PH",
+      "level": 4,
+      "region_type": "일부",
+      "note": "민다나오의 잠보앙가, 술루‧바실란 타위타위 군도",
+      "issued_on": null
+    },
+    {
+      "country_name": "필리핀",
+      "country_en": "Philippines",
+      "iso_code": "PH",
+      "level": 3,
+      "region_type": "일부",
+      "note": "팔라완섬 2단계 지역(아볼란, 나라, 케손) 이남, 민다나오섬 일부(2단계 및 4단계 지역 제외)",
+      "issued_on": null
+    },
+    {
+      "country_name": "필리핀",
+      "country_en": "Philippines",
+      "iso_code": "PH",
+      "level": 2,
+      "region_type": "일부",
+      "note": "1, 3, 4단계 지역을 제외한 지역 , 시아르가오주 및 다바오 카가얀데오로시, 라귄딩안 공항 및 N9 도로 일부",
+      "issued_on": null
+    },
+    {
+      "country_name": "필리핀",
+      "country_en": "Philippines",
+      "iso_code": "PH",
+      "level": 1,
+      "region_type": "일부",
+      "note": "수빅시, 보라카이섬, 보홀섬, 세부막탄섬(라푸라푸시)",
+      "issued_on": null
+    },
+    {
+      "country_name": "홍콩",
+      "country_en": "Hongkong",
+      "iso_code": "HK",
+      "level": 1,
+      "region_type": "전체",
+      "note": "전 지역",
+      "issued_on": null
+    }
+  ]
+}

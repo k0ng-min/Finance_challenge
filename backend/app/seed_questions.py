@@ -19,9 +19,6 @@ Base.metadata.create_all(bind=engine)
 
 # (context_type, question_text, target_field, impact_weight, applies_to_l1)
 QUESTIONS = [
-    # L1 자체가 아직 보류 상태일 때만 쓰는 중립 질문. 낮은 confidence로 임시 선택된
-    # SPC/INJ 등의 전용 질문을 바로 노출하면 휴대폰 분실에 전쟁·테러를 묻는 문제가 생긴다.
-    ("사고후", "사고 유형을 더 확인하기 위해 무슨 일이 있었는지 구체적으로 알려주세요. (예: 다침, 질병, 휴대품 도난·분실·파손, 항공편·수하물 문제)", "incident_type_detail", 1.0, "UNRESOLVED"),
     ("사고후", "정확한 진단명 또는 증상을 알려주시겠어요? (예: 발목 골절, 열상 등)", "diagnosis", 0.9, "INJ"),
     ("사고후", "병원에 입원하셨나요, 아니면 통원 치료만 받으셨나요?", "hospitalized", 0.85, "INJ"),
     ("사고후", "수술을 받으셨나요?", "surgery", 0.7, "INJ"),
@@ -66,21 +63,75 @@ QUESTIONS = [
 ]
 
 
+# --- 세부유형(L2)이 정해졌을 때만 묻는 질문 ---------------------------------
+#
+# 대분류 질문만 있으면 "휴대품 사고"에는 늘 같은 문항이 나온다. 정작 청구에 필요한 건
+# 도난이면 경찰 신고서, 분실이면 잃어버린 상황, 파손이면 수리 견적처럼 세부유형마다
+# 다른 것들이다. 세부유형이 확정되기 전에는 이 질문들이 나오지 않는다(그 전에 다 꺼내면
+# 도난·파손·분실 질문이 한꺼번에 쏟아진다).
+L2_QUESTIONS = [
+    # --- 휴대품(PROP) ---
+    ("사고후", "도난 신고서(경찰 확인서)를 받아두셨나요?", "prop_police_report", 0.85, "PROP", "PROP_THEFT"),
+    ("사고후", "도난당한 물건과 구입가를 알려주시겠어요?", "prop_theft_item", 0.7, "PROP", "PROP_THEFT"),
+    ("사고후", "파손된 물건의 수리 견적서나 수리비 영수증이 있나요?", "prop_damage_estimate", 0.85, "PROP", "PROP_DAMAGE"),
+    ("사고후", "어디서 어떻게 잃어버리셨는지 알려주시겠어요?", "prop_loss_place", 0.8, "PROP", "PROP_LOSS"),
+    ("사고후", "여권 재발급에 실제로 든 비용이 얼마인가요?", "prop_passport_cost", 0.85, "PROP", "PROP_PASSPORT_LOSS"),
+    ("사고후", "분실한 것이 현금인가요, 여행자수표·유가증권인가요?", "prop_cash_kind", 0.8, "PROP", "PROP_CASH_SECURITIES"),
+
+    # --- 운송(TRV) ---
+    ("사고후", "항공사에서 지연·결항 확인서를 받으셨나요?", "trv_delay_certificate", 0.85, "TRV", "TRV_FLIGHT_DELAY"),
+    ("사고후", "지연 때문에 실제로 쓰신 비용(숙박·식사 등)이 있나요?", "trv_delay_expense", 0.7, "TRV", "TRV_FLIGHT_DELAY"),
+    ("사고후", "수하물이 몇 시간 만에 도착했나요?", "trv_baggage_delay_hours", 0.85, "TRV", "TRV_BAGGAGE_DELAY"),
+    ("사고후", "항공사에서 수하물 사고 접수증(PIR)을 받으셨나요?", "trv_baggage_pir", 0.85, "TRV", "TRV_BAGGAGE_DELAY,TRV_BAGGAGE_LOSS"),
+
+    # --- 상해(INJ) ---
+    ("사고후", "현지 병원 진단서와 진료비 영수증을 받아두셨나요?", "inj_overseas_docs", 0.8, "INJ", "INJ_OVERSEAS_TREATMENT"),
+    ("사고후", "귀국 후 국내에서 치료를 시작한 날짜가 언제인가요?", "inj_domestic_start", 0.75, "INJ", "INJ_DOMESTIC_TREATMENT"),
+    ("사고후", "후유장해 진단을 받으셨다면 장해 정도(%)가 어떻게 되나요?", "inj_disability_rate", 0.8, "INJ", "INJ_DEATH_DISABILITY"),
+
+    # --- 질병(ILL) ---
+    ("사고후", "격리 통지서나 확진 증명서를 받으셨나요?", "ill_quarantine_doc", 0.85, "ILL", "ILL_INFECTIOUS"),
+    ("사고후", "격리 기간이 며칠이었나요?", "ill_quarantine_days", 0.75, "ILL", "ILL_INFECTIOUS"),
+    ("사고후", "현지 병원 진단서와 진료비 영수증을 받아두셨나요?", "ill_overseas_docs", 0.8, "ILL", "ILL_OVERSEAS_TREATMENT"),
+
+    # --- 배상책임(LIA) ---
+    ("사고후", "숙소에서 청구서나 수리 견적서를 받으셨나요?", "lia_lodging_bill", 0.85, "LIA", "LIA_LODGING"),
+    ("사고후", "피해자와 합의하셨나요? 합의서가 있으면 함께 준비해주세요.", "lia_settlement", 0.8, "LIA", "LIA_PERSONAL,LIA_PROPERTY"),
+
+    # --- 여행변경(CHG) ---
+    ("사고후", "실제로 청구된 취소 수수료가 얼마인가요?", "chg_cancel_fee", 0.85, "CHG", "CHG_CANCELLATION"),
+    ("사고후", "조기 귀국하며 추가로 든 항공료가 얼마인가요?", "chg_return_cost", 0.85, "CHG", "CHG_INTERRUPTION"),
+
+    # --- 긴급지원(EMG) ---
+    ("사고후", "수색·구조 비용 청구서를 받으셨나요?", "emg_rescue_bill", 0.85, "EMG", "EMG_RESCUE"),
+    ("사고후", "이송에 든 비용과 이송 수단(에어앰뷸런스 등)을 알려주시겠어요?", "emg_transport_cost", 0.85, "EMG", "EMG_MEDICAL_TRANSPORT"),
+]
+
+
 def run():
     db = SessionLocal()
     try:
-        existing_by_field = {q.target_field: q for q in db.query(QuestionBank).all()}
+        # incident_id가 달린 행은 사고 한 건을 위해 그때그때 만들어진 질문이다
+        # (incident_questions_gemini). 프롬프트가 담보 필드 이름(diagnosis 등)을 그대로
+        # 쓰라고 시키므로 여기 target_field가 겹친다 — 공용 행으로 오인하면 공용 질문이
+        # 영영 안 만들어지고, 사고별 행에 공용 태그가 덧칠돼 다른 사고로 새어 나간다.
+        existing_by_field = {
+            q.target_field: q
+            for q in db.query(QuestionBank).filter(QuestionBank.incident_id.is_(None)).all()
+        }
         added = updated = 0
-        for context_type, text, target_field, weight, applies_to_l1 in QUESTIONS:
+        specs = [(c, t, f, w, l1, None) for c, t, f, w, l1 in QUESTIONS] + L2_QUESTIONS
+        for context_type, text, target_field, weight, applies_to_l1, applies_to_l2 in specs:
             row = existing_by_field.get(target_field)
             if row is None:
                 db.add(QuestionBank(
                     context_type=context_type, question_text=text, target_field=target_field,
-                    impact_weight=weight, applies_to_l1=applies_to_l1,
+                    impact_weight=weight, applies_to_l1=applies_to_l1, applies_to_l2=applies_to_l2,
                 ))
                 added += 1
-            elif row.applies_to_l1 != applies_to_l1:
+            elif row.applies_to_l1 != applies_to_l1 or row.applies_to_l2 != applies_to_l2:
                 row.applies_to_l1 = applies_to_l1
+                row.applies_to_l2 = applies_to_l2
                 updated += 1
         db.commit()
         print(f"question_bank 시드 완료: {added}건 추가, {updated}건 applies_to_l1 갱신 (기존 {len(existing_by_field)}건)")

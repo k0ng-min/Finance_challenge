@@ -1,15 +1,29 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut, type OverlapReportOut } from "../api";
+import {
+  api, type RecommendationOut, type InsurerTierOut, type InsurerRankOut, type OverlapReportOut,
+  type InsurerComparisonOut,
+} from "../api";
 import { useApp } from "../context/AppContext";
 import { PageHero } from "./PageHero";
 import { InsurerIncidentClauses } from "./InsurerIncidentClauses";
+import { StandardTermsComparison } from "./StandardTermsComparison";
 import { Icon3D } from "./Icon3D";
 import { LoadingScreen } from "./LoadingScreen";
 import { OverlapReportView } from "./OverlapReport";
+import { RankingRadar } from "./RankingRadar";
+import { TravelAlertBadge } from "./TravelAlertBadge";
+import { NextStepCard } from "./NextStepCard";
+import { PlanCoverageBoard } from "./PlanCoverageBoard";
+import { Modal } from "./Modal";
+import { shortInsurerName } from "../data/insurers";
+import { INSURER_COUNT } from "../data/insurers";
 
 type Phase = "tier" | "ranking" | "detail";
+
+// backend/app/services/insurer_tiers.py의 TIER_LABELS와 반드시 같은 순서로 둔다.
+const PLAN_TIER_LABELS = ["실속", "표준", "고급"];
 
 export function InsurerRankingFlow({
   result, initialTier, hasExternalPolicies, externalPoliciesReady,
@@ -32,17 +46,35 @@ export function InsurerRankingFlow({
   const [tiers, setTiers] = useState<InsurerTierOut[]>([]);
   const [tier, setTier] = useState<string | null>(initialTier ?? null);
   const [ranking, setRanking] = useState<InsurerRankOut[]>([]);
+  // 그 등급 상품이 없어 비교에서 빠진 보험사 안내. 아무 말 없이 목록에서 사라지면
+  // 사용자는 자료가 누락된 걸로 읽는다.
+  const [excludedNote, setExcludedNote] = useState<string | null>(null);
   const [loading, setLoading] = useState(!!initialTier);
   const [selected, setSelected] = useState<InsurerRankOut | null>(null);
   const [registering, setRegistering] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
+  const [detailTab, setDetailTab] = useState<"incidents" | "standard">("incidents");
+  // 순위 목록에서 보험사 이름을 누르면(고르는 것과 별개로) 등급·담보한도를 팝업으로 미리 볼 수 있다.
+  const [previewCode, setPreviewCode] = useState<string | null>(null);
+  const [previewPlanByInsurer, setPreviewPlanByInsurer] = useState<Record<string, string>>({});
+  // 상세 화면(선택한 보험사 확정 단계)에서 등급을 고를 때도 표는 기본으로 숨겨 두고, 눌러야 뜬다.
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  // 이 보험사의 어느 등급(플랜)을 염두에 두고 있는지 — 등록할 때 그대로 같이 저장한다.
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const normalizedSex = sex === "F" ? "F" : sex === "M" ? "M" : null;
+  // 순위 목록 전체에 적용하는 등급(실속/표준/고급) — "기준 다시 선택" 옆에서 고른다.
+  // 바뀌면 카드마다 그 등급의 가격으로 다시 불러온다.
+  const [planTierRank, setPlanTierRank] = useState(1);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparison, setComparison] = useState<InsurerComparisonOut | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   useEffect(() => {
     api.getInsurerTiers().then(setTiers).catch(() => {});
   }, []);
 
-  async function fetchRanking(tierCode: string) {
+  async function fetchRanking(tierCode: string, tierRank: number = planTierRank) {
     setLoading(true);
     try {
       const rp = result.risk_profile;
@@ -52,8 +84,11 @@ export function InsurerRankingFlow({
         trip_days: typeof rp.trip_days === "number" ? rp.trip_days : undefined,
         activities: Array.isArray(rp.activities) ? (rp.activities as string[]) : undefined,
         coverage_priority: Array.isArray(rp.coverage_priority) ? (rp.coverage_priority as string[]) : undefined,
-      }, { age, sex });
+        companion_type: typeof rp.companion_type === "string" ? rp.companion_type : undefined,
+        rental_car: rp.rental_car === true,
+      }, { age, sex, user_id: userId }, tierRank);
       setRanking(res.ranking);
+      setExcludedNote(res.excluded_note);
       setPhase("ranking");
     } finally {
       setLoading(false);
@@ -65,6 +100,22 @@ export function InsurerRankingFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialTier]);
 
+  // 등급을 바꾸면(순위 화면에서) 같은 기준으로 다시 불러온다 — 최초 진입 때는 건너뛴다
+  // (그때는 위 initialTier 이펙트나 pickTier가 이미 처리한다).
+  useEffect(() => {
+    if (phase === "ranking" && tier) fetchRanking(tier, planTierRank);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planTierRank]);
+
+  useEffect(() => {
+    if (!showComparison) return;
+    setComparisonLoading(true);
+    api.getInsurerComparisonMetrics(planTierRank)
+      .then(setComparison)
+      .catch(() => setComparison(null))
+      .finally(() => setComparisonLoading(false));
+  }, [showComparison, planTierRank]);
+
   async function pickTier(tierCode: string) {
     setTier(tierCode);
     await fetchRanking(tierCode);
@@ -73,6 +124,9 @@ export function InsurerRankingFlow({
   function pickInsurer(item: InsurerRankOut) {
     setSelected(item);
     setRegistered(false);
+    // 목록에서 고른 등급(실속/표준/고급)을 그대로 이어서 보여준다 — 안 그러면 "고급"을
+    // 보고 들어왔는데 상세 화면은 다시 "표준"으로 돌아가 버린다.
+    setSelectedPlan(item.plan_name ?? null);
     setPhase("detail");
   }
 
@@ -98,6 +152,7 @@ export function InsurerRankingFlow({
         trip_id: result.trip_id,
         insurer_name_raw: selected.insurer_name,
         product_name_raw: null,
+        plan_name: selectedPlan,
         period_start: iso(start),
         period_end: iso(end),
       });
@@ -130,7 +185,7 @@ export function InsurerRankingFlow({
             icon="target"
             title="딱 맞는 보험사를 찾고 있어요"
             messages={[
-              "6개 보험사의 실제 약관을 대조하고 있어요",
+              `${INSURER_COUNT}개 보험사의 실제 약관을 대조하고 있어요`,
               "선택하신 기준에 맞춰 우선순위를 매기고 있어요",
               "근거가 되는 조항을 정리하고 있어요",
             ]}
@@ -144,7 +199,7 @@ export function InsurerRankingFlow({
           icon="target"
           eyebrow="보장 유형 선택"
           title={"어떤 기준으로\n비교해 드릴까요?"}
-          subtitle="선택한 기준에 따라 6개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요."
+          subtitle={`선택한 기준에 따라 ${INSURER_COUNT}개 보험사의 실제 약관 근거를 비교해 순위를 매겨드려요.`}
         />
         <div className="tier-list">
           {tiers.map((t, i) => (
@@ -172,6 +227,15 @@ export function InsurerRankingFlow({
   }
 
   if (phase === "ranking") {
+    // 비교 대상 평균을 축마다 미리 구해 둔다 — 카드마다 다시 세면 같은 값을 보험사 수만큼 계산한다.
+    // 자료가 없어 빠진 축은 평균에서도 뺀다(0으로 세면 평균이 부당하게 내려간다).
+    const axisAverages = [0, 1, 2, 3, 4].map((index) => {
+      const scores = ranking
+        .map((r) => r.axes[index])
+        .filter((axis) => axis && axis.available)
+        .map((axis) => axis.score);
+      return scores.length ? scores.reduce((sum, v) => sum + v, 0) / scores.length : 0;
+    });
     return (
       <div className="result-section">
         <PageHero
@@ -180,71 +244,214 @@ export function InsurerRankingFlow({
           title={"보험사 순위,\n이렇게 나왔어요"}
           subtitle="근거가 된 약관 조항 항목을 함께 표시했어요. 눌러서 담보 추천 결과를 확인하세요."
         />
-        <button type="button" className="btn-secondary" style={{ marginBottom: 10 }} onClick={() => setPhase("tier")}>
-          ← 기준 다시 선택
-        </button>
-        <a
-          className="price-link"
-          href="https://www.e-insmarket.or.kr/m/tripIns/tripInsList.knia?prdtSmlClsCd=H001"
-          target="_blank"
-          rel="noreferrer"
+        <div className="rank-toolbar">
+          <button
+            type="button"
+            className="btn-secondary rank-toolbar__reselect"
+            onClick={() => setPhase("tier")}
+          >
+            다시 선택
+          </button>
+          <div className="rank-toolbar__tiers">
+            {PLAN_TIER_LABELS.map((label, rank) => (
+              <button
+                key={label}
+                type="button"
+                className={`rank-toolbar__tier${planTierRank === rank ? " rank-toolbar__tier--on" : ""}`}
+                onClick={() => setPlanTierRank(rank)}
+                disabled={loading}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          className="rank-compare-trigger"
+          onClick={() => setShowComparison(true)}
         >
-          💳 여행 일수·목적지까지 반영한 실시간 견적은 보험다모아(공식 보험 비교 사이트)에서 바로
-          확인할 수 있어요 →
-        </a>
+          <span>📊 {PLAN_TIER_LABELS[planTierRank]} 등급 · {ranking.length}개사 보장금액 한눈에 비교</span>
+          <span className="rank-compare-trigger__arrow">›</span>
+        </button>
+        <Modal
+          open={showComparison}
+          onClose={() => setShowComparison(false)}
+          title={`${PLAN_TIER_LABELS[planTierRank]} 등급 · 보장금액 비교`}
+          className="modal-card--wide"
+        >
+          {comparisonLoading && <p className="muted" style={{ fontSize: "0.82rem" }}>불러오는 중...</p>}
+          {!comparisonLoading && comparison && (
+            <>
+              {comparison.categories.map((cat) => (
+                <div key={cat.category} className="compare-category">
+                  <p className="compare-category__title">{cat.category}</p>
+                  <div className="compare-table-scroll">
+                    <table className="coverage-table compare-table">
+                      <thead>
+                        <tr>
+                          <th>담보</th>
+                          {ranking.map((r) => (
+                            <th key={r.insurer_code}>{shortInsurerName(r.insurer_code, r.insurer_name)}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cat.metrics.map((m) => {
+                          const valueByCode = new Map(m.values.map((v) => [v.insurer_code, v.value_text]));
+                          return (
+                            <tr key={m.metric_label}>
+                              <td>{m.metric_label}</td>
+                              {ranking.map((r) => {
+                                const raw = valueByCode.get(r.insurer_code);
+                                const display = raw == null
+                                  ? "-"
+                                  : /^\d+$/.test(raw) ? `${Number(raw).toLocaleString()}${m.unit}` : raw;
+                                return <td key={r.insurer_code}>{display}</td>;
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+              <p className="muted plan-board__source">
+                {comparison.source}에서 직접 조회한 값이며 — 실제
+                가입 시 금액은 달라질 수 있어요.
+              </p>
+            </>
+          )}
+        </Modal>
         <div className="rank-list">
           {ranking.map((r, i) => (
-            <motion.button
+            <motion.div
               key={r.insurer_code}
-              type="button"
+              role="button"
+              tabIndex={0}
               className="rank-card"
               onClick={() => pickInsurer(r)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") pickInsurer(r); }}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.04 }}
               whileTap={{ scale: 0.98 }}
             >
-              <span className={`rank-badge${r.rank <= 3 ? " rank-badge--top" : ""}`}>{r.rank}</span>
-              <div className="rank-card__text">
-                <div className="rank-card__toprow">
-                  <strong>{r.insurer_name}</strong>
-                  <span className="rank-card__meta">
-                    <span className="rank-card__basis">{r.comparison_basis}</span>
-                    {r.premium_total != null ? (
-                      <span className="rank-card__premium">{r.premium_total.toLocaleString()}원</span>
-                    ) : (
-                      <span className="rank-card__premium rank-card__premium--none">가입연령 밖</span>
-                    )}
+              <div className="rank-card__head">
+                <span className={`rank-badge${r.rank === 1 ? " rank-badge--first" : ""}`}>{r.rank}</span>
+                <div className="rank-card__name">
+                  <button
+                    type="button"
+                    className="rank-card__name-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewCode(r.insurer_code);
+                    }}
+                  >
+                    {r.insurer_name}
+                  </button>
+                  <span className="rank-card__basis">
+                    {r.comparison_basis}
+                    {r.plan_coverage_item_count != null && ` · 담보한도 ${r.plan_coverage_item_count}건 보기`}
                   </span>
                 </div>
-                {r.tags.length > 0 && (
-                  <div className="rank-card__tags">
-                    {r.tags.map((t) => (
-                      <span className="rank-tag" key={t}>{t}</span>
+                {/* 이 금액은 여행일수로 환산한 견적이 아니라 비교공시 원문값이다. 숫자만 크게
+                    두면 "내가 낼 돈"으로 읽히므로 기준 기간을 바로 아래에 붙여 둔다. */}
+                <span className="rank-card__price">
+                  {r.published_premium != null ? (
+                    <>
+                      <span className="rank-card__price-main">
+                        <b>{r.published_premium.toLocaleString()}</b>
+                        <i>원</i>
+                      </span>
+                      <small>{r.premium_period_days ?? 1}일 기준</small>
+                    </>
+                  ) : (
+                    // 왜 금액이 없는지는 서버가 문구로 알려준다(가입연령 밖 등). 조용히 빼지 않는다.
+                    <em>{r.premium_note ?? "가격 정보 없음"}</em>
+                  )}
+                </span>
+                <span className="rank-card__arrow">›</span>
+              </div>
+
+              {/* 순위를 만든 다섯 축. 왼쪽은 축마다 점수와 이번 총점에 넣은 몫,
+                  오른쪽은 같은 값을 오각형으로 묶은 그림이다. 막대만으로는 "어느 쪽으로
+                  치우친 보험사인가"가 안 읽히고, 그림만으로는 정확한 값이 안 읽힌다.
+                  비교 대상 평균선을 겹쳐 그려 앞서는 축과 밀리는 축이 바로 보이게 했다.
+
+                  예전에는 이 아래에 약관 근거 네 축 게이지가 따로 또 있었다. 그 네 축은
+                  여기 clause 축 하나로 이미 들어가 있어서 같은 걸 두 번 보여준 셈이었다. */}
+              {r.axes.length === 5 && (
+                <div className="rank-scorecard">
+                  <div className="rank-axes">
+                    {r.axes.map((axis, index) => (
+                      <div
+                        className={`rank-axis${axis.available ? "" : " rank-axis--na"}`}
+                        key={axis.code}
+                        title={axis.detail}
+                      >
+                        <span className="rank-axis__num">{index + 1}</span>
+                        <span className="rank-axis__label">{axis.label}</span>
+                        <span className="rank-axis__track">
+                          <i style={{ width: `${Math.round(axis.score * 100)}%` }} />
+                        </span>
+                        <span className="rank-axis__value">
+                          {axis.available ? `+${axis.contribution.toFixed(1)}` : "자료 없음"}
+                        </span>
+                      </div>
                     ))}
                   </div>
-                )}
-                <div className="rank-card__dimensions">
-                  {r.dimensions.map((dimension) => (
-                    <div className="rank-dimension" key={dimension.code} title={dimension.summary}>
-                      <span>{dimension.label}</span>
-                      {dimension.level > 0 ? (
-                        <span className="rank-dimension__dots" aria-label={`${dimension.status}, 5단계 중 ${dimension.level}단계`}>
-                          {Array.from({ length: 5 }, (_, index) => (
-                            <i key={index} className={index < dimension.level ? "is-active" : ""} />
-                          ))}
-                        </span>
-                      ) : (
-                        <em>근거 부족</em>
-                      )}
+                  <div className="rank-radar-box">
+                    <RankingRadar axes={r.axes} average={axisAverages} insurerName={r.insurer_name} />
+                    <div className="rank-radar-legend">
+                      <span className="rank-radar-legend__self">이 보험사</span>
+                      <span className="rank-radar-legend__avg">{ranking.length}개사 평균</span>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </div>
-              <span className="rank-card__arrow">›</span>
-            </motion.button>
+              )}
+
+            </motion.div>
           ))}
         </div>
+
+        {/* 금액에 대한 단서는 카드를 다 읽은 뒤 확인하는 각주라, 목록 위가 아니라 아래에 둔다 —
+            위에 있으면 순위를 보기도 전에 회색 글씨부터 읽게 된다. */}
+        {excludedNote && <p className="rank-excluded-note">{excludedNote}</p>}
+        <p className="rank-premium-note">
+          카드의 금액은 각 보험사 다이렉트 사이트에서 직접 조회한 {ranking[0]?.premium_period_days ?? 1}일 기준
+          실제 가격이며, 선택한 여행일수로 환산한 견적이 아닙니다.
+        </p>
+
+        {ranking.map((r) => (
+          <Modal
+            key={r.insurer_code}
+            open={previewCode === r.insurer_code}
+            onClose={() => setPreviewCode(null)}
+            title={`${r.insurer_name} 등급·담보한도`}
+          >
+            <PlanCoverageBoard
+              insurerCode={r.insurer_code}
+              age={age}
+              sex={normalizedSex}
+              selectedPlan={previewPlanByInsurer[r.insurer_code] ?? r.plan_name ?? null}
+              onSelectPlan={(plan) =>
+                setPreviewPlanByInsurer((prev) => ({ ...prev, [r.insurer_code]: plan }))
+              }
+            />
+          </Modal>
+        ))}
+
+        {/* 순위는 "어느 보험사가 나은가"까지만 답한다. 그 숫자가 실제 상황에서 어떻게
+            갈리는지는 시뮬레이션이 조항 원문으로 보여주므로, 여행 준비의 마지막 자리에서
+            바로 이어지게 둔다. */}
+        <NextStepCard
+          to="/simulate"
+          icon="target"
+          label="다음 단계"
+          title="이 여행에서 사고가 나면?"
+        />
       </div>
     );
   }
@@ -271,13 +478,40 @@ export function InsurerRankingFlow({
           🔗 {selected.insurer_name} 공식 홈페이지에서 바로 가입 상담받기 →
         </a>
       )}
+      {selected && (
+        <button
+          type="button"
+          className="card rank-plan-summary"
+          onClick={() => setShowPlanModal(true)}
+        >
+          <span className="rank-plan-summary__label">어느 등급으로 가입하시겠어요?</span>
+          <span className="rank-plan-summary__value">
+            {selectedPlan ? `${selectedPlan} 선택됨 · 등급·담보한도 보기` : "등급·담보한도 보기 ›"}
+          </span>
+        </button>
+      )}
+      {selected && (
+        <Modal
+          open={showPlanModal}
+          onClose={() => setShowPlanModal(false)}
+          title={`${selected.insurer_name} 등급·담보한도`}
+        >
+          <PlanCoverageBoard
+            insurerCode={selected.insurer_code}
+            age={age}
+            sex={normalizedSex}
+            selectedPlan={selectedPlan}
+            onSelectPlan={setSelectedPlan}
+          />
+        </Modal>
+      )}
       <div className="detail-actions-row" style={{ display: "flex", gap: 10, marginBottom: 14 }}>
         <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setPhase("ranking")}>
           ← 순위로 돌아가기
         </button>
         {!registered && (
           <button type="button" className="btn-primary" style={{ flex: 1 }} onClick={registerToMyPolicies} disabled={registering}>
-            {registering ? "등록 중..." : isLoggedIn ? "내 보험으로 등록하기" : "로그인하고 등록하기"}
+            {registering ? "등록 중..." : isLoggedIn ? `${selectedPlan ? `${selectedPlan}으로 ` : ""}내 보험으로 등록하기` : "로그인하고 등록하기"}
           </button>
         )}
       </div>
@@ -288,17 +522,45 @@ export function InsurerRankingFlow({
           {" "}({String(result.risk_profile.trip_days ?? "-")}일)
         </div>
         <div>위험도: <strong>{String(result.risk_profile.risk_level ?? "-")}</strong></div>
+        {/* 여행경보는 외교부 자료다. 위험도(활동·기간으로 계산한 값)와 출처가 다르므로
+            같은 줄에 섞지 않고, 어디서 온 값인지 밝혀서 따로 보여준다. */}
+        <TravelAlertBadge alert={result.risk_profile.travel_alert} />
         {Array.isArray(result.risk_profile.risky_activity_detected) &&
           (result.risk_profile.risky_activity_detected as string[]).length > 0 && (
             <div>감지된 위험활동: {(result.risk_profile.risky_activity_detected as string[]).join(", ")}</div>
           )}
       </div>
-      {selected && <InsurerIncidentClauses insurerCode={selected.insurer_code} typeCodes={selectedTypeCodes} />}
+      {selected && (
+        <>
+          <div className="tabs" style={{ marginBottom: 14 }}>
+            <button
+              type="button"
+              className={`tab${detailTab === "incidents" ? " tab--active" : ""}`}
+              onClick={() => setDetailTab("incidents")}
+            >
+              사고유형별 조항
+            </button>
+            <button
+              type="button"
+              className={`tab${detailTab === "standard" ? " tab--active" : ""}`}
+              onClick={() => setDetailTab("standard")}
+            >
+              표준약관과 비교
+            </button>
+          </div>
+          {detailTab === "incidents" ? (
+            <InsurerIncidentClauses insurerCode={selected.insurer_code} typeCodes={selectedTypeCodes} />
+          ) : (
+            <StandardTermsComparison insurerCode={selected.insurer_code} />
+          )}
+        </>
+      )}
 
       {registered && (
         <div className="card" style={{ marginTop: 16 }}>
           <p style={{ marginTop: 0, fontWeight: 700 }}>✓ 내 보험에 등록했어요</p>
           <p className="muted" style={{ fontSize: "0.85rem" }}>
+            {selectedPlan ? `${selectedPlan} 등급으로, ` : ""}
             여행 기간({String(result.risk_profile.trip_days ?? "-")}일) 기준으로 자동 등록됐어요.
           </p>
           <button type="button" className="btn-secondary" style={{ width: "100%" }} onClick={() => navigate("/policies")}>
@@ -309,7 +571,7 @@ export function InsurerRankingFlow({
       {registered && overlap && (
         <section style={{ marginTop: 16 }}>
           <h2 style={{ fontSize: "1.05rem" }}>기존보험과 겹치거나 비는 담보</h2>
-          <OverlapReportView report={overlap} />
+          <OverlapReportView report={overlap} showUnknown={false} />
         </section>
       )}
     </div>

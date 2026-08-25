@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type ChecklistOut } from "../api";
+import { api, ApiError, type ChecklistOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
@@ -11,6 +11,7 @@ import { LoadingScreen } from "../components/LoadingScreen";
 import { PickerField } from "../components/PickerField";
 import { TripContextBadge } from "../components/TripContextBadge";
 import { usePager, PagerNav } from "../components/Pager";
+import { DocPhotoCheck } from "../components/DocPhotoCheck";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
@@ -35,7 +36,15 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
       setChecklist(res);
       setActiveTarget(null);
     } catch (err) {
-      setError(String(err));
+      // 브라우저에 남아 있던 사고 id가 서버에서 사라진 경우(게스트 기록 정리 등)는
+      // 오류가 아니라 "아직 접수한 사고가 없는 상태"다. 안내 화면으로 되돌린다.
+      if (err instanceof ApiError && err.status === 404) {
+        setActiveIncidentId(null);
+        setChecklist(null);
+        setError(null);
+      } else {
+        setError(userMessage(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -53,11 +62,26 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
       const res = await api.submitEvidence(activeIncidentId, [{ required_doc_std_id: docId, status }]);
       setChecklist(res);
     } catch (err) {
-      setError(String(err));
+      setError(userMessage(err));
     } finally {
       setSaving(false);
     }
   }
+
+  // activeIncidentId가 없으면 아래에서 안내 화면으로 일찍 반환하는데, 그 반환 이전에
+  // 훅을 전부 호출해 둬야 한다 — usePager를 반환 뒤(조건부)에 두면 사고를 고르는 순간
+  // 훅 개수가 늘어나 React가 "Rendered more hooks than during the previous render"로
+  // 터진다(2026-08-19 oxlint가 잡은 버그, PolicyCard가 쓰는 정답 패턴을 따랐다).
+  const grouped = new Map<string, ChecklistOut["items"]>();
+  (checklist?.items ?? []).forEach((it) => {
+    const key = it.coverage_target_ref;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(it);
+  });
+  const targets = [...grouped.keys()];
+  const current = activeTarget ?? targets[0];
+  const items = current ? grouped.get(current) ?? [] : [];
+  const { page, setPage, totalPages, pageItems } = usePager(items, 4);
 
   if (!activeIncidentId) {
     return (
@@ -70,17 +94,6 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
       </div>
     );
   }
-
-  const grouped = new Map<string, ChecklistOut["items"]>();
-  (checklist?.items ?? []).forEach((it) => {
-    const key = it.coverage_target_ref;
-    if (!grouped.has(key)) grouped.set(key, []);
-    grouped.get(key)!.push(it);
-  });
-  const targets = [...grouped.keys()];
-  const current = activeTarget ?? targets[0];
-  const items = current ? grouped.get(current) ?? [] : [];
-  const { page, setPage, totalPages, pageItems } = usePager(items, 4);
 
   return (
     <div className={embedded ? "" : "page"}>
@@ -131,6 +144,18 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
           </div>
           <div className="card">
             <h3 style={{ marginTop: 0 }}>{current}</h3>
+            {/* 아이콘만 두면 뭘 하는 버튼인지 알 수 없다. 표 위에 한 줄로만 알린다 —
+                행마다 설명을 붙이면 다시 시끄러워진다. */}
+            <p className="doc-photo-hint">
+              <span className="doc-photo-hint__icon" aria-hidden>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                     strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </span>
+              외국어로 된 서류는 카메라 버튼을 눌러보세요. 번역해서 필요한 내용이 담겼는지 확인해 드려요.
+            </p>
             <table className="coverage-table">
               <thead>
                 <tr>
@@ -152,14 +177,22 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
                       )}
                     </td>
                     <td>{it.is_mandatory ? "필수" : "상황에 따라"}</td>
+                    {/* 상태 선택이 주인공이고, 사진은 그 옆에 붙는 보조 수단이다. */}
                     <td>
-                      <PickerField
-                        value={it.status}
-                        disabled={saving}
-                        onChange={(status) => updateStatus(it.required_doc_std_id, status)}
-                        modalTitle="서류 상태"
-                        options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
-                      />
+                      <div className="doc-status-cell">
+                        <PickerField
+                          value={it.status}
+                          disabled={saving}
+                          onChange={(status) => updateStatus(it.required_doc_std_id, status)}
+                          modalTitle="서류 상태"
+                          options={STATUS_OPTIONS.map((s) => ({ value: s, label: s }))}
+                        />
+                        <DocPhotoCheck
+                          incidentId={activeIncidentId}
+                          docStdId={it.required_doc_std_id}
+                          onChecklist={setChecklist}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}

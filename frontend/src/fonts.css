@@ -1,0 +1,22 @@
+/* 자체 호스팅 폰트 — Google Fonts(Jua)·jsdelivr(Pretendard) CDN 대신 빌드에 포함시켜
+   서비스워커 precache(vite.config.ts의 workbox globPatterns: woff2)가 자동으로 집어가게
+   한다. 오프라인(비행기모드)에서 index.html은 열려도 CDN 요청이 막혀 시스템 폰트로
+   떨어지던 문제(2026-08-19)를 없앤다. Jua는 앱 어디서도 안 쓰는 Gaegu와 달리 실제로
+   --font-display에 쓰이므로 남기고, Gaegu는 아예 참조된 곳이 없어 자체 호스팅하지
+   않는다(불필요한 다운로드를 줄인다). */
+
+@font-face {
+  font-family: "Jua";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Jua-Regular.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Pretendard";
+  font-style: normal;
+  font-weight: 45 920;
+  font-display: swap;
+  src: url("/fonts/PretendardVariable.woff2") format("woff2-variations");
+}

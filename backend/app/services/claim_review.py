@@ -28,8 +28,9 @@ from sqlalchemy.orm import Session
 
 from app.models.kb import Clause, ClauseIncidentMap, CoverageDocMap, IncidentType
 from app.models.user import Incident, UserCoverage, UserPolicy
-from app.models.question import QuestionBank
+from app.models.question import QuestionBank, UserQuestionLog
 from app.services import incident_classify_gemini as incident_classify
+from app.services import incident_questions_gemini
 from app.services.incident_context import build_incident_context
 from app.services.nlu import NLUEngine, ExtractedField, IncidentDraft, get_nlu_engine
 
@@ -77,10 +78,25 @@ def resolve_type_ids(db: Session, incident_type_id: int | None, merged: dict[str
     """이번 사고에서 담보를 찾아야 하는 incident_type_id 목록.
 
     분류된 주 유형(incident_type_id) 하나가 기본이고, item_damage_type이 확인됐는데 주
-    유형이 PROP 계열이 아니면(=상해+휴대품 혼합 사고) 그 유형도 추가한다."""
+    유형이 PROP 계열이 아니면(=상해+휴대품 혼합 사고) 그 유형도 추가한다.
+
+    주 유형이 L1 루트면(=세부유형이 확신 없어 보류된 상태) 그 아래 세부유형을 전부
+    같이 본다. 조항 매핑은 전부 L2에 달려 있어서, 루트 하나만으로는 걸리는 조항이
+    0건이다 — "다리를 다쳤어요"가 상해까지만 잡혔을 때 KB에 상해 약관이 그대로 있는데도
+    "관련 약관을 찾지 못했다"가 나오던 원인이다. 세부유형이 확정된 경우에는 형제 유형을
+    끌어오지 않는다(상관없는 담보가 청구검토 후보로 섞인다)."""
     type_ids: list[int] = []
     if incident_type_id is not None:
         type_ids.append(incident_type_id)
+        node = db.get(IncidentType, incident_type_id)
+        if node is not None and node.parent_id is None:
+            children = (
+                db.query(IncidentType)
+                .filter(IncidentType.parent_id == incident_type_id, IncidentType.is_active.is_(True))
+                .order_by(IncidentType.type_id)
+                .all()
+            )
+            type_ids.extend(c.type_id for c in children)
     item_field = merged.get("item_damage_type")
     item_type_id = _item_damage_type_id(db, item_field.value if item_field else None)
     if item_type_id is not None and item_type_id not in type_ids:
@@ -101,10 +117,13 @@ def _activity_matches_waiver(clause_text: str, modifiers: dict | None) -> bool:
     return activity.strip() in clause_text
 
 
-def _rank_maps(maps: list["ClauseIncidentMap"], modifiers: dict | None) -> list["ClauseIncidentMap"]:
+def rank_maps(maps: list["ClauseIncidentMap"], modifiers: dict | None) -> list["ClauseIncidentMap"]:
     """관련도 순으로 정렬한다. 기본은 직접 > 조건부 > 면책이지만, 수식자(활동)이 실제로
     그 면책 조항 원문에 언급돼 있으면 그 면책 조항을 맨 앞으로 — '직접'이 같이 걸려있어도
-    이번 사고엔 면책이 실제로 적용될 근거가 있으므로 면책을 대표값으로 쓴다."""
+    이번 사고엔 면책이 실제로 적용될 근거가 있으므로 면책을 대표값으로 쓴다.
+
+    사고 시뮬레이션(services/simulation.py)도 이 함수를 그대로 호출한다. 가입 전 화면과
+    사고 접수 화면의 판정 기준이 갈라지지 않게 하려면 정렬 규칙이 한 군데에만 있어야 한다."""
     def sort_key(m):
         if m.relevance == "면책" and _activity_matches_waiver(m.clause.text, modifiers):
             return (-1, 0)
@@ -145,7 +164,7 @@ def relevant_coverages_for_type(
         )
         if not maps:
             continue
-        best = _rank_maps(maps, modifiers)[0]
+        best = rank_maps(maps, modifiers)[0]
         yield uc, cov, cov.policy_version.product.insurer, best.relevance
 
 
@@ -156,7 +175,7 @@ def _evidence_clauses(db: Session, coverage_id: int, type_id: int, modifiers: di
         .filter(Clause.coverage_id == coverage_id, ClauseIncidentMap.type_id == type_id)
         .all()
     )
-    ranked = _rank_maps(maps, modifiers)
+    ranked = rank_maps(maps, modifiers)
     seen: set[int] = set()
     clauses: list[Clause] = []
     for m in ranked:
@@ -337,52 +356,159 @@ def generate_claim_findings(
     return findings
 
 
-def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
-    """applies_to_l1=NULL은 모든 L1에서 후보가 되는 완전 공통 질문. 값이 있으면(콤마로 여러
-    L1을 나열 가능, 예: "INJ,ILL") 지금 분류된 l1_code가 그 안에 있을 때만 후보가 된다."""
-    if applies_to_l1 is None:
+def _matches_code(applies_to: str | None, code: str | None) -> bool:
+    """applies_to=NULL이면 제한 없음. 값이 있으면(콤마로 여러 개 나열 가능) 지금 분류된
+    코드가 그 안에 있을 때만 해당한다."""
+    if applies_to is None:
         return True
-    if not l1_code:
+    if not code:
         return False
-    return l1_code in {code.strip() for code in applies_to_l1.split(",")}
+    return code in {c.strip() for c in applies_to.split(",")}
+
+
+def _question_applies(question: "QuestionBank", l1_code: str | None, l2_code: str | None) -> bool:
+    """이 질문을 지금 사고에서 물어도 되는지.
+
+    applies_to_l2가 달린 질문은 그 세부유형으로 확정됐을 때만 묻는다 — 아직 모르는 채로
+    다 꺼내면 도난·파손·분실 질문이 한꺼번에 쏟아진다. applies_to_l1만 달린 질문은 그
+    대분류 전체에서, 둘 다 없으면 모든 사고에서 후보가 된다."""
+    if question.applies_to_l2 is not None:
+        return _matches_code(question.applies_to_l1, l1_code) and _matches_code(question.applies_to_l2, l2_code)
+    return _matches_code(question.applies_to_l1, l1_code)
+
+
+# 생성 질문이 빼먹어도 공용 뱅크에서 반드시 보충하는 필드.
+#
+# item_damage_type은 이 모듈 자신이 휴대품 L2(도난/파손/분실)를 정하는 유일한 결정적
+# 입력이다(_item_damage_type_id). 그런데 "분실"(본인 부주의)은 휴대품손해 특약에서
+# 통째로 빠지는 보험사가 있어서, 이 한 값에 "청구검토 대상"과 "면책"이 갈린다.
+# 모델이 그 사고에서만 중요한 걸 묻느라 이걸 지나칠 수 있는데, 여기는 모델의 재량에
+# 맡길 자리가 아니다.
+_MUST_ASK_FIELDS = {"item_damage_type"}
+
+
+def _bank_candidates(db: Session, l1_code: str | None, l2_code: str | None = None) -> list[QuestionBank]:
+    """공용 질문 뱅크(seed_questions.py)에서 이 대분류에 해당하는 질문을 꺼낸다.
+
+    incident_id가 달린 행은 어떤 사고 하나를 위해 만들어진 것이므로 반드시 뺀다 —
+    안 그러면 그 질문이 그 뒤로 모든 사람의 사고에 따라붙는다."""
+    rows = (
+        db.query(QuestionBank)
+        .filter(QuestionBank.context_type == "사고후", QuestionBank.incident_id.is_(None))
+        .order_by(QuestionBank.impact_weight.desc())
+        .all()
+    )
+    return [q for q in rows if _question_applies(q, l1_code, l2_code)]
+
+
+def _answered(question: QuestionBank, merged: dict[str, ExtractedField], modifiers: dict,
+              confidence_threshold: float) -> bool:
+    """이 질문에 이미 답이 있는지. 자유서술에서 뽑아낸 값도 답으로 친다."""
+    field = question.target_field
+    if field in merged:
+        found = merged[field]
+        return found.value is not None and found.confidence >= confidence_threshold
+    return bool(modifiers.get(field))
+
+
+def _answers_so_far(db: Session, incident_id: int) -> dict[str, str]:
+    """이 사고에서 이미 받은 (질문 문장 → 답) 표.
+
+    2단계 질문을 만들 때 이걸 그대로 넘긴다 — 안 넘기면 모델이 1단계와 똑같은 걸
+    또 묻는다."""
+    rows = (
+        db.query(QuestionBank.question_text, UserQuestionLog.answer_text)
+        .join(UserQuestionLog, UserQuestionLog.question_id == QuestionBank.question_id)
+        .filter(QuestionBank.incident_id == incident_id)
+        .all()
+    )
+    return {text: answer for text, answer in rows if answer}
+
+
+def _staged_candidates(
+    db: Session, incident: Incident, l1_code: str | None,
+    merged: dict[str, ExtractedField], modifiers: dict, generate: bool,
+    confidence_threshold: float,
+) -> list[QuestionBank] | None:
+    """사고별 맞춤 질문을 단계에 맞춰 꺼낸다.
+
+    1단계(대분류 확인)를 다 답하기 전에는 1단계만 보여준다. 다 답하면 그때서야 그
+    답을 읽고 2단계(세부유형) 질문을 만든다 — 두 단계를 한꺼번에 만들면 2단계가
+    1단계 답을 못 보고, 결국 같은 걸 두 번 묻게 된다.
+
+    어느 단계에서든 생성이 실패하면 None을 돌려 공용 뱅크로 되돌아간다."""
+    gen = incident_questions_gemini
+    first = gen.generate_questions(
+        db, incident=incident, stage=gen.STAGE_L1, l1_code=l1_code, merged=merged,
+        modifiers=modifiers, create=generate,
+    )
+    if first is None:
+        return None
+    if any(not _answered(q, merged, modifiers, confidence_threshold) for q in first):
+        return first
+
+    second = gen.generate_questions(
+        db, incident=incident, stage=gen.STAGE_L2, l1_code=l1_code, merged=merged,
+        modifiers=modifiers, answers=_answers_so_far(db, incident.incident_id),
+        create=generate,
+    )
+    if second is None:
+        return None
+    return second
 
 
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
-    answered_question_ids: set[int] | None = None,
-    answered_target_fields: set[str] | None = None,
+    incident: Incident | None = None, generate: bool = False,
+    l2_code: str | None = None,
 ):
-    """분류된 대분류(l1_code)에 해당하는(또는 공통, applies_to_l1=NULL인) 질문 중,
-    아직 확인 안 됐거나 신뢰도가 낮은 것만 골라서 impact_weight 순으로 반환한다.
+    """이 사고에서 아직 물어볼 게 남은 질문을 impact_weight 순으로 반환한다.
 
-    L2 판별용 질문(applies_to_l1로 태그됨)이 이 함수의 주 용도다 — L1이 아직 없으면
-    (분류 실패/자유서술 없음) 공통 질문만 반환한다."""
+    질문은 두 곳에서 온다.
+
+    1. **사고별 맞춤 질문** — 사고 내용을 읽고 그 자리에서 만든 것
+       (incident_questions_gemini). 사고에 이미 적혀 있는 건 묻지 않고, 그 사고에서만
+       중요한 것(예: 분실 장소가 잠겨 있었는지)을 묻는다. 이게 있으면 이걸 쓴다.
+    2. **공용 질문 뱅크**(seed_questions.py, incident_id=NULL) — 1이 없을 때의 폴백.
+       분류된 대분류(l1_code)에 태그된 것과 공통(applies_to_l1=NULL)만 후보가 된다.
+
+    둘 다 question_bank 한 테이블에 들어 있어서, 공용 후보를 뽑을 때 incident_id가
+    달린 행은 반드시 빼야 한다 — 안 그러면 어떤 사고에서 만들어진 질문이 그 뒤로 모든
+    사람의 사고에 따라붙는다.
+
+    incident를 넘기지 않으면 1을 아예 시도하지 않는다. generate=True는 저장까지 하는
+    경로(분석 실행)에서만 켠다 — 조회 전용 경로는 커밋을 하지 않기 때문이다."""
     modifiers = modifiers or {}
-    answered_question_ids = answered_question_ids or set()
-    answered_target_fields = answered_target_fields or set()
-    all_questions = (
-        db.query(QuestionBank)
-        .filter(QuestionBank.context_type == "사고후")
-        .order_by(QuestionBank.impact_weight.desc())
-        .all()
-    )
+
+    candidates = None
+    if incident is not None:
+        candidates = _staged_candidates(db, incident, l1_code, merged, modifiers, generate,
+                                        confidence_threshold)
+
+    if candidates is None:
+        candidates = _bank_candidates(db, l1_code, l2_code)
+    else:
+        # 생성 질문을 쓰더라도 _MUST_ASK_FIELDS는 공용 뱅크에서 보충한다. 이미 그 필드를
+        # 묻는 생성 질문이 있으면 겹쳐 넣지 않는다.
+        asked = {q.target_field for q in candidates}
+        supplement = [
+            q for q in _bank_candidates(db, l1_code, l2_code)
+            if q.target_field in _MUST_ASK_FIELDS and q.target_field not in asked
+        ]
+        if supplement:
+            candidates = sorted(
+                candidates + supplement, key=lambda q: -(q.impact_weight or 0.0)
+            )
 
     pending = []
-    for q in all_questions:
-        if not _question_applies(q.applies_to_l1, l1_code):
-            continue
-        # 구조화/정규화에 실패한 답변도 사용자가 이미 답한 사실은 사라지지 않는다.
-        # question_id와 target_field 양쪽을 막아 같은 질문(또는 같은 목적의 표현만 다른
-        # 질문)이 다음 분석 라운드에서 다시 나타나는 무한 루프를 차단한다.
-        if q.question_id in answered_question_ids or q.target_field in answered_target_fields:
-            continue
+    for q in candidates:
         field = q.target_field
         if field in merged:
             f = merged[field]
             if f.value is not None and f.confidence >= confidence_threshold:
                 continue
-        elif field in modifiers and modifiers[field] not in (None, ""):
+        elif modifiers.get(field):
             continue
         pending.append(q)
     return pending

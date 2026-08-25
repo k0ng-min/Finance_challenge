@@ -1,6 +1,6 @@
 """영역 B: 사용자 도메인 (new.md 참조)"""
 from sqlalchemy import (
-    Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text
+    Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -75,6 +75,11 @@ class UserPolicy(Base):
     product_name_raw = Column(String)
     policy_type = Column(String)  # 직접가입/카드부가/단체 — 더 이상 등록 화면에서 받지 않음(과거 데이터 호환용으로만 남김)
     subscriber_age = Column(Integer, nullable=True)  # 가입자 나이
+    # 그 보험사가 실제로 파는 등급명 그대로(예: "표준형") — 보험사 순위·보험료 화면에서
+    # 등급을 고르고 등록하면 여기 남는다. 담보 목록(UserCoverage)은 여전히 policy_version의
+    # 실제 약관(Coverage)에서 채우므로 이 값이 담보 목록 자체를 바꾸지는 않는다 — 어느
+    # 등급을 염두에 두고 등록했는지 기록해 사고 접수·보관함 화면에 참고로 보여줄 뿐이다.
+    plan_name = Column(String, nullable=True)
     period_start = Column(Date)
     period_end = Column(Date)
 
@@ -132,12 +137,39 @@ class Incident(Base):
     # 부가 정보(예: 활동=스쿠버다이빙 → 상해 면책 조항 검토)를 유형과 분리해서 담는다.
     modifiers = Column(Text, nullable=True)
     classify_confidence = Column(Float, nullable=True)
+    # 이 사고에 대해 맞춤 질문 생성(incident_questions_gemini)을 한 번이라도 끝냈는지.
+    # "만들어진 질문이 0건"과 "아직 만들어 본 적 없음"을 구분하기 위한 것이다 — 전자는
+    # 모델이 "더 물을 게 없다"고 판단한 결과라 공용 뱅크를 다시 열면 안 되고, 후자는
+    # (Gemini가 없는 환경 등) 공용 뱅크가 유일한 질문 출처다.
+    # 사고 접수 질문이 어디까지 진행됐는지. 0=아직 안 만듦, 1=대분류 질문을 만듦,
+    # 2=세부분류 질문까지 만듦. 만든 질문이 0건이어도 단계는 올라간다 — "만들었는데
+    # 물을 게 없었다"와 "아직 안 만들었다"를 구분해야 재방문 때 질문이 되살아나지 않는다.
+    question_stage = Column(Integer, default=0)
 
     user = relationship("AppUser", back_populates="incidents")
     incident_type = relationship("IncidentType")
     evidences = relationship("Evidence", back_populates="incident")
     user_policy = relationship("UserPolicy")
     trip = relationship("Trip")
+
+
+class UserPremiumWatchlist(Base):
+    """로그인 계정이 보험료 비교(PremiumCalc)에서 담아 둔 보험사 목록("비교함").
+
+    게스트는 이 표에 저장하지 않는다 — 이 앱은 로그인 없는 게스트도 모든 기능을 쓸 수
+    있는 게 기본 설계지만, 게스트는 user_id가 브라우저를 벗어나면 이어지지 않으므로
+    서버에 남겨봐야 다시 못 찾는다(다른 데이터도 전부 이 원칙을 따른다). 그래서 이
+    목록은 화면의 selected 상태로만 갖고 있다가, 로그인 계정일 때만 서버에 동기화한다.
+    """
+    __tablename__ = "user_premium_watchlist"
+    __table_args__ = (
+        UniqueConstraint("user_id", "insurer_code", name="uq_watchlist_user_insurer"),
+    )
+
+    watchlist_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("app_user.user_id"), nullable=False)
+    insurer_code = Column(String, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
 
 
 class Evidence(Base):

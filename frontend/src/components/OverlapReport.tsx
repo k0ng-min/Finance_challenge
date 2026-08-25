@@ -39,7 +39,9 @@ function Group({ title, items, tone }: { title: string; items: OverlapFindingOut
   );
 }
 
-export function OverlapReportView({ report }: { report: OverlapReportOut }) {
+export function OverlapReportView(
+  { report, showUnknown = true }: { report: OverlapReportOut; showUnknown?: boolean },
+) {
   const empty =
     report.duplicates.length === 0 && report.gaps.length === 0 &&
     report.fixed_ok.length === 0 && report.unknown.length === 0;
@@ -55,8 +57,10 @@ export function OverlapReportView({ report }: { report: OverlapReportOut }) {
       <Group title="겹치지만 각각 다 받아요" items={report.fixed_ok} tone="ok" />
 
       {/* 확인불가는 건수가 많아 화면을 뒤덮는다. 접어두되 개수는 항상 보이게 해서
-          "근거를 못 찾은 게 이만큼 있다"는 사실 자체는 숨기지 않는다. */}
-      {report.unknown.length > 0 && (
+          "근거를 못 찾은 게 이만큼 있다"는 사실 자체는 숨기지 않는다.
+          다만 보험사 순위처럼 진단이 주인공이 아닌 화면에서는 내린다 — 고를 때 볼 것이
+          아니라서 자리만 차지한다. */}
+      {showUnknown && report.unknown.length > 0 && (
         <details className="overlap-unknown overlap-group">
           <summary>
             <h3 className="overlap-group__title">

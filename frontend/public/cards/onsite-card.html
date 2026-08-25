@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>해외 서류 챙기기</title>
+<style>
+  @font-face {
+    font-family: "Jua";
+    src: url("../fonts/Jua-Regular.woff2") format("woff2");
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "Pretendard";
+    src: url("../fonts/PretendardVariable.woff2") format("woff2-variations");
+    font-weight: 45 920;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1980px; overflow: hidden; }
+  body {
+    font-family: "Pretendard", -apple-system, sans-serif;
+    background: linear-gradient(180deg, #eef4fd 0%, #f8fbff 38%, #ffffff 100%);
+    color: #33405a;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+  .card {
+    width: 1080px;
+    height: 1980px;
+    padding: 64px 64px 56px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 26px;
+    font-weight: 800;
+    color: #3568c9;
+    letter-spacing: -0.02em;
+  }
+  .brand__dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #4b84ec;
+    box-shadow: 0 0 0 5px #e4edfc;
+  }
+  .eyebrow {
+    margin-top: 30px;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    color: #4b84ec;
+  }
+  h1 {
+    font-family: "Jua", sans-serif;
+    font-size: 68px;
+    line-height: 1.28;
+    color: #1f2a3d;
+    margin-top: 14px;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    margin-top: 18px;
+    font-size: 30px;
+    line-height: 1.5;
+    color: #33405a;
+    font-weight: 600;
+  }
+  .badges {
+    margin-top: 28px;
+    display: flex;
+    gap: 12px;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 24px;
+    font-weight: 800;
+  }
+  .badge--country { background: #1f2a3d; color: #fff; }
+  .badge--incident { background: #e4edfc; color: #3568c9; }
+
+  .intro {
+    margin-top: 32px;
+    background: #1f2a3d;
+    border-radius: 24px;
+    padding: 30px 34px;
+    color: #fff;
+  }
+  .intro__label {
+    font-size: 20px;
+    font-weight: 800;
+    color: #9fc0ff;
+    letter-spacing: 0.04em;
+  }
+  .intro__local {
+    margin-top: 12px;
+    font-size: 27px;
+    line-height: 1.55;
+    color: #ffffff;
+  }
+  .intro__ko {
+    margin-top: 10px;
+    font-size: 24px;
+    line-height: 1.5;
+    color: #c7d4ec;
+  }
+
+  .section-label {
+    margin-top: 34px;
+    margin-bottom: 16px;
+    font-size: 24px;
+    font-weight: 800;
+    color: #1f2a3d;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label__badge {
+    font-size: 18px;
+    font-weight: 800;
+    background: #fdedc5;
+    color: #a56a1a;
+    padding: 4px 12px;
+    border-radius: 999px;
+  }
+  .section-label--others .section-label__badge {
+    background: #dcf1ea;
+    color: #1f7a5c;
+  }
+
+  .doclist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .doc {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #ffffff;
+    border: 1px solid #e2eaf7;
+    border-radius: 16px;
+    padding: 16px 22px;
+  }
+  .doc--urgent { border-color: #f6cf9a; background: #fffaf0; }
+  .doc__names { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .doc__local { font-size: 21px; color: #8592a8; font-weight: 600; }
+  .doc__ko { font-size: 25px; font-weight: 700; color: #1f2a3d; }
+  .doc__flag {
+    flex-shrink: 0;
+    font-size: 17px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .doc__flag--local { background: #ee8a4b; color: #fff; }
+  .doc__flag--ok { background: #e4edfc; color: #3568c9; }
+
+  .quote-box {
+    margin-top: 30px;
+    background: #e4edfc;
+    border-radius: 20px;
+    padding: 26px 30px;
+    border-left: 8px solid #4b84ec;
+  }
+  .quote-box__label {
+    font-size: 20px;
+    font-weight: 800;
+    color: #3568c9;
+  }
+  .quote-box__text {
+    margin-top: 10px;
+    font-size: 22px;
+    line-height: 1.6;
+    color: #1f2a3d;
+  }
+  .quote-box__source {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #6c7a94;
+    font-weight: 700;
+  }
+
+  .footer {
+    margin-top: auto;
+    padding-top: 30px;
+    border-top: 1px solid #e2eaf7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer__note {
+    font-size: 19px;
+    color: #8592a8;
+    line-height: 1.5;
+    max-width: 720px;
+  }
+  .footer__cta {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    background: #4b84ec;
+    padding: 16px 28px;
+    border-radius: 14px;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand"><span class="brand__dot"></span>약관형광펜</div>
+
+    <div class="eyebrow">ON SITE · 해외 서류 챙기기</div>
+    <h1>귀국하면 못 받는<br />서류부터 챙기세요</h1>
+    <p class="subtitle">약관이 요구하는 형식을 현지어로 보여드려요.<br />병원·경찰서 창구에 이 화면을 그대로 보여주세요.</p>
+
+    <div class="badges">
+      <span class="badge badge--country">🇹🇭 태국</span>
+      <span class="badge badge--incident">상해 사고</span>
+    </div>
+
+    <div class="intro">
+      <div class="intro__label">창구에 이 문장을 보여주세요 · 태국어</div>
+      <p class="intro__local">ฉันต้องใช้เอกสารที่ระบุรายการด้านล่างนี้เพื่อเรียกร้องค่าสินไหมประกันภัย รบกวนช่วยออกเอกสารให้ด้วย ขอบคุณครับ/ค่ะ</p>
+      <p class="intro__ko">보험 청구를 위해 아래 항목이 포함된 서류가 필요합니다. 발급을 도와주시면 감사하겠습니다.</p>
+    </div>
+
+    <div class="section-label">
+      귀국하면 못 받아요
+      <span class="section-label__badge">현지에서만 · 5건</span>
+    </div>
+    <div class="doclist">
+      <div class="doc doc--urgent">
+        <div class="doc__names"><span class="doc__local">ใบเสร็จรับเงินค่ารักษาพยาบาลพร้อมรายละเอียด</span><span class="doc__ko">진료비계산서·영수증</span></div>
+        <span class="doc__flag doc__flag--local">현지only</span>
+      </div>
+      <div class="doc doc--urgent">
+        <div class="doc__names"><span class="doc__local">ใบแจกแจงรายละเอียดค่ารักษาพยาบาล</span><span class="doc__ko">진료비세부내역서</span></div>
+        <span class="doc__flag doc__flag--local">현지only</span>
+      </div>
+      <div class="doc doc--urgent">
+        <div class="doc__names"><span class="doc__local">ใบรับรองการรักษาผู้ป่วยในหรือผู้ป่วยนอก</span><span class="doc__ko">입원치료확인서/통원확인서</span></div>
+        <span class="doc__flag doc__flag--local">현지only</span>
+      </div>
+      <div class="doc doc--urgent">
+        <div class="doc__names"><span class="doc__local">ใบสั่งยาจากแพทย์ (รวมใบเสร็จค่ายา)</span><span class="doc__ko">의사처방전(처방조제비 포함)</span></div>
+        <span class="doc__flag doc__flag--local">현지only</span>
+      </div>
+      <div class="doc doc--urgent">
+        <div class="doc__names"><span class="doc__local">ใบมรณบัตร</span><span class="doc__ko">사망진단서</span></div>
+        <span class="doc__flag doc__flag--local">현지only</span>
+      </div>
+    </div>
+
+    <div class="section-label section-label--others">
+      귀국 후에도 준비할 수 있어요
+      <span class="section-label__badge">3건</span>
+    </div>
+    <div class="doclist">
+      <div class="doc">
+        <div class="doc__names"><span class="doc__local">แบบฟอร์มเรียกร้องค่าสินไหมทดแทน (แบบฟอร์มของบริษัทประกัน)</span><span class="doc__ko">보험금 청구서(회사 양식)</span></div>
+        <span class="doc__flag doc__flag--ok">귀국가능</span>
+      </div>
+      <div class="doc">
+        <div class="doc__names"><span class="doc__local">บัตรประจำตัวที่มีรูปถ่ายของผู้เรียกร้อง</span><span class="doc__ko">신분증(청구인)</span></div>
+        <span class="doc__flag doc__flag--ok">공통</span>
+      </div>
+    </div>
+
+    <div class="quote-box">
+      <div class="quote-box__label">약관이 요구하는 것 · 신분증(청구인)</div>
+      <p class="quote-box__text">"신분증(주민등록증 또는 운전면허증 등 사진이 부착된 정부기관발행 신분증, 본인이 아닌 경우에는 본인의 인감증명서…)"</p>
+      <div class="quote-box__source">삼성화재해상보험 [여행중 배상책임 특별약관] 제10조(보험금의 지급절차) — 조항 원문 그대로 인용</div>
+    </div>
+
+    <div class="footer">
+      <p class="footer__note">6개 손해보험사 약관 원문을 근거로 만들었어요. 국가·사고유형을 바꾸면 그 나라 말로 서류 요청 카드가 새로 만들어져요.</p>
+      <span class="footer__cta">약관형광펜</span>
+    </div>
+  </div>
+</body>
+</html>
