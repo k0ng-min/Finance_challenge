@@ -350,6 +350,8 @@ def _question_applies(applies_to_l1: str | None, l1_code: str | None) -> bool:
 def pending_questions(
     db: Session, l1_code: str | None, merged: dict[str, ExtractedField],
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
+    answered_question_ids: set[int] | None = None,
+    answered_target_fields: set[str] | None = None,
 ):
     """분류된 대분류(l1_code)에 해당하는(또는 공통, applies_to_l1=NULL인) 질문 중,
     아직 확인 안 됐거나 신뢰도가 낮은 것만 골라서 impact_weight 순으로 반환한다.
@@ -357,6 +359,8 @@ def pending_questions(
     L2 판별용 질문(applies_to_l1로 태그됨)이 이 함수의 주 용도다 — L1이 아직 없으면
     (분류 실패/자유서술 없음) 공통 질문만 반환한다."""
     modifiers = modifiers or {}
+    answered_question_ids = answered_question_ids or set()
+    answered_target_fields = answered_target_fields or set()
     all_questions = (
         db.query(QuestionBank)
         .filter(QuestionBank.context_type == "사고후")
@@ -368,12 +372,17 @@ def pending_questions(
     for q in all_questions:
         if not _question_applies(q.applies_to_l1, l1_code):
             continue
+        # 구조화/정규화에 실패한 답변도 사용자가 이미 답한 사실은 사라지지 않는다.
+        # question_id와 target_field 양쪽을 막아 같은 질문(또는 같은 목적의 표현만 다른
+        # 질문)이 다음 분석 라운드에서 다시 나타나는 무한 루프를 차단한다.
+        if q.question_id in answered_question_ids or q.target_field in answered_target_fields:
+            continue
         field = q.target_field
         if field in merged:
             f = merged[field]
             if f.value is not None and f.confidence >= confidence_threshold:
                 continue
-        elif modifiers.get(field):
+        elif field in modifiers and modifiers[field] not in (None, ""):
             continue
         pending.append(q)
     return pending

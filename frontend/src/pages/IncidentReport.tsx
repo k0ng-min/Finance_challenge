@@ -69,6 +69,9 @@ export function IncidentReport() {
   // 있다가 진단 조회 직전에 기다린다(핸들러 자체는 여전히 안 기다리고 화면을 바로 넘긴다).
   const [hasPickedExternal, setHasPickedExternal] = useState(false);
   const externalLinkReadyRef = useRef<Promise<unknown>>(Promise.resolve());
+  // 서버가 오래된 응답을 돌려주더라도 방금 제출한 question_id를 같은 화면에 다시
+  // 렌더링하지 않는 마지막 방어선. 정상 경로에서는 백엔드가 이미 답변 이력으로 제거한다.
+  const answeredQuestionIdsRef = useRef<Set<number>>(new Set());
   const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
 
   // 한 번 입력한 나이·성별은 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
@@ -121,6 +124,7 @@ export function IncidentReport() {
     if (resumeIncidentId) {
       setResuming(true);
       setIncidentId(resumeIncidentId);
+      answeredQuestionIdsRef.current.clear();
       api.getIncident(resumeIncidentId).then((res) => {
         setAnalysis(res);
         setPhase(res.pending_questions.length > 0 ? "questions" : "result");
@@ -157,6 +161,7 @@ export function IncidentReport() {
 
   async function handleStart() {
     if (!userId || !freeText.trim()) return;
+    answeredQuestionIdsRef.current.clear();
     setLoading(true);
     setError(null);
     try {
@@ -202,11 +207,19 @@ export function IncidentReport() {
     if (!analysis || !answerText.trim()) return;
     const question = analysis.pending_questions[0];
     setLoading(true);
+    setError(null);
     try {
       const res = await api.answerQuestion(analysis.incident_id, question.question_id, answerText);
-      setAnalysis(res);
+      answeredQuestionIdsRef.current.add(question.question_id);
+      const next = {
+        ...res,
+        pending_questions: res.pending_questions.filter(
+          (q) => !answeredQuestionIdsRef.current.has(q.question_id),
+        ),
+      };
+      setAnalysis(next);
       setAnswerText("");
-      setPhase(res.pending_questions.length > 0 ? "questions" : "result");
+      setPhase(next.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
       setError(String(err));
     } finally {

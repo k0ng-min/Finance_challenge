@@ -19,6 +19,9 @@ Base.metadata.create_all(bind=engine)
 
 # (context_type, question_text, target_field, impact_weight, applies_to_l1)
 QUESTIONS = [
+    # L1 자체가 아직 보류 상태일 때만 쓰는 중립 질문. 낮은 confidence로 임시 선택된
+    # SPC/INJ 등의 전용 질문을 바로 노출하면 휴대폰 분실에 전쟁·테러를 묻는 문제가 생긴다.
+    ("사고후", "사고 유형을 더 확인하기 위해 무슨 일이 있었는지 구체적으로 알려주세요. (예: 다침, 질병, 휴대품 도난·분실·파손, 항공편·수하물 문제)", "incident_type_detail", 1.0, "UNRESOLVED"),
     ("사고후", "정확한 진단명 또는 증상을 알려주시겠어요? (예: 발목 골절, 열상 등)", "diagnosis", 0.9, "INJ"),
     ("사고후", "병원에 입원하셨나요, 아니면 통원 치료만 받으셨나요?", "hospitalized", 0.85, "INJ"),
     ("사고후", "수술을 받으셨나요?", "surgery", 0.7, "INJ"),

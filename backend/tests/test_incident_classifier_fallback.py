@@ -188,15 +188,6 @@ def test_low_confidence_l1_can_change_after_followup(db_session, monkeypatch):
 
     theft = db_session.query(IncidentType).filter_by(l2_code="PROP_THEFT").one()
 
-    def _classify_l2(_db, l1_code, _free_text, answers):
-        assert l1_code == "PROP"
-        assert answers["item_damage_type"] == "도난"
-        return classifier.L2ClassifyResult(
-            type_id=theft.type_id, l2_code=theft.l2_code,
-            confidence=0.93, reason="도난 확인", abstained=False,
-        )
-
-    monkeypatch.setattr(classifier, "classify_l2", _classify_l2)
     merged = {"item_damage_type": ExtractedField("도난", 0.99, "소매치기")}
     final_type_id, final_confidence, _ = _classify_incident(
         db_session, "여행 중 문제가 생겼어요", merged,
@@ -205,10 +196,11 @@ def test_low_confidence_l1_can_change_after_followup(db_session, monkeypatch):
 
     assert "item_damage_type: 도난" in l1_inputs[1]
     assert final_type_id == theft.type_id
-    assert final_confidence == 0.93
+    # 명시 답변과 taxonomy가 1:1이므로 외부 모델 없이 확정한다.
+    assert final_confidence == 1.0
 
 
-def test_new_type_suggestion_is_not_auto_created_or_marked_confident(db_session, monkeypatch):
+def test_new_type_suggestion_is_not_auto_created_and_keeps_l1_confidence(db_session, monkeypatch):
     _seed_taxonomy(db_session)
     monkeypatch.setattr(classifier, "classify_l1", lambda _text: ("PROP", 0.91, "재물 피해"))
     monkeypatch.setattr(classifier, "extract_modifiers", lambda _text: {})
@@ -226,4 +218,4 @@ def test_new_type_suggestion_is_not_auto_created_or_marked_confident(db_session,
 
     assert db_session.query(IncidentType).count() == before
     assert type_id == db_session.query(IncidentType).filter_by(l2_code="PROP").one().type_id
-    assert confidence == 0.0
+    assert confidence == 0.91
