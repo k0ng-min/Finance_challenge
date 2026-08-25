@@ -27,6 +27,7 @@ from dataclasses import fields as dc_fields
 from sqlalchemy.orm import Session
 
 from app.models.kb import Clause, ClauseIncidentMap, CoverageDocMap, IncidentType
+from app.models.analysis import AnalysisRun
 from app.models.user import Incident, UserCoverage, UserPolicy
 from app.models.question import QuestionBank, UserQuestionLog
 from app.services import incident_classify_gemini as incident_classify
@@ -401,14 +402,53 @@ def _bank_candidates(db: Session, l1_code: str | None, l2_code: str | None = Non
     return [q for q in rows if _question_applies(q, l1_code, l2_code)]
 
 
+def answered_question_state(
+    db: Session, incident_id: int,
+) -> tuple[set[int], set[str], dict[str, str], dict[str, str]]:
+    """사고의 모든 분석 라운드에서 받은 질문 답변을 복원한다.
+
+    공용 질문은 ``QuestionBank.incident_id``가 NULL이라 질문 테이블만 보면 어느 사고의
+    답인지 알 수 없다. 답변이 연결된 AnalysisRun을 incident_id로 조인해야 사고별 질문과
+    공용 질문을 모두 정확히 찾을 수 있다.
+    """
+    rows = (
+        db.query(UserQuestionLog, QuestionBank)
+        .join(AnalysisRun, UserQuestionLog.analysis_run_id == AnalysisRun.analysis_run_id)
+        .join(QuestionBank, UserQuestionLog.question_id == QuestionBank.question_id)
+        .filter(AnalysisRun.incident_id == incident_id)
+        .order_by(UserQuestionLog.qlog_id.asc())
+        .all()
+    )
+    question_ids: set[int] = set()
+    target_fields: set[str] = set()
+    answers_by_question: dict[str, str] = {}
+    answers_by_field: dict[str, str] = {}
+    for log, question in rows:
+        question_ids.add(question.question_id)
+        if question.target_field:
+            target_fields.add(question.target_field)
+        answer = (log.answer_text or "").strip()
+        if not answer:
+            continue
+        answers_by_question[question.question_text] = answer
+        if question.target_field:
+            answers_by_field[question.target_field] = answer
+    return question_ids, target_fields, answers_by_question, answers_by_field
+
+
 def _answered(question: QuestionBank, merged: dict[str, ExtractedField], modifiers: dict,
-              confidence_threshold: float) -> bool:
+              confidence_threshold: float, answered_question_ids: set[int] | None = None,
+              answered_target_fields: set[str] | None = None) -> bool:
     """이 질문에 이미 답이 있는지. 자유서술에서 뽑아낸 값도 답으로 친다."""
     field = question.target_field
+    if question.question_id in (answered_question_ids or set()):
+        return True
+    if field in (answered_target_fields or set()):
+        return True
     if field in merged:
         found = merged[field]
         return found.value is not None and found.confidence >= confidence_threshold
-    return bool(modifiers.get(field))
+    return field in modifiers and modifiers[field] not in (None, "")
 
 
 def _answers_so_far(db: Session, incident_id: int) -> dict[str, str]:
@@ -416,19 +456,15 @@ def _answers_so_far(db: Session, incident_id: int) -> dict[str, str]:
 
     2단계 질문을 만들 때 이걸 그대로 넘긴다 — 안 넘기면 모델이 1단계와 똑같은 걸
     또 묻는다."""
-    rows = (
-        db.query(QuestionBank.question_text, UserQuestionLog.answer_text)
-        .join(UserQuestionLog, UserQuestionLog.question_id == QuestionBank.question_id)
-        .filter(QuestionBank.incident_id == incident_id)
-        .all()
-    )
-    return {text: answer for text, answer in rows if answer}
+    return answered_question_state(db, incident_id)[2]
 
 
 def _staged_candidates(
     db: Session, incident: Incident, l1_code: str | None,
     merged: dict[str, ExtractedField], modifiers: dict, generate: bool,
     confidence_threshold: float,
+    answered_question_ids: set[int] | None = None,
+    answered_target_fields: set[str] | None = None,
 ) -> list[QuestionBank] | None:
     """사고별 맞춤 질문을 단계에 맞춰 꺼낸다.
 
@@ -444,7 +480,10 @@ def _staged_candidates(
     )
     if first is None:
         return None
-    if any(not _answered(q, merged, modifiers, confidence_threshold) for q in first):
+    if any(not _answered(
+        q, merged, modifiers, confidence_threshold,
+        answered_question_ids, answered_target_fields,
+    ) for q in first):
         return first
 
     second = gen.generate_questions(
@@ -462,6 +501,7 @@ def pending_questions(
     modifiers: dict | None = None, confidence_threshold: float = 0.6,
     incident: Incident | None = None, generate: bool = False,
     l2_code: str | None = None,
+    use_generated_questions: bool = True,
 ):
     """이 사고에서 아직 물어볼 게 남은 질문을 impact_weight 순으로 반환한다.
 
@@ -480,11 +520,18 @@ def pending_questions(
     incident를 넘기지 않으면 1을 아예 시도하지 않는다. generate=True는 저장까지 하는
     경로(분석 실행)에서만 켠다 — 조회 전용 경로는 커밋을 하지 않기 때문이다."""
     modifiers = modifiers or {}
+    answered_question_ids: set[int] = set()
+    answered_target_fields: set[str] = set()
+    if incident is not None:
+        answered_question_ids, answered_target_fields, _, _ = answered_question_state(
+            db, incident.incident_id,
+        )
 
     candidates = None
-    if incident is not None:
+    if incident is not None and use_generated_questions:
         candidates = _staged_candidates(db, incident, l1_code, merged, modifiers, generate,
-                                        confidence_threshold)
+                                        confidence_threshold, answered_question_ids,
+                                        answered_target_fields)
 
     if candidates is None:
         candidates = _bank_candidates(db, l1_code, l2_code)
@@ -503,12 +550,10 @@ def pending_questions(
 
     pending = []
     for q in candidates:
-        field = q.target_field
-        if field in merged:
-            f = merged[field]
-            if f.value is not None and f.confidence >= confidence_threshold:
-                continue
-        elif modifiers.get(field):
+        if _answered(
+            q, merged, modifiers, confidence_threshold,
+            answered_question_ids, answered_target_fields,
+        ):
             continue
         pending.append(q)
     return pending

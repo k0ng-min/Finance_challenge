@@ -10,10 +10,13 @@
 import pytest
 
 from app.models.user import AppUser, Incident
-from app.models.question import QuestionBank
+from app.models.kb import IncidentType
+from app.models.analysis import AnalysisRun
+from app.models.question import QuestionBank, UserQuestionLog
 from app.routers import incidents as incidents_router
 from app.services import claim_review
-from app.services.nlu import ExtractedField
+from app.services import incident_classify_gemini as classifier
+from app.services.nlu import ExtractedField, RuleBasedNLU
 
 
 def _incident(db, free_text="발목이 부러져서 병원에 갔어요"):
@@ -167,6 +170,24 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 
+def _force_prop_question_flow(db, monkeypatch):
+    """명확한 L2는 바로 끝나는 운영 규칙과 질문 엔진 자체 테스트를 분리한다."""
+    root = db.query(IncidentType).filter_by(l2_code="PROP", parent_id=None).first()
+    if root is None:
+        root = IncidentType(l1_code="PROP", l2_code="PROP", name="휴대품·재물", is_active=True)
+        db.add(root)
+        db.flush()
+    monkeypatch.setattr(classifier, "classify_l1", lambda _text: ("PROP", 0.9, "휴대품"))
+    monkeypatch.setattr(classifier, "extract_modifiers", lambda _text: {})
+    monkeypatch.setattr(
+        classifier, "classify_l2",
+        lambda *_args, **_kwargs: classifier.L2ClassifyResult(
+            type_id=root.type_id, l2_code=None, confidence=0.0,
+            reason="세부유형 추가 확인", abstained=True,
+        ),
+    )
+
+
 def _fake_generator(texts):
     """Gemini 대신 정해진 질문을 만들어 저장하는 스텁."""
     def generate(db, *, incident, stage, l1_code, merged, modifiers=None, answers=None, create=True):
@@ -195,6 +216,7 @@ def _fake_generator(texts):
 
 
 def test_접수_응답에_사고별_질문이_나오고_조회해도_그대로다(client, db_session, monkeypatch):
+    _force_prop_question_flow(db_session, monkeypatch)
     _shared_question(db_session)
     db_session.commit()
     monkeypatch.setattr(
@@ -206,7 +228,7 @@ def test_접수_응답에_사고별_질문이_나오고_조회해도_그대로�
     user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
 
     created = client.post("/incidents", json={
-        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+        "user_id": user_id, "free_text": "휴대품에 문제가 생겼어요",
     }, headers=auth)
     assert created.status_code == 200, created.text
     analysis = created.json()
@@ -222,13 +244,14 @@ def test_접수_응답에_사고별_질문이_나오고_조회해도_그대로�
 
 def test_조회만_하는_경로는_질문을_새로_만들지_않는다(client, db_session, monkeypatch):
     """생성은 접수·답변처럼 커밋이 뒤따르는 경로에서만 일어나야 한다."""
+    _force_prop_question_flow(db_session, monkeypatch)
     _shared_question(db_session)
     db_session.commit()
     res = client.post("/users", json={"nickname": "조회게스트"})
     body = res.json()
     user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
     created = client.post("/incidents", json={
-        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+        "user_id": user_id, "free_text": "휴대품에 문제가 생겼어요",
     }, headers=auth)
     incident_id = created.json()["incident_id"]
 
@@ -373,6 +396,7 @@ def test_세부유형이_아직_없으면_전용_질문은_묻지_않는다(db_s
 def test_한_페이지_답변을_한_번에_저장하고_분석은_한_번만_돈다(client, db_session, monkeypatch):
     """질문이 한 화면에 다 뜨는 흐름이라, 답도 한 번에 들어온다. 답마다 따로 저장하면
     같은 사고 분석이 답변 수만큼 돌아 응답이 그만큼 느려지고 결과도 중간 상태가 섞인다."""
+    _force_prop_question_flow(db_session, monkeypatch)
     _shared_question(db_session)
     db_session.commit()
     monkeypatch.setattr(
@@ -382,7 +406,7 @@ def test_한_페이지_답변을_한_번에_저장하고_분석은_한_번만_�
     body = client.post("/users", json={"nickname": "배치게스트"}).json()
     user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
     analysis = client.post("/incidents", json={
-        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+        "user_id": user_id, "free_text": "휴대품에 문제가 생겼어요",
     }, headers=auth).json()
     incident_id = analysis["incident_id"]
     questions = analysis["pending_questions"]
@@ -415,6 +439,7 @@ def test_기타_자유입력은_사고에_남아_재분류에_쓰인다(client, 
     의미가 없다 — 사고 수식자로 남겨 재분류·조항 판단에 들어가야 한다."""
     from app.models.user import Incident
 
+    _force_prop_question_flow(db_session, monkeypatch)
     _shared_question(db_session)
     db_session.commit()
     monkeypatch.setattr(
@@ -424,7 +449,7 @@ def test_기타_자유입력은_사고에_남아_재분류에_쓰인다(client, 
     body = client.post("/users", json={"nickname": "기타게스트"}).json()
     user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
     analysis = client.post("/incidents", json={
-        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+        "user_id": user_id, "free_text": "휴대품에 문제가 생겼어요",
     }, headers=auth).json()
     incident_id = analysis["incident_id"]
 
@@ -440,6 +465,7 @@ def test_기타_자유입력은_사고에_남아_재분류에_쓰인다(client, 
 
 def test_질문에는_예아니오인지_입력칸인지가_같이_내려온다(client, db_session, monkeypatch):
     """한 페이지에 버튼과 입력칸을 섞어 그리려면 화면이 그걸 알아야 한다."""
+    _force_prop_question_flow(db_session, monkeypatch)
     _shared_question(db_session)
     db_session.commit()
     monkeypatch.setattr(
@@ -449,9 +475,166 @@ def test_질문에는_예아니오인지_입력칸인지가_같이_내려온다(
     body = client.post("/users", json={"nickname": "형태게스트"}).json()
     user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
     analysis = client.post("/incidents", json={
-        "user_id": user_id, "free_text": "휴대폰을 소매치기당했어요",
+        "user_id": user_id, "free_text": "휴대품에 문제가 생겼어요",
     }, headers=auth).json()
 
     question = analysis["pending_questions"][0]
     assert question["answer_type"] == "yesno"
     assert question["stage"] == "L1"
+
+
+def test_정규화되지_않은_공용질문_답도_다시_묻지_않는다(db_session):
+    """공용 질문은 incident_id가 NULL이라 QuestionBank만 조회해서는 답변 사고를 못 찾는다."""
+    incident = _incident(db_session, free_text="휴대품에 문제가 생겼어요")
+    question = _shared_question(
+        db_session, text="도난·파손·분실 중 무엇인가요?", field="item_damage_type",
+        applies_to_l1="PROP",
+    )
+    run = AnalysisRun(user_id=incident.user_id, run_type="사고후검토", incident_id=incident.incident_id)
+    db_session.add(run)
+    db_session.flush()
+    db_session.add(UserQuestionLog(
+        analysis_run_id=run.analysis_run_id, question_id=question.question_id,
+        answer_text="잘 모르겠어요",
+    ))
+    db_session.commit()
+
+    assert claim_review.pending_questions(
+        db_session, "PROP", {}, incident=incident, generate=False,
+    ) == []
+
+
+def test_배치에서_비워둔_질문도_모름으로_종료된다(client, db_session, monkeypatch):
+    _force_prop_question_flow(db_session, monkeypatch)
+    monkeypatch.setattr(
+        claim_review.incident_questions_gemini, "generate_questions",
+        _fake_generator(["경찰 신고서를 받으셨나요?", "가방은 잠겨 있었나요?"]),
+    )
+    body = client.post("/users", json={"nickname": "부분답변게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+    created = client.post("/incidents", json={
+        "user_id": user_id, "free_text": "휴대품에 문제가 생겼어요",
+    }, headers=auth).json()
+    questions = created["pending_questions"]
+
+    answered = client.post(f"/incidents/{created['incident_id']}/answers/batch", json={
+        "answers": [{"question_id": questions[0]["question_id"], "answer_text": "예"}],
+    }, headers=auth)
+
+    assert answered.status_code == 200, answered.text
+    returned_ids = {q["question_id"] for q in answered.json()["pending_questions"]}
+    assert returned_ids.isdisjoint({q["question_id"] for q in questions})
+    logs = db_session.query(UserQuestionLog).order_by(UserQuestionLog.qlog_id).all()
+    assert [log.answer_text for log in logs] == ["예", "모름"]
+
+
+def _seed_phone_flow(db):
+    roots: dict[str, IncidentType] = {}
+    for code, name in (("PROP", "휴대품·재물"), ("SPC", "특수·기타")):
+        root = IncidentType(l1_code=code, l2_code=code, name=name, is_active=True)
+        db.add(root)
+        db.flush()
+        roots[code] = root
+    for code, name in (
+        ("PROP_THEFT", "도난"), ("PROP_DAMAGE", "파손"), ("PROP_LOSS", "분실"),
+    ):
+        db.add(IncidentType(
+            l1_code="PROP", l2_code=code, name=name,
+            parent_id=roots["PROP"].type_id, is_active=True,
+        ))
+    db.add_all([
+        QuestionBank(
+            context_type="사고후", question_text="무슨 일이 있었는지 구체적으로 알려주세요.",
+            target_field="incident_type_detail", impact_weight=1.0,
+            applies_to_l1="UNRESOLVED", incident_id=None, answer_type="text",
+        ),
+        QuestionBank(
+            context_type="사고후", question_text="전쟁이나 테러와 관련됐나요?",
+            target_field="spc_war_terror", impact_weight=0.8,
+            applies_to_l1="SPC", incident_id=None, answer_type="yesno",
+        ),
+    ])
+    db.commit()
+
+
+@pytest.mark.parametrize(
+    ("free_text", "expected_l2", "expected_item"),
+    (
+        ("여행 중 휴대폰을 변기에 빠뜨려 고장났어요.", "PROP_DAMAGE", "파손"),
+        ("여행 중 휴대폰을 어디선가 잃어버렸어요.", "PROP_LOSS", "분실"),
+    ),
+)
+def test_명확한_휴대폰_사고는_무관한_질문_없이_종료된다(
+    client, db_session, monkeypatch, free_text, expected_l2, expected_item,
+):
+    from app import config
+
+    _seed_phone_flow(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+    monkeypatch.setattr(incidents_router, "get_nlu_engine", lambda: RuleBasedNLU())
+    body = client.post("/users", json={"nickname": "휴대폰게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+
+    response = client.post("/incidents", json={
+        "user_id": user_id, "free_text": free_text,
+    }, headers=auth)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["pending_questions"] == []
+    incident = db_session.get(Incident, response.json()["incident_id"])
+    assert incident.incident_type.l2_code == expected_l2
+    assert incident.item_damage_type == expected_item
+
+
+def test_모호한_사고는_중립질문_뒤_PROP_THEFT로_바뀐다(client, db_session, monkeypatch):
+    from app import config
+
+    _seed_phone_flow(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+    monkeypatch.setattr(incidents_router, "get_nlu_engine", lambda: RuleBasedNLU())
+    body = client.post("/users", json={"nickname": "재분류게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+    created = client.post("/incidents", json={
+        "user_id": user_id, "free_text": "여행 중 문제가 생겼어요.",
+    }, headers=auth).json()
+
+    questions = created["pending_questions"]
+    assert [q["target_field"] for q in questions] == ["incident_type_detail"]
+    assert all("전쟁" not in q["question_text"] for q in questions)
+
+    answered = client.post(f"/incidents/{created['incident_id']}/answers/batch", json={
+        "answers": [{
+            "question_id": questions[0]["question_id"],
+            "answer_text": "휴대폰을 소매치기당했어요.",
+        }],
+    }, headers=auth)
+
+    assert answered.status_code == 200, answered.text
+    assert answered.json()["pending_questions"] == []
+    incident = db_session.get(Incident, created["incident_id"])
+    assert incident.incident_type.l2_code == "PROP_THEFT"
+
+
+def test_중립질문으로도_분류가_안되면_반복하지_않고_종료한다(
+    client, db_session, monkeypatch,
+):
+    from app import config
+
+    _seed_phone_flow(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", False)
+    monkeypatch.setattr(incidents_router, "get_nlu_engine", lambda: RuleBasedNLU())
+    body = client.post("/users", json={"nickname": "보류종료게스트"}).json()
+    user_id, auth = body["user_id"], {"Authorization": f"Bearer {body['token']}"}
+    created = client.post("/incidents", json={
+        "user_id": user_id, "free_text": "여행 중 문제가 생겼어요.",
+    }, headers=auth).json()
+    question = created["pending_questions"][0]
+
+    answered = client.post(f"/incidents/{created['incident_id']}/answers/batch", json={
+        "answers": [{"question_id": question["question_id"], "answer_text": "잘 모르겠어요"}],
+    }, headers=auth)
+
+    assert answered.status_code == 200, answered.text
+    assert answered.json()["pending_questions"] == []
+    refreshed = client.get(f"/incidents/{created['incident_id']}", headers=auth)
+    assert refreshed.json()["pending_questions"] == []

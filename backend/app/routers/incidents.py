@@ -25,7 +25,8 @@ from app.services import incident_classify_gemini as incident_classify
 from app.services import doc_verify_gemini
 from app.services.doc_verify import decide_status
 from app.services.claim_review import (
-    merge_incident_fields, generate_claim_findings, pending_questions, iter_relevant_user_coverages,
+    answered_question_state, merge_incident_fields, generate_claim_findings, pending_questions,
+    iter_relevant_user_coverages,
 )
 from app.services.finding_persistence import persist_findings, load_findings_out
 from app.services.validation import run_core_validation, persist_validation, check_docs_not_secured
@@ -62,10 +63,12 @@ def _modifiers_dict(incident: Incident) -> dict:
 
 
 _RECLASSIFY_CONFIDENCE_THRESHOLD = incident_classify.DEFAULT_L2_AUTO_THRESHOLD
+_UNRESOLVED_L1_CODE = "UNRESOLVED"
 
 
 def _build_reclassification_text(
     free_text: str, merged: dict[str, ExtractedField], modifiers: dict,
+    answered_questions: dict[str, str] | None = None,
 ) -> str:
     """최초 서술과 후속 답변을 L1 재분류용 단일 입력으로 만든다."""
     parts = [f"최초 사고 설명:\n{(free_text or '').strip() or '(없음)'}"]
@@ -77,6 +80,10 @@ def _build_reclassification_text(
     details.extend(
         f"{name}: {value}" for name, value in sorted(modifiers.items()) if value
     )
+    details.extend(
+        f"답변({name}): {value}"
+        for name, value in sorted((answered_questions or {}).items()) if value
+    )
     parts.append("추가 확인 정보:\n" + ("\n".join(details) if details else "(없음)"))
     return "\n\n".join(parts)
 
@@ -85,13 +92,14 @@ def _classify_incident(
     db: Session, free_text: str, merged: dict[str, ExtractedField],
     existing_type_id: int | None = None, existing_modifiers: dict | None = None,
     existing_confidence: float | None = None,
+    answered_questions: dict[str, str] | None = None,
 ) -> tuple[int | None, float | None, dict]:
     """사고를 incident_type(L1→L2)으로 분류한다.
 
     existing_type_id가 없으면(=최초 접수) L1을 새로 분류하고 modifiers도 처음 추출한다.
-    확정된 L2가 있으면 L1을 유지한다. 다만 낮은 confidence로 L1 루트에 보류된 사고는 최초
-    서술과 후속 답변을 합쳐 L1부터 다시 평가한다. 그래야 잘못 잡힌 L1 안에서 L2만 고르는
-    고착을 막을 수 있다.
+    확정된 L2가 있으면 L1을 유지한다. L1 루트에 보류된 사고는 confidence와 무관하게 최초
+    서술과 후속 답변을 합쳐 L1부터 다시 평가한다. 그래야 새로 확인된 정보가 다른 유형인데도
+    기존 L1 안에서 L2만 고르는 고착을 막을 수 있다.
 
     이미 충분히 확신 있게 분류돼 있으면(existing_confidence 높음) 매 답변마다 다시 Gemini를
     부르지 않는다 — 무료 API 쿼터를 아끼기 위함이자, 이미 답이 정해진 걸 매번 다시 물어서
@@ -108,8 +116,10 @@ def _classify_incident(
     if existing_type_id is None:
         l1_code, l1_confidence, _reason = incident_classify.classify_l1(free_text or "")
         modifiers.update(incident_classify.extract_modifiers(free_text or ""))
-    elif existing_is_root and (existing_confidence or 0.0) < incident_classify.DEFAULT_L1_AUTO_THRESHOLD:
-        augmented_text = _build_reclassification_text(free_text, merged, modifiers)
+    elif existing_is_root:
+        augmented_text = _build_reclassification_text(
+            free_text, merged, modifiers, answered_questions,
+        )
         l1_code, l1_confidence, _reason = incident_classify.classify_l1(augmented_text)
         modifiers.update(incident_classify.extract_modifiers(augmented_text))
     else:
@@ -120,20 +130,77 @@ def _classify_incident(
         return None, None, modifiers
 
     root = db.query(IncidentType).filter_by(l1_code=l1_code, parent_id=None).first()
+
+    # 휴대품 도난·파손·분실은 사용자 서술/답변의 명시 표현과 taxonomy가 1:1이다.
+    # Gemini가 꺼져 L1 confidence가 낮더라도 이 구조화 근거가 있으면 안전하게 L2까지
+    # 확정하고, 무관한 중립/SPC 질문이나 같은 유형 질문을 되풀이하지 않는다.
+    answer_text = "\n".join(str(v) for v in (answered_questions or {}).values() if v)
+    item_field = merged.get("item_damage_type")
+    item_damage_type = (
+        (item_field.value if item_field else None)
+        or classify_item_damage_type(answer_text)
+        or classify_item_damage_type(free_text)
+    )
+    prop_l2_by_answer = {"도난": "PROP_THEFT", "파손": "PROP_DAMAGE", "분실": "PROP_LOSS"}
+    if l1_code == "PROP" and item_damage_type in prop_l2_by_answer:
+        if item_field is None or item_field.value is None:
+            merged["item_damage_type"] = ExtractedField(
+                value=item_damage_type,
+                confidence=1.0 if answer_text else (0.5 if item_damage_type == "분실" else 0.7),
+                source_span="사용자 답변" if answer_text else "규칙 정규화",
+            )
+        l2_row = db.query(IncidentType).filter_by(
+            l2_code=prop_l2_by_answer[item_damage_type],
+        ).first()
+        if l2_row:
+            return l2_row.type_id, 1.0, modifiers
+
     if l1_confidence < incident_classify.DEFAULT_L1_AUTO_THRESHOLD:
         # L1 신뢰도도 낮으면 L2 호출로 추측을 확대하지 않고, L1 루트에서 질문을 생성한다.
         return (root.type_id if root else None), l1_confidence, modifiers
 
     answers = {name: str(f.value) for name, f in merged.items() if f.value is not None}
     answers.update({k: str(v) for k, v in modifiers.items() if v})
+    answers.update({k: str(v) for k, v in (answered_questions or {}).items() if v})
 
     result = incident_classify.classify_l2(db, l1_code, free_text or "", answers)
     if result.l2_code:
         return result.type_id, result.confidence, modifiers
-    # 신규 유형 제안도 검수 전에는 사고에 자동 할당하지 않는다. L1 루트에서 질문으로 보강한다.
-    # 보류 상태의 raw confidence가 높아도 '확정된 L2 confidence'가 아니므로 0으로 저장한다.
-    # 그렇지 않으면 다음 답변에서 조기 반환되어 영원히 재분류되지 않는 문제가 생긴다.
-    return (root.type_id if root else None), 0.0, modifiers
+    # root에서는 이 값이 L1 확정도다. 후속 답변 때 root를 항상 재분류하므로 높은 값을
+    # 보존해도 L1에 고착되지 않으며, 질문 엔진은 'L1 미확정'과 'L2만 보류'를 구분한다.
+    return (root.type_id if root else None), l1_confidence, modifiers
+
+
+def _pending_questions_for_incident(
+    db: Session, incident: Incident, merged: dict[str, ExtractedField], *, generate: bool,
+):
+    """분류 확정도까지 반영해 이 사고에서 실제로 보여줄 질문을 고른다."""
+    type_row = db.get(IncidentType, incident.type_id) if incident.type_id else None
+    if (
+        type_row is not None
+        and type_row.parent_id is not None
+        and (incident.classify_confidence or 0.0) >= _RECLASSIFY_CONFIDENCE_THRESHOLD
+    ):
+        return []
+
+    is_unresolved_l1 = (
+        type_row is None
+        or (type_row.parent_id is None and (
+            (incident.classify_confidence or 0.0) < incident_classify.DEFAULT_L1_AUTO_THRESHOLD
+        ))
+    )
+    l1_code = _UNRESOLVED_L1_CODE if is_unresolved_l1 else type_row.l1_code
+    # 미확정 L1에는 사고별 생성 질문도 임시 유형별 공용 질문도 쓰지 않는다. 중립 시드
+    # 한 문항만 사용해야 휴대폰 분실에 전쟁·테러 질문이 나오는 경로를 닫을 수 있다.
+    questions = pending_questions(
+        db, l1_code, merged, _modifiers_dict(incident), incident=incident,
+        generate=generate and not is_unresolved_l1,
+        l2_code=_l2_code_for_type(db, incident.type_id),
+        use_generated_questions=not is_unresolved_l1,
+    )
+    if is_unresolved_l1:
+        return [q for q in questions if q.applies_to_l1 == _UNRESOLVED_L1_CODE]
+    return questions
 
 
 def _serialize_structured(merged: dict[str, ExtractedField]) -> dict:
@@ -192,10 +259,7 @@ def _run_analysis(db: Session, incident: Incident, merged: dict[str, ExtractedFi
     findings_out = persist_findings(db, run, finding_specs)
 
     l1_code = _l1_code_for_type(db, incident.type_id)
-    questions = pending_questions(
-        db, l1_code, merged, _modifiers_dict(incident), incident=incident, generate=True,
-        l2_code=_l2_code_for_type(db, incident.type_id),
-    )
+    questions = _pending_questions_for_incident(db, incident, merged, generate=True)
 
     validation_specs = run_core_validation(db, incident.user_id, incident.occurred_at, merged, l1_code)
     doc_check = check_docs_not_secured(db, incident.incident_id)
@@ -369,11 +433,7 @@ def get_incident(
     ]
 
     merged = _current_merged(incident)
-    l1_code = _l1_code_for_type(db, incident.type_id)
-    questions = pending_questions(
-        db, l1_code, merged, _modifiers_dict(incident), incident=incident, generate=False,
-        l2_code=_l2_code_for_type(db, incident.type_id),
-    )
+    questions = _pending_questions_for_incident(db, incident, merged, generate=False)
 
     return IncidentAnalysisOut(
         incident_id=incident.incident_id,
@@ -425,6 +485,20 @@ def _apply_answer(incident: Incident, question: QuestionBank, answer_text: str, 
         current_modifiers[field] = answer_text
         incident.modifiers = json.dumps(current_modifiers, ensure_ascii=False)
 
+        if field == "incident_type_detail":
+            normalized_item_damage = classify_item_damage_type(answer_text)
+            if normalized_item_damage:
+                explicit["item_damage_type"] = normalized_item_damage
+
+
+def _current_question_map(
+    db: Session, incident: Incident,
+) -> dict[int, QuestionBank]:
+    questions = _pending_questions_for_incident(
+        db, incident, _current_merged(incident), generate=False,
+    )
+    return {q.question_id: q for q in questions}
+
 
 
 @router.post("/{incident_id}/answers", response_model=IncidentAnalysisOut)
@@ -441,29 +515,41 @@ def answer_question(
     if not question:
         raise HTTPException(status_code=404, detail="질문을 찾을 수 없습니다.")
 
+    answer_text = payload.answer_text.strip()
+    if not answer_text:
+        raise HTTPException(status_code=422, detail="답변을 입력해주세요.")
+    current_questions = _current_question_map(db, incident)
+    if question.question_id not in current_questions:
+        raise HTTPException(status_code=409, detail="이미 답했거나 현재 사고와 관련 없는 질문입니다.")
+
     latest_run = (
         db.query(AnalysisRun)
         .filter(AnalysisRun.incident_id == incident_id)
         .order_by(AnalysisRun.analysis_run_id.desc())
         .first()
     )
+    if latest_run is None:
+        raise HTTPException(status_code=409, detail="분석 결과가 없어 답변을 저장할 수 없습니다.")
     db.add(UserQuestionLog(
-        analysis_run_id=latest_run.analysis_run_id if latest_run else None,
+        analysis_run_id=latest_run.analysis_run_id,
         question_id=question.question_id,
-        answer_text=payload.answer_text,
+        answer_text=answer_text,
     ))
 
     explicit = _current_explicit(incident)
-    _apply_answer(incident, question, payload.answer_text, explicit)
+    _apply_answer(incident, question, answer_text, explicit)
 
     nlu = get_nlu_engine()
     merged = merge_incident_fields(nlu, "", explicit, classify_text=incident.free_text)
     _apply_to_incident(incident, merged)
 
+    db.flush()
+    _, _, _, answers_by_field = answered_question_state(db, incident_id)
     type_id, classify_confidence, modifiers = _classify_incident(
         db, incident.free_text, merged,
         existing_type_id=incident.type_id, existing_modifiers=_modifiers_dict(incident),
         existing_confidence=incident.classify_confidence,
+        answered_questions=answers_by_field,
     )
     if type_id is not None:
         incident.type_id = type_id
@@ -495,24 +581,41 @@ def answer_questions_batch(
         raise HTTPException(status_code=404, detail="사고 정보를 찾을 수 없습니다.")
     verify_owner(incident.user_id, current)
 
+    current_questions = _current_question_map(db, incident)
+    if not current_questions:
+        raise HTTPException(status_code=409, detail="현재 답변할 질문이 없습니다.")
+
+    submitted: dict[int, str] = {}
+    submitted_ids: set[int] = set()
+    for item in payload.answers:
+        submitted_ids.add(item.question_id)
+        answer = item.answer_text.strip()
+        if answer:
+            submitted[item.question_id] = answer
+    invalid_ids = submitted_ids - set(current_questions)
+    if invalid_ids:
+        raise HTTPException(status_code=409, detail="현재 사고와 관련 없는 질문이 포함돼 있습니다.")
+
     latest_run = (
         db.query(AnalysisRun)
         .filter(AnalysisRun.incident_id == incident_id)
         .order_by(AnalysisRun.analysis_run_id.desc())
         .first()
     )
+    if latest_run is None:
+        raise HTTPException(status_code=409, detail="분석 결과가 없어 답변을 저장할 수 없습니다.")
     explicit = _current_explicit(incident)
-    for item in payload.answers:
-        question = db.get(QuestionBank, item.question_id)
-        if question is None:
-            # 남의 화면에서 온 질문 id일 수 있다. 통째로 실패시키지 않고 그 답만 버린다.
-            continue
+    for question in current_questions.values():
+        answer_text = submitted.get(question.question_id)
         db.add(UserQuestionLog(
-            analysis_run_id=latest_run.analysis_run_id if latest_run else None,
+            analysis_run_id=latest_run.analysis_run_id,
             question_id=question.question_id,
-            answer_text=item.answer_text,
+            # 화면 안내대로 모르는 항목을 비워도 다음 단계로 진행한다. 빈 문항은 명시적인
+            # '모름'으로 기록해 같은 화면이 되살아나는 것을 막되 구조화 값에는 넣지 않는다.
+            answer_text=answer_text or "모름",
         ))
-        _apply_answer(incident, question, item.answer_text, explicit)
+        if answer_text:
+            _apply_answer(incident, question, answer_text, explicit)
 
     note = (payload.extra_note or "").strip()
     if note:
@@ -526,10 +629,13 @@ def answer_questions_batch(
     merged = merge_incident_fields(nlu, "", explicit, classify_text=incident.free_text)
     _apply_to_incident(incident, merged)
 
+    db.flush()
+    _, _, _, answers_by_field = answered_question_state(db, incident_id)
     type_id, classify_confidence, modifiers = _classify_incident(
         db, incident.free_text, merged,
         existing_type_id=incident.type_id, existing_modifiers=_modifiers_dict(incident),
         existing_confidence=incident.classify_confidence,
+        answered_questions=answers_by_field,
     )
     if type_id is not None:
         incident.type_id = type_id
