@@ -31,6 +31,7 @@ from app.models.user import Incident, UserCoverage, UserPolicy
 from app.models.question import QuestionBank, UserQuestionLog
 from app.services import incident_classify_gemini as incident_classify
 from app.services import incident_questions_gemini
+from app.services.coverage_amounts import amount_for_std_code
 from app.services.incident_context import build_incident_context
 from app.services.nlu import NLUEngine, ExtractedField, IncidentDraft, get_nlu_engine
 
@@ -235,10 +236,22 @@ def generate_claim_findings(
             seen_coverage_ids.add(cov.coverage_id)
 
             evidence_clauses = _evidence_clauses(db, cov.coverage_id, type_id, modifiers)
-            # 사고 시 "얼마나 보장되는지"가 가장 궁금한 부분이므로 별도 필드로 뽑아둔다(카드에
-            # 배지로 짧게 보여주기 위함). 실제 가입금액(사용자 입력)을 우선하고 없으면 약관상
-            # 보장한도 원문을 그대로 쓴다 — 둘 다 실제 데이터이며 지어낸 숫자는 넣지 않는다.
+            # 사고 시 "얼마나 보장되는지"가 가장 궁금한 부분이라 카드에 배지로 따로 뽑는다.
+            # 값의 출처가 둘인데 성격이 달라서 한 칸에 섞지 않는다.
+            #
+            #  * coverage_amount — 약관이 정한 보장한도 원문. "1일 70,000원(20일 한도)"처럼
+            #    등급과 무관한 조건이 붙는 경우가 있어 그대로 인용한다. 다만 대부분의 담보는
+            #    금액을 "보험증권 기재 금액"이라고만 쓰고 증권으로 미룬다 — 그래서 이 칸만
+            #    보면 정작 숫자가 없다.
+            #  * plan_amount — 등록할 때 고른 등급의 실제 가입금액(보험사 공시표). 숫자는
+            #    여기 있다. 등급을 안 골랐으면 비고, 지어내지 않는다.
             coverage_amount = uc.subscribed_amount or cov.limit_amount
+            plan_amount = amount_for_std_code(
+                db,
+                insurer_code=insurer.code,
+                plan_name=uc.user_policy.plan_name,
+                std_code=cov.coverage_std.std_code if cov.coverage_std else None,
+            )
 
             # 조항 원문을 이 사고 상황에 대입해 한 문장 설명(있으면 덧붙이고, 실패/무관하면
             # 조용히 생략 — explain_clause_plain은 실패 시 원문을 그대로 돌려주므로 그 경우엔
@@ -262,6 +275,7 @@ def generate_claim_findings(
                         f"{situational}"
                     ),
                     "coverage_amount": coverage_amount,
+                    "plan_amount": plan_amount,
                     "confidence": "높음",
                     "evidence": [(c, c.default_color) for c in evidence_clauses],
                 })
@@ -278,6 +292,7 @@ def generate_claim_findings(
                         f"{situational}"
                     ),
                     "coverage_amount": coverage_amount,
+                    "plan_amount": plan_amount,
                     "confidence": "높음",
                     "evidence": [(c, c.default_color) for c in evidence_clauses],
                 })

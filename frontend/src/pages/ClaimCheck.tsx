@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { TopBar } from "../components/TopBar";
 import { PageHero } from "../components/PageHero";
 import { DocumentCheck } from "./DocumentCheck";
@@ -17,7 +18,21 @@ type Tab = "docs" | "mistakes";
  * 무관하게 받을 수 있어 "조항을 직접 찾아보는" 약관 형광펜 쪽이 성격상 더 맞다.
  */
 export function ClaimCheck() {
-  const [tab, setTab] = useState<Tab>("docs");
+  // ?tab=mistakes로 들어오면 실수 방지부터 편다. 합치기 전 주소인 /mistakes가 여기로
+  // 넘어오는데(App.tsx), 그냥 넘기면 "실수 방지 보러 왔는데 서류 체크가 열리는" 셈이 된다 —
+  // 옛 링크나 북마크를 눌러도 원래 보려던 쪽이 나와야 한다.
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(params.get("tab") === "mistakes" ? "mistakes" : "docs");
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  // 서류 체크 맨 아래 "실수 방지 점검하러 가기"는 원래 /mistakes로 navigate했는데, 두
+  // 화면을 여기 탭으로 합치면서 그 경로가 /checklist로 되돌아오게 됐다(App.tsx). 결과는
+  // 같은 화면을 다시 마운트하는 것뿐 — 탭은 첫 번째("서류 체크")로 초기화되고, 사용자
+  // 눈에는 아무 일도 일어나지 않는다. 이동 대신 탭을 바꾸고 그 자리로 올려준다.
+  function goToMistakes() {
+    setTab("mistakes");
+    tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="page">
@@ -28,7 +43,7 @@ export function ClaimCheck() {
         title={"청구 전에\n두 가지만 확인해요"}
         subtitle="필요한 서류를 갖췄는지, 놓치거나 어긋난 정보가 없는지 순서대로 확인합니다."
       />
-      <div className="tabs">
+      <div className="tabs" ref={tabsRef}>
         <button
           type="button"
           className={`tab${tab === "docs" ? " tab--active" : ""}`}
@@ -44,7 +59,9 @@ export function ClaimCheck() {
           실수 방지
         </button>
       </div>
-      {tab === "docs" ? <DocumentCheck embedded /> : <MistakeCheck embedded />}
+      {tab === "docs"
+        ? <DocumentCheck embedded onNextStep={goToMistakes} />
+        : <MistakeCheck embedded />}
     </div>
   );
 }

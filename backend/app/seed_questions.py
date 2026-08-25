@@ -87,7 +87,10 @@ L2_QUESTIONS = [
     # --- 상해(INJ) ---
     ("사고후", "현지 병원 진단서와 진료비 영수증을 받아두셨나요?", "inj_overseas_docs", 0.8, "INJ", "INJ_OVERSEAS_TREATMENT"),
     ("사고후", "귀국 후 국내에서 치료를 시작한 날짜가 언제인가요?", "inj_domestic_start", 0.75, "INJ", "INJ_DOMESTIC_TREATMENT"),
-    ("사고후", "후유장해 진단을 받으셨다면 장해 정도(%)가 어떻게 되나요?", "inj_disability_rate", 0.8, "INJ", "INJ_DEATH_DISABILITY"),
+    # "장해"는 오타가 아니라 약관 정식 용어다(장해분류표·장해지급률, seed_db_2026_c.py 참고).
+    # 다만 일상어가 아니라 사용자가 "장애"의 오기로 읽는다는 지적이 있었다. 용어는 그대로
+    # 두되 — 진단서에 그 이름으로 적혀 있어야 찾을 수 있다 — 무슨 뜻인지 괄호로 풀어 준다.
+    ("사고후", "후유장해(치료를 마친 뒤에도 남는 신체 기능의 영구 손상) 진단을 받으셨다면, 진단서에 적힌 장해지급률이 몇 %인가요?", "inj_disability_rate", 0.8, "INJ", "INJ_DEATH_DISABILITY"),
 
     # --- 질병(ILL) ---
     ("사고후", "격리 통지서나 확진 증명서를 받으셨나요?", "ill_quarantine_doc", 0.85, "ILL", "ILL_INFECTIOUS"),
@@ -129,12 +132,21 @@ def run():
                     impact_weight=weight, applies_to_l1=applies_to_l1, applies_to_l2=applies_to_l2,
                 ))
                 added += 1
-            elif row.applies_to_l1 != applies_to_l1 or row.applies_to_l2 != applies_to_l2:
+            elif (
+                row.applies_to_l1 != applies_to_l1
+                or row.applies_to_l2 != applies_to_l2
+                or row.question_text != text
+                or row.impact_weight != weight
+            ):
+                # 문구도 여기서 맞춰 준다. 예전에는 applies_to_l1/l2만 갱신해서, 질문 문장을
+                # 고쳐도 이미 시드된 DB(배포 서버 포함)에는 옛 문장이 그대로 남았다.
                 row.applies_to_l1 = applies_to_l1
                 row.applies_to_l2 = applies_to_l2
+                row.question_text = text
+                row.impact_weight = weight
                 updated += 1
         db.commit()
-        print(f"question_bank 시드 완료: {added}건 추가, {updated}건 applies_to_l1 갱신 (기존 {len(existing_by_field)}건)")
+        print(f"question_bank 시드 완료: {added}건 추가, {updated}건 갱신 (기존 {len(existing_by_field)}건)")
     finally:
         db.close()
 

@@ -28,6 +28,7 @@ def persist_findings(db: Session, run: AnalysisRun, finding_specs: list[dict]) -
             description=spec["description"],
             confidence=spec["confidence"],
             coverage_amount=spec.get("coverage_amount"),
+            plan_amount=spec.get("plan_amount"),
         )
         db.add(finding)
         db.flush()
@@ -60,6 +61,7 @@ def persist_findings(db: Session, run: AnalysisRun, finding_specs: list[dict]) -
             description=finding.description,
             confidence=finding.confidence,
             coverage_amount=finding.coverage_amount,
+            plan_amount=finding.plan_amount,
             clauses=clause_outs,
         ))
     return findings_out
@@ -111,6 +113,7 @@ def load_findings_out(db: Session, analysis_run_id: int) -> list[FindingOut]:
             description=finding.description,
             confidence=finding.confidence,
             coverage_amount=finding.coverage_amount,
+            plan_amount=finding.plan_amount,
             clauses=clause_outs,
         ))
     return out

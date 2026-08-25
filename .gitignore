@@ -2,6 +2,10 @@ __pycache__/
 *.pyc
 .venv/
 backend/data/*.db.bak*
+# 로컬에서 화면을 눌러 보려고 만든 사본 DB. 커밋 대상은 backend/data/app.db 하나뿐이다 —
+# 사본을 두는 이유는 QA 중 생기는 게스트 계정·여행·사고 행이 그 파일에 쌓이지 않게 하려는 것.
+# (DATABASE_URL 환경변수로 가리킨다. backend/app/database.py 참고)
+backend/data/qa*.db
 node_modules/
 frontend/dist/
 .env

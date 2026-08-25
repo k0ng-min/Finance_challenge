@@ -18,9 +18,18 @@ export function FindingCard({ finding, incidentId }: { finding: FindingOut; inci
       </div>
       {finding.target_ref && <div className="finding-target">{finding.target_ref}</div>}
       <p className="finding-desc">{finding.description}</p>
-      {finding.coverage_amount && (
+      {/* 금액은 두 가지를 따로 보여준다. 약관은 대부분 "보험증권 기재 금액"이라고만 쓰기
+          때문에 약관 한도만 보여주면 정작 숫자가 없고, 반대로 등급별 가입금액만 보여주면
+          "1개당 20만원"처럼 약관에만 있는 조건이 사라진다. */}
+      {finding.plan_amount && (
         <div className="finding-amount">
-          <span className="finding-amount__label">보장금액</span>
+          <span className="finding-amount__label">가입금액</span>
+          <span className="finding-amount__value">{finding.plan_amount}</span>
+        </div>
+      )}
+      {finding.coverage_amount && (
+        <div className="finding-amount finding-amount--clause">
+          <span className="finding-amount__label">약관 한도</span>
           <span className="finding-amount__value">{finding.coverage_amount}</span>
         </div>
       )}

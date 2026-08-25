@@ -167,6 +167,8 @@ export interface FindingOut {
   description: string;
   confidence: string | null;
   coverage_amount: string | null;
+  /** 등록한 등급 기준 실제 가입금액("5,000만원 (실속형 기준)"). 약관 한도와 다른 값이다. */
+  plan_amount: string | null;
   clauses: ClauseOut[];
 }
 

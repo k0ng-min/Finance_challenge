@@ -70,10 +70,15 @@ export function Onsite() {
         );
       })
       .catch(() => {
-        if (!cancelled) {
-          setPack(null);
-          setError("현지 대응 정보를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요.");
-        }
+        if (cancelled) return;
+        setPack(null);
+        // 나라를 직접 고른 요청이 실패했을 때만 빨간 배너를 띄운다. 등록한 여행 기준으로
+        // 자동으로 보낸 요청이 실패한 것뿐이라면(여행이 이미 없어진 경우 등) 사용자는
+        // 아무것도 누른 적이 없다 — 그 화면에 에러를 띄우면 나라를 고르기도 전에 뭔가
+        // 고장 난 것처럼 보인다. 이 경우엔 나라를 고르라는 안내로 되돌린다.
+        setError(
+          country ? "현지 대응 정보를 불러오지 못했어요. 잠시 뒤 다시 시도해 주세요." : null
+        );
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -149,7 +154,7 @@ export function Onsite() {
       {loading && <LoadingState label="현지 대응 정보를 준비하고 있어요..." />}
       {!loading && error && <div className="error-box">{error}</div>}
 
-      {!loading && !pack && !error && !tripId && !country && (
+      {!loading && !pack && !error && !country && (
         <div className="empty-state">
           <Icon3D src="suitcase" size={56} />
           <p className="muted">나라를 고르면 그 나라 말로 된 서류 요청 카드를 만들어 드려요.</p>

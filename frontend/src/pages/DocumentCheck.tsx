@@ -15,7 +15,9 @@ import { DocPhotoCheck } from "../components/DocPhotoCheck";
 
 const STATUS_OPTIONS = ["미확인", "보유", "미보유", "발급불가"];
 
-export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {}) {
+export function DocumentCheck(
+  { embedded = false, onNextStep }: { embedded?: boolean; onNextStep?: () => void } = {}
+) {
   const { userId, incidentId } = useApp();
   const [activeIncidentId, setActiveIncidentId] = useState<number | null>(incidentId);
   const [checklist, setChecklist] = useState<ChecklistOut | null>(null);
@@ -208,6 +210,7 @@ export function DocumentCheck({ embedded = false }: { embedded?: boolean } = {})
         icon="shield"
         label="다음 단계"
         title="실수 방지 점검하러 가기"
+        onNavigate={onNextStep}
       />
     </div>
   );

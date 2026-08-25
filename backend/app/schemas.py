@@ -90,6 +90,9 @@ class FindingOut(BaseModel):
     description: str
     confidence: Optional[str]
     coverage_amount: Optional[str] = None
+    #: 등록한 등급 기준 실제 가입금액("5,000만원 (실속형 기준)"). 약관 한도와 다른 값이라
+    #: 같은 칸에 섞지 않고 따로 둔다.
+    plan_amount: Optional[str] = None
     clauses: list[ClauseOut]
 
 

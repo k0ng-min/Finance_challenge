@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { api, type ClauseOut } from "../api";
@@ -40,7 +40,12 @@ function ClauseRelevanceText({
 
 /** "쉬운 말로 보기"는 이제 버튼을 누른 순간이 아니라, 조항 목록을 불러올 때 이미 다 준비해
  * 둔 결과를 그대로 보여주기만 한다(그래서 버튼을 누르면 로딩 없이 바로 뜬다). */
-function ClausePlainText({ text, supported }: { text: string | null; supported: boolean }) {
+function ClausePlainText(
+  { text, supported, ready }: { text: string | null; supported: boolean; ready: boolean }
+) {
+  // "아직 안 만들어졌다"와 "만들 수 없다"는 다른 말이다. 조항 원문을 먼저 보여주고 설명은
+  // 뒤따라 채우는 구조라, 준비가 안 끝났을 뿐인데 "만들 수 없어요"라고 하면 거짓말이 된다.
+  if (!ready) return <p className="clause-plain muted">쉬운말 설명을 준비하고 있어요...</p>;
   if (!supported || !text) return <p className="clause-plain muted">지금은 쉬운말 설명을 만들 수 없어요.</p>;
   return <p className="clause-plain">{text}</p>;
 }
@@ -54,6 +59,8 @@ interface ClauseWithContext {
   segments: { text: string; highlighted: boolean }[] | null;
   plainText: string | null;
   plainSupported: boolean;
+  /** 형광펜 표시·쉬운말 설명 조회가 이 조항까지 끝났는지. 원문은 처음부터 있다. */
+  enriched: boolean;
 }
 
 /** 검색어가 포함된 부분을 표시해서 왜 이 조항이 검색됐는지 한눈에 보이게 한다. */
@@ -86,8 +93,14 @@ export function ClauseHighlight() {
     tripDestination: string | null; tripStartDate: string | null; tripEndDate: string | null; incidentCountry: string | null;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  /** 원문은 이미 떴고, 형광펜 표시·쉬운말 설명을 뒤에서 채우는 중인지. */
+  const [enriching, setEnriching] = useState(false);
+  /** 관련도 순 정렬이 실제로 적용됐는지 — 적용 전에 "관련도 순"이라고 적으면 거짓말이 된다. */
+  const [sortedByRelevance, setSortedByRelevance] = useState(false);
   const [index, setIndex] = useState(0);
   const [showPlain, setShowPlain] = useState(false);
+  /** 사용자가 조항을 넘겼는지. 읽고 있는 도중에 목록을 재배열하면 보던 조항이 사라진다. */
+  const userMovedRef = useRef(false);
   const [query, setQuery] = useState("");
 
   // 사고와 무관하게(가입 전 추천 화면 등에서) 조항 하나만 보러 들어온 경우 — 관련도 하이라이트
@@ -122,9 +135,15 @@ export function ClauseHighlight() {
       setTripContext(null);
       return;
     }
+    // 사고를 바꾸면 앞 사고의 조회가 아직 돌고 있다. 이 표시가 없으면 그 결과가 뒤늦게
+    // 도착해 새 사고의 목록 위에 덧칠된다.
+    let cancelled = false;
+    userMovedRef.current = false;
     setLoading(true);
+    setSortedByRelevance(false);
     api.getIncident(activeIncidentId)
       .then(async (r) => {
+        if (cancelled) return;
         setTripContext({
           tripDestination: r.trip_destination, tripStartDate: r.trip_start_date,
           tripEndDate: r.trip_end_date, incidentCountry: r.incident_country,
@@ -142,45 +161,72 @@ export function ClauseHighlight() {
                 segments: null,
                 plainText: null,
                 plainSupported: true,
+                enriched: false,
               });
             }
           })
         );
         const list = [...byId.values()];
 
-        // 이 사고와 얼마나 관련 있는지(노란 글자 수)와 쉬운말 설명을 전부 미리 계산해서,
-        // "쉬운 말로 보기"를 눌렀을 때 다시 기다리지 않게 한다. 조항마다 Gemini를 2번씩
-        // (관련도+쉬운말) 부르는데, 전부 한꺼번에 병렬로 쏘면 무료 티어의 분당 요청 한도를
-        // 넘어서 두 번째 조항부터 조용히 실패(폴백: 하이라이트 없음)하는 문제가 있었다.
-        // 조항 개수가 적어(보통 3~6개) 조항 단위로만 순차 처리해도 체감 속도 차이는 크지 않다.
-        const withRelevance: ClauseWithContext[] = [];
+        // 조항 원문은 이미 손에 있다. 조항마다 Gemini를 2번씩(관련도+쉬운말) 부르는 건
+        // 형광펜 표시와 쉬운말 설명 때문인데, 그걸 다 기다렸다가 화면을 그리면 조항이 많은
+        // 사고에서 그 앞에 한참 묶인다 — 이 자리에 "보통 3~6개"라고 적혀 있었지만, 실제
+        // 상해 사고 한 건에서 31개가 나왔다(호출 62번을 순서대로 기다린다는 뜻이다).
+        // 그래서 원문부터 바로 보여주고, 표시는 준비되는 대로 그 자리에 채워 넣는다.
+        // 순차 조회 자체는 그대로 둔다 — 한꺼번에 쏘면 무료 티어의 분당 한도를 넘어서
+        // 두 번째 조항부터 조용히 실패한다(폴백: 하이라이트 없음).
+        setItems(list);
+        setShowPlain(false);
+        // ?clauseId=가 있으면 그 조항의 위치로 바로 이동한다
+        // (예: 청구검토 결과 카드에서 조항을 눌러 들어온 경우).
+        const linkedPos = linkedClauseId
+          ? list.findIndex((it) => it.clause.clause_id === Number(linkedClauseId))
+          : -1;
+        setIndex(linkedPos !== -1 ? linkedPos : 0);
+        setLoading(false);
+        setEnriching(true);
+
         for (const it of list) {
+          if (cancelled) return;
           const [relevance, plain] = await Promise.all([
             api.getClauseRelevance(it.clause.clause_id, activeIncidentId).catch(() => null),
             api.getClausePlainText(it.clause.clause_id, activeIncidentId).catch(() => null),
           ]);
-          withRelevance.push({
-            ...it,
-            relevantChars: relevance?.relevant_chars ?? 0,
-            segments: relevance?.segments ?? null,
-            plainText: plain?.plain_text ?? null,
-            plainSupported: plain?.supported ?? false,
-          });
+          if (cancelled) return;
+          setItems((prev) =>
+            prev.map((p) =>
+              p.clause.clause_id === it.clause.clause_id
+                ? {
+                    ...p,
+                    relevantChars: relevance?.relevant_chars ?? 0,
+                    segments: relevance?.segments ?? null,
+                    plainText: plain?.plain_text ?? null,
+                    plainSupported: plain?.supported ?? false,
+                    enriched: true,
+                  }
+                : p
+            )
+          );
         }
-        withRelevance.sort((a, b) => b.relevantChars - a.relevantChars);
+        if (cancelled) return;
+        setEnriching(false);
 
-        setItems(withRelevance);
-        setIndex(0);
-        setShowPlain(false);
-
-        // ?clauseId=가 있으면 그 조항의 위치로 바로 이동한다
-        // (예: 청구검토 결과 카드에서 조항을 눌러 들어온 경우).
-        if (linkedClauseId) {
-          const pos = withRelevance.findIndex((it) => it.clause.clause_id === Number(linkedClauseId));
-          if (pos !== -1) setIndex(pos);
+        // 관련도 순 정렬은 전부 준비된 뒤에 한 번만 한다. 그것도 사용자가 아직 첫 조항에서
+        // 움직이지 않았을 때만 — 읽는 중에 목록이 재배열되면 보던 조항이 눈앞에서 바뀐다.
+        // 조항을 지정해 들어온 경우(?clauseId=)도 그 위치가 흐트러지므로 건드리지 않는다.
+        if (!userMovedRef.current && linkedPos === -1) {
+          setItems((prev) => [...prev].sort((a, b) => b.relevantChars - a.relevantChars));
+          setSortedByRelevance(true);
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+        setEnriching(false);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIncidentId, linkedClauseId]);
 
@@ -208,7 +254,9 @@ export function ClauseHighlight() {
             <div className="clause-reader__target">{soloClause.article_no}</div>
           </div>
           <p className="clause-reader__text">{soloClause.text}</p>
-          {soloPlain && <ClausePlainText text={soloPlain.text} supported={soloPlain.supported} />}
+          {soloPlain && (
+            <ClausePlainText text={soloPlain.text} supported={soloPlain.supported} ready />
+          )}
           {soloClause.page_ref && <div className="clause-page">원문 위치: {soloClause.page_ref}</div>}
         </div>
       </div>
@@ -235,6 +283,7 @@ export function ClauseHighlight() {
   const activeItem = items[Math.min(index, items.length - 1)];
 
   function goToIndex(next: number) {
+    userMovedRef.current = true;
     setIndex(next);
     setShowPlain(false);
   }
@@ -257,7 +306,7 @@ export function ClauseHighlight() {
         icon="highlighter"
         eyebrow="CLAUSE HIGHLIGHT"
         title={"이 사고와 관련된 부분,\n노란색으로 한눈에"}
-        subtitle="이번 사고와 직접 관련된 실제 약관 원문만 노랗게 표시했어요. 관련도가 높은 조항부터 보여드려요."
+        subtitle="이번 사고와 직접 관련된 실제 약관 원문만 노랗게 표시했어요. 표시가 다 준비되면 관련도가 높은 순서로 정렬해 드려요."
       />
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
       {tripContext && (
@@ -321,7 +370,10 @@ export function ClauseHighlight() {
               >
                 ← 이전 조항
               </button>
-              <span className="clause-reader__count">{index + 1} / {items.length} (관련도 순)</span>
+              <span className="clause-reader__count">
+                {index + 1} / {items.length}
+                {sortedByRelevance ? " (관련도 순)" : ""}
+              </span>
               <button
                 type="button"
                 className="clause-reader__navbtn"
@@ -331,6 +383,15 @@ export function ClauseHighlight() {
                 다음 조항 →
               </button>
             </div>
+
+            {enriching && (
+              <p className="clause-reader__progress muted">
+                형광펜 표시를 준비하고 있어요 · {items.filter((it) => it.enriched).length}/{items.length}
+                <span className="clause-reader__progress-hint">
+                  준비되는 대로 이 자리에 노란색이 채워져요. 원문은 지금 바로 읽으실 수 있어요.
+                </span>
+              </p>
+            )}
 
             <AnimatePresence mode="wait">
               <motion.div
@@ -360,7 +421,11 @@ export function ClauseHighlight() {
                   {showPlain ? "원문으로 접기" : "💬 쉬운 말로 보기"}
                 </button>
                 {showPlain && (
-                  <ClausePlainText text={activeItem.plainText} supported={activeItem.plainSupported} />
+                  <ClausePlainText
+                    text={activeItem.plainText}
+                    supported={activeItem.plainSupported}
+                    ready={activeItem.enriched}
+                  />
                 )}
                 {activeItem.clause.page_ref && (
                   <div className="clause-page">원문 위치: {activeItem.clause.page_ref}</div>

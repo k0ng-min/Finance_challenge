@@ -32,7 +32,11 @@ class AnalysisFinding(Base):
     target_ref = Column(String)
     description = Column(Text)  # 확정적 지급표현 금지
     confidence = Column(String)
-    coverage_amount = Column(String, nullable=True)  # 실제 가입금액(사용자 입력) 또는 약관상 보장한도 원문
+    coverage_amount = Column(String, nullable=True)  # 약관상 보장한도 원문(또는 사용자 입력)
+    # 등록할 때 고른 등급 기준의 실제 가입금액. 위 coverage_amount와 성격이 다르다 —
+    # 약관은 대부분 금액을 "보험증권 기재 금액"이라고만 쓰고 증권으로 미루는데, 그 실제
+    # 숫자는 보험사 공시 등급별 가입금액표에 있다(services/coverage_amounts.py).
+    plan_amount = Column(String, nullable=True)
 
     analysis_run = relationship("AnalysisRun", back_populates="findings")
     evidence_links = relationship("FindingEvidenceLink", back_populates="finding")

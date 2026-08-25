@@ -7,11 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app import config
-from app.database import Base, engine
+from app import schema_migrations
+from app.database import engine
 from app.limiter import limiter
 from app.services.kb_provenance import synchronize_policy_fingerprints
 from app import models  # noqa: F401  (모델 등록을 위해 import)
@@ -19,95 +19,10 @@ from app.routers import (
     users, trips, policies, incidents, insurers, auth, clauses, external_policies, onsite,
 )
 
-Base.metadata.create_all(bind=engine)
-
-
-def _add_missing_columns(table: str, additions: dict[str, str]):
-    """SQLAlchemy는 기존 테이블에 새 컬럼을 자동 추가하지 않으므로, 없는 컬럼만 직접 추가한다."""
-    with engine.connect() as conn:
-        existing = {row[1] for row in conn.execute(text(f"PRAGMA table_info({table})"))}
-        for col, ddl in additions.items():
-            if col not in existing:
-                conn.execute(text(ddl))
-        conn.commit()
-
-
-_add_missing_columns("app_user", {
-    "email": "ALTER TABLE app_user ADD COLUMN email VARCHAR",
-    "password_hash": "ALTER TABLE app_user ADD COLUMN password_hash VARCHAR",
-    "password_salt": "ALTER TABLE app_user ADD COLUMN password_salt VARCHAR",
-    "auth_provider": "ALTER TABLE app_user ADD COLUMN auth_provider VARCHAR DEFAULT 'guest'",
-    "session_token": "ALTER TABLE app_user ADD COLUMN session_token VARCHAR",
-    "session_expires_at": "ALTER TABLE app_user ADD COLUMN session_expires_at DATETIME",
-    "kakao_id": "ALTER TABLE app_user ADD COLUMN kakao_id VARCHAR",
-    "google_id": "ALTER TABLE app_user ADD COLUMN google_id VARCHAR",
-    "terms_agreed_at": "ALTER TABLE app_user ADD COLUMN terms_agreed_at DATETIME",
-    "privacy_agreed_at": "ALTER TABLE app_user ADD COLUMN privacy_agreed_at DATETIME",
-    "marketing_agreed_at": "ALTER TABLE app_user ADD COLUMN marketing_agreed_at DATETIME",
-    "age": "ALTER TABLE app_user ADD COLUMN age INTEGER",
-    "sex": "ALTER TABLE app_user ADD COLUMN sex VARCHAR",
-})
-_add_missing_columns("trip", {
-    "user_policy_id": "ALTER TABLE trip ADD COLUMN user_policy_id INTEGER",
-})
-_add_missing_columns("user_policy", {
-    "plan_name": "ALTER TABLE user_policy ADD COLUMN plan_name VARCHAR",
-})
-_add_missing_columns("clause", {
-    "highlight_spans": "ALTER TABLE clause ADD COLUMN highlight_spans TEXT",
-    "plain_text": "ALTER TABLE clause ADD COLUMN plain_text TEXT",
-    "source_edition": "ALTER TABLE clause ADD COLUMN source_edition VARCHAR",
-})
-_add_missing_columns("incident", {
-    "user_policy_id": "ALTER TABLE incident ADD COLUMN user_policy_id INTEGER",
-    "free_text": "ALTER TABLE incident ADD COLUMN free_text TEXT",
-    "item_damage_type": "ALTER TABLE incident ADD COLUMN item_damage_type VARCHAR",
-    "type_id": "ALTER TABLE incident ADD COLUMN type_id INTEGER",
-    "modifiers": "ALTER TABLE incident ADD COLUMN modifiers TEXT",
-    "classify_confidence": "ALTER TABLE incident ADD COLUMN classify_confidence FLOAT",
-    "question_stage": "ALTER TABLE incident ADD COLUMN question_stage INTEGER DEFAULT 0",
-})
-_add_missing_columns("analysis_finding", {
-    "coverage_amount": "ALTER TABLE analysis_finding ADD COLUMN coverage_amount VARCHAR",
-})
-_add_missing_columns("user_policy", {
-    "subscriber_age": "ALTER TABLE user_policy ADD COLUMN subscriber_age INTEGER",
-})
-_add_missing_columns("incident_type", {
-    "needs_review": "ALTER TABLE incident_type ADD COLUMN needs_review BOOLEAN DEFAULT 0",
-})
-_add_missing_columns("question_bank", {
-    "applies_to_l1": "ALTER TABLE question_bank ADD COLUMN applies_to_l1 VARCHAR",
-    "incident_id": "ALTER TABLE question_bank ADD COLUMN incident_id INTEGER",
-    "applies_to_l2": "ALTER TABLE question_bank ADD COLUMN applies_to_l2 VARCHAR",
-    "stage": "ALTER TABLE question_bank ADD COLUMN stage VARCHAR",
-    "answer_type": "ALTER TABLE question_bank ADD COLUMN answer_type VARCHAR DEFAULT 'text'",
-})
-_add_missing_columns("overlap_rule", {
-    "anchor_phrase": "ALTER TABLE overlap_rule ADD COLUMN anchor_phrase VARCHAR",
-})
-_add_missing_columns("insurer_premium", {
-    "period_days": "ALTER TABLE insurer_premium ADD COLUMN period_days INTEGER DEFAULT 7 NOT NULL",
-})
-
-
-def _migrate_insurer_premium_to_plan_schema():
-    """옛 insurer_premium은 (insurer_id, sex, age)에 UNIQUE가 걸려 있어 보험사 등급별로
-    여러 행을 못 넣는다. SQLite는 ALTER로 UNIQUE 제약을 못 바꾸므로, plan_name이
-    없는 옛 테이블이면 통째로 지우고 새 스키마로 다시 만든다 — 2026-08-19에 보험다모아
-    비교공시값을 보험사 실제 등급별 가격으로 전면 교체하면서 생긴 스키마 변경이다.
-    app.seed_premiums_actual을 다시 돌리면 채워진다."""
-    with engine.connect() as conn:
-        existing = {row[1] for row in conn.execute(text("PRAGMA table_info(insurer_premium)"))}
-        if existing and "plan_name" not in existing:
-            conn.execute(text("DROP TABLE insurer_premium"))
-            conn.commit()
-            Base.metadata.create_all(bind=engine)
-            print("[startup] insurer_premium을 등급별 가격 스키마로 재생성했습니다 — "
-                  "python -m app.seed_premiums_actual 로 다시 채워주세요.")
-
-
-_migrate_insurer_premium_to_plan_schema()
+# 스키마 맞추기(없는 테이블 생성 + 기존 테이블에 새 컬럼 추가)는 app.schema_migrations에
+# 있다. 앱을 띄우지 않고 DB만 여는 쪽(테스트 등)에서도 같은 코드를 부를 수 있어야 해서
+# 따로 뒀다 — 그 사연은 그 모듈의 설명을 참고.
+schema_migrations.apply(engine)
 
 # 기존 app.db도 새 시드와 동일한 PDF 지문을 갖도록 멱등 동기화한다.
 synchronize_policy_fingerprints(engine)

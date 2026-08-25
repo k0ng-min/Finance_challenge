@@ -145,12 +145,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem(LS_EMAIL);
         }
       }
-      await bootstrapGuest();
+      try {
+        await bootstrapGuest();
+      } catch {
+        // 게스트 생성까지 실패하면 지금은 서버에 닿지 않는다는 뜻이다. 여기서 그냥
+        // 던져 버리면 아래 setLoading(false)가 영영 실행되지 않아, 사용자는 이유도
+        // 모른 채 "준비하고 있어요..." 화면에 갇힌다(백엔드가 잠들어 있을 때 실제로
+        // 그랬다). userId 없이 진행시키면 각 화면이 자기 몫의 안내를 띄운다.
+      }
       setLoading(false);
     }
     restore();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 여행 ID도 사고와 똑같이 서버 기준으로 맞춰 준다. localStorage에 남은 trip_id를
+  // 그대로 믿으면, 그 여행이 이미 없는 경우(게스트 토큰이 사라져 계정이 새로 만들어졌거나,
+  // 게스트가 새 여행을 등록하며 앞 기록이 정리됐거나, 서버 데이터가 초기화된 경우)에도
+  // 화면들이 그 ID로 요청을 보낸다 → 404. 「해외 서류 챙기기」에서 나라를 고르기도 전에
+  // "현지 대응 정보를 불러오지 못했어요" 배너가 뜨던 게 정확히 이 경우였다.
+  useEffect(() => {
+    if (loading || !userId) return;
+    let cancelled = false;
+    api.listTrips(userId)
+      .then((list) => {
+        if (cancelled) return;
+        if (list.length === 0) {
+          localStorage.removeItem(LS_TRIP);
+          setTripIdState(null);
+          return;
+        }
+        const stored = Number(localStorage.getItem(LS_TRIP)) || null;
+        const stillExists = stored != null && list.some((t) => t.trip_id === stored);
+        const resolved = stillExists ? stored! : list[0].trip_id;
+        localStorage.setItem(LS_TRIP, String(resolved));
+        setTripIdState(resolved);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, userId, isLoggedIn]);
 
   // 지금까지는 "지금 보고 있는 사고"를 localStorage에만 들고 있어서, 로그인하거나 브라우저를
   // 껐다 켜거나 다른 기기에서 열면 그 값이 비고 → 약관 형광펜·서류 체크·실수 방지 화면이

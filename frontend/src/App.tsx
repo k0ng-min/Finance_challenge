@@ -74,8 +74,8 @@ function App() {
               <Route path="/policies" element={<MyPolicies />} />
               <Route path="/incident" element={<IncidentReport />} />
               <Route path="/checklist" element={<ClaimCheck />} />
-              {/* 예전 경로로 들어와도 합쳐진 화면으로 보낸다 */}
-              <Route path="/mistakes" element={<Navigate to="/checklist" replace />} />
+              {/* 예전 경로로 들어와도 합쳐진 화면으로 보내되, 원래 보려던 탭을 편다 */}
+              <Route path="/mistakes" element={<Navigate to="/checklist?tab=mistakes" replace />} />
               <Route path="/premium" element={<PremiumCalc />} />
               <Route path="/highlights" element={<ClauseHighlight />} />
               <Route path="/onsite" element={<Onsite />} />

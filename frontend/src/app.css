@@ -1511,8 +1511,23 @@ button { cursor: pointer; font-family: inherit; }
   padding: 8px 12px;
   margin: 0 0 10px;
 }
+/* 가입금액 바로 아래 약관 한도가 이어질 때 — 두 줄이 한 덩어리로 보이게 붙인다. */
+.finding-amount + .finding-amount { margin-top: -6px; }
+.finding-amount--clause { background: transparent; border: 1px solid var(--border); }
+.finding-amount--clause .finding-amount__label { color: var(--muted); }
 .finding-amount__label { font-size: 0.72rem; font-weight: 800; color: var(--primary-dark); flex-shrink: 0; }
 .finding-amount__value { font-size: 0.8rem; font-weight: 700; color: var(--heading); line-height: 1.4; }
+
+/* 조항 원문은 먼저 뜨고 형광펜 표시가 뒤따라 채워지는 동안의 진행 표시. */
+.clause-reader__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+.clause-reader__progress-hint { font-size: 0.72rem; font-weight: 500; }
 
 .clause-card { border-radius: var(--radius-sm); padding: 11px 13px; }
 .clause-card--compact {
