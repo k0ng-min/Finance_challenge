@@ -135,12 +135,26 @@ def dummy_password_check() -> None:
     가입돼 있는지 밖에서 훑을 수 있다(계정 열거). 없는 계정에도 같은 비용의 검증을 한 번
     돌려서 그 차이를 없앤다.
     """
-    verify_password("dummy-password", _DUMMY_HASH, "")
+    verify_password("dummy-password", _dummy_hash(), "")
 
 
-# 위 dummy_password_check가 쓸 고정 해시. 모듈을 읽을 때 한 번만 만든다(매번 만들면
-# 그것대로 시간이 들어 오히려 편차가 생긴다). 이 값으로 로그인할 수 있는 계정은 없다.
-_DUMMY_HASH = hash_password(secrets.token_urlsafe(16))[0]
+#: dummy_password_check가 쓸 고정 해시. 처음 쓸 때 한 번만 만들고 그다음부터 재사용한다.
+_DUMMY_HASH_CACHE: str | None = None
+
+
+def _dummy_hash() -> str:
+    """비교용 더미 해시를 처음 필요할 때 만든다.
+
+    모듈을 읽을 때 미리 만들어 두는 편이 코드는 단순한데, bcrypt 해시 한 번이 이 환경에서
+    0.23초다. 앱 기동이 1.15초인데 그중 0.2초를 로그인 한 번 안 해도 늘 내는 셈이라
+    (무료 인스턴스가 잠에서 깰 때마다 첫 방문자가 그만큼 더 기다린다) 쓰는 자리로 미룬다.
+    한 번 만든 값은 프로세스가 사는 동안 재사용하므로, 매번 만들어서 오히려 시간 편차가
+    생기는 일도 없다 — 그 편차를 없애는 게 이 함수의 목적이라 중요한 부분이다.
+    """
+    global _DUMMY_HASH_CACHE
+    if _DUMMY_HASH_CACHE is None:
+        _DUMMY_HASH_CACHE = hash_password(secrets.token_urlsafe(16))[0]
+    return _DUMMY_HASH_CACHE
 
 
 def idle_expired(user) -> bool:

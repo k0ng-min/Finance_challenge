@@ -36,6 +36,11 @@ services:
       # 로컬·클론 환경에서는 기본값이 켬이라 그대로 동작한다. backend/app/config.py 참고.
       - key: SEED_ON_STARTUP
         value: "0"
+      # 보안 감사 로그에 접속 주소를 남길 때 섞는 비밀키. 아무 긴 난수 문자열이면 된다
+      # (예: openssl rand -hex 32). 비워 두면 주소를 아예 기록하지 않는다 — 소금 없는
+      # 해시는 전수 대입으로 복원되므로, 보호되지 않는 값을 보호되는 척 남기지 않는다.
+      - key: AUDIT_HASH_KEY
+        sync: false
       - key: KAKAO_REST_API_KEY
         sync: false
       - key: KAKAO_CLIENT_SECRET

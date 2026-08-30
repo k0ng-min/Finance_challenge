@@ -43,3 +43,8 @@ EXTERNAL_POLICY_PROVIDERS = [
 # 여섯 번 열고 openpyxl까지 끌어오느라 기동이 눈에 띄게 느려진다. 첫 방문자가 그만큼
 # 더 기다리게 되므로 배포에서는 0으로 끈다(render.yaml 참고).
 SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "1").strip().lower() not in ("0", "false", "no")
+
+# 보안 감사 로그에 접속 주소를 남길 때 섞는 비밀키(app/services/security_audit.py).
+# IPv4는 주소가 43억 개뿐이라 소금 없는 해시는 전수 대입으로 금방 원래 주소가 나온다.
+# 비워 두면 주소를 아예 기록하지 않는다 — 보호되지 않는 값을 보호되는 척 남기지 않기 위함.
+AUDIT_HASH_KEY = os.getenv("AUDIT_HASH_KEY", "")

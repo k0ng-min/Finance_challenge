@@ -83,7 +83,7 @@ def test_연속_실패가_쌓이면_계정이_잠긴다(client, db_session):
 
     # 이제는 올바른 비밀번호로도 들어갈 수 없다 — 이게 잠금의 핵심이다.
     res = client.post("/auth/login", json={"email": user.email, "password": PASSWORD})
-    assert res.status_code == 429, f"잠긴 계정이 {res.status_code}로 통과했습니다"
+    assert res.status_code == 401, f"잠긴 계정이 {res.status_code}로 통과했습니다"
 
     db_session.refresh(user)
     assert user.locked_until is not None
@@ -248,7 +248,10 @@ def test_감사_로그에_비밀번호나_토큰이_남지_않는다(client, db_
         assert hash_session_token("live-token") not in blob, "감사 로그에 토큰 해시가 남았습니다"
 
 
-def test_접속_주소는_원문_대신_지문으로_남는다(client, db_session):
+def test_접속_주소는_원문_대신_지문으로_남는다(client, db_session, monkeypatch):
+    from app import config
+
+    monkeypatch.setattr(config, "AUDIT_HASH_KEY", "test-audit-key")
     user = make_account(db_session)
     client.post("/auth/login", json={"email": user.email, "password": PASSWORD},
                 headers={"X-Forwarded-For": "203.0.113.7"})
@@ -261,3 +264,62 @@ def test_접속_주소는_원문_대신_지문으로_남는다(client, db_sessio
     assert fingerprint == security_audit.client_fingerprint(
         type("R", (), {"headers": {"x-forwarded-for": "203.0.113.7"}, "client": None})()
     )
+
+
+def test_잠긴_계정과_없는_계정의_응답이_구분되지_않는다(client, db_session):
+    """잠금이 계정 열거 수단이 되면 안 된다.
+
+    처음에는 잠긴 계정에 429와 "너무 많이 시도했다"는 별도 문구를 줬는데, 없는 이메일은
+    잠길 수가 없어서(잠금은 실제 계정에만 걸린다) 아무리 두드려도 401만 나왔다. 즉 아무
+    이메일에나 다섯 번 틀린 뒤 한 번 더 넣어 보면, 429가 오는지 401이 오는지로 가입 여부가
+    그대로 갈렸다. 응답 시간까지 맞춰 놓고 상태코드로 그 정보를 흘리는 셈이었다.
+    """
+    user = make_account(db_session, email="real@example.com", token="real-token")
+
+    for _ in range(MAX_FAILED_LOGINS):
+        client.post("/auth/login", json={"email": user.email, "password": "wrong-password"})
+        client.post("/auth/login", json={"email": "ghost@example.com", "password": "wrong-password"})
+
+    db_session.refresh(user)
+    assert user.locked_until is not None, "테스트 전제가 깨졌습니다 — 계정이 잠기지 않았습니다"
+
+    잠긴계정 = client.post("/auth/login", json={"email": user.email, "password": PASSWORD})
+    없는계정 = client.post("/auth/login", json={"email": "ghost@example.com", "password": PASSWORD})
+
+    assert 잠긴계정.status_code == 없는계정.status_code, (
+        f"상태코드가 갈립니다({잠긴계정.status_code} vs {없는계정.status_code}) — "
+        "가입 여부가 드러납니다"
+    )
+    assert 잠긴계정.json() == 없는계정.json(), "응답 문구가 갈려 가입 여부가 드러납니다"
+
+    # 그래도 잠긴 사실 자체는 감사 로그에 남아 있어야 운영자가 알아볼 수 있다.
+    assert len(events(db_session, security_audit.LOGIN_BLOCKED)) >= 1
+
+
+def test_비밀키가_없으면_접속_주소를_아예_남기지_않는다(client, db_session, monkeypatch):
+    """소금 없는 해시는 IPv4 43억 개를 훑으면 복원된다 — 그럴 바엔 남기지 않는다."""
+    from app import config
+
+    monkeypatch.setattr(config, "AUDIT_HASH_KEY", "")
+    user = make_account(db_session)
+    client.post("/auth/login", json={"email": user.email, "password": PASSWORD},
+                headers={"X-Forwarded-For": "203.0.113.7"})
+
+    성공 = events(db_session, security_audit.LOGIN_SUCCESS)
+    assert len(성공) == 1
+    assert 성공[0].client_hash is None, "비밀키가 없는데 주소 지문이 남았습니다"
+
+
+def test_비밀키가_다르면_같은_주소도_다른_지문이_된다(monkeypatch):
+    """키를 모르면 지문에서 주소를 되짚을 수 없어야 한다."""
+    from app import config
+
+    fake_request = type("R", (), {"headers": {"x-forwarded-for": "203.0.113.7"}, "client": None})()
+
+    monkeypatch.setattr(config, "AUDIT_HASH_KEY", "key-one")
+    첫번째 = security_audit.client_fingerprint(fake_request)
+    monkeypatch.setattr(config, "AUDIT_HASH_KEY", "key-two")
+    두번째 = security_audit.client_fingerprint(fake_request)
+
+    assert 첫번째 and 두번째
+    assert 첫번째 != 두번째, "키를 바꿔도 지문이 같습니다 — 키가 섞이지 않았습니다"

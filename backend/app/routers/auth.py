@@ -269,17 +269,22 @@ def login(request: Request, payload: LoginIn, db: Session = Depends(get_db)):
             detail="이 계정은 아직 비밀번호를 정하지 않았어요. 구글 또는 카카오로 로그인한 뒤 계정 화면에서 비밀번호를 설정해 주세요.",
         )
 
-    # 연속 실패로 잠긴 계정은 비밀번호가 맞아도 받지 않는다. 잠겼다는 사실 자체는 본인에게
-    # 알려야 하는 정보라 문구를 따로 준다 — 계정이 있다는 걸 노출하지만, 이 문구를 보려면
-    # 이미 그 계정으로 여러 번 실패해 봤어야 해서 새로 새는 정보가 아니다.
+    # 연속 실패로 잠긴 계정은 비밀번호가 맞아도 받지 않는다.
+    #
+    # 잠겼다는 사실을 응답에 드러내지 않는 것이 중요하다. 처음에는 "너무 많이 시도했다"는
+    # 별도 문구와 429를 줬는데, 그러면 계정이 있는지 없는지가 그대로 드러난다 — 없는
+    # 이메일은 잠길 수가 없어서(잠금은 실제 계정에만 걸린다) 아무리 두드려도 401만 나온다.
+    # 즉 아무 이메일에나 5번 틀린 뒤 한 번 더 넣어 보고, 429가 오면 가입된 계정, 401이면
+    # 아닌 계정으로 갈라낼 수 있었다. 바로 아래 dummy_password_check로 응답 시간까지
+    # 맞춰 놓고 상태코드로 그 정보를 그대로 흘리는 셈이었다.
+    #
+    # 그래서 실패와 똑같은 401·똑같은 문구로 돌려준다. 잠금은 그대로 걸려 있고(비밀번호가
+    # 맞아도 통과하지 못한다), 무슨 일이 있었는지는 감사 로그에 남는다.
     if user and is_locked(user):
         security_audit.record(db, security_audit.LOGIN_BLOCKED, user_id=user.user_id, request=request,
-                              detail="잠금 상태에서 로그인 시도")
+                              detail=f"잠금 상태에서 로그인 시도({LOCKOUT_MINUTES}분 잠금)")
         db.commit()
-        raise HTTPException(
-            status_code=429,
-            detail=f"로그인 시도가 너무 많았어요. {LOCKOUT_MINUTES}분 뒤에 다시 시도해 주세요.",
-        )
+        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 맞지 않아요.")
 
     if not user or not is_social or not verify_password(payload.password, user.password_hash, user.password_salt or ""):
         if user is None:
