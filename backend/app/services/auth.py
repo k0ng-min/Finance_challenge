@@ -7,7 +7,7 @@ passlib 없이 bcrypt 패키지를 직접 쓴다. bcrypt는 해시 자체에 sal
 import hashlib
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
 
@@ -20,8 +20,20 @@ _BCRYPT_MAX_BYTES = 72  # bcrypt 알고리즘 자체의 한계 — 넘는 부분
 SESSION_TTL_DAYS = 14
 
 
+def utc_now() -> datetime:
+    """지금 시각을 UTC로, 단 시간대 정보는 떼고 돌려준다.
+
+    datetime.utcnow()는 파이썬에서 폐기 예정이라 경고가 뜬다. 그렇다고 권장 대체인
+    datetime.now(timezone.utc)를 그대로 쓰면 시간대가 붙은 값이 되는데, 세션 만료를
+    담는 컬럼은 시간대를 저장하지 않는 DateTime이다(models/user.py). 붙은 값과 안 붙은
+    값을 비교하면 TypeError로 로그인이 통째로 깨진다. 그래서 UTC로 계산한 뒤 시간대만
+    떼어, 지금까지 저장된 값들과 같은 모양을 유지한다.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def session_expiry() -> datetime:
-    return datetime.utcnow() + timedelta(days=SESSION_TTL_DAYS)
+    return utc_now() + timedelta(days=SESSION_TTL_DAYS)
 
 
 def hash_password(password: str) -> tuple[str, str]:

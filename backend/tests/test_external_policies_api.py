@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from app.database import get_db
 from app.main import app
 from app.models.user import AppUser
-from app.services.auth import hash_session_token
+from app.services.auth import utc_now, hash_session_token
 
 
 # 소유권 검사가 토큰을 요구하므로(익명 접근 차단) 테스트도 본인 토큰을 들고 부른다.
@@ -20,7 +20,7 @@ def client(db_session):
     db_session.add(AppUser(
         user_id=1, nickname="테스트", auth_provider="guest",
         session_token=hash_session_token("test-token"),
-        session_expires_at=datetime.utcnow() + timedelta(days=1),
+        session_expires_at=utc_now() + timedelta(days=1),
     ))
     db_session.commit()
 

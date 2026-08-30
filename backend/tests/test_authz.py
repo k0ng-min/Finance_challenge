@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from app.database import get_db
 from app.main import app
 from app.models.user import AppUser
-from app.services.auth import hash_session_token
+from app.services.auth import utc_now, hash_session_token
 
 # 사용자별 데이터를 돌려주는 엔드포인트. 하나라도 빠지면 그 구멍으로 전부 새어나간다.
 OWNED_PATHS = [
@@ -37,7 +37,7 @@ def make_user(db, nickname: str, token: str) -> int:
     user = AppUser(
         nickname=nickname, auth_provider="guest",
         session_token=hash_session_token(token),
-        session_expires_at=datetime.utcnow() + timedelta(days=1),
+        session_expires_at=utc_now() + timedelta(days=1),
     )
     db.add(user)
     db.commit()
@@ -92,3 +92,26 @@ def test_세션_토큰은_DB에_평문으로_남지_않는다(client, db_session
     user = db_session.get(AppUser, res.json()["user_id"])
     assert user.session_token != token, "세션 토큰이 평문으로 저장돼 있습니다"
     assert user.session_token == hash_session_token(token)
+
+
+def test_기한이_지난_세션은_거부되고_토큰이_지워진다(client, db_session):
+    """만료 검사는 저장된 시각(시간대 없음)과 지금 시각을 직접 비교한다.
+
+    이 비교가 지금까지 테스트를 통과한 적이 없었다 — 기존 테스트는 전부 넉넉히 살아
+    있는 세션만 만들어서, 만료된 쪽 가지로는 한 번도 들어가지 않았다. 시각을 다루는
+    방식을 바꿀 때(예: utcnow -> utc_now) 여기가 조용히 깨지면 로그인 전체가 막히므로
+    양쪽 가지를 모두 지나가게 둔다.
+    """
+    user = AppUser(
+        nickname="만료된사람", auth_provider="guest",
+        session_token=hash_session_token("stale-token"),
+        session_expires_at=utc_now() - timedelta(seconds=1),
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    res = client.get("/auth/me", headers={"Authorization": "Bearer stale-token"})
+    assert res.status_code == 401, f"만료된 세션이 {res.status_code}로 통과했습니다"
+
+    db_session.refresh(user)
+    assert user.session_token is None, "만료된 세션의 토큰이 DB에 그대로 남아 있습니다"

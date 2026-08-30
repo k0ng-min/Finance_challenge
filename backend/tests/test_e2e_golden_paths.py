@@ -18,6 +18,8 @@ Gemini는 부르지 않는다. 사고유형 분류는 고정값으로 갈아끼�
 """
 from datetime import datetime, timedelta
 
+from app.services.auth import utc_now
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -76,7 +78,7 @@ def login(db, user_id: int, token: str = "e2e-token") -> dict:
     user = db.get(AppUser, user_id)
     user.auth_provider = "kakao"
     user.session_token = token
-    user.session_expires_at = datetime.utcnow() + timedelta(days=1)
+    user.session_expires_at = utc_now() + timedelta(days=1)
     db.commit()
     return {"Authorization": f"Bearer {token}"}
 

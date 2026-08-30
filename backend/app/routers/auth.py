@@ -1,4 +1,3 @@
-from datetime import datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
@@ -10,7 +9,7 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident
 from app.services.auth import (
-    hash_password, hash_session_token, issue_session, session_expiry, verify_password,
+    hash_password, hash_session_token, issue_session, session_expiry, utc_now, verify_password,
 )
 from app.services.deletion import delete_user_cascade, wipe_user_data
 from app.services.oauth import exchange_kakao_code, exchange_google_code
@@ -172,7 +171,7 @@ def get_current_user(
     user = db.query(AppUser).filter(AppUser.session_token == hash_session_token(token)).first()
     if not user:
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
-    if user.session_expires_at and user.session_expires_at < datetime.utcnow():
+    if user.session_expires_at and user.session_expires_at < utc_now():
         user.session_token = None
         db.commit()
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
@@ -308,7 +307,7 @@ def submit_consent(payload: ConsentIn, user: AppUser = Depends(get_current_user)
     그대로 돌려줘, 프론트가 별도 조회 없이 가입 미완료 리다이렉트를 풀 수 있게 한다."""
     if not (payload.agree_terms and payload.agree_privacy):
         raise HTTPException(status_code=400, detail="이용약관과 개인정보 수집·이용에 동의해야 계속할 수 있어요.")
-    now = datetime.utcnow()
+    now = utc_now()
     user.terms_agreed_at = now
     user.privacy_agreed_at = now
     if payload.agree_marketing:

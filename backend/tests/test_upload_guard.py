@@ -13,7 +13,7 @@ from app.database import get_db
 from app.main import app
 from app.models.kb import RequiredDocStd
 from app.models.user import AppUser, Incident
-from app.services.auth import hash_session_token
+from app.services.auth import utc_now, hash_session_token
 
 AUTH = {"Authorization": "Bearer up-token"}
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 64
@@ -26,7 +26,7 @@ def client(db_session):
     user = AppUser(
         nickname="업로더", auth_provider="guest",
         session_token=hash_session_token("up-token"),
-        session_expires_at=datetime.utcnow() + timedelta(days=1),
+        session_expires_at=utc_now() + timedelta(days=1),
     )
     db_session.add(user)
     db_session.flush()
