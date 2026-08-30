@@ -133,8 +133,6 @@ def _ensure_question_bank():
         print(f"[startup] question_bank 시드를 건너뜁니다: {exc}")
 
 
-_ensure_doc_requirements()
-_ensure_travel_alerts()
 def _ensure_actual_premiums():
     """실제 조회 보험료를 시트에 있는 보험사만큼 채워 둔다.
 
@@ -169,9 +167,19 @@ def _ensure_actual_premiums():
         print(f"[startup] 보험료 적재를 건너뜁니다: {exc}")
 
 
-_ensure_onsite_and_simulation()
-_ensure_question_bank()
-_ensure_actual_premiums()
+# 위 다섯 점검을 한자리에 모아 둔다. 예전에는 두 곳에 흩어져 있었는데(정의 사이에 호출이
+# 끼어 있었다), 무엇이 기동 때 도는지 한눈에 안 보였다.
+#
+# config.SEED_ON_STARTUP이 꺼져 있으면 통째로 건너뛴다. 다섯 점검 모두 "비어 있으면 채운다"
+# 라서, 자료가 이미 들어 있는 DB에서는 무엇도 바꾸지 않는다 — 다만 그 사실을 확인하려고
+# DB 세션을 여섯 번 열고 openpyxl까지 끌어온다. 커밋된 app.db를 그대로 싣는 배포본에서는
+# 그 확인이 항상 헛일이라, 무료 인스턴스에서 첫 방문자를 그만큼 더 기다리게 할 이유가 없다.
+if config.SEED_ON_STARTUP:
+    _ensure_doc_requirements()
+    _ensure_travel_alerts()
+    _ensure_onsite_and_simulation()
+    _ensure_question_bank()
+    _ensure_actual_premiums()
 
 app = FastAPI(title="여행자보험 전 생애주기 AI")
 

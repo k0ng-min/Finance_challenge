@@ -1845,6 +1845,61 @@ button { cursor: pointer; font-family: inherit; }
 }
 .loading-state p { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
 
+/* 앱을 처음 열 때의 부팅 화면(BootScreen). 무료 서버가 잠에서 깨는 30~60초를
+   설명 없이 견디게 두지 않으려고, 로딩 문구 대신 진행 막대와 경과 시간을 함께 보여준다. */
+.boot-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 60vh;
+  text-align: center;
+  padding: 0 24px;
+}
+.boot-screen__title {
+  color: var(--heading);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+.boot-screen__desc {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  max-width: 320px;
+}
+.boot-screen__bar {
+  width: min(280px, 100%);
+  height: 6px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  overflow: hidden;
+}
+.boot-screen__bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--mint));
+  transition: width 0.9s linear;
+}
+.boot-screen__elapsed {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.boot-screen__retry {
+  margin-top: 4px;
+  padding: 11px 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+.boot-screen__retry:hover { background: var(--primary-dark); }
+
 .modal-overlay {
   position: fixed;
   inset: 0;

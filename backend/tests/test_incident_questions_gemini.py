@@ -47,7 +47,7 @@ def _install(monkeypatch, payload=None, error=None):
             raise error
         return _FakeClient(payload)
 
-    monkeypatch.setattr(qgen.genai, "Client", _client)
+    monkeypatch.setattr(qgen, "_get_client", _client)
 
 
 def _incident(db):
@@ -120,7 +120,7 @@ def test_질문_없음으로_끝난_사고는_다시_열어도_빈_목록이다(
     _install(monkeypatch, payload={"items": []})
     assert _generate(db_session, incident) == []
 
-    monkeypatch.setattr(qgen.genai, "Client", _boom)
+    monkeypatch.setattr(qgen, "_get_client", _boom)
     again = qgen.generate_questions(
         db_session, incident=incident, stage=qgen.STAGE_L1, l1_code="PROP",
         merged={}, create=False,
@@ -133,7 +133,7 @@ def test_생성을_한_적_없는_사고는_None으로_공용_뱅크를_연다(d
     """Gemini 키가 없는 환경에서는 생성이 아예 일어나지 않는다. 그때는 공용 뱅크가
     유일한 질문 출처이므로 폴백이 반드시 열려야 한다."""
     incident = _incident(db_session)
-    monkeypatch.setattr(qgen.genai, "Client", _boom)
+    monkeypatch.setattr(qgen, "_get_client", _boom)
 
     result = qgen.generate_questions(
         db_session, incident=incident, stage=qgen.STAGE_L1, l1_code="PROP",
@@ -173,7 +173,7 @@ def test_프롬프트에_이_대분류의_세부유형_후보가_들어간다(db
     monkeypatch.setattr(config, "GEMINI_ENABLED", True)
     monkeypatch.setattr(config, "GEMINI_API_KEY", "test-key")
     monkeypatch.setattr(
-        qgen.genai, "Client",
+        qgen, "_get_client",
         lambda api_key=None: type("C", (), {"models": _Recording(None)})(),
     )
 
@@ -219,7 +219,7 @@ def test_2단계_프롬프트에_1단계_답이_들어간다(db_session, monkeyp
     monkeypatch.setattr(config, "GEMINI_ENABLED", True)
     monkeypatch.setattr(config, "GEMINI_API_KEY", "test-key")
     monkeypatch.setattr(
-        qgen.genai, "Client",
+        qgen, "_get_client",
         lambda api_key=None: type("C", (), {"models": _Recording(None)})(),
     )
 

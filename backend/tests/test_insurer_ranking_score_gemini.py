@@ -47,7 +47,7 @@ def _install_fake(monkeypatch, recorder, scores):
                          for c, s in scores.items()]}
     monkeypatch.setattr(config, "GEMINI_ENABLED", True)
     monkeypatch.setattr(config, "GEMINI_API_KEY", "test-key")
-    monkeypatch.setattr(scorer.genai, "Client", lambda api_key=None: _FakeClient(recorder, payload))
+    monkeypatch.setattr(scorer, "_get_client", lambda api_key=None: _FakeClient(recorder, payload))
     scorer.clear_cache()
 
 
@@ -177,7 +177,7 @@ def test_모델이_실패하면_규칙_기반_순위를_그대로_쓴다(monkeyp
     def boom(api_key=None):
         raise RuntimeError("네트워크 끊김")
 
-    monkeypatch.setattr(scorer.genai, "Client", boom)
+    monkeypatch.setattr(scorer, "_get_client", boom)
     scorer.clear_cache()
 
     assert _call() is None
@@ -200,7 +200,7 @@ def test_실패는_캐시하지_않는다(monkeypatch, amounts):
             {"insurer_code": "BBB", "score": 90.0, "reasons": ["b"]},
         ]})
 
-    monkeypatch.setattr(scorer.genai, "Client", client)
+    monkeypatch.setattr(scorer, "_get_client", client)
 
     assert _call() is None
     state["fail"] = False

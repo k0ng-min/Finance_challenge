@@ -22,11 +22,22 @@ import json
 import logging
 
 from pydantic import BaseModel
-from google import genai
-from google.genai import types
 
 from app import config
 from app.services.nlu import ExtractedField, IncidentDraft, RuleBasedNLU
+
+
+def _get_client():
+    """google.genai는 쓰는 자리에서 불러온다.
+
+    이 패키지는 import만으로 1.4초가 걸리는데(로컬 기준, 무료 인스턴스는 더 오래),
+    앱 기동에는 필요 없고 실제 Gemini 호출이 있을 때만 필요하다. 최상단에 두면 무료
+    인스턴스가 잠에서 깰 때마다 첫 방문자가 그 시간을 그대로 기다린다.
+    doc_verify_gemini·incident_classify_gemini도 같은 이유로 같은 모양을 쓴다.
+    """
+    from google import genai
+
+    return genai.Client(api_key=config.GEMINI_API_KEY)
 
 logger = logging.getLogger(__name__)
 
@@ -136,10 +147,12 @@ class GeminiNLU:
     실패 시 예외를 던지고, 상위(get_nlu_engine)에서 RuleBasedNLU로 폴백한다."""
 
     def __init__(self):
-        self._client = genai.Client(api_key=config.GEMINI_API_KEY)
+        self._client = _get_client()
         self._fallback = RuleBasedNLU()
 
     def _generate_json(self, prompt: str, schema: type[BaseModel]) -> BaseModel:
+        from google.genai import types
+
         response = self._client.models.generate_content(
             model=config.GEMINI_MODEL,
             contents=prompt,
@@ -203,6 +216,8 @@ class GeminiNLU:
         return result.std_code, round(result.confidence, 2)
 
     def explain_clause_plain(self, clause_text: str, incident_context: dict | None = None) -> str:
+        from google.genai import types
+
         if not clause_text or not clause_text.strip():
             return clause_text
         try:

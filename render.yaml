@@ -30,6 +30,12 @@ services:
         sync: false
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
+      # 무료 인스턴스는 15분간 요청이 없으면 잠들고, 다음 방문자가 기동을 그대로 기다린다.
+      # 기동 때 도는 시드 점검은 커밋된 app.db를 그대로 싣는 배포본에서 항상 헛일이라
+      # (전부 "비어 있으면 채운다"인데 이미 다 들어 있다) 그 확인 시간을 없앤다.
+      # 로컬·클론 환경에서는 기본값이 켬이라 그대로 동작한다. backend/app/config.py 참고.
+      - key: SEED_ON_STARTUP
+        value: "0"
       - key: KAKAO_REST_API_KEY
         sync: false
       - key: KAKAO_CLIENT_SECRET

@@ -1,5 +1,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api, type AuthUserOut } from "../api";
+import { api, pingHealth, type AuthUserOut } from "../api";
+
+/** 앱을 처음 열 때 서버에 닿기까지의 단계. 화면 문구가 여기에 따라 갈린다. */
+export type BootPhase = "connecting" | "waking" | "failed";
+
+// 이만큼 지나도록 서버가 응답하지 않으면 "잠든 서버를 깨우는 중"이라고 알린다.
+// 깨어 있는 서버는 1초 안에 답하므로, 이 시간을 넘겼다는 건 기상 중이라는 뜻이다.
+// 너무 짧게 잡으면 잠깐 느린 네트워크에도 "서버가 잠들었다"는 오해를 준다.
+const WAKE_NOTICE_SECONDS = 6;
+// 여기까지 못 깨우면 포기하고 다시 시도할 길을 준다. 무료 인스턴스의 기상은 보통
+// 30~60초라서, 그 두 배쯤 기다려 본 뒤에도 안 되면 다른 문제로 보는 게 맞다.
+const BOOT_DEADLINE_MS = 90000;
 
 interface AppState {
   userId: number | null;
@@ -8,6 +19,12 @@ interface AppState {
   setTripId: (id: number) => void;
   setIncidentId: (id: number) => void;
   loading: boolean;
+  /** 서버에 닿기까지의 단계. 부팅 화면이 이 값으로 문구를 고른다. */
+  bootPhase: BootPhase;
+  /** 부팅을 시작한 뒤 흐른 초. 기다리는 사람에게 진행 중임을 보여주는 데 쓴다. */
+  bootSeconds: number;
+  /** 서버 깨우기에 실패했을 때 처음부터 다시 시도한다. */
+  retryBoot: () => void;
   // 인증 상태 — 로그인 전에는 nickname/email이 없는 익명 게스트로 동작한다
   nickname: string | null;
   email: string | null;
@@ -62,6 +79,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => Number(localStorage.getItem(LS_INCIDENT)) || null
   );
   const [loading, setLoading] = useState(true);
+  const [bootPhase, setBootPhase] = useState<BootPhase>("connecting");
+  const [bootSeconds, setBootSeconds] = useState(0);
+  // 「다시 시도」가 이 값을 올리면 부팅 effect가 통째로 다시 돈다.
+  const [bootAttempt, setBootAttempt] = useState(0);
   const [nickname, setNickname] = useState<string | null>(() => localStorage.getItem(LS_NICKNAME));
   const [email, setEmail] = useState<string | null>(() => localStorage.getItem(LS_EMAIL));
   const [age, setAge] = useState<number | null>(() => Number(localStorage.getItem(LS_AGE)) || null);
@@ -102,6 +123,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
+    let cancelled = false;
+    const startedAt = Date.now();
+    setLoading(true);
+    setBootPhase("connecting");
+    setBootSeconds(0);
+
+    // 1초마다 경과 시간을 올린다. 화면은 이 값으로 "몇 초째 기다리는 중"을 보여주고,
+    // WAKE_NOTICE_SECONDS를 넘으면 문구를 "서버를 깨우는 중"으로 바꾼다.
+    const ticker = window.setInterval(() => {
+      if (cancelled) return;
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+      setBootSeconds(elapsed);
+      if (elapsed >= WAKE_NOTICE_SECONDS) {
+        setBootPhase((p) => (p === "connecting" ? "waking" : p));
+      }
+    }, 1000);
+
+    /** 서버가 응답할 때까지 두드린다. 성공하면 true, 제한 시간을 넘기면 false. */
+    async function wakeServer(): Promise<boolean> {
+      let backoff = 1000;
+      while (!cancelled && Date.now() - startedAt < BOOT_DEADLINE_MS) {
+        try {
+          await pingHealth(20000);
+          return true;
+        } catch {
+          // 아직 안 깨어났거나 네트워크가 흔들린 것. 잠시 쉬었다 다시 두드린다 —
+          // 붙잡혀 있던 그 시간이 곧 서버가 일어나던 시간이라 헛수고가 아니다.
+          await new Promise((r) => setTimeout(r, backoff));
+          backoff = Math.min(backoff * 2, 8000);
+        }
+      }
+      return false;
+    }
+
     async function restore() {
       const token = localStorage.getItem(LS_TOKEN);
       if (token) {
@@ -155,9 +210,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false);
     }
-    restore();
+
+    (async () => {
+      // 서버를 먼저 깨우고 나서 세션을 복원한다. 깨어 있을 때 /health는 수십 밀리초라
+      // 사실상 공짜고, 잠들어 있을 때는 이 두드림이 곧 기상 신호가 된다.
+      const awake = await wakeServer();
+      if (cancelled) return;
+      if (!awake) {
+        // loading을 풀지 않는다 — 서버에 닿지 못하는 채로 화면을 열어 주면 어느 기능을
+        // 눌러도 실패한다. 대신 이유를 밝히고 다시 시도할 길을 준다(App의 BootScreen).
+        setBootPhase("failed");
+        return;
+      }
+      await restore();
+      if (!cancelled) window.clearInterval(ticker);
+    })();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(ticker);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [bootAttempt]);
 
   // 여행 ID도 사고와 똑같이 서버 기준으로 맞춰 준다. localStorage에 남은 trip_id를
   // 그대로 믿으면, 그 여행이 이미 없는 경우(게스트 토큰이 사라져 계정이 새로 만들어졌거나,
@@ -347,6 +421,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <AppCtx.Provider
       value={{
         userId, tripId, incidentId, setTripId, setIncidentId, loading,
+        bootPhase, bootSeconds, retryBoot: () => setBootAttempt((n) => n + 1),
         nickname, email, age, sex, isLoggedIn, signupCompleted, hasPassword,
         loginWithKakao, loginWithGoogle, loginWithEmail, setPassword,
         applyAuthUser, cancelPendingSignup,

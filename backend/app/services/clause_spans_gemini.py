@@ -17,11 +17,22 @@ import logging
 
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from google import genai
-from google.genai import types
 
 from app import config
 from app.models.kb import Clause
+
+
+def _get_client():
+    """google.genai는 쓰는 자리에서 불러온다.
+
+    이 패키지는 import만으로 1.4초가 걸리는데(로컬 기준, 무료 인스턴스는 더 오래),
+    앱 기동에는 필요 없고 실제 Gemini 호출이 있을 때만 필요하다. 최상단에 두면 무료
+    인스턴스가 잠에서 깰 때마다 첫 방문자가 그 시간을 그대로 기다린다.
+    doc_verify_gemini·incident_classify_gemini도 같은 이유로 같은 모양을 쓴다.
+    """
+    from google import genai
+
+    return genai.Client(api_key=config.GEMINI_API_KEY)
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +180,9 @@ def get_incident_relevance(clause_text: str, incident_context: dict) -> tuple[li
     if not situation:
         return None
     try:
-        client = genai.Client(api_key=config.GEMINI_API_KEY)
+        from google.genai import types
+
+        client = _get_client()
         response = client.models.generate_content(
             model=config.GEMINI_MODEL,
             contents=_RELEVANCE_PROMPT.format(situation=situation, clause_text=clause_text),
@@ -203,7 +216,9 @@ def get_highlight_spans(db: Session, clause: Clause) -> list[dict] | None:
         return None
 
     try:
-        client = genai.Client(api_key=config.GEMINI_API_KEY)
+        from google.genai import types
+
+        client = _get_client()
         response = client.models.generate_content(
             model=config.GEMINI_MODEL,
             contents=_SPAN_PROMPT.format(clause_text=clause.text),

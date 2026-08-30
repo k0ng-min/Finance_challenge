@@ -35,3 +35,11 @@ EXTERNAL_POLICY_PROVIDERS = [
     p.strip() for p in os.getenv("EXTERNAL_POLICY_PROVIDERS", "manual,mock").split(",")
     if p.strip()
 ]
+
+# 기동할 때 시드(질문 뱅크·서류요건·여행경보 등)를 점검해 비어 있으면 채울지 여부.
+# 저장소를 클론한 사람이 시드 명령을 따로 기억하지 않아도 기능이 온전히 돌게 하려는
+# 장치라 기본값은 켬이다. 다만 배포본에서는 커밋된 app.db에 이미 전부 들어 있어 이
+# 점검이 전부 no-op인데, 무료 인스턴스(0.1 CPU)에서는 그 no-op을 확인하려고 DB 세션을
+# 여섯 번 열고 openpyxl까지 끌어오느라 기동이 눈에 띄게 느려진다. 첫 방문자가 그만큼
+# 더 기다리게 되므로 배포에서는 0으로 끈다(render.yaml 참고).
+SEED_ON_STARTUP = os.getenv("SEED_ON_STARTUP", "1").strip().lower() not in ("0", "false", "no")

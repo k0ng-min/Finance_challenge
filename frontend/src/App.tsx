@@ -1,6 +1,7 @@
 import { lazy, Suspense, useRef } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { LoadingState } from "./components/LoadingState";
+import { BootScreen } from "./components/BootScreen";
 import { AppFooter } from "./components/AppFooter";
 import { BackgroundDecor } from "./components/BackgroundDecor";
 import { FrameScrollbar } from "./components/FrameScrollbar";
@@ -31,7 +32,7 @@ const OAuthCallback = lazy(() =>
 const NotFound = lazy(() => import("./pages/NotFound").then((m) => ({ default: m.NotFound })));
 
 function App() {
-  const { loading, isLoggedIn, signupCompleted } = useApp();
+  const { loading, isLoggedIn, signupCompleted, bootPhase, bootSeconds, retryBoot } = useApp();
   const location = useLocation();
   const isHome = location.pathname === "/";
   const mainRef = useRef<HTMLElement>(null);
@@ -45,7 +46,7 @@ function App() {
       <div className="app-shell">
         <main className="app-main">
           <div className="page">
-            <LoadingState label="여행자보험 AI를 준비하고 있어요..." />
+            <BootScreen phase={bootPhase} seconds={bootSeconds} onRetry={retryBoot} />
           </div>
         </main>
       </div>

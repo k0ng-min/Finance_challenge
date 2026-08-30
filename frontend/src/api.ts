@@ -746,6 +746,27 @@ export interface SimulationOut {
   disclaimer: string;
 }
 
+/**
+ * 서버가 깨어 있는지만 확인한다. 무료 호스팅(Render)은 15분간 요청이 없으면 잠들고,
+ * 다음 요청이 들어오면 그 요청을 붙잡아 둔 채 컨테이너를 다시 띄운다 — 그동안 응답이
+ * 30~60초까지 늦어진다. 부팅 때 이걸 먼저 한 번 두드려서, 앱이 "왜 아무 반응이 없지"가
+ * 아니라 "지금 서버를 깨우는 중"이라고 정확히 말할 수 있게 한다.
+ *
+ * 다른 요청들과 달리 토큰도 JSON 헤더도 붙이지 않고, 응답 본문도 읽지 않는다 —
+ * 돌아왔다는 사실 하나만 쓴다. timeoutMs가 지나면 요청을 끊는데, 끊어도 서버를 깨우는
+ * 일 자체는 계속 진행되므로 다시 두드리면 된다.
+ */
+export async function pingHealth(timeoutMs = 20000): Promise<void> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_BASE}/health`, { signal: controller.signal });
+    if (!res.ok) throw new ApiError(res.status, "health");
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const api = {
   createUser: (nickname: string) =>
     request<UserOut>("/users", { method: "POST", body: JSON.stringify({ nickname }) }),
