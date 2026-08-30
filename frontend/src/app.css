@@ -2123,7 +2123,6 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: var(--radius-sm);
   background: var(--card-bg);
   border: 1.5px solid var(--border);
-  min-height: 132px;
 }
 .tour-clause p {
   font-size: 0.74rem;
@@ -2144,17 +2143,6 @@ button { cursor: pointer; font-family: inherit; }
 }
 .tour-clause__ink--done { transform: scaleX(1); }
 .tour-clause__word { position: relative; z-index: 1; color: var(--heading); font-weight: 700; }
-.tour-stamp {
-  position: absolute;
-  right: 16px;
-  bottom: 14px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  color: #2f8f74;
-  background: var(--mint-soft);
-  padding: 3px 9px;
-  border-radius: 999px;
-}
 
 /* 손끝과 눌린 자리의 물결 */
 .tour-tap {

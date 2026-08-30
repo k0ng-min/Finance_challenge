@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, type MotionProps } from "framer-motion";
+import { AnimatePresence, motion, type MotionProps, type TargetAndTransition } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 const LS_TOUR_SEEN = "travel_ai_tour_seen";
@@ -221,62 +221,134 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
 /* --------------------------------------------------------------------------
  * 장면들
  *
- * 각 장면은 6초 안에 "손끝이 누른다 → 화면이 바뀐다"를 한 번씩 보여준다. playing이 false면
- * (움직임 줄이기 설정) 애니메이션 없이 끝 모습만 그린다.
+ * 시간은 전부 "장면이 시작하고 몇 초"로 적는다. 예전에는 손끝의 이동을 전체 길이에 균등
+ * 분배했는데, 그러면 누르는 시점이 화면이 바뀌는 시점과 어긋난다 — 실제로 장면 1에서
+ * 손끝이 3.5초에 「다음」을 눌렀고 화면은 2.5초에 이미 넘어가 있었다(없는 버튼을 누르는
+ * 모습이었다). 아래 상수들이 그 순서를 한자리에서 정한다.
+ *
+ * playing이 false면(움직임 줄이기 설정, 또는 사람이 직접 넘긴 뒤) 재생하지 않고 각 장면의
+ * 끝 모습만 그린다.
  * ----------------------------------------------------------------------- */
 
-/** 화면을 누르는 손끝. 좌표는 tour-screen 안쪽 기준(px). */
-function Tap({ points, playing }: { points: [number, number][]; playing: boolean }) {
-  if (!playing) return null;
-  // 누를 곳으로 이동 → 눌림(작아졌다 커짐) → 다음 곳으로. 마지막엔 조용히 사라진다.
-  const xs = points.flatMap(([x]) => [x, x, x]);
-  const ys = points.flatMap(([, y]) => [y, y, y]);
-  const scales = points.flatMap(() => [1, 0.68, 1]);
-  const step = 1 / (xs.length - 1);
-  const times = xs.map((_, i) => Math.min(1, i * step));
+/** 한 번의 터치. at은 손끝이 실제로 눌리는 시각(초). */
+interface Press {
+  x: number;
+  y: number;
+  at: number;
+}
+
+/** 손끝이 자리를 옮기는 데 걸리는 시간과, 눌렀다 떼는 데 걸리는 시간. */
+const MOVE_S = 0.5;
+const PRESS_S = 0.16;
+
+/**
+ * 화면을 누르는 손끝. 좌표는 tour-screen 안쪽 기준(px).
+ *
+ * 키프레임 배열(x·y·scale·opacity·times)의 길이는 반드시 서로 같아야 한다. 예전에는
+ * opacity만 9개였고 나머지는 3~6개라, 손끝이 엉뚱하게 움직였다. 아래처럼 한 번에 같이
+ * 쌓으면 그런 어긋남이 생길 수 없다.
+ */
+function Tap({ presses, playing }: { presses: Press[]; playing: boolean }) {
+  if (!playing || presses.length === 0) return null;
+
+  const D = SCENE_MS / 1000;
+  const t: number[] = [];
+  const x: number[] = [];
+  const y: number[] = [];
+  const s: number[] = [];
+  const o: number[] = [];
+  const at = (time: number, px: number, py: number, scale: number, opacity: number) => {
+    t.push(Math.min(1, Math.max(0, time / D)));
+    x.push(px);
+    y.push(py);
+    s.push(scale);
+    o.push(opacity);
+  };
+
+  const first = presses[0];
+  // 손끝은 누를 자리 아래에서 올라온다 — 제자리에서 갑자기 나타나면 어디서 왔는지 모른다.
+  const startY = first.y + 34;
+  // 나타나는 시점을 움직이기 직전으로 당긴다. 예전에는 투명도가 0초부터 선형으로 올라가서,
+  // 손끝이 할 일 없이 버튼 아래에 1.8초쯤 떠 있다가 그제야 움직였다.
+  const appear = Math.max(0.3, first.at - MOVE_S - 0.15);
+  at(0, first.x, startY, 1, 0);
+  at(Math.max(0.05, appear - 0.25), first.x, startY, 1, 0);
+  at(appear, first.x, startY, 1, 1);
+
+  presses.forEach((p) => {
+    at(p.at - 0.12, p.x, p.y, 1, 1); // 도착
+    at(p.at, p.x, p.y, 0.72, 1); // 눌림
+    at(p.at + PRESS_S, p.x, p.y, 1, 1); // 뗌
+  });
+
+  const last = presses[presses.length - 1];
+  at(last.at + 0.55, last.x, last.y, 1, 0);
+
   return (
     <motion.span
       className="tour-tap"
-      initial={{ x: xs[0], y: ys[0], opacity: 0 }}
-      animate={{ x: xs, y: ys, scale: scales, opacity: [0, 1, 1, 1, 1, 1, 1, 0.9, 0] }}
-      transition={{ duration: (SCENE_MS / 1000) * 0.72, times, ease: "easeInOut" }}
+      initial={{ x: x[0], y: y[0], scale: 1, opacity: 0 }}
+      animate={{ x, y, scale: s, opacity: o }}
+      transition={{ duration: D, times: t, ease: "easeInOut" }}
     />
   );
 }
 
-/** 눌린 자리에서 퍼지는 물결. 손끝과 같은 시점에 맞춰 delay로 띄운다. */
-function Ripple({ x, y, delay, playing }: { x: number; y: number; delay: number; playing: boolean }) {
+/** 눌린 자리에서 퍼지는 물결. 누르는 시각을 그대로 받아 손끝과 어긋나지 않게 한다. */
+function Ripples({ presses, playing }: { presses: Press[]; playing: boolean }) {
   if (!playing) return null;
   return (
-    <motion.span
-      className="tour-ripple"
-      style={{ left: x, top: y }}
-      initial={{ scale: 0.2, opacity: 0 }}
-      animate={{ scale: [0.2, 1.6], opacity: [0.55, 0] }}
-      transition={{ duration: 0.7, delay, ease: "easeOut" }}
-    />
+    <>
+      {presses.map((p) => (
+        <motion.span
+          key={`${p.x}-${p.y}-${p.at}`}
+          className="tour-ripple"
+          style={{ left: p.x, top: p.y }}
+          initial={{ scale: 0.2, opacity: 0 }}
+          animate={{ scale: [0.2, 1.6], opacity: [0.5, 0] }}
+          transition={{ duration: 0.65, delay: p.at, ease: "easeOut" }}
+        />
+      ))}
+    </>
   );
 }
 
-/** 앞 화면이 물러나고 뒤 화면이 들어오는 전환. t는 전체 장면에서 바뀌는 시점(0~1). */
-function panelMotion(playing: boolean, t: number, direction: "out" | "in"): MotionProps {
-  if (!playing) {
-    return direction === "out"
-      ? { initial: { opacity: 0 }, animate: { opacity: 0 } }
-      : { initial: { opacity: 1 }, animate: { opacity: 1, x: 0 } };
-  }
-  const dur = SCENE_MS / 1000;
-  return direction === "out"
-    ? {
-        initial: { opacity: 1, x: 0 },
-        animate: { opacity: [1, 1, 0], x: [0, 0, -26] },
-        transition: { duration: dur, times: [0, t, t + 0.09], ease: "easeInOut" },
-      }
-    : {
-        initial: { opacity: 0, x: 26 },
-        animate: { opacity: [0, 0, 1], x: [26, 26, 0] },
-        transition: { duration: dur, times: [0, t + 0.02, t + 0.13], ease: "easeOut" },
-      };
+/**
+ * 앞 화면이 물러나고 뒤 화면이 들어오는 전환.
+ *
+ * 두 화면이 동시에 보이지 않게 한다. 예전에는 겹치는 구간이 있어서 글자 위에 글자가
+ * 얹혀 보였다 — 앞 화면이 완전히 사라진 뒤에 뒤 화면이 들어온다.
+ */
+function panelOut(playing: boolean, at: number): MotionProps {
+  if (!playing) return { initial: { opacity: 0 }, animate: { opacity: 0 } };
+  return {
+    initial: { opacity: 1, x: 0 },
+    animate: { opacity: 0, x: -22 },
+    transition: { delay: at, duration: 0.2, ease: "easeIn" },
+  };
+}
+
+function panelIn(playing: boolean, at: number): MotionProps {
+  if (!playing) return { initial: { opacity: 1, x: 0 }, animate: { opacity: 1, x: 0 } };
+  return {
+    initial: { opacity: 0, x: 22 },
+    animate: { opacity: 1, x: 0 },
+    transition: { delay: at + 0.22, duration: 0.28, ease: "easeOut" },
+  };
+}
+
+/** 재생할 때만 delay를 걸고, 정지 상태에서는 끝 모습을 그대로 그린다. */
+function reveal(
+  playing: boolean,
+  delay: number,
+  from: TargetAndTransition = { opacity: 0, y: 10 },
+): MotionProps {
+  if (!playing) return { initial: false, animate: { opacity: 1, y: 0, scaleX: 1 } };
+  return {
+    initial: from,
+    animate: { opacity: 1, y: 0, scaleX: 1 },
+    transition: { delay, duration: 0.35, ease: "easeOut" },
+  };
 }
 
 interface Scene {
@@ -284,62 +356,64 @@ interface Scene {
   render: (playing: boolean) => ReactNode;
 }
 
+/* 장면 1 — 고르면 순위가 나온다.
+   0.0 자리잡기 · 1.15 국가 칸 터치 · 1.4 「일본」 · 2.25 「다음」 터치 · 2.5 화면 전환 ·
+   2.9~ 순위가 차오름 · 4.2~6.0 머무름 */
+const S1_FIELD: Press = { x: 124, y: 89, at: 1.15 };
+const S1_NEXT: Press = { x: 124, y: 137, at: 2.25 };
+const S1_SWAP = 2.45;
+
+/* 장면 2 — 한 문장이면 결과가 나온다.
+   0.4~2.0 타이핑 · 2.6 「사고 분석 요청」 터치 · 2.85 화면 전환 · 3.2~ 결과 */
+const S2_SEND: Press = { x: 124, y: 161, at: 2.6 };
+const S2_SWAP = 2.8;
+
+/* 장면 3 — 화면을 바꾸지 않고 그 자리에서 형광펜이 그어진다.
+   1.0 「근거 보기」 터치 · 1.5 첫 획 · 2.5 둘째 획 */
+const S3_SHOW: Press = { x: 124, y: 217, at: 1.0 };
+
 const SCENES: Scene[] = [
   {
     caption: "여행 정보만 넣으면 7개사를 비교해요",
     render: (playing) => (
       <>
-        <motion.div className="tour-panel" {...panelMotion(playing, 0.42, "out")}>
+        <motion.div className="tour-panel" {...panelOut(playing, S1_SWAP)}>
           <p className="tour-mini__eyebrow">STEP 1 · 목적지</p>
           <p className="tour-mini__ask">어디로 떠나시나요?</p>
           <div className="tour-mini__field">
-            {playing ? (
-              <motion.span
-                initial={{ opacity: 1 }}
-                animate={{ opacity: [1, 1, 0] }}
-                transition={{ duration: 1, times: [0, 0.6, 1], delay: 1.2 }}
-              >
-                국가를 선택하세요
-              </motion.span>
-            ) : null}
-            {playing && (
-              <motion.span
-                className="tour-mini__value"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0, 1] }}
-                transition={{ duration: 1, times: [0, 0.6, 1], delay: 1.2 }}
-              >
-                일본
-              </motion.span>
-            )}
-            {!playing && <span className="tour-mini__value">일본</span>}
+            <motion.span
+              initial={playing ? { opacity: 1 } : false}
+              animate={{ opacity: playing ? 0 : 0 }}
+              transition={{ delay: S1_FIELD.at + 0.15, duration: 0.2 }}
+            >
+              국가를 선택하세요
+            </motion.span>
+            <motion.span
+              className="tour-mini__value"
+              initial={playing ? { opacity: 0 } : false}
+              animate={{ opacity: 1 }}
+              transition={{ delay: S1_FIELD.at + 0.25, duration: 0.2 }}
+            >
+              일본
+            </motion.span>
             <span className="tour-mini__chev">⌄</span>
           </div>
           <div className="tour-mini__btn">다음</div>
-          <Tap points={[[124, 89], [124, 137]]} playing={playing} />
-          <Ripple x={124} y={89} delay={1.3} playing={playing} />
-          <Ripple x={124} y={137} delay={2.4} playing={playing} />
+          <Tap presses={[S1_FIELD, S1_NEXT]} playing={playing} />
+          <Ripples presses={[S1_FIELD, S1_NEXT]} playing={playing} />
         </motion.div>
 
-        <motion.div className="tour-panel" {...panelMotion(playing, 0.42, "in")}>
+        <motion.div className="tour-panel" {...panelIn(playing, S1_SWAP)}>
           <p className="tour-mini__eyebrow">균형형 기준 · 표준 등급</p>
           {RANKING.map((r, i) => (
-            <motion.div
-              key={r.name}
-              className="tour-rank"
-              initial={playing ? { opacity: 0, y: 10 } : false}
-              animate={playing ? { opacity: [0, 0, 1], y: [10, 10, 0] } : {}}
-              transition={{ duration: SCENE_MS / 1000, times: [0, 0.5 + i * 0.04, 0.6 + i * 0.04] }}
-            >
+            <motion.div key={r.name} className="tour-rank" {...reveal(playing, S1_SWAP + 0.5 + i * 0.1)}>
               <span className="tour-rank__no">{i + 1}</span>
               <span className="tour-rank__name">{r.name}</span>
               <span className="tour-rank__won">{r.won}</span>
               <span className="tour-rank__bar">
                 <motion.span
                   style={{ width: `${r.score}%` }}
-                  initial={playing ? { scaleX: 0 } : false}
-                  animate={playing ? { scaleX: [0, 0, 1] } : {}}
-                  transition={{ duration: SCENE_MS / 1000, times: [0, 0.58 + i * 0.04, 0.78 + i * 0.04] }}
+                  {...reveal(playing, S1_SWAP + 0.7 + i * 0.1, { scaleX: 0 })}
                 />
               </span>
             </motion.div>
@@ -352,45 +426,41 @@ const SCENES: Scene[] = [
     caption: "사고는 한 문장이면 충분해요",
     render: (playing) => (
       <>
-        <motion.div className="tour-panel" {...panelMotion(playing, 0.46, "out")}>
+        <motion.div className="tour-panel" {...panelOut(playing, S2_SWAP)}>
           <p className="tour-mini__eyebrow">STEP 2 · 사고 내용</p>
           <p className="tour-mini__ask">무슨 일이 있었나요?</p>
           <div className="tour-mini__note">
-            {playing ? (
-              <motion.span
-                className="tour-type"
-                initial={{ width: 0 }}
-                animate={{ width: ["0px", "0px", "168px"] }}
-                transition={{ duration: SCENE_MS / 1000, times: [0, 0.06, 0.36], ease: "linear" }}
-              >
-                길에서 넘어져 발목을 다쳤어요
-              </motion.span>
-            ) : (
-              <span className="tour-type tour-type--done">길에서 넘어져 발목을 다쳤어요</span>
-            )}
-            {playing && <span className="tour-caret" />}
+            {/* 글자 폭을 px로 적어 두면 글이 바뀔 때 잘린다. 오른쪽에서 왼쪽으로 덮개를
+                걷어내는 방식이라 어떤 길이든 정확히 끝까지 드러난다. */}
+            <motion.span
+              className="tour-type"
+              initial={playing ? { clipPath: "inset(0 100% 0 0)" } : false}
+              animate={{ clipPath: "inset(0 0% 0 0)" }}
+              transition={{ delay: 0.4, duration: 1.6, ease: "linear" }}
+            >
+              길에서 넘어져 발목을 다쳤어요
+              {playing && <span className="tour-caret" />}
+            </motion.span>
           </div>
           <div className="tour-mini__btn">사고 분석 요청</div>
-          <Tap points={[[124, 161]]} playing={playing} />
-          <Ripple x={124} y={161} delay={2.6} playing={playing} />
+          <Tap presses={[S2_SEND]} playing={playing} />
+          <Ripples presses={[S2_SEND]} playing={playing} />
         </motion.div>
 
-        <motion.div className="tour-panel" {...panelMotion(playing, 0.46, "in")}>
+        <motion.div className="tour-panel" {...panelIn(playing, S2_SWAP)}>
           <p className="tour-mini__eyebrow">상해 · 해외상해치료</p>
-          <div className="tour-result">
+          <motion.div className="tour-result" {...reveal(playing, S2_SWAP + 0.5)}>
             <span className="tour-result__tag">받을 수 있어요</span>
             <p className="tour-result__title">해외여행중 상해치료비</p>
             <p className="tour-result__sub">제4조 · 실제 부담한 의료비</p>
-          </div>
+          </motion.div>
           <p className="tour-mini__eyebrow">필요한 서류</p>
           <div className="tour-chips">
             {DOCS.map((d, i) => (
               <motion.span
                 key={d}
                 className="tour-chip"
-                initial={playing ? { opacity: 0, scale: 0.9 } : false}
-                animate={playing ? { opacity: [0, 0, 1], scale: [0.9, 0.9, 1] } : {}}
-                transition={{ duration: SCENE_MS / 1000, times: [0, 0.6 + i * 0.05, 0.7 + i * 0.05] }}
+                {...reveal(playing, S2_SWAP + 0.8 + i * 0.12, { opacity: 0, y: 6 })}
               >
                 {d}
               </motion.span>
@@ -411,44 +481,30 @@ const SCENES: Scene[] = [
           <p>
             회사는 피보험자가 보험기간 중에 발생한
             <span className="tour-clause__target">
-              {playing && (
-                <motion.span
-                  className="tour-clause__ink"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 0.85, delay: 2.7, ease: "easeInOut" }}
-                />
-              )}
-              {!playing && <span className="tour-clause__ink tour-clause__ink--done" />}
+              <motion.span
+                className="tour-clause__ink"
+                initial={playing ? { scaleX: 0 } : false}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 1.5, duration: 0.8, ease: "easeInOut" }}
+              />
               <span className="tour-clause__word">급격하고 우연한 외래의 사고</span>
             </span>
             로 상해를 입은 경우
             <span className="tour-clause__target">
-              {playing && (
-                <motion.span
-                  className="tour-clause__ink"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: 0.7, delay: 3.5, ease: "easeInOut" }}
-                />
-              )}
-              {!playing && <span className="tour-clause__ink tour-clause__ink--done" />}
+              <motion.span
+                className="tour-clause__ink"
+                initial={playing ? { scaleX: 0 } : false}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 2.5, duration: 0.65, ease: "easeInOut" }}
+              />
               <span className="tour-clause__word">보험금을 지급합니다</span>
             </span>
-            .
+            . 다만, 약관에서 보장하지 않는다고 정한 사유로 생긴 손해는 보상하지 않습니다.
           </p>
         </div>
         <div className="tour-mini__btn tour-mini__btn--ghost">근거 보기</div>
-        <Tap points={[[124, 200]]} playing={playing} />
-        <Ripple x={124} y={200} delay={2.4} playing={playing} />
-        <motion.p
-          className="tour-stamp"
-          initial={playing ? { opacity: 0, y: 6 } : false}
-          animate={playing ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 4.4, duration: 0.4 }}
-        >
-          원문 대조 완료
-        </motion.p>
+        <Tap presses={[S3_SHOW]} playing={playing} />
+        <Ripples presses={[S3_SHOW]} playing={playing} />
       </div>
     ),
   },
