@@ -33,6 +33,9 @@ _COLUMN_ADDITIONS: dict[str, dict[str, str]] = {
         "marketing_agreed_at": "ALTER TABLE app_user ADD COLUMN marketing_agreed_at DATETIME",
         "age": "ALTER TABLE app_user ADD COLUMN age INTEGER",
         "sex": "ALTER TABLE app_user ADD COLUMN sex VARCHAR",
+        "failed_login_count": "ALTER TABLE app_user ADD COLUMN failed_login_count INTEGER DEFAULT 0",
+        "locked_until": "ALTER TABLE app_user ADD COLUMN locked_until DATETIME",
+        "last_seen_at": "ALTER TABLE app_user ADD COLUMN last_seen_at DATETIME",
     },
     "trip": {
         "user_policy_id": "ALTER TABLE trip ADD COLUMN user_policy_id INTEGER",

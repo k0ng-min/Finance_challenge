@@ -80,3 +80,133 @@ def hash_session_token(token: str) -> str:
 
 def is_valid_email(email: str) -> bool:
     return bool(EMAIL_RE.match(email))
+
+
+# --- 로그인 보호 -------------------------------------------------------------
+# 요청 빈도 제한(slowapi)은 토큰이나 IP 단위라, 주소를 바꿔 가며 같은 계정을 두드리는
+# 대입 공격은 그대로 통과한다. 계정 자체에도 연속 실패를 세어 두고 잠근다.
+#
+# 값은 금융권에서 흔히 쓰는 "5회 실패 시 잠금"을 따르되, 잠금 시간은 사람이 직접 풀어야
+# 하는 영구 잠금 대신 자동으로 풀리는 10분으로 둔다. 이 서비스에는 계정 잠금을 풀어 줄
+# 상담 창구가 없어서, 영구 잠금은 공격자가 남의 계정을 마음대로 막아 버리는 수단
+# (서비스 거부)이 되기 때문이다.
+MAX_FAILED_LOGINS = 5
+LOCKOUT_MINUTES = 10
+
+# 로그인한 계정이 이만큼 아무 요청도 보내지 않으면 세션을 만료시킨다. 자리를 비운 사이
+# 남이 그 브라우저를 쓰는 상황을 막기 위한 것이고, 금융권에서 표준으로 쓰는 장치다.
+# 게스트에게는 적용하지 않는다 — 로그인이 없는 사용자는 화면을 오래 들여다보다 돌아와도
+# 하던 일이 이어져야 하고, 게스트 데이터는 애초에 그 브라우저 밖으로 나가지 않는다.
+IDLE_TIMEOUT_MINUTES = 30
+
+
+def is_locked(user) -> bool:
+    """지금 이 계정이 잠금 상태인가."""
+    locked_until = getattr(user, "locked_until", None)
+    return bool(locked_until and locked_until > utc_now())
+
+
+def register_failed_login(user) -> bool:
+    """로그인 실패를 계정에 기록한다. 이번 실패로 잠기게 됐으면 True.
+
+    커밋은 부르는 쪽 몫이다 — 로그인 실패는 예외로 끝나는 경로라, 부르는 쪽이 예외를
+    던지기 전에 반드시 커밋해야 이 기록이 남는다.
+    """
+    user.failed_login_count = (user.failed_login_count or 0) + 1
+    if user.failed_login_count >= MAX_FAILED_LOGINS:
+        user.locked_until = utc_now() + timedelta(minutes=LOCKOUT_MINUTES)
+        user.failed_login_count = 0  # 잠금이 풀린 뒤 처음부터 다시 센다
+        return True
+    return False
+
+
+def clear_failed_logins(user) -> None:
+    """로그인에 성공했으니 실패 기록과 잠금을 지운다."""
+    user.failed_login_count = 0
+    user.locked_until = None
+
+
+def dummy_password_check() -> None:
+    """계정이 없을 때도 있을 때와 같은 시간을 쓰게 만든다.
+
+    응답 문구는 이미 "이메일이 없음"과 "비밀번호가 틀림"을 구분하지 않는데, 정작 걸리는
+    시간이 달랐다 — 계정이 없으면 bcrypt 검증을 아예 건너뛰고 즉시 401이 나가고, 있으면
+    bcrypt를 한 번 돌린 뒤(수십~수백 밀리초) 401이 나간다. 그 차이만 재도 어떤 이메일이
+    가입돼 있는지 밖에서 훑을 수 있다(계정 열거). 없는 계정에도 같은 비용의 검증을 한 번
+    돌려서 그 차이를 없앤다.
+    """
+    verify_password("dummy-password", _DUMMY_HASH, "")
+
+
+# 위 dummy_password_check가 쓸 고정 해시. 모듈을 읽을 때 한 번만 만든다(매번 만들면
+# 그것대로 시간이 들어 오히려 편차가 생긴다). 이 값으로 로그인할 수 있는 계정은 없다.
+_DUMMY_HASH = hash_password(secrets.token_urlsafe(16))[0]
+
+
+def idle_expired(user) -> bool:
+    """로그인 계정이 무활동 시간을 넘겼는가. 게스트와 기록이 없는 세션은 대상이 아니다."""
+    if not getattr(user, "email", None):
+        return False  # 게스트
+    last_seen = getattr(user, "last_seen_at", None)
+    if last_seen is None:
+        return False  # 이 장치가 생기기 전에 만들어진 세션 — 다음 요청부터 기록된다
+    return last_seen < utc_now() - timedelta(minutes=IDLE_TIMEOUT_MINUTES)
+
+
+# --- 비밀번호 정책 -----------------------------------------------------------
+# 길이만 8자로 보던 것을 조금 더 본다. 여기서 막고 싶은 것은 "복잡한 비밀번호를 강요하기"가
+# 아니라 "대입 몇 번에 뚫리는 비밀번호를 막기"다 — 그래서 특수문자를 강제하는 대신,
+# 실제로 공격에 먼저 시도되는 것들(연속된 숫자, 흔한 단어, 자기 이메일)을 걸러낸다.
+MIN_PASSWORD_LENGTH = 8
+
+#: 유출된 비밀번호 목록에서 늘 상위에 오는 것들. 전수 목록을 들고 있을 자리는 아니고,
+#: 실제로 제일 먼저 시도되는 형태만 막는다.
+_COMMON_PASSWORDS = {
+    "password", "password1", "password123", "12345678", "123456789", "1234567890",
+    "qwerty123", "qwertyuiop", "abc12345", "iloveyou", "admin123", "letmein1",
+    "1q2w3e4r", "1qaz2wsx", "asdfasdf", "11111111", "00000000", "987654321",
+}
+
+
+def password_policy_error(password: str, *, email: str | None = None, nickname: str | None = None) -> str | None:
+    """비밀번호가 정책에 어긋나면 사용자에게 보여줄 한 문장, 통과하면 None.
+
+    문구는 무엇이 문제인지 정확히 알려준다 — "규칙에 맞지 않습니다"로 뭉뚱그리면
+    사용자가 될 때까지 아무 값이나 넣어 보게 되고, 그러다 더 약한 비밀번호로 끝난다.
+    """
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return f"비밀번호는 {MIN_PASSWORD_LENGTH}자 이상으로 정해주세요."
+
+    kinds = sum([
+        bool(re.search(r"[a-zA-Z]", password)),
+        bool(re.search(r"\d", password)),
+        bool(re.search(r"[^a-zA-Z0-9]", password)),
+    ])
+    if kinds < 2:
+        return "영문·숫자·기호 중 두 가지 이상을 섞어 주세요."
+
+    lowered = password.lower()
+    if lowered in _COMMON_PASSWORDS:
+        return "너무 많이 쓰이는 비밀번호예요. 다른 비밀번호로 정해주세요."
+
+    # 같은 글자 반복(aaaaaaaa)과 연속된 나열(12345678, abcdefgh)은 길이만 채운 비밀번호다.
+    if len(set(password)) <= 2:
+        return "같은 글자만 반복하지 말고 다른 글자를 섞어 주세요."
+    if _is_sequential(lowered):
+        return "연속된 문자나 숫자만으로는 정할 수 없어요."
+
+    # 자기 이메일 아이디나 닉네임이 그대로 들어간 비밀번호는 아는 사람이 바로 맞힌다.
+    local_part = (email or "").split("@")[0].lower()
+    for hint in (local_part, (nickname or "").lower()):
+        if len(hint) >= 4 and hint in lowered:
+            return "이메일이나 닉네임이 그대로 들어간 비밀번호는 쓸 수 없어요."
+
+    return None
+
+
+def _is_sequential(text: str) -> bool:
+    """전체가 오름차순/내림차순 연속인지(1234..., dcba...)."""
+    if len(text) < 4:
+        return False
+    diffs = {ord(b) - ord(a) for a, b in zip(text, text[1:])}
+    return diffs in ({1}, {-1})

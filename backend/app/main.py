@@ -269,6 +269,37 @@ async def add_security_headers(request, call_next):
     return response
 
 
+@app.middleware("http")
+async def audit_forbidden_requests(request, call_next):
+    """남의 데이터에 접근하려던 요청(403)을 감사 로그에 남긴다.
+
+    이 검사는 verify_owner(routers/auth.py)가 하는데, 그 함수는 DB 세션을 받지 않는다 —
+    거기서 기록하려면 verify_owner를 부르는 수십 곳의 시그니처를 전부 바꿔야 한다. 대신
+    응답이 나가는 길목에서 한 번에 본다. 어차피 감사에 필요한 것은 "어느 경로에 누가
+    접근하려 했는가"이고, 그건 여기서도 전부 알 수 있다.
+
+    401은 여기서 세지 않는다. 세션 만료처럼 정상적인 흐름에서도 늘 생기는 응답이라
+    같이 남기면 실제 침해 시도가 그 안에 묻힌다. 로그인 실패는 auth 라우터가 따로 남긴다.
+    """
+    response = await call_next(request)
+    if response.status_code == 403:
+        from app.database import SessionLocal
+        from app.services import security_audit
+
+        db = SessionLocal()
+        try:
+            security_audit.record(
+                db, security_audit.OWNERSHIP_VIOLATION, request=request,
+                detail="본인 소유가 아닌 자원에 접근 시도",
+            )
+            db.commit()
+        except Exception:  # noqa: BLE001 — 감사 실패가 응답을 막지 않게 한다
+            db.rollback()
+        finally:
+            db.close()
+    return response
+
+
 app.include_router(users.router)
 app.include_router(trips.router)
 app.include_router(policies.router)

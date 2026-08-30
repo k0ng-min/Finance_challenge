@@ -9,8 +9,12 @@ from app.database import get_db
 from app.limiter import limiter
 from app.models.user import AppUser, Incident
 from app.services.auth import (
-    hash_password, hash_session_token, issue_session, session_expiry, utc_now, verify_password,
+    IDLE_TIMEOUT_MINUTES, LOCKOUT_MINUTES, MAX_FAILED_LOGINS,
+    clear_failed_logins, dummy_password_check, hash_password, hash_session_token, idle_expired,
+    is_locked, issue_session, password_policy_error, register_failed_login, session_expiry,
+    utc_now, verify_password,
 )
+from app.services import security_audit
 from app.services.deletion import delete_user_cascade, wipe_user_data
 from app.services.oauth import exchange_kakao_code, exchange_google_code
 
@@ -173,8 +177,29 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
     if user.session_expires_at and user.session_expires_at < utc_now():
         user.session_token = None
+        security_audit.record(db, security_audit.SESSION_EXPIRED, user_id=user.user_id,
+                              detail="세션 유효기간 만료")
         db.commit()
         raise HTTPException(status_code=401, detail="세션이 만료되었습니다. 다시 로그인해주세요.")
+
+    # 로그인 계정은 무활동 시간도 본다. 자리를 비운 사이 남이 그 브라우저를 쓰는 상황을
+    # 막기 위한 것으로, 금융권에서 표준으로 쓰는 장치다. 게스트에게는 적용하지 않는다
+    # (idle_expired가 판단한다) — 로그인 없는 사용자까지 끊으면 화면을 오래 들여다보다
+    # 돌아온 사람이 하던 일을 잃는다.
+    if idle_expired(user):
+        user.session_token = None
+        security_audit.record(db, security_audit.SESSION_IDLE_EXPIRED, user_id=user.user_id,
+                              detail=f"{IDLE_TIMEOUT_MINUTES}분 무활동")
+        db.commit()
+        raise HTTPException(
+            status_code=401,
+            detail=f"{IDLE_TIMEOUT_MINUTES}분 넘게 사용하지 않아 자동으로 로그아웃했어요. 다시 로그인해주세요.",
+        )
+
+    # 무활동 판정의 기준점을 갱신한다. 매 요청마다 쓰기가 생기지만, 이 앱의 요청량에서는
+    # 무시할 수 있는 비용이고 이 값 없이는 위 판정 자체가 성립하지 않는다.
+    user.last_seen_at = utc_now()
+    db.commit()
     # DB에는 해시만 있어서 응답에 담을 원문이 없다. 방금 검증한 원문을 실어 보내 응답
     # 빌더들이 그대로 돌려줄 수 있게 한다(새 토큰을 발급하는 게 아니라 있던 것을 되돌려줌).
     user.raw_session_token = token
@@ -243,10 +268,39 @@ def login(request: Request, payload: LoginIn, db: Session = Depends(get_db)):
             status_code=403,
             detail="이 계정은 아직 비밀번호를 정하지 않았어요. 구글 또는 카카오로 로그인한 뒤 계정 화면에서 비밀번호를 설정해 주세요.",
         )
+
+    # 연속 실패로 잠긴 계정은 비밀번호가 맞아도 받지 않는다. 잠겼다는 사실 자체는 본인에게
+    # 알려야 하는 정보라 문구를 따로 준다 — 계정이 있다는 걸 노출하지만, 이 문구를 보려면
+    # 이미 그 계정으로 여러 번 실패해 봤어야 해서 새로 새는 정보가 아니다.
+    if user and is_locked(user):
+        security_audit.record(db, security_audit.LOGIN_BLOCKED, user_id=user.user_id, request=request,
+                              detail="잠금 상태에서 로그인 시도")
+        db.commit()
+        raise HTTPException(
+            status_code=429,
+            detail=f"로그인 시도가 너무 많았어요. {LOCKOUT_MINUTES}분 뒤에 다시 시도해 주세요.",
+        )
+
     if not user or not is_social or not verify_password(payload.password, user.password_hash, user.password_salt or ""):
+        if user is None:
+            # 계정이 없어도 있을 때와 같은 시간을 쓴다. 안 그러면 응답 시간 차이만으로
+            # 어떤 이메일이 가입돼 있는지 훑을 수 있다(문구는 이미 같게 맞춰 뒀다).
+            dummy_password_check()
+        else:
+            just_locked = register_failed_login(user)
+            security_audit.record(
+                db,
+                security_audit.ACCOUNT_LOCKED if just_locked else security_audit.LOGIN_FAILED,
+                user_id=user.user_id, request=request,
+                detail=f"연속 실패 {MAX_FAILED_LOGINS}회로 잠금" if just_locked else "비밀번호 불일치",
+            )
+        # 실패한 요청이라도 이 기록만은 남아야 해서 예외를 던지기 전에 커밋한다.
+        db.commit()
         raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 맞지 않아요.")
 
+    clear_failed_logins(user)
     user.raw_session_token = issue_session(user)
+    security_audit.record(db, security_audit.LOGIN_SUCCESS, user_id=user.user_id, request=request)
     db.commit()
     return auth_user_out(user)
 
@@ -273,14 +327,20 @@ def set_password(
         ):
             raise HTTPException(status_code=400, detail="현재 비밀번호가 맞지 않아요.")
     new_password = payload.new_password or ""
-    if len(new_password) < 8:
-        raise HTTPException(status_code=400, detail="비밀번호는 8자 이상으로 정해주세요.")
     if len(new_password) > 72:
         raise HTTPException(status_code=400, detail="비밀번호는 72자 이하로 정해주세요.")
+    # 길이만 보던 것을 정책으로 넓혔다. 특수문자를 강제하는 대신, 실제 대입 공격이 먼저
+    # 시도하는 것들(흔한 비밀번호, 연속 나열, 자기 이메일·닉네임)을 걸러낸다.
+    policy_error = password_policy_error(new_password, email=user.email, nickname=user.nickname)
+    if policy_error:
+        raise HTTPException(status_code=400, detail=policy_error)
 
     digest, salt = hash_password(new_password)
     user.password_hash = digest
     user.password_salt = salt
+    # 비밀번호 변경은 계정을 통째로 넘길 수 있는 행위라 반드시 기록으로 남긴다.
+    # 새 비밀번호는 물론 그 해시도 남기지 않는다 — 언제 누가 바꿨는지만 있으면 된다.
+    security_audit.record(db, security_audit.PASSWORD_CHANGED, user_id=user.user_id, request=request)
     db.commit()
     return auth_user_out(user)
 
@@ -333,6 +393,11 @@ def me(request: Request, user: AppUser = Depends(get_current_user)):
 @limiter.limit("5/hour")
 def delete_account(request: Request, user: AppUser = Depends(get_current_user), db: Session = Depends(get_db)):
     """회원 탈퇴 — 이 계정과 계정이 만든 모든 여행·사고·보험 기록을 되돌릴 수 없이 삭제한다."""
+    # 되돌릴 수 없는 삭제라 "언제 이 계정이 지워졌는가"는 남겨야 한다. 다만 계정 행이
+    # 사라지므로 user_id 외래키를 걸어 두면 감사 기록까지 함께 끊긴다 — 지워진 번호를
+    # detail에 문자열로만 남기고 user_id는 비운다. 삭제 전에 기록해야 순서가 맞다.
+    security_audit.record(db, security_audit.ACCOUNT_DELETED, request=request,
+                          detail=f"user_id={user.user_id} 탈퇴")
     delete_user_cascade(db, user)
     db.commit()
     return {"status": "deleted"}

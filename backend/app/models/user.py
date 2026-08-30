@@ -37,6 +37,16 @@ class AppUser(Base):
     age = Column(Integer, nullable=True)
     sex = Column(String, nullable=True)
 
+    # --- 로그인 보호 ---------------------------------------------------------
+    # 요청 빈도 제한(slowapi)만으로는 대입 공격을 못 막는다. 그 한도는 토큰이나 IP 단위라
+    # 공격자가 주소를 바꿔 가며 같은 계정을 계속 두드리면 그대로 통과한다. 그래서 계정
+    # 자체에도 연속 실패를 세어 두고, 일정 횟수를 넘기면 잠시 잠근다(금융권에서 쓰는 방식).
+    failed_login_count = Column(Integer, default=0, nullable=True)
+    #: 이 시각까지는 비밀번호가 맞아도 로그인을 받지 않는다. 성공하면 지워진다.
+    locked_until = Column(DateTime, nullable=True)
+    #: 마지막으로 이 계정 토큰이 실제로 쓰인 시각. 유휴 세션 만료 판정에 쓴다.
+    last_seen_at = Column(DateTime, nullable=True)
+
     trips = relationship("Trip", back_populates="user")
     policies = relationship("UserPolicy", back_populates="user")
     incidents = relationship("Incident", back_populates="user")
@@ -183,3 +193,33 @@ class Evidence(Base):
 
     incident = relationship("Incident", back_populates="evidences")
     required_doc_std = relationship("RequiredDocStd")
+
+
+class SecurityEvent(Base):
+    """보안과 관련된 사건만 따로 남기는 감사 로그.
+
+    로그인 성공·실패, 계정 잠금, 남의 데이터 접근 시도, 비밀번호 변경, 계정 삭제처럼
+    "누가 언제 무엇을 시도했는가"가 사후에 확인돼야 하는 일들이 지금까지 아무 데도
+    남지 않았다. 금융 분야에서 이런 기록은 사고가 났을 때 경위를 밝힐 유일한 근거라
+    별도 표로 둔다 — 애플리케이션 로그와 달리 재배포로 사라지지 않아야 한다.
+
+    남기지 않는 것을 분명히 해 둔다. 비밀번호와 세션 토큰은 원문도 해시도 넣지 않고,
+    사고 내용·진단명 같은 민감정보도 넣지 않는다. 감사 로그가 유출되면 그것 자체가
+    2차 사고가 되기 때문이다. 주체는 user_id로만 가리키고, 접속 주소는 원문 대신
+    해시 앞자리만 남겨 "같은 곳에서 반복된 시도"는 셀 수 있되 주소 자체는 복원되지 않게 한다.
+    """
+
+    __tablename__ = "security_event"
+
+    security_event_id = Column(Integer, primary_key=True)
+    occurred_at = Column(DateTime, server_default=func.now(), index=True)
+    #: "login_success" 같은 사건 종류. app.services.security_audit에 목록이 있다.
+    event_type = Column(String, nullable=False, index=True)
+    #: 사건의 주체. 계정을 특정할 수 없는 실패(없는 이메일로 로그인 시도)는 NULL이다.
+    user_id = Column(Integer, ForeignKey("app_user.user_id"), nullable=True, index=True)
+    #: 접속 주소의 SHA-256 앞 16자리. 원문 주소는 남기지 않는다.
+    client_hash = Column(String, nullable=True)
+    #: 어떤 경로에서 벌어진 일인지(예: "POST /auth/login").
+    target = Column(String, nullable=True)
+    #: 사람이 읽을 한 줄. 개인정보·자격증명은 담지 않는다.
+    detail = Column(String, nullable=True)

@@ -3,6 +3,27 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 const LS_TOKEN = "travel_ai_token";
 
+/** 서버가 세션을 끊었을 때 앱 전체에 알리는 신호. AppContext가 듣고 게스트로 되돌린다. */
+export const SESSION_EXPIRED_EVENT = "travel-ai:session-expired";
+
+/**
+ * 서버가 토큰을 거절했을 때(401) 브라우저에 남은 죽은 토큰을 치운다.
+ *
+ * 서버는 세션 유효기간이 지났거나, 로그인 계정이 30분 넘게 아무 요청도 보내지 않으면
+ * 세션을 끊는다. 그때 브라우저가 죽은 토큰을 그대로 들고 있으면 화면은 로그인 상태로
+ * 보이는데 누르는 것마다 실패하는, 사용자가 원인을 짐작할 수 없는 상태가 된다.
+ *
+ * 로그인 요청 자체의 401은 건드리지 않는다. 비밀번호를 한 번 틀렸을 뿐인데 그 브라우저에
+ * 있던 게스트 세션까지 날아가면, 로그인 전에 쌓아둔 여행·사고 기록을 잃는다.
+ */
+function handleUnauthorized(path: string, sentToken: boolean) {
+  if (!sentToken || path.startsWith("/auth/login")) return;
+  localStorage.removeItem(LS_TOKEN);
+  localStorage.removeItem("travel_ai_nickname");
+  localStorage.removeItem("travel_ai_email");
+  window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const token = localStorage.getItem(LS_TOKEN);
   const res = await fetch(`${API_BASE}${path}`, {
@@ -13,6 +34,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
   if (!res.ok) {
+    if (res.status === 401) handleUnauthorized(path, Boolean(token));
     const body = await res.text();
     throw new ApiError(res.status, body);
   }
@@ -27,7 +49,10 @@ async function requestForm<T>(path: string, body: FormData): Promise<T> {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body,
   });
-  if (!res.ok) throw new ApiError(res.status, await res.text());
+  if (!res.ok) {
+    if (res.status === 401) handleUnauthorized(path, Boolean(token));
+    throw new ApiError(res.status, await res.text());
+  }
   return res.json();
 }
 

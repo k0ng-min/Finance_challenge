@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api, pingHealth, type AuthUserOut } from "../api";
+import { SESSION_EXPIRED_EVENT, api, pingHealth, type AuthUserOut } from "../api";
 
 /** 앱을 처음 열 때 서버에 닿기까지의 단계. 화면 문구가 여기에 따라 갈린다. */
 export type BootPhase = "connecting" | "waking" | "failed";
@@ -232,6 +232,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bootAttempt]);
+
+  // 서버가 세션을 끊으면(유효기간 만료, 또는 로그인 계정의 30분 무활동) api.ts가 죽은
+  // 토큰을 치우고 이 신호를 보낸다. 화면 상태도 같이 게스트로 되돌려야, 상단에 닉네임이
+  // 남아 "로그인돼 있는데 아무것도 안 되는" 상태가 생기지 않는다.
+  //
+  // 로그아웃만 시키고 끝내지 않고 게스트 세션을 새로 받는다 — 이 앱은 로그인 없이도 모든
+  // 기능을 쓸 수 있는 게 기본이라, 끊긴 자리에서 그대로 이어 쓸 수 있어야 한다.
+  useEffect(() => {
+    function onExpired() {
+      setIsLoggedIn(false);
+      setNickname(null);
+      setEmail(null);
+      setHasPassword(false);
+      setSignupCompleted(true);
+      localStorage.removeItem(LS_USER);
+      bootstrapGuest().catch(() => {
+        // 게스트 재발급까지 실패하면 서버에 닿지 않는 상황이다. 각 화면이 자기 몫의
+        // 안내를 띄우고, 다음 요청이 성공하면 자연히 회복된다.
+      });
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 여행 ID도 사고와 똑같이 서버 기준으로 맞춰 준다. localStorage에 남은 trip_id를
   // 그대로 믿으면, 그 여행이 이미 없는 경우(게스트 토큰이 사라져 계정이 새로 만들어졌거나,
