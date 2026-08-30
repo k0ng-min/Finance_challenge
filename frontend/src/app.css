@@ -1916,8 +1916,11 @@ button { cursor: pointer; font-family: inherit; }
 }
 .boot-screen__retry:hover { background: var(--primary-dark); }
 
-/* 첫 진입 둘러보기(WelcomeTour). 팝업(Modal)과 색·모서리는 같게 두되, 위쪽 진행 막대와
-   전체 폭 그림 자리가 필요해서 구조는 따로 짰다. */
+/* 첫 진입 둘러보기(WelcomeTour).
+
+   기능을 글로 설명하지 않는다. 앱 화면을 축소해 두고 손끝이 눌러 가는 과정을 재생하고,
+   글은 장면마다 한 줄만 둔다. 색·모서리·글꼴은 전부 앱 토큰에서 그대로 가져와, 이 안내가
+   다른 프로그램에서 끼어든 창처럼 보이지 않게 한다. */
 .tour-overlay {
   position: fixed;
   inset: 0;
@@ -1930,37 +1933,17 @@ button { cursor: pointer; font-family: inherit; }
 }
 .tour-card {
   position: relative;
-  width: min(380px, 100%);
+  width: min(316px, 100%);
   background: var(--card-bg);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
-  padding: 18px 22px 20px;
+  padding: 20px 20px 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 14px;
   outline: none;
 }
-.tour-card__bars {
-  display: flex;
-  gap: 5px;
-  width: 100%;
-  padding: 0 26px 0 0;
-}
-.tour-card__bar {
-  flex: 1;
-  height: 4px;
-  border-radius: 999px;
-  background: var(--cream-deep);
-  overflow: hidden;
-}
-.tour-card__bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--primary);
-}
-.tour-card__bar-fill--done { width: 100%; }
 .tour-card__close {
   position: absolute;
   top: 12px;
@@ -1972,62 +1955,279 @@ button { cursor: pointer; font-family: inherit; }
   line-height: 1;
   padding: 4px;
   cursor: pointer;
+  z-index: 2;
 }
 .tour-card__close:hover { color: var(--heading); }
 
-/* 장마다 글 길이가 달라도 카드가 들썩이지 않게 높이를 고정한다 */
-.tour-card__stage {
-  width: 100%;
-  min-height: 232px;
+/* 앱을 축소해 놓은 화면. 안쪽에서 벌어지는 일이 밖으로 새지 않게 잘라 둔다. */
+.tour-screen {
+  position: relative;
+  width: 248px;
+  height: 264px;
+  margin-top: 6px;
+  border-radius: var(--radius-md);
+  background: var(--ivory);
+  border: 1.5px solid var(--border);
+  overflow: hidden;
+  flex: none;
+}
+.tour-screen__inner { position: absolute; inset: 0; }
+.tour-panel { position: absolute; inset: 0; padding: 14px 16px; }
+
+.tour-mini__eyebrow {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.tour-mini__ask {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  color: var(--heading);
+  margin-bottom: 12px;
+}
+/* 실제 화면의 선택 필드·버튼을 같은 모양으로 줄여 놓은 것 */
+.tour-mini__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.tour-mini__field > span:first-child { position: absolute; }
+.tour-mini__value { position: absolute; color: var(--heading); font-weight: 700; }
+.tour-mini__chev { margin-left: auto; color: var(--muted); }
+.tour-mini__btn {
+  margin-top: 14px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.tour-slide {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  text-align: center;
-}
-.tour-slide__title {
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
   font-family: var(--font-display);
-  font-size: 1.12rem;
-  color: var(--heading);
+  font-size: 0.8rem;
 }
-.tour-slide__body {
-  font-size: 0.88rem;
-  line-height: 1.65;
-  color: var(--text);
-  max-width: 300px;
+.tour-mini__btn--ghost {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
 }
 
-.tour-card__dots {
+/* 자유서술 입력칸 — 글자가 타이핑되듯 드러난다 */
+.tour-mini__note {
   display: flex;
   align-items: center;
-  gap: 7px;
+  height: 58px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  overflow: hidden;
 }
-.tour-card__dot {
-  width: 7px;
-  height: 7px;
+.tour-type {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 0.74rem;
+  color: var(--heading);
+  line-height: 1.4;
+}
+.tour-type--done { width: auto; }
+.tour-caret {
+  width: 1.5px;
+  height: 13px;
+  margin-left: 2px;
+  background: var(--primary);
+  animation: tour-blink 1s steps(1) infinite;
+  flex: none;
+}
+@keyframes tour-blink { 0%, 50% { opacity: 1; } 50.01%, 100% { opacity: 0; } }
+
+/* 순위 결과 — 실제 순위 카드의 뼈대(번호·이름·가격·게이지)만 남긴 축소판 */
+.tour-rank {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  margin-bottom: 7px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+}
+.tour-rank__no {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  color: var(--primary);
+  text-align: center;
+}
+.tour-rank__name { font-size: 0.72rem; font-weight: 700; color: var(--heading); }
+.tour-rank__won { font-size: 0.72rem; font-weight: 800; color: var(--heading); font-variant-numeric: tabular-nums; }
+.tour-rank__bar {
+  grid-column: 2 / -1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  overflow: hidden;
+}
+.tour-rank__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+  transform-origin: left;
+}
+
+/* 사고 결과 — 담보 한 장과 서류 칩 */
+.tour-result {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  margin-bottom: 12px;
+}
+.tour-result__tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--mint-soft);
+  color: #2f8f74;
+  font-size: 0.6rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.tour-result__title { font-size: 0.78rem; font-weight: 700; color: var(--heading); }
+.tour-result__sub { font-size: 0.66rem; color: var(--muted); margin-top: 2px; }
+.tour-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.tour-chip {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  font-size: 0.64rem;
+  color: var(--text);
+}
+
+/* 약관 원문과 형광펜 — 이 안내의 시그니처.
+   실제 화면(.clause-relevant-mark)이 쓰는 것과 같은 노란 잉크로, 글자 뒤에서 좌에서
+   우로 그어진다. 획이 글자를 덮지 않도록 잉크를 뒤에 깔고 글자를 위에 올린다. */
+.tour-clause {
+  padding: 12px 13px;
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  min-height: 132px;
+}
+.tour-clause p {
+  font-size: 0.74rem;
+  line-height: 1.95;
+  color: var(--text);
+}
+.tour-clause__target { position: relative; display: inline-block; }
+.tour-clause__ink {
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  top: 0.12em;
+  bottom: 0.06em;
+  border-radius: 3px;
+  background: rgba(234, 179, 8, 0.32);
+  transform-origin: left center;
+  z-index: 0;
+}
+.tour-clause__ink--done { transform: scaleX(1); }
+.tour-clause__word { position: relative; z-index: 1; color: var(--heading); font-weight: 700; }
+.tour-stamp {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #2f8f74;
+  background: var(--mint-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+/* 손끝과 눌린 자리의 물결 */
+.tour-tap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  background: rgba(75, 132, 236, 0.28);
+  border: 2px solid var(--primary);
+  pointer-events: none;
+  z-index: 3;
+}
+.tour-ripple {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 장면 캡션 — 한 줄만. 높이를 고정해 문장이 바뀔 때 카드가 들썩이지 않게 한다. */
+.tour-caption {
+  position: relative;
+  height: 22px;
+  width: 100%;
+  text-align: center;
+}
+.tour-caption p {
+  position: absolute;
+  inset: 0;
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  color: var(--heading);
+}
+
+.tour-nav { display: flex; align-items: center; gap: 7px; }
+.tour-nav__dot {
+  position: relative;
+  width: 22px;
+  height: 5px;
   padding: 0;
   border: none;
   border-radius: 999px;
   background: var(--cream-deep);
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  overflow: hidden;
+  transition: background 0.2s;
 }
-.tour-card__dot--on { background: var(--primary); transform: scale(1.25); }
-.tour-card__arrow {
+.tour-nav__dot--on { background: var(--primary-soft); }
+.tour-nav__dot--full { background: var(--primary); }
+.tour-nav__dot-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  transform-origin: left;
+}
+.tour-nav__arrow {
   border: none;
   background: none;
   color: var(--muted);
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   line-height: 1;
-  padding: 0 6px;
+  padding: 0 4px;
   cursor: pointer;
 }
-.tour-card__arrow:disabled { opacity: 0.3; cursor: default; }
+.tour-nav__arrow:disabled { opacity: 0.28; cursor: default; }
 
 .tour-card__cta {
   width: 100%;
@@ -2047,7 +2247,7 @@ button { cursor: pointer; font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--muted);
   cursor: pointer;
   user-select: none;

@@ -1,51 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { AnimatePresence, motion, type MotionProps } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Icon3D } from "./Icon3D";
-import { INSURER_COUNT } from "../data/insurers";
 
 const LS_TOUR_SEEN = "travel_ai_tour_seen";
 
-/** 한 장이 저절로 넘어가기까지의 시간. 짧은 문장 두 줄을 읽고 그림을 볼 만큼은 되고,
- * 다 읽은 사람이 답답해하지 않을 만큼은 짧게 잡았다. */
-const SLIDE_MS = 4500;
-
-interface Slide {
-  icon: string;
-  title: string;
-  body: string;
-  /** 마지막 장에만 있다. 누르면 그 화면으로 보내고 안내를 닫는다. */
-  cta?: { label: string; to: string };
-}
-
-const SLIDES: Slide[] = [
-  {
-    icon: "shield",
-    title: "실제 약관이 근거예요",
-    body: `${INSURER_COUNT}개 손해보험사의 진짜 약관을 조항 단위로 읽어 두었어요. 어떤 안내든 그 원문을 함께 보여드리고, 근거를 못 찾으면 지어내지 않고 "확인불가"라고 말합니다.`,
-  },
-  {
-    icon: "suitcase",
-    title: "여행 전에는 고르는 걸 도와요",
-    body: "어디로 얼마나 가는지만 알려주시면, 필요한 보장을 짚고 보험사별 실제 보험료까지 나란히 비교해 드려요.",
-  },
-  {
-    icon: "collision",
-    title: "사고가 나면 한 문장이면 돼요",
-    body: '"길에서 넘어져 발목을 다쳤어요"처럼 편하게 쓰시면, 무슨 사고인지 분류하고 받을 수 있는 담보와 필요한 서류를 찾아드려요.',
-  },
-  {
-    icon: "highlighter",
-    title: "근거를 형광펜으로 짚어줘요",
-    body: "왜 그렇게 안내했는지 궁금하면 약관 원문에서 관련 구간에 형광펜이 칠해진 걸 그대로 확인하실 수 있어요.",
-  },
-  {
-    icon: "key",
-    title: "가입 없이 전부 써보실 수 있어요",
-    body: "로그인은 기록을 남기고 싶을 때만 하시면 돼요. 지금 바로 둘러보세요.",
-    cta: { label: "내 여행부터 준비하기", to: "/trip" },
-  },
-];
+/** 한 장면이 흐르는 시간. 손끝이 두 번 눌리고 결과가 자리를 잡을 만큼은 되어야 한다. */
+const SCENE_MS = 6000;
 
 /** 이 브라우저에서 안내를 이미 닫아 두었는지. */
 export function hasSeenTour(): boolean {
@@ -59,28 +19,30 @@ export function hasSeenTour(): boolean {
 }
 
 /**
- * 앱을 처음 연 사람에게 이 서비스가 무엇인지 한 바퀴 보여주는 안내.
+ * 손끝이 화면을 눌러 가는 모습을 그대로 보여주는 첫 진입 안내.
  *
- * 홈 화면은 카드 이름만 늘어놓기 때문에, 처음 온 사람은 이 앱의 핵심(모든 안내에 실제
- * 약관 원문이 근거로 붙는다는 것)을 만나기까지 여러 번을 눌러 들어가야 한다. 그래서
- * 열자마자 다섯 장으로 요약해 저절로 넘겨 보여주고, 마지막 장에서 첫 화면으로 보낸다.
+ * 처음에는 다섯 장에 걸쳐 기능을 글로 설명했다. 그런데 처음 온 사람이 앱을 열자마자
+ * 읽어야 할 문단을 받으면, 읽지 않고 닫는다. 설명을 줄이는 대신 보여주기로 바꿨다 —
+ * 앱의 실제 화면을 축소해 두고, 손끝이 눌러서 다음 화면으로 넘어가는 과정을 재생한다.
+ * 글은 장면마다 한 줄만 남긴다.
  *
- * 저절로 넘어가되 사람이 손대는 순간 멈춘다 — 읽는 속도는 저마다 다른데 화면이 계속
- * 제 맘대로 넘어가면 안내가 아니라 방해가 된다.
+ * 마지막 장면이 이 안내의 핵심이다. 약관 원문 위로 노란 형광펜이 좌에서 우로 그어진다 —
+ * 서비스 이름(BohumPen)과 이 프로젝트가 지키는 원칙("근거 없는 결과를 내지 않는다")이
+ * 그 동작 하나에 같이 담긴다. 나머지 장면은 그 한 획을 향해 조용히 깔아 주는 역할만 한다.
  */
 export function WelcomeTour({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
-  const [index, setIndex] = useState(0);
+  const [scene, setScene] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(true);
-  // 사람이 화살표나 점을 눌렀다 = 자기 속도로 읽겠다는 뜻이다. 그 뒤로는 안 넘긴다.
+  // 사람이 점이나 화살표를 눌렀다 = 자기 속도로 보겠다는 뜻이다. 그 뒤로는 안 넘긴다.
   const [paused, setPaused] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
-  // 움직임을 줄이도록 설정한 사람에게는 저절로 넘기지 않는다(멀미·주의력 문제).
+  // 움직임을 줄이도록 설정한 사람에게는 재생하지 않고 각 장면의 끝 모습만 보여준다.
   const reduceMotion =
     typeof window !== "undefined" &&
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  const autoAdvancing = !paused && !reduceMotion;
+  const playing = !paused && !reduceMotion;
 
   const close = useCallback(() => {
     if (dontShowAgain) {
@@ -93,18 +55,18 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
     onClose();
   }, [dontShowAgain, onClose]);
 
-  // 저절로 넘기기. 마지막 장에서는 멈춘다 — 저 혼자 닫히면 마지막 문장을 놓친다.
+  // 마지막 장면에서는 멈춘다 — 저 혼자 닫히면 형광펜이 그어지는 장면을 놓친다.
   useEffect(() => {
-    if (!autoAdvancing || index >= SLIDES.length - 1) return;
-    const timer = window.setTimeout(() => setIndex((i) => i + 1), SLIDE_MS);
+    if (!playing || scene >= SCENES.length - 1) return;
+    const timer = window.setTimeout(() => setScene((i) => i + 1), SCENE_MS);
     return () => window.clearTimeout(timer);
-  }, [index, autoAdvancing]);
+  }, [scene, playing]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") close();
-      if (e.key === "ArrowRight") goTo(Math.min(index + 1, SLIDES.length - 1));
-      if (e.key === "ArrowLeft") goTo(Math.max(index - 1, 0));
+      if (e.key === "ArrowRight") goTo(Math.min(scene + 1, SCENES.length - 1));
+      if (e.key === "ArrowLeft") goTo(Math.max(scene - 1, 0));
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -117,11 +79,11 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
 
   function goTo(next: number) {
     setPaused(true);
-    setIndex(next);
+    setScene(next);
   }
 
-  const slide = SLIDES[index];
-  const isLast = index === SLIDES.length - 1;
+  const current = SCENES[scene];
+  const isLast = scene === SCENES.length - 1;
 
   return (
     <motion.div
@@ -138,85 +100,88 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
         aria-label="여행자보험 AI 둘러보기"
         tabIndex={-1}
         ref={dialogRef}
-        initial={{ opacity: 0, y: 28, scale: 0.96 }}
+        initial={{ opacity: 0, y: 26, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 28, scale: 0.96 }}
+        exit={{ opacity: 0, y: 26, scale: 0.96 }}
         transition={{ type: "spring", stiffness: 320, damping: 28 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 몇 장 중 몇 번째인지, 그리고 다음 장까지 얼마나 남았는지를 같은 막대로 보여준다 */}
-        <div className="tour-card__bars" aria-hidden="true">
-          {SLIDES.map((_, i) => (
-            <span key={i} className="tour-card__bar">
-              {i < index && <span className="tour-card__bar-fill tour-card__bar-fill--done" />}
-              {i === index && (
-                <motion.span
-                  key={`${index}-${autoAdvancing}`}
-                  className="tour-card__bar-fill"
-                  initial={{ width: autoAdvancing && !isLast ? "0%" : "100%" }}
-                  animate={{ width: "100%" }}
-                  transition={
-                    autoAdvancing && !isLast
-                      ? { duration: SLIDE_MS / 1000, ease: "linear" }
-                      : { duration: 0.2 }
-                  }
-                />
-              )}
-            </span>
-          ))}
-        </div>
-
         <button type="button" className="tour-card__close" onClick={close} aria-label="안내 닫기">
           ✕
         </button>
 
-        <div className="tour-card__stage">
+        {/* 앱을 축소해 놓은 화면. 손끝이 여기를 눌러 가며 다음 화면으로 넘어간다. */}
+        <div className="tour-screen" aria-hidden="true">
           <AnimatePresence mode="wait">
             <motion.div
-              key={index}
-              className="tour-slide"
-              initial={{ opacity: 0, x: 40 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -40 }}
-              transition={{ duration: 0.32, ease: "easeOut" }}
+              key={scene}
+              className="tour-screen__inner"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
             >
-              <motion.div
-                initial={{ scale: 0.7, rotate: -6, opacity: 0 }}
-                animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                transition={{ type: "spring", stiffness: 240, damping: 18 }}
-              >
-                <Icon3D src={slide.icon} size={78} />
-              </motion.div>
-              <strong className="tour-slide__title">{slide.title}</strong>
-              <p className="tour-slide__body">{slide.body}</p>
+              {current.render(playing)}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        <div className="tour-card__dots">
+        {/* 화면이 무엇을 하고 있는지 한 줄. 여기가 길어지면 다시 읽기 싫은 안내가 된다. */}
+        <div className="tour-caption">
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={scene}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.28 }}
+            >
+              {current.caption}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+
+        <div className="tour-nav">
           <button
             type="button"
-            className="tour-card__arrow"
-            onClick={() => goTo(Math.max(index - 1, 0))}
-            disabled={index === 0}
+            className="tour-nav__arrow"
+            onClick={() => goTo(Math.max(scene - 1, 0))}
+            disabled={scene === 0}
             aria-label="이전"
           >
             ‹
           </button>
-          {SLIDES.map((_, i) => (
+          {SCENES.map((s, i) => (
             <button
-              key={i}
+              key={s.caption}
               type="button"
-              className={`tour-card__dot${i === index ? " tour-card__dot--on" : ""}`}
+              className={
+                "tour-nav__dot" +
+                (i === scene ? " tour-nav__dot--on" : "") +
+                // 시간이 차오르지 않는 장면(마지막 장면, 수동으로 넘긴 뒤)에서는
+                // 막대를 가득 채워 지금 어디인지 보이게 한다.
+                (i === scene && (!playing || isLast) ? " tour-nav__dot--full" : "")
+              }
               onClick={() => goTo(i)}
-              aria-label={`${i + 1}번째 안내`}
-              aria-current={i === index}
-            />
+              aria-label={`${i + 1}번째 장면`}
+              aria-current={i === scene}
+            >
+              {/* 재생 중인 점만 안에서 시간이 차오른다 — 다음 장면까지 얼마나 남았는지 */}
+              {i === scene && playing && !isLast && (
+                <motion.span
+                  key={`fill-${scene}`}
+                  className="tour-nav__dot-fill"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: SCENE_MS / 1000, ease: "linear" }}
+                />
+              )}
+            </button>
           ))}
           <button
             type="button"
-            className="tour-card__arrow"
-            onClick={() => goTo(Math.min(index + 1, SLIDES.length - 1))}
+            className="tour-nav__arrow"
+            onClick={() => goTo(Math.min(scene + 1, SCENES.length - 1))}
             disabled={isLast}
             aria-label="다음"
           >
@@ -224,17 +189,20 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {slide.cta && (
-          <button
+        {isLast && (
+          <motion.button
             type="button"
             className="tour-card__cta"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
             onClick={() => {
               close();
-              navigate(slide.cta!.to);
+              navigate("/trip");
             }}
           >
-            {slide.cta.label}
-          </button>
+            내 여행부터 준비하기
+          </motion.button>
         )}
 
         <label className="tour-card__again">
@@ -249,3 +217,247 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
     </motion.div>
   );
 }
+
+/* --------------------------------------------------------------------------
+ * 장면들
+ *
+ * 각 장면은 6초 안에 "손끝이 누른다 → 화면이 바뀐다"를 한 번씩 보여준다. playing이 false면
+ * (움직임 줄이기 설정) 애니메이션 없이 끝 모습만 그린다.
+ * ----------------------------------------------------------------------- */
+
+/** 화면을 누르는 손끝. 좌표는 tour-screen 안쪽 기준(px). */
+function Tap({ points, playing }: { points: [number, number][]; playing: boolean }) {
+  if (!playing) return null;
+  // 누를 곳으로 이동 → 눌림(작아졌다 커짐) → 다음 곳으로. 마지막엔 조용히 사라진다.
+  const xs = points.flatMap(([x]) => [x, x, x]);
+  const ys = points.flatMap(([, y]) => [y, y, y]);
+  const scales = points.flatMap(() => [1, 0.68, 1]);
+  const step = 1 / (xs.length - 1);
+  const times = xs.map((_, i) => Math.min(1, i * step));
+  return (
+    <motion.span
+      className="tour-tap"
+      initial={{ x: xs[0], y: ys[0], opacity: 0 }}
+      animate={{ x: xs, y: ys, scale: scales, opacity: [0, 1, 1, 1, 1, 1, 1, 0.9, 0] }}
+      transition={{ duration: (SCENE_MS / 1000) * 0.72, times, ease: "easeInOut" }}
+    />
+  );
+}
+
+/** 눌린 자리에서 퍼지는 물결. 손끝과 같은 시점에 맞춰 delay로 띄운다. */
+function Ripple({ x, y, delay, playing }: { x: number; y: number; delay: number; playing: boolean }) {
+  if (!playing) return null;
+  return (
+    <motion.span
+      className="tour-ripple"
+      style={{ left: x, top: y }}
+      initial={{ scale: 0.2, opacity: 0 }}
+      animate={{ scale: [0.2, 1.6], opacity: [0.55, 0] }}
+      transition={{ duration: 0.7, delay, ease: "easeOut" }}
+    />
+  );
+}
+
+/** 앞 화면이 물러나고 뒤 화면이 들어오는 전환. t는 전체 장면에서 바뀌는 시점(0~1). */
+function panelMotion(playing: boolean, t: number, direction: "out" | "in"): MotionProps {
+  if (!playing) {
+    return direction === "out"
+      ? { initial: { opacity: 0 }, animate: { opacity: 0 } }
+      : { initial: { opacity: 1 }, animate: { opacity: 1, x: 0 } };
+  }
+  const dur = SCENE_MS / 1000;
+  return direction === "out"
+    ? {
+        initial: { opacity: 1, x: 0 },
+        animate: { opacity: [1, 1, 0], x: [0, 0, -26] },
+        transition: { duration: dur, times: [0, t, t + 0.09], ease: "easeInOut" },
+      }
+    : {
+        initial: { opacity: 0, x: 26 },
+        animate: { opacity: [0, 0, 1], x: [26, 26, 0] },
+        transition: { duration: dur, times: [0, t + 0.02, t + 0.13], ease: "easeOut" },
+      };
+}
+
+interface Scene {
+  caption: string;
+  render: (playing: boolean) => ReactNode;
+}
+
+const SCENES: Scene[] = [
+  {
+    caption: "여행 정보만 넣으면 7개사를 비교해요",
+    render: (playing) => (
+      <>
+        <motion.div className="tour-panel" {...panelMotion(playing, 0.42, "out")}>
+          <p className="tour-mini__eyebrow">STEP 1 · 목적지</p>
+          <p className="tour-mini__ask">어디로 떠나시나요?</p>
+          <div className="tour-mini__field">
+            {playing ? (
+              <motion.span
+                initial={{ opacity: 1 }}
+                animate={{ opacity: [1, 1, 0] }}
+                transition={{ duration: 1, times: [0, 0.6, 1], delay: 1.2 }}
+              >
+                국가를 선택하세요
+              </motion.span>
+            ) : null}
+            {playing && (
+              <motion.span
+                className="tour-mini__value"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0, 1] }}
+                transition={{ duration: 1, times: [0, 0.6, 1], delay: 1.2 }}
+              >
+                일본
+              </motion.span>
+            )}
+            {!playing && <span className="tour-mini__value">일본</span>}
+            <span className="tour-mini__chev">⌄</span>
+          </div>
+          <div className="tour-mini__btn">다음</div>
+          <Tap points={[[124, 89], [124, 137]]} playing={playing} />
+          <Ripple x={124} y={89} delay={1.3} playing={playing} />
+          <Ripple x={124} y={137} delay={2.4} playing={playing} />
+        </motion.div>
+
+        <motion.div className="tour-panel" {...panelMotion(playing, 0.42, "in")}>
+          <p className="tour-mini__eyebrow">균형형 기준 · 표준 등급</p>
+          {RANKING.map((r, i) => (
+            <motion.div
+              key={r.name}
+              className="tour-rank"
+              initial={playing ? { opacity: 0, y: 10 } : false}
+              animate={playing ? { opacity: [0, 0, 1], y: [10, 10, 0] } : {}}
+              transition={{ duration: SCENE_MS / 1000, times: [0, 0.5 + i * 0.04, 0.6 + i * 0.04] }}
+            >
+              <span className="tour-rank__no">{i + 1}</span>
+              <span className="tour-rank__name">{r.name}</span>
+              <span className="tour-rank__won">{r.won}</span>
+              <span className="tour-rank__bar">
+                <motion.span
+                  style={{ width: `${r.score}%` }}
+                  initial={playing ? { scaleX: 0 } : false}
+                  animate={playing ? { scaleX: [0, 0, 1] } : {}}
+                  transition={{ duration: SCENE_MS / 1000, times: [0, 0.58 + i * 0.04, 0.78 + i * 0.04] }}
+                />
+              </span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </>
+    ),
+  },
+  {
+    caption: "사고는 한 문장이면 충분해요",
+    render: (playing) => (
+      <>
+        <motion.div className="tour-panel" {...panelMotion(playing, 0.46, "out")}>
+          <p className="tour-mini__eyebrow">STEP 2 · 사고 내용</p>
+          <p className="tour-mini__ask">무슨 일이 있었나요?</p>
+          <div className="tour-mini__note">
+            {playing ? (
+              <motion.span
+                className="tour-type"
+                initial={{ width: 0 }}
+                animate={{ width: ["0px", "0px", "168px"] }}
+                transition={{ duration: SCENE_MS / 1000, times: [0, 0.06, 0.36], ease: "linear" }}
+              >
+                길에서 넘어져 발목을 다쳤어요
+              </motion.span>
+            ) : (
+              <span className="tour-type tour-type--done">길에서 넘어져 발목을 다쳤어요</span>
+            )}
+            {playing && <span className="tour-caret" />}
+          </div>
+          <div className="tour-mini__btn">사고 분석 요청</div>
+          <Tap points={[[124, 161]]} playing={playing} />
+          <Ripple x={124} y={161} delay={2.6} playing={playing} />
+        </motion.div>
+
+        <motion.div className="tour-panel" {...panelMotion(playing, 0.46, "in")}>
+          <p className="tour-mini__eyebrow">상해 · 해외상해치료</p>
+          <div className="tour-result">
+            <span className="tour-result__tag">받을 수 있어요</span>
+            <p className="tour-result__title">해외여행중 상해치료비</p>
+            <p className="tour-result__sub">제4조 · 실제 부담한 의료비</p>
+          </div>
+          <p className="tour-mini__eyebrow">필요한 서류</p>
+          <div className="tour-chips">
+            {DOCS.map((d, i) => (
+              <motion.span
+                key={d}
+                className="tour-chip"
+                initial={playing ? { opacity: 0, scale: 0.9 } : false}
+                animate={playing ? { opacity: [0, 0, 1], scale: [0.9, 0.9, 1] } : {}}
+                transition={{ duration: SCENE_MS / 1000, times: [0, 0.6 + i * 0.05, 0.7 + i * 0.05] }}
+              >
+                {d}
+              </motion.span>
+            ))}
+          </div>
+        </motion.div>
+      </>
+    ),
+  },
+  {
+    // 이 장면이 안내의 핵심이라 화면을 갈아끼우지 않는다. 보고 있던 그 약관 원문 위에
+    // 형광펜이 그대로 그어져야, "근거를 원문에서 짚는다"는 말이 눈으로 확인된다.
+    caption: "왜 그런지 약관 원문에서 짚어줘요",
+    render: (playing) => (
+      <div className="tour-panel">
+        <p className="tour-mini__eyebrow">카카오페이손해보험 · 제4조</p>
+        <div className="tour-clause">
+          <p>
+            회사는 피보험자가 보험기간 중에 발생한
+            <span className="tour-clause__target">
+              {playing && (
+                <motion.span
+                  className="tour-clause__ink"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.85, delay: 2.7, ease: "easeInOut" }}
+                />
+              )}
+              {!playing && <span className="tour-clause__ink tour-clause__ink--done" />}
+              <span className="tour-clause__word">급격하고 우연한 외래의 사고</span>
+            </span>
+            로 상해를 입은 경우
+            <span className="tour-clause__target">
+              {playing && (
+                <motion.span
+                  className="tour-clause__ink"
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ duration: 0.7, delay: 3.5, ease: "easeInOut" }}
+                />
+              )}
+              {!playing && <span className="tour-clause__ink tour-clause__ink--done" />}
+              <span className="tour-clause__word">보험금을 지급합니다</span>
+            </span>
+            .
+          </p>
+        </div>
+        <div className="tour-mini__btn tour-mini__btn--ghost">근거 보기</div>
+        <Tap points={[[124, 200]]} playing={playing} />
+        <Ripple x={124} y={200} delay={2.4} playing={playing} />
+        <motion.p
+          className="tour-stamp"
+          initial={playing ? { opacity: 0, y: 6 } : false}
+          animate={playing ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 4.4, duration: 0.4 }}
+        >
+          원문 대조 완료
+        </motion.p>
+      </div>
+    ),
+  },
+];
+
+const RANKING = [
+  { name: "카카오페이손보", won: "3,863원", score: 92 },
+  { name: "신한EZ손보", won: "4,610원", score: 84 },
+  { name: "메리츠화재", won: "4,945원", score: 79 },
+];
+
+const DOCS = ["진료비 영수증", "진단서", "신분증"];
