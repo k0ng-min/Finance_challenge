@@ -8,6 +8,7 @@ import { PageHero } from "../components/PageHero";
 import { IncidentPicker } from "../components/IncidentPicker";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { TripContextBadge } from "../components/TripContextBadge";
+import { EvidenceStats } from "../components/EvidenceStats";
 import { RejectionClauseSearch } from "../components/RejectionClauseSearch";
 
 /** 조항 하나를 그 사고 상황과 대조해서, 직접 관련된 부분만 노란색으로 표시한다.
@@ -276,6 +277,7 @@ export function ClauseHighlight() {
           subtitle={'"사고가 발생했어요"에서 사고를 분석하면 관련 조항이 형광펜으로 여기 모여요. 아직 없다면 보험사와 조항 번호로 직접 찾아볼 수 있어요.'}
         />
         <RejectionClauseSearch />
+        <EvidenceStats />
       </div>
     );
   }

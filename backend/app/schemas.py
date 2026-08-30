@@ -753,3 +753,45 @@ class SimulationOut(BaseModel):
     scenarios: list[SimulatedScenarioOut] = []
     #: 화면에 고정으로 띄우는 경계 문구. 서버가 내려보내 화면과 테스트가 같은 문장을 쓴다.
     disclaimer: str
+
+
+# --- 근거 검증 현황 ---------------------------------------------------------
+# "근거 없는 결과를 내지 않는다"는 이 프로젝트의 원칙인데, 그게 지켜지고 있다는 사실은
+# 지금까지 문서에만 있었다. 아래 스키마는 그 검증을 앱 안에서 DB 실측으로 보여주기 위한 것이다.
+
+class KbCheckOut(BaseModel):
+    """"몇 건 중 몇 건이 근거를 갖췄는가"를 담는 한 줄."""
+    code: str
+    label: str
+    #: 이 검사가 무엇을 확인하는지, 왜 그게 근거가 되는지 한 문장.
+    description: str
+    passed: int
+    total: int
+    #: 통과율(%). 소수점 첫째 자리까지.
+    rate: float
+
+
+class KbInsurerStatOut(BaseModel):
+    insurer_code: str
+    insurer_name: str
+    clause_count: int
+    coverage_count: int
+    clause_term_count: int
+    incident_map_count: int
+    #: 이 보험사에서 읽은 약관 판본. 어느 판을 읽었는지가 근거의 일부다.
+    version_label: Optional[str] = None
+    effective_date: Optional[dt.date] = None
+    #: 원본 PDF의 SHA-256 앞 12자리. 같은 파일을 읽었는지 대조할 수 있게 남긴다.
+    file_hash_prefix: Optional[str] = None
+
+
+class KbStatsOut(BaseModel):
+    insurer_count: int
+    clause_count: int
+    coverage_count: int
+    clause_term_count: int
+    incident_map_count: int
+    incident_type_l1_count: int
+    incident_type_l2_count: int
+    checks: list[KbCheckOut] = []
+    insurers: list[KbInsurerStatOut] = []

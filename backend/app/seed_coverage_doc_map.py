@@ -13,6 +13,7 @@ administrative 담보(DISABILITY_CONVERSION/TRAVEL_COMPANION/DELEGATION_CLAIM)�
 from app.database import Base, SessionLocal, engine
 from app import models  # noqa: F401
 from app.models.kb import Coverage, CoverageDocMap, CoverageStd, RequiredDocStd
+from app.services.kb_seed_common import ADMIN_STD_CODES
 
 Base.metadata.create_all(bind=engine)
 
@@ -73,22 +74,37 @@ DOC_RULES: dict[str, list[tuple[str, bool]]] = {
     "PET_CARE": [("CLAIM_FORM", True), ("ID_CARD", True)],
 }
 
-ADMIN_STD_CODES = {"DISABILITY_CONVERSION", "TRAVEL_COMPANION", "DELEGATION_CLAIM"}
 
 
 def run():
+    """담보별 필요서류를 채운다. 이미 있는 담보는 건드리지 않고 없는 담보만 채운다.
+
+    예전에는 "coverage_doc_map에 행이 하나라도 있으면 통째로 건너뛴다"였다. 그러면 이 시드가
+    한 번 돈 뒤에 추가된 담보는 영영 서류가 안 붙는다 — 실제로 현대해상 특별약관 8건
+    (구조송환·휴대품·식중독·전염병·항공기납치·여권분실·여행중단·자택도난)과 삼성화재
+    반려동물 돌봄 1건이 그렇게 빈 채로 남아 있었고, 청구 안내에서 서류가 나오지 않았다.
+    seed_premiums_actual·seed_questions가 같은 이유로 이미 "없는 것만 추가"로 바뀌어 있어서
+    여기도 같은 방식으로 맞춘다.
+
+    규칙에 없는 표준담보와 ADMIN_STD_CODES(지정대리청구·장애인전용전환 같은 제도성 특약)는
+    그대로 넘어간다. 청구서류라는 개념 자체가 없는 특약이라, 없는 서류를 붙이지 않는다.
+    """
     db = SessionLocal()
     try:
-        if db.query(CoverageDocMap).count() > 0:
-            print("이미 시드됨 (coverage_doc_map). 스킵합니다.")
-            return
-
         docs = {d.doc_code: d for d in db.query(RequiredDocStd).all()}
-        rows = (
-            db.query(Coverage, CoverageStd.std_code)
-            .outerjoin(CoverageStd, CoverageStd.coverage_std_id == Coverage.coverage_std_id)
-            .all()
-        )
+        already = {r[0] for r in db.query(CoverageDocMap.coverage_id).distinct()}
+        rows = [
+            (coverage, std_code)
+            for coverage, std_code in (
+                db.query(Coverage, CoverageStd.std_code)
+                .outerjoin(CoverageStd, CoverageStd.coverage_std_id == Coverage.coverage_std_id)
+                .all()
+            )
+            if coverage.coverage_id not in already
+        ]
+        if not rows:
+            print("coverage_doc_map: 모든 담보에 이미 서류가 붙어 있습니다.")
+            return
 
         created = 0
         no_docs: list[tuple[int, str]] = []

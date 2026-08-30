@@ -746,6 +746,42 @@ export interface SimulationOut {
   disclaimer: string;
 }
 
+// --- 근거 검증 현황 ---------------------------------------------------------
+export interface KbCheckOut {
+  code: string;
+  label: string;
+  description: string;
+  passed: number;
+  total: number;
+  /** 통과율(%) */
+  rate: number;
+}
+
+export interface KbInsurerStatOut {
+  insurer_code: string;
+  insurer_name: string;
+  clause_count: number;
+  coverage_count: number;
+  clause_term_count: number;
+  incident_map_count: number;
+  version_label: string | null;
+  effective_date: string | null;
+  /** 원본 PDF의 SHA-256 앞 12자리 */
+  file_hash_prefix: string | null;
+}
+
+export interface KbStatsOut {
+  insurer_count: number;
+  clause_count: number;
+  coverage_count: number;
+  clause_term_count: number;
+  incident_map_count: number;
+  incident_type_l1_count: number;
+  incident_type_l2_count: number;
+  checks: KbCheckOut[];
+  insurers: KbInsurerStatOut[];
+}
+
 /**
  * 서버가 깨어 있는지만 확인한다. 무료 호스팅(Render)은 15분간 요청이 없으면 잠들고,
  * 다음 요청이 들어오면 그 요청을 붙잡아 둔 채 컨테이너를 다시 띄운다 — 그동안 응답이
@@ -768,6 +804,9 @@ export async function pingHealth(timeoutMs = 20000): Promise<void> {
 }
 
 export const api = {
+  /** 약관 KB 규모와 근거 검증 통과율. 서버가 DB에서 직접 세어 내려준다. */
+  getKbStats: () => request<KbStatsOut>("/insurers/kb-stats"),
+
   createUser: (nickname: string) =>
     request<UserOut>("/users", { method: "POST", body: JSON.stringify({ nickname }) }),
 

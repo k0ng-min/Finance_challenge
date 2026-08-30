@@ -6,6 +6,14 @@ required_doc_std(표준 청구서류)와 coverage_std(표준 담보)는 보험�
 """
 from app.models.kb import Insurer, Product, PolicyVersion, CoverageStd, RequiredDocStd
 
+# 보험금 청구 자체가 없는 계약 절차 특약. 청구서류를 매핑하지 않는 것이 정상이며,
+# "서류가 안 붙은 담보"를 셀 때도 분모에서 빼야 한다 — 채울 것이 없는 자리라서
+# 분모에 넣으면 못 채운 것처럼 보인다.
+# 시드(seed_coverage_doc_map)와 근거 검증 현황(routers/insurers.kb_stats)이 같은 기준을
+# 써야 해서 여기 둔다 — 앱이 시드 스크립트를 import하면 그쪽의 create_all 부작용까지
+# 기동에 딸려 온다.
+ADMIN_STD_CODES = {"DISABILITY_CONVERSION", "TRAVEL_COMPANION", "DELEGATION_CLAIM"}
+
 
 def raw_text_is_grounded(clause_text: str, raw_text: str) -> bool:
     """ClauseTerm.raw_text가 실제 조항 원문의 부분 문자열인지 확인한다.

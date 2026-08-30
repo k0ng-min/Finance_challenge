@@ -2054,6 +2054,90 @@ button { cursor: pointer; font-family: inherit; }
 }
 .tour-card__again input { accent-color: var(--primary); cursor: pointer; }
 
+/* 근거 검증 현황(EvidenceStats). "근거 없는 결과를 내지 않는다"는 원칙이 실제로 지켜지고
+   있는지를 DB 실측 숫자로 보여주는 구획이라, 못 채운 항목도 가리지 않고 같은 모양으로 둔다. */
+.evidence { margin-top: 26px; }
+.evidence__lead {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text);
+  margin: 6px 2px 14px;
+}
+.evidence__checks { display: flex; flex-direction: column; gap: 10px; }
+.evidence-check {
+  background: var(--card-bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 13px 15px;
+}
+.evidence-check__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.evidence-check__head strong { font-size: 0.88rem; color: var(--heading); }
+.evidence-check__rate {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.evidence-check__bar {
+  height: 6px;
+  margin: 9px 0 6px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  overflow: hidden;
+}
+.evidence-check__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+}
+/* 다 채운 항목만 색을 달리해, 훑어봐도 어디가 남았는지 바로 보이게 한다 */
+.evidence-check__bar-fill--full { background: var(--mint); }
+.evidence-check__count {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.evidence-check__desc {
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.evidence__detail { margin-top: 12px; }
+.evidence__detail summary {
+  font-size: 0.82rem;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 6px 2px;
+}
+/* 표는 좁은 화면에서 제 구획 안에서만 옆으로 밀리게 한다 — 페이지 전체가 밀리면 안 된다 */
+.evidence__table-wrap { overflow-x: auto; margin-top: 8px; }
+.evidence__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.evidence__table th,
+.evidence__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.evidence__table th { color: var(--muted); font-weight: 700; }
+.evidence__num { text-align: right; font-variant-numeric: tabular-nums; }
+.evidence__version { display: block; color: var(--text); }
+.evidence__date,
+.evidence__hash { display: block; font-size: 0.72rem; color: var(--muted); }
+
 .modal-overlay {
   position: fixed;
   inset: 0;

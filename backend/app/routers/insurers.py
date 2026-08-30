@@ -5,16 +5,19 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.limiter import limiter
 from app.models.kb import (
-    Clause, ClauseIncidentMap, ClauseStandardMap, Coverage, IncidentType, Insurer, InsurerComparisonMetric,
-    InsurerPlanCoverage, InsurerPremium, NonpaymentRate, PolicyVersion, Product, StandardClause,
+    Clause, ClauseIncidentMap, ClauseStandardMap, ClauseTerm, Coverage, CoverageDocMap, CoverageStd, IncidentType,
+    Insurer, InsurerComparisonMetric, InsurerPlanCoverage, InsurerPremium, NonpaymentRate,
+    PolicyVersion, Product, StandardClause,
 )
 from app.schemas import (
     ClauseOut, ClauseTermOut, ComparisonCategoryOut, ComparisonMetricOut, ComparisonMetricValueOut,
     InsurerComparisonOut, InsurerCoverageOut, InsurerIncidentCoverageOut, InsurerStandardComparisonOut,
     InsurerTierOut, InsurerRankingOut, InsurerPlanCoverageOut, InsurerPlanCoverageRowOut, InsurerPlanOut,
-    InsurerPlansOut, InsurerPremiumCurveOut, InsurerPremiumOut, NonpaymentRateOut,
+    InsurerPlansOut, InsurerPremiumCurveOut, InsurerPremiumOut, KbCheckOut, KbInsurerStatOut,
+    KbStatsOut, NonpaymentRateOut,
     NonpaymentRatesOut, PremiumComparisonOut, PremiumPointOut, StandardClauseComparisonOut, StandardClauseOut,
 )
+from app.services.kb_seed_common import ADMIN_STD_CODES, raw_text_is_grounded
 from app.services.insurer_ranking import TIERS, list_tiers, rank_insurers
 from app.services.insurer_ranking_score_gemini import last_scores, score_ranking
 from app.services import ranking_score
@@ -785,3 +788,132 @@ def get_insurer_ranking(
     _attach_plan_coverage_summary(db, ranking)
 
     return InsurerRankingOut(tier_code=tier, ranking=ranking, excluded_note=excluded_note)
+
+
+# --- 근거 검증 현황 ---------------------------------------------------------
+# 이 프로젝트의 원칙은 "근거 없는 결과를 내지 않는다"인데, 그게 실제로 지켜지고 있다는
+# 사실은 지금까지 README에만 있었다. 화면에서 확인할 수 있게 DB에서 직접 세어 내려준다.
+#
+# 숫자를 상수로 적어두지 않는 것이 이 엔드포인트의 핵심이다. 보험사가 하나 늘거나 조항이
+# 다시 적재되면 문서의 숫자는 조용히 낡는데(실제로 README의 담보 수와 서류 연결률이
+# 그렇게 낡아 있었다), 근거를 보여주겠다는 화면이 틀린 숫자를 보여주면 없느니만 못하다.
+
+# 약관 KB는 배포 중에 바뀌지 않는다(재배포로만 바뀐다). 매 요청마다 조항 원문 558건을
+# 전부 읽어 대조할 이유가 없어서 프로세스마다 한 번만 계산하고 재사용한다.
+_kb_stats_cache: KbStatsOut | None = None
+
+
+def _rate(passed: int, total: int) -> float:
+    return round(passed / total * 100, 1) if total else 0.0
+
+
+@router.get("/kb-stats", response_model=KbStatsOut)
+def kb_stats(db: Session = Depends(get_db)) -> KbStatsOut:
+    global _kb_stats_cache
+    if _kb_stats_cache is not None:
+        return _kb_stats_cache
+
+    clause_texts = dict(db.query(Clause.clause_id, Clause.text).all())
+    terms = db.query(ClauseTerm.clause_id, ClauseTerm.raw_text).all()
+    grounded = sum(
+        1 for clause_id, raw_text in terms
+        if raw_text_is_grounded(clause_texts.get(clause_id) or "", raw_text or "")
+    )
+
+    # 분모는 "청구서류라는 개념이 성립하는 담보"만 센다. 지정대리청구·장애인전용보험 전환
+    # 같은 제도성 특약(ADMIN_STD_CODES)과 표준담보에 아직 이어지지 않은 행은 청구할 서류가
+    # 애초에 없어서, 전체 담보를 분모로 쓰면 "못 채운 자리"처럼 보이지만 실제로는 채울 것이
+    # 없는 자리다. 반대로 이 예외를 화면에서 감추지도 않는다 — 아래 description에 밝힌다.
+    coverage_rows = (
+        db.query(Coverage.coverage_id, CoverageStd.std_code)
+        .outerjoin(CoverageStd, CoverageStd.coverage_std_id == Coverage.coverage_std_id)
+        .all()
+    )
+    coverage_ids = {cid for cid, _ in coverage_rows}
+    claimable_ids = {
+        cid for cid, std_code in coverage_rows
+        if std_code and std_code not in ADMIN_STD_CODES
+    }
+    coverage_with_doc = claimable_ids & {r[0] for r in db.query(CoverageDocMap.coverage_id).distinct()}
+    clause_with_incident = {r[0] for r in db.query(ClauseIncidentMap.clause_id).distinct()}
+
+    checks = [
+        KbCheckOut(
+            code="clause_term_grounded",
+            label="수치 조건이 원문에 실재하는가",
+            description=(
+                "지급한도·자기부담금 같은 숫자를 조항에서 뽑아 따로 저장할 때, 그 근거가 된 "
+                "원문 조각이 조항 원문의 부분 문자열인지 한 건씩 다시 대조했습니다."
+            ),
+            passed=grounded, total=len(terms), rate=_rate(grounded, len(terms)),
+        ),
+        KbCheckOut(
+            code="clause_incident_mapped",
+            label="조항이 사고유형에 연결됐는가",
+            description=(
+                "어떤 사고에 어떤 조항이 걸리는지 미리 이어 둔 비율입니다. 이어지지 않은 조항은 "
+                "안내에 쓰이지 않습니다 — 억지로 갖다 붙이지 않기 때문입니다."
+            ),
+            passed=len(clause_with_incident), total=len(clause_texts),
+            rate=_rate(len(clause_with_incident), len(clause_texts)),
+        ),
+        KbCheckOut(
+            code="coverage_doc_linked",
+            label="담보에 필요서류가 붙었는가",
+            description=(
+                "담보별로 청구에 필요한 서류를 표준 서류 코드 14종에 이어 둔 비율입니다. "
+                "지정대리청구·장애인전용보험 전환처럼 청구할 서류가 애초에 없는 제도성 특약은 "
+                "세지 않습니다(전체 담보 "
+                f"{len(coverage_ids)}건 중 {len(coverage_ids) - len(claimable_ids)}건)."
+            ),
+            passed=len(coverage_with_doc), total=len(claimable_ids),
+            rate=_rate(len(coverage_with_doc), len(claimable_ids)),
+        ),
+    ]
+
+    # 보험사별 규모와 "어느 판본을 읽었는지". 판본과 파일 지문도 근거의 일부다 —
+    # 같은 보험사라도 판이 다르면 조항이 다르다.
+    per_insurer: list[KbInsurerStatOut] = []
+    for insurer in db.query(Insurer).order_by(Insurer.insurer_id).all():
+        versions = (
+            db.query(PolicyVersion)
+            .join(Product, Product.product_id == PolicyVersion.product_id)
+            .filter(Product.insurer_id == insurer.insurer_id)
+            .all()
+        )
+        version_ids = [v.policy_version_id for v in versions]
+        if not version_ids:
+            continue
+        clause_ids = [
+            r[0] for r in db.query(Clause.clause_id)
+            .filter(Clause.policy_version_id.in_(version_ids)).all()
+        ]
+        latest = max(versions, key=lambda v: (v.effective_date is not None, v.effective_date))
+        per_insurer.append(KbInsurerStatOut(
+            insurer_code=insurer.code,
+            insurer_name=insurer.name,
+            clause_count=len(clause_ids),
+            coverage_count=db.query(Coverage)
+                .filter(Coverage.policy_version_id.in_(version_ids)).count(),
+            clause_term_count=db.query(ClauseTerm)
+                .filter(ClauseTerm.clause_id.in_(clause_ids)).count() if clause_ids else 0,
+            incident_map_count=db.query(ClauseIncidentMap)
+                .filter(ClauseIncidentMap.clause_id.in_(clause_ids)).count() if clause_ids else 0,
+            version_label=latest.version_label,
+            effective_date=latest.effective_date,
+            file_hash_prefix=(latest.file_hash or "")[:12] or None,
+        ))
+
+    _kb_stats_cache = KbStatsOut(
+        insurer_count=len(per_insurer),
+        clause_count=len(clause_texts),
+        coverage_count=len(coverage_ids),
+        clause_term_count=len(terms),
+        incident_map_count=db.query(ClauseIncidentMap).count(),
+        # L1 루트 행은 parent_id가 없다. 8개로 고정이고 늘리지 않는다(models/kb.py 참고).
+        incident_type_l1_count=db.query(IncidentType).filter(IncidentType.parent_id.is_(None)).count(),
+        incident_type_l2_count=db.query(IncidentType).filter(IncidentType.parent_id.isnot(None)).count(),
+        checks=checks,
+        insurers=per_insurer,
+    )
+    return _kb_stats_cache
