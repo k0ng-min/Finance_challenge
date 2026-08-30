@@ -73,8 +73,10 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
   });
 
   // 열리면 안내 자체로 초점을 옮긴다 — 키보드·스크린리더 사용자가 뒤 화면을 더듬지 않게.
+  // preventScroll이 없으면 브라우저가 카드를 화면 안으로 끌어오느라 감싼 층을 스크롤한다.
+  // 창이 낮아 카드가 다 안 들어가는 경우 그 스크롤이 닫기 단추를 화면 위로 밀어냈다.
   useEffect(() => {
-    dialogRef.current?.focus();
+    dialogRef.current?.focus({ preventScroll: true });
   }, []);
 
   function goTo(next: number) {
@@ -110,6 +112,43 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
           ✕
         </button>
 
+        {/* 여행 전 → 사고 후 → 근거 확인. 이 안내가 보여주는 것이 기능 세 개가 아니라
+            하나로 이어진 흐름이라는 걸 먼저 알린다. 지금 장면 다음 선이 차오르는 것이 곧
+            다음 장면까지 남은 시간이라, 진행 막대를 따로 둘 필요가 없다. */}
+        <nav className="tour-rail" aria-label="둘러보기 단계">
+          {SCENES.map((s, i) => (
+            <div className="tour-rail__item" key={s.stage}>
+              {i > 0 && (
+                <span className="tour-rail__line">
+                  <motion.span
+                    key={`line-${i}-${scene}-${playing}`}
+                    className="tour-rail__line-fill"
+                    initial={{ scaleX: i <= scene ? 1 : 0 }}
+                    animate={{ scaleX: i <= scene || (i === scene + 1 && playing) ? 1 : 0 }}
+                    transition={
+                      i === scene + 1 && playing
+                        ? { duration: SCENE_MS / 1000, ease: "linear" }
+                        : { duration: 0.3 }
+                    }
+                  />
+                </span>
+              )}
+              <button
+                type="button"
+                className={
+                  "tour-rail__step" +
+                  (i === scene ? " tour-rail__step--on" : "") +
+                  (i < scene ? " tour-rail__step--done" : "")
+                }
+                onClick={() => goTo(i)}
+                aria-current={i === scene}
+              >
+                {s.stage}
+              </button>
+            </div>
+          ))}
+        </nav>
+
         {/* 앱을 축소해 놓은 화면. 손끝이 여기를 눌러 가며 다음 화면으로 넘어간다. */}
         <div className="tour-screen" aria-hidden="true">
           <AnimatePresence mode="wait">
@@ -139,54 +178,6 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
               {current.caption}
             </motion.p>
           </AnimatePresence>
-        </div>
-
-        <div className="tour-nav">
-          <button
-            type="button"
-            className="tour-nav__arrow"
-            onClick={() => goTo(Math.max(scene - 1, 0))}
-            disabled={scene === 0}
-            aria-label="이전"
-          >
-            ‹
-          </button>
-          {SCENES.map((s, i) => (
-            <button
-              key={s.caption}
-              type="button"
-              className={
-                "tour-nav__dot" +
-                (i === scene ? " tour-nav__dot--on" : "") +
-                // 시간이 차오르지 않는 장면(마지막 장면, 수동으로 넘긴 뒤)에서는
-                // 막대를 가득 채워 지금 어디인지 보이게 한다.
-                (i === scene && (!playing || isLast) ? " tour-nav__dot--full" : "")
-              }
-              onClick={() => goTo(i)}
-              aria-label={`${i + 1}번째 장면`}
-              aria-current={i === scene}
-            >
-              {/* 재생 중인 점만 안에서 시간이 차오른다 — 다음 장면까지 얼마나 남았는지 */}
-              {i === scene && playing && !isLast && (
-                <motion.span
-                  key={`fill-${scene}`}
-                  className="tour-nav__dot-fill"
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ duration: SCENE_MS / 1000, ease: "linear" }}
-                />
-              )}
-            </button>
-          ))}
-          <button
-            type="button"
-            className="tour-nav__arrow"
-            onClick={() => goTo(Math.min(scene + 1, SCENES.length - 1))}
-            disabled={isLast}
-            aria-label="다음"
-          >
-            ›
-          </button>
         </div>
 
         {isLast && (
@@ -238,6 +229,10 @@ interface Press {
 }
 
 /** 손끝이 자리를 옮기는 데 걸리는 시간과, 눌렀다 떼는 데 걸리는 시간. */
+/** 축소 화면의 높이(app.css의 .tour-screen과 같아야 한다). 커서가 화면 밖에서
+ * 나타나지 않도록 시작점을 정하는 데 쓴다. */
+const SCREEN_H = 240;
+
 const MOVE_S = 0.5;
 const PRESS_S = 0.16;
 
@@ -266,14 +261,18 @@ function Tap({ presses, playing }: { presses: Press[]; playing: boolean }) {
   };
 
   const first = presses[0];
-  // 손끝은 누를 자리 아래에서 올라온다 — 제자리에서 갑자기 나타나면 어디서 왔는지 모른다.
-  const startY = first.y + 34;
+  // 커서는 누를 자리 바깥에서 다가온다 — 제자리에서 갑자기 나타나면 어디서 왔는지 모른다.
+  // 다만 아래쪽 버튼을 누를 때 아래에서 올라오게 두면 시작점이 화면 밖이라, 잘린 채로
+  // 나타났다. 대상이 화면 아래쪽이면 위에서 비스듬히 다가온다.
+  const low = first.y > SCREEN_H * 0.6;
+  const startX = low ? first.x - 44 : first.x;
+  const startY = low ? first.y - 40 : first.y + 34;
   // 나타나는 시점을 움직이기 직전으로 당긴다. 예전에는 투명도가 0초부터 선형으로 올라가서,
   // 손끝이 할 일 없이 버튼 아래에 1.8초쯤 떠 있다가 그제야 움직였다.
   const appear = Math.max(0.3, first.at - MOVE_S - 0.15);
-  at(0, first.x, startY, 1, 0);
-  at(Math.max(0.05, appear - 0.25), first.x, startY, 1, 0);
-  at(appear, first.x, startY, 1, 1);
+  at(0, startX, startY, 1, 0);
+  at(Math.max(0.05, appear - 0.25), startX, startY, 1, 0);
+  at(appear, startX, startY, 1, 1);
 
   presses.forEach((p) => {
     at(p.at - 0.12, p.x, p.y, 1, 1); // 도착
@@ -286,11 +285,23 @@ function Tap({ presses, playing }: { presses: Press[]; playing: boolean }) {
 
   return (
     <motion.span
-      className="tour-tap"
+      className="tour-cursor"
       initial={{ x: x[0], y: y[0], scale: 1, opacity: 0 }}
       animate={{ x, y, scale: s, opacity: o }}
       transition={{ duration: D, times: t, ease: "easeInOut" }}
-    />
+    >
+      {/* 둥근 포인터. 앱이 쓰는 파랑에 흰 테두리를 둘러, 어떤 배경 위에서도 끝이 어디를
+          가리키는지 보이게 한다. 끝점(3.4, 2.2)이 누르는 좌표에 오도록 CSS에서 밀어 둔다. */}
+      <svg viewBox="0 0 22 22" width="25" height="25" aria-hidden="true">
+        <path
+          d="M3.4 2.2 15.9 11.4c.7.5.4 1.6-.5 1.7l-4.6.4-2.3 4.3c-.4.8-1.6.6-1.8-.3L3.4 2.2Z"
+          fill="var(--primary)"
+          stroke="#fff"
+          strokeWidth="1.7"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </motion.span>
   );
 }
 
@@ -352,6 +363,8 @@ function reveal(
 }
 
 interface Scene {
+  /** 레일에 찍히는 단계 이름. 세 장면이 하나의 흐름임을 이 세 낱말이 이어 준다. */
+  stage: string;
   caption: string;
   render: (playing: boolean) => ReactNode;
 }
@@ -359,21 +372,22 @@ interface Scene {
 /* 장면 1 — 고르면 순위가 나온다.
    0.0 자리잡기 · 1.15 국가 칸 터치 · 1.4 「일본」 · 2.25 「다음」 터치 · 2.5 화면 전환 ·
    2.9~ 순위가 차오름 · 4.2~6.0 머무름 */
-const S1_FIELD: Press = { x: 124, y: 89, at: 1.15 };
-const S1_NEXT: Press = { x: 124, y: 137, at: 2.25 };
+const S1_FIELD: Press = { x: 144, y: 89, at: 1.15 };
+const S1_NEXT: Press = { x: 144, y: 137, at: 2.25 };
 const S1_SWAP = 2.45;
 
 /* 장면 2 — 한 문장이면 결과가 나온다.
    0.4~2.0 타이핑 · 2.6 「사고 분석 요청」 터치 · 2.85 화면 전환 · 3.2~ 결과 */
-const S2_SEND: Press = { x: 124, y: 161, at: 2.6 };
+const S2_SEND: Press = { x: 144, y: 161, at: 2.6 };
 const S2_SWAP = 2.8;
 
 /* 장면 3 — 화면을 바꾸지 않고 그 자리에서 형광펜이 그어진다.
    1.0 「근거 보기」 터치 · 1.5 첫 획 · 2.5 둘째 획 */
-const S3_SHOW: Press = { x: 124, y: 217, at: 1.0 };
+const S3_SHOW: Press = { x: 144, y: 217, at: 1.0 };
 
 const SCENES: Scene[] = [
   {
+    stage: "여행 전",
     caption: "여행 정보만 넣으면 7개사를 비교해요",
     render: (playing) => (
       <>
@@ -423,6 +437,7 @@ const SCENES: Scene[] = [
     ),
   },
   {
+    stage: "사고 후",
     caption: "사고는 한 문장이면 충분해요",
     render: (playing) => (
       <>
@@ -473,6 +488,7 @@ const SCENES: Scene[] = [
   {
     // 이 장면이 안내의 핵심이라 화면을 갈아끼우지 않는다. 보고 있던 그 약관 원문 위에
     // 형광펜이 그대로 그어져야, "근거를 원문에서 짚는다"는 말이 눈으로 확인된다.
+    stage: "근거 확인",
     caption: "왜 그런지 약관 원문에서 짚어줘요",
     render: (playing) => (
       <div className="tour-panel">
