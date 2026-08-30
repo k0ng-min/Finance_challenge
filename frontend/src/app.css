@@ -281,6 +281,22 @@ body {
 }
 .home__topbar { display: flex; align-items: center; padding: 8px 2px 0; flex: none; }
 .home__topbar-spacer { flex: 1; }
+/* 둘러보기 안내를 다시 여는 단추. 테마 단추 옆에 같은 크기로 붙어 한 벌처럼 보이게 한다. */
+.home__tour-btn {
+  width: 30px;
+  height: 30px;
+  margin-left: 6px;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.home__tour-btn:hover { color: var(--primary); border-color: var(--primary); }
 .account-pill {
   display: inline-flex;
   align-items: center;
@@ -1899,6 +1915,144 @@ button { cursor: pointer; font-family: inherit; }
   box-shadow: var(--shadow-soft);
 }
 .boot-screen__retry:hover { background: var(--primary-dark); }
+
+/* 첫 진입 둘러보기(WelcomeTour). 팝업(Modal)과 색·모서리는 같게 두되, 위쪽 진행 막대와
+   전체 폭 그림 자리가 필요해서 구조는 따로 짰다. */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 24, 38, 0.52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 400;
+}
+.tour-card {
+  position: relative;
+  width: min(380px, 100%);
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop);
+  padding: 18px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  outline: none;
+}
+.tour-card__bars {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  padding: 0 26px 0 0;
+}
+.tour-card__bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  overflow: hidden;
+}
+.tour-card__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary);
+}
+.tour-card__bar-fill--done { width: 100%; }
+.tour-card__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px;
+  cursor: pointer;
+}
+.tour-card__close:hover { color: var(--heading); }
+
+/* 장마다 글 길이가 달라도 카드가 들썩이지 않게 높이를 고정한다 */
+.tour-card__stage {
+  width: 100%;
+  min-height: 232px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tour-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.tour-slide__title {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  color: var(--heading);
+}
+.tour-slide__body {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--text);
+  max-width: 300px;
+}
+
+.tour-card__dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.tour-card__dot {
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--cream-deep);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.tour-card__dot--on { background: var(--primary); transform: scale(1.25); }
+.tour-card__arrow {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
+  padding: 0 6px;
+  cursor: pointer;
+}
+.tour-card__arrow:disabled { opacity: 0.3; cursor: default; }
+
+.tour-card__cta {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+.tour-card__cta:hover { background: var(--primary-dark); }
+
+.tour-card__again {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.tour-card__again input { accent-color: var(--primary); cursor: pointer; }
 
 .modal-overlay {
   position: fixed;

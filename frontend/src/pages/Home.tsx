@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Icon3D } from "../components/Icon3D";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { PenWriteCompass } from "../components/PenWriteCompass";
+import { WelcomeTour, hasSeenTour } from "../components/WelcomeTour";
 import { useApp } from "../context/AppContext";
 import { INSURER_COUNT } from "../data/insurers";
 
@@ -30,10 +32,26 @@ export function Home() {
   const navigate = useNavigate();
   const { isLoggedIn, nickname } = useApp();
   const quickItems = [isLoggedIn ? QUICK_LOGGED_IN : QUICK_GUEST, ...QUICK_REST];
+  // 둘러보기 안내는 홈에서만 뜨므로 홈이 직접 들고 있는다. 처음 온 사람에게는 저절로
+  // 열리고, 한 번 닫은 사람은 상단 물음표 단추로 다시 열 수 있다 — 게스트로만 둘러보는
+  // 사람도 닿아야 해서 로그인이 필요한 계정 화면이 아니라 여기에 뒀다.
+  const [tourOpen, setTourOpen] = useState(false);
+  useEffect(() => {
+    if (!hasSeenTour()) setTourOpen(true);
+  }, []);
   return (
     <div className="page home">
       <div className="home__topbar">
         <ThemeToggle />
+        <button
+          type="button"
+          className="home__tour-btn"
+          onClick={() => setTourOpen(true)}
+          aria-label="둘러보기 다시 보기"
+          title="둘러보기 다시 보기"
+        >
+          ?
+        </button>
         <span className="home__topbar-spacer" />
         <button type="button" className="account-pill" onClick={() => navigate("/account")}>
           <Icon3D src={isLoggedIn ? "key" : "lock"} size={18} />
@@ -101,6 +119,10 @@ export function Home() {
       </div>
 
       <p className="home__footer">© 2026 BohumPen</p>
+
+      <AnimatePresence>
+        {tourOpen && <WelcomeTour onClose={() => setTourOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
