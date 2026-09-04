@@ -6,9 +6,9 @@
 
 평가축:
   - coverage_fit: 선택 사고유형에 직접/조건부로 연결된 보장 근거
-  - condition_clarity: 관련 담보 중 ClauseTerm으로 조건이 구조화된 비율
-  - claim_simplicity: 관련 담보의 필수서류 수(적을수록 우위)
-  - restrictions: 선택 사고유형과 연결된 조건부/면책 범위(적을수록 우위)
+  - condition_clarity: 관련 담보의 ClauseTerm 구조화 근거(완결성이 확인된 경우만 비교)
+  - claim_simplicity: 관련 담보의 필수서류 근거(전수 검증된 경우에만 비교 가능)
+  - restrictions: 선택 사고유형의 조건부/면책 근거(전수 검증된 경우에만 비교 가능)
 
 전체 면책 조항 개수처럼 PDF 분할 방식에 좌우되는 값은 사용하지 않는다. 60~98점
 정규화도 하지 않으며, 화면에는 1~5의 상대 단계와 근거 부족 상태만 노출한다.
@@ -42,10 +42,11 @@ from app.models.kb import (
 
 _L1_CODES = {"INJ", "ILL", "PROP", "LIA", "TRV", "CHG", "EMG", "SPC"}
 _DIMENSION_ORDER = ("coverage_fit", "condition_clarity", "claim_simplicity", "restrictions")
-# 화면에 그대로 나가는 문구다. 네 축 모두 "단계가 높을수록 사용자에게 유리"하게 계산되므로
-# (restrictions는 1-제한비율, claim_simplicity는 필수서류 수의 부호를 뒤집은 값), 라벨도
-# 유리한 방향을 그대로 읽어주는 말로 쓴다 — "제한조건 5단계"처럼 좋은 건지 나쁜 건지
-# 되짚어야 하는 표현을 쓰지 않는다.
+AVAILABLE = "AVAILABLE"
+UNKNOWN = "UNKNOWN"
+NOT_APPLICABLE = "NOT_APPLICABLE"
+# 화면에 그대로 나가는 문구다. 비교 가능한 축은 단계가 높을수록 사용자에게 유리한
+# 방향으로 읽히게 하고, 비교 불가 축은 level 대신 상태 문구를 쓴다.
 _DIMENSION_LABELS = {
     "coverage_fit": "걱정한 사고를 챙겨줘요",
     "condition_clarity": "조건이 숫자로 또렷해요",
@@ -78,17 +79,34 @@ class DimensionMetric:
     value: float | None
     summary: str
     evidence: list[EvidenceRef] = field(default_factory=list)
+    comparison_state: str = AVAILABLE
+    known_count: int = 0
+    total_count: int = 0
     level: int = 0
 
+    @property
+    def available(self) -> bool:
+        return self.comparison_state == AVAILABLE and self.value is not None
+
     def as_dict(self) -> dict:
+        completeness_rate = (
+            round(self.known_count / self.total_count * 100, 1)
+            if self.total_count
+            else None
+        )
         return {
             "code": self.code,
             "label": _DIMENSION_LABELS[self.code],
             "level": self.level,
-            "status": _level_status(self.level),
+            "status": _dimension_status(self),
             "summary": self.summary,
             "evidence_count": len(self.evidence),
             "evidence": [item.as_dict() for item in self.evidence[:12]],
+            "comparison_state": self.comparison_state,
+            "available": self.available,
+            "known_count": self.known_count,
+            "total_count": self.total_count,
+            "completeness_rate": completeness_rate,
         }
 
 
@@ -120,6 +138,14 @@ def _level_status(level: int) -> str:
         4: "우수",
         5: "매우 우수",
     }[level]
+
+
+def _dimension_status(metric: DimensionMetric) -> str:
+    if metric.comparison_state == UNKNOWN:
+        return "근거 부족"
+    if metric.comparison_state == NOT_APPLICABLE:
+        return "비교 제외"
+    return _level_status(metric.level)
 
 
 def _dedupe_evidence(items: list[EvidenceRef]) -> list[EvidenceRef]:
@@ -165,27 +191,38 @@ def _collect_evaluation(db: Session, insurer: Insurer, l1_codes: set[str]) -> In
         if mapping.relevance in {"조건부", "면책"}:
             restriction_evidence.append(evidence)
 
+    mapped_l1_codes = {
+        code
+        for code, values in relevance_by_l1.items()
+        if values & {"직접", "조건부", "면책"}
+    }
+    missing_l1_codes = l1_codes - mapped_l1_codes
     direct_count = sum("직접" in values for values in relevance_by_l1.values())
     conditional_only_count = sum(
         "직접" not in values and "조건부" in values for values in relevance_by_l1.values()
     )
-    unsupported_count = len(l1_codes) - direct_count - conditional_only_count
-    fit_value = (direct_count + conditional_only_count * 0.5) / len(l1_codes) if rows else None
+    exclusion_only_count = sum(
+        "면책" in values and not (values & {"직접", "조건부"})
+        for values in relevance_by_l1.values()
+    )
+    fit_state = UNKNOWN if missing_l1_codes else AVAILABLE
+    fit_value = (
+        (direct_count + conditional_only_count * 0.5) / len(l1_codes)
+        if fit_state == AVAILABLE
+        else None
+    )
     fit_summary = (
         f"선택 사고유형 {len(l1_codes)}개 중 직접 {direct_count}개, "
-        f"조건부 {conditional_only_count}개, 근거 미확인 {unsupported_count}개"
-        if rows
-        else "선택 사고유형과 연결된 약관 근거를 확인하지 못했습니다."
+        f"조건부 {conditional_only_count}개, 명시적 면책 {exclusion_only_count}개, "
+        f"미매핑 {len(missing_l1_codes)}개"
     )
 
     restricted_count = sum(
         bool(values & {"조건부", "면책"}) for values in relevance_by_l1.values()
     )
-    restriction_value = 1 - (restricted_count / len(l1_codes)) if rows else None
     restriction_summary = (
-        f"선택 사고유형 중 조건부·면책 근거가 연결된 유형 {restricted_count}개"
-        if rows
-        else "관련 제한조건을 평가할 약관 매핑이 없습니다."
+        f"조건부·면책 근거 {restricted_count}개 확인. 제한 없음에 대한 전수 검증 "
+        "상태가 없어 보험사 간 비교에서 제외"
     )
 
     term_rows: list[tuple[ClauseTerm, Clause, Coverage]] = []
@@ -198,9 +235,17 @@ def _collect_evaluation(db: Session, insurer: Insurer, l1_codes: set[str]) -> In
             .all()
         )
     term_coverage_ids = {coverage.coverage_id for _, _, coverage in term_rows}
-    clarity_value = (
-        len(term_coverage_ids) / len(supported_coverage_ids) if supported_coverage_ids else None
-    )
+    if not supported_coverage_ids:
+        clarity_state = NOT_APPLICABLE if fit_state == AVAILABLE else UNKNOWN
+        clarity_value = None
+    elif len(term_coverage_ids) == len(supported_coverage_ids):
+        clarity_state = AVAILABLE
+        clarity_value = 1.0
+    else:
+        # ClauseTerm은 양성 annotation만 저장한다. 따라서 누락은 실제 조건 불명확이
+        # 아니라 데이터 미구축일 수 있으며, 부분 구축률을 제품 점수로 사용하지 않는다.
+        clarity_state = UNKNOWN
+        clarity_value = None
     clarity_evidence = _dedupe_evidence([
         EvidenceRef(
             kind="term",
@@ -212,10 +257,8 @@ def _collect_evaluation(db: Session, insurer: Insurer, l1_codes: set[str]) -> In
         for term, clause, coverage in term_rows
     ])
     clarity_summary = (
-        f"관련 담보 {len(supported_coverage_ids)}개 중 {len(term_coverage_ids)}개에 "
-        "지급한도·자기부담금 등 구조화 조건이 있습니다."
-        if supported_coverage_ids
-        else "조건 명확성을 평가할 보장 근거가 없습니다."
+        f"관련 담보 {len(supported_coverage_ids)}개 중 구조화 조건 확인 "
+        f"{len(term_coverage_ids)}개, 미검증 {len(supported_coverage_ids - term_coverage_ids)}개"
     )
 
     doc_rows: list[tuple[CoverageDocMap, Coverage]] = []
@@ -231,15 +274,14 @@ def _collect_evaluation(db: Session, insurer: Insurer, l1_codes: set[str]) -> In
     }
     for doc_map, coverage in doc_rows:
         docs_by_coverage[coverage.coverage_id].append(doc_map)
-    docs_complete = bool(supported_coverage_ids) and all(docs_by_coverage.values())
-    mandatory_counts = [
-        sum(link.is_mandatory for link in links) for links in docs_by_coverage.values()
-    ]
-    average_mandatory = (
-        sum(mandatory_counts) / len(mandatory_counts) if docs_complete else None
+    # CoverageDocMap 역시 양성 annotation만 저장한다. 한 건 이상 있다는 사실은 알 수
+    # 있지만 문서 목록이 완결됐다는 음성/완료 표시는 없으므로 개수를 성능점수로 쓰지 않는다.
+    simplicity_value = None
+    simplicity_state = (
+        UNKNOWN
+        if supported_coverage_ids
+        else (NOT_APPLICABLE if fit_state == AVAILABLE else UNKNOWN)
     )
-    # 상대 단계 산정에는 필수서류 평균의 부호만 뒤집어 사용한다. 절대 점수로 해석하지 않는다.
-    simplicity_value = -average_mandatory if average_mandatory is not None else None
     doc_evidence = _dedupe_evidence([
         EvidenceRef(
             kind="document",
@@ -254,27 +296,38 @@ def _collect_evaluation(db: Session, insurer: Insurer, l1_codes: set[str]) -> In
         for doc_map, coverage in doc_rows
     ])
     simplicity_summary = (
-        f"관련 담보당 필수서류가 평균 {average_mandatory:.1f}종입니다."
-        if average_mandatory is not None
-        else "관련 담보 전체의 필요서류 근거가 갖춰지지 않아 비교에서 보수적으로 처리합니다."
+        f"관련 담보 {len(supported_coverage_ids)}개 중 서류 근거 확인 "
+        f"{sum(bool(links) for links in docs_by_coverage.values())}개. "
+        "전수 검증 상태가 없어 보험사 간 비교에서 제외"
+        if supported_coverage_ids
+        else "청구서류를 평가할 보장 담보가 없어 비교에서 제외"
     )
 
     dimensions = {
         "coverage_fit": DimensionMetric(
             code="coverage_fit", value=fit_value, summary=fit_summary,
             evidence=_dedupe_evidence(fit_evidence),
+            comparison_state=fit_state,
+            known_count=len(mapped_l1_codes), total_count=len(l1_codes),
         ),
         "condition_clarity": DimensionMetric(
             code="condition_clarity", value=clarity_value, summary=clarity_summary,
             evidence=clarity_evidence,
+            comparison_state=clarity_state,
+            known_count=len(term_coverage_ids), total_count=len(supported_coverage_ids),
         ),
         "claim_simplicity": DimensionMetric(
             code="claim_simplicity", value=simplicity_value, summary=simplicity_summary,
             evidence=doc_evidence,
+            comparison_state=simplicity_state,
+            known_count=sum(bool(links) for links in docs_by_coverage.values()),
+            total_count=len(supported_coverage_ids),
         ),
         "restrictions": DimensionMetric(
-            code="restrictions", value=restriction_value, summary=restriction_summary,
+            code="restrictions", value=None, summary=restriction_summary,
             evidence=_dedupe_evidence(restriction_evidence),
+            comparison_state=UNKNOWN,
+            known_count=restricted_count, total_count=len(l1_codes),
         ),
     }
     return InsurerEvaluation(
@@ -287,24 +340,45 @@ def _collect_evaluation(db: Session, insurer: Insurer, l1_codes: set[str]) -> In
 
 
 def _assign_relative_levels(evaluations: list[InsurerEvaluation]) -> None:
-    """각 평가축을 보험사 사이의 상대 단계(1~5)로 변환한다. 근거가 없으면 0이다."""
+    """각 평가축을 보험사 사이의 상대 단계(1~5)로 변환한다."""
     for code in _DIMENSION_ORDER:
         values = sorted({
             evaluation.dimensions[code].value
             for evaluation in evaluations
-            if evaluation.dimensions[code].value is not None
+            if evaluation.dimensions[code].available
         })
         if not values:
             continue
         for evaluation in evaluations:
             metric = evaluation.dimensions[code]
-            if metric.value is None:
+            if not metric.available:
                 metric.level = 0
             elif len(values) == 1:
                 metric.level = 3
             else:
                 position = values.index(metric.value)
                 metric.level = 1 + round(position / (len(values) - 1) * 4)
+
+
+def _exclude_incomplete_comparison_cohorts(
+    evaluations: list[InsurerEvaluation],
+) -> None:
+    """부분 annotation이 보험상품의 상대 우위로 바뀌지 않게 한다.
+
+    ClauseTerm에는 '검토 완료 후 해당 조건 없음'을 표현하는 음성 레코드가 없다.
+    한 보험사라도 UNKNOWN이면 완성돼 보이는 보험사를 더 높게 평가할 근거 역시
+    부족하므로 condition_clarity 비교군 전체를 제외한다.
+    """
+    metrics = [evaluation.dimensions["condition_clarity"] for evaluation in evaluations]
+    if not any(metric.comparison_state == UNKNOWN for metric in metrics):
+        return
+    for metric in metrics:
+        if metric.comparison_state != AVAILABLE:
+            continue
+        metric.value = None
+        metric.level = 0
+        metric.comparison_state = UNKNOWN
+        metric.summary += " (비교군 일부의 근거가 미구축되어 상대 비교 제외)"
 
 
 TIERS = {
@@ -344,8 +418,16 @@ def list_tiers() -> list[dict]:
 
 
 def _comparison_value(evaluation: InsurerEvaluation, weights: dict[str, float]) -> float:
-    # 근거 부족(level=0)은 유리한 것으로 오인하지 않도록 0으로 보수 처리한다.
-    return sum(weights[code] * (evaluation.dimensions[code].level / 5) for code in weights)
+    available_codes = [
+        code for code in weights if evaluation.dimensions[code].available
+    ]
+    weight_sum = sum(weights[code] for code in available_codes)
+    if weight_sum <= 0:
+        return 0.0
+    return sum(
+        weights[code] / weight_sum * (evaluation.dimensions[code].level / 5)
+        for code in available_codes
+    )
 
 
 def rank_insurers(db: Session, tier_code: str, trip_context: dict | None = None) -> list[dict]:
@@ -358,6 +440,7 @@ def rank_insurers(db: Session, tier_code: str, trip_context: dict | None = None)
         _collect_evaluation(db, insurer, l1_codes)
         for insurer in db.query(Insurer).order_by(Insurer.code).all()
     ]
+    _exclude_incomplete_comparison_cohorts(evaluations)
     _assign_relative_levels(evaluations)
     weights = TIERS[tier_code]["weights"]
     evaluations.sort(

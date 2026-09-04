@@ -106,18 +106,36 @@ def test_가입_전_여정이_근거와_함께_끝까지_이어진다(client):
     ranking = client.get("/insurers/ranking", params={
         "tier": "균형형", "coverage_priority": "PROP",
         "destination": "일본", "trip_days": 5, "age": 30, "sex": "M",
+        "plan_tier": 1,
     })
     assert ranking.status_code == 200, ranking.text
     rows = ranking.json()["ranking"]
-    assert len(rows) >= 2, "비교할 보험사가 둘 이상은 나와야 합니다"
+    # Case D: 현재 KB의 7개사 랭킹 API와 새 비교 가능 상태 계약을 함께 고정한다.
+    assert len(rows) == 7
+    assert {item["insurer_code"] for item in rows} == {
+        "DB", "HYUNDAI", "KAKAOPAY", "KB", "MERITZ", "SAMSUNG", "SHINHAN",
+    }
 
     for item in rows:
         assert item["dimensions"], "평가축이 비어 있습니다"
         for dim in item["dimensions"]:
             assert 0 <= dim["level"] <= 5
-            # 근거가 없으면 0단계여야 한다 — 근거 부족을 유리하게 치지 않는다.
-            if dim["level"] == 0:
+            assert dim["comparison_state"] in {"AVAILABLE", "UNKNOWN", "NOT_APPLICABLE"}
+            assert dim["available"] is (dim["comparison_state"] == "AVAILABLE")
+            if dim["comparison_state"] == "UNKNOWN":
+                assert dim["level"] == 0
                 assert dim["status"] == "근거 부족"
+            if dim["comparison_state"] == "NOT_APPLICABLE":
+                assert dim["level"] == 0
+                assert dim["status"] == "비교 제외"
+
+        assert item["axes"], "최종 점수 축이 비어 있습니다"
+        assert sum(axis["weight"] for axis in item["axes"] if axis["available"]) == pytest.approx(1.0)
+        for axis in item["axes"]:
+            assert axis["comparison_state"] in {"AVAILABLE", "UNKNOWN", "NOT_APPLICABLE"}
+            if not axis["available"]:
+                assert axis["weight"] == 0.0
+                assert axis["contribution"] == 0.0
 
         if item["published_premium"] is not None:
             assert item["premium_period_days"] == 1, "공시 기준 기간이 1일이 아닙니다"

@@ -108,6 +108,28 @@ def test_프롬프트에_등급별로_달라지는_금액이_들어간다(monkey
     assert "5,000만원" in prompt and "30,000만원" in prompt and "50,000만원" in prompt
 
 
+def test_unknown_axis_is_not_sent_as_zero_to_gemini(monkeypatch, amounts):
+    calls = []
+    _install_fake(monkeypatch, calls, {"AAA": 60.0, "BBB": 50.0})
+    ranking = _ranking(["AAA", "BBB"])
+    for item in ranking:
+        item["dimensions"].append({
+            "code": "condition_clarity",
+            "label": "절대로 프롬프트에 없어야 하는 축",
+            "level": 0,
+            "status": "근거 부족",
+            "summary": "ClauseTerm 미구축",
+            "available": False,
+            "comparison_state": "UNKNOWN",
+        })
+
+    _call(ranking=ranking)
+
+    prompt = calls[0]["prompt"]
+    assert "절대로 프롬프트에 없어야 하는 축" not in prompt
+    assert "빠진 축을 0점" in prompt
+
+
 def test_순위가_같아도_된다고_알려준다(monkeypatch, amounts):
     """억지로 다르게 만들라고 시키면 모델이 근거 없는 차이를 지어낸다."""
     calls = []

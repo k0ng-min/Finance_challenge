@@ -418,6 +418,11 @@ export interface RankingDimensionOut {
   summary: string;
   evidence_count: number;
   evidence: RankingEvidenceOut[];
+  comparison_state: "AVAILABLE" | "UNKNOWN" | "NOT_APPLICABLE";
+  available: boolean;
+  known_count: number;
+  total_count: number;
+  completeness_rate: number | null;
 }
 
 export interface RankingAxisOut {
@@ -433,6 +438,7 @@ export interface RankingAxisOut {
   /** false면 자료가 없어 이 축을 빼고 나머지로 100%를 다시 맞췄다 */
   available: boolean;
   detail: string;
+  comparison_state: "AVAILABLE" | "UNKNOWN" | "NOT_APPLICABLE";
 }
 
 export interface InsurerRankOut {

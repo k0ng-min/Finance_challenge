@@ -55,6 +55,10 @@ AXIS_LABELS = {
     "activity": "이번 여행 위험에 맞아요",
 }
 
+AVAILABLE = "AVAILABLE"
+UNKNOWN = "UNKNOWN"
+NOT_APPLICABLE = "NOT_APPLICABLE"
+
 # 활동·동행·목적지 같은 선택이 어느 사고유형의 무게를 올리는지. 근거는 상식적인
 # 대응이지 약관이 아니므로, 가중치를 올릴 뿐 "보장된다"고 말하지 않는다.
 ACTIVITY_TO_INCIDENT: dict[str, tuple[str, ...]] = {
@@ -99,6 +103,11 @@ class AxisScore:
     contribution: float = 0.0  # score * weight * 100
     available: bool = True
     detail: str = ""
+    comparison_state: str = AVAILABLE
+
+    def __post_init__(self) -> None:
+        if not self.available and self.comparison_state == AVAILABLE:
+            self.comparison_state = UNKNOWN
 
 
 @dataclass
@@ -139,7 +148,14 @@ def renormalize(weights: dict[str, float], unavailable: set[str]) -> dict[str, f
     total = sum(kept.values())
     if total <= 0:
         return {}
-    return {code: w / total for code, w in kept.items()}
+    normalized = {code: w / total for code, w in kept.items()}
+    # 부동소수점 나눗셈 뒤에도 API에 내려가는 비중 합이 정확히 1.0이 되게 마지막
+    # 축에 미세한 반올림 잔차를 모은다. 축 사이의 실질 비율은 바뀌지 않는다.
+    last_code = next(reversed(normalized))
+    normalized[last_code] = 1.0 - sum(
+        weight for code, weight in normalized.items() if code != last_code
+    )
+    return normalized
 
 
 def incident_weights(
@@ -307,15 +323,24 @@ def price_score(
 
 
 def clause_score(entry: dict) -> AxisScore:
-    """약관 근거 네 축의 단계(1~5)를 평균해 0~1로. insurer_ranking.py가 계산한 값이다."""
+    """비교 가능한 약관 축만 평균한다. UNKNOWN/N/A는 0점이 아니라 제외다."""
     dimensions = entry.get("dimensions") or []
-    levels = [d.get("level") or 0 for d in dimensions]
+    comparable = [
+        dimension
+        for dimension in dimensions
+        if dimension.get("available", (dimension.get("level") or 0) > 0)
+        and dimension.get("comparison_state", AVAILABLE) == AVAILABLE
+    ]
+    levels = [dimension.get("level") or 0 for dimension in comparable]
     if not levels:
         return AxisScore("clause", AXIS_LABELS["clause"], 0.0, available=False,
-                         detail="약관 근거 자료가 없어요")
+                         detail="비교 가능한 약관 근거 축이 없어 총점에서 제외했어요")
     score = sum(levels) / (len(levels) * 5)
     return AxisScore("clause", AXIS_LABELS["clause"], score,
-                     detail=f"약관 근거 {len(levels)}개 축 평균 {sum(levels) / len(levels):.1f}단계")
+                     detail=(
+                         f"비교 가능한 약관 근거 {len(levels)}/{len(dimensions)}개 축 평균 "
+                         f"{sum(levels) / len(levels):.1f}단계"
+                     ))
 
 
 def overlap_score(db: Session, insurer_code: str, plan_tier: int,
@@ -335,8 +360,12 @@ def overlap_score(db: Session, insurer_code: str, plan_tier: int,
         return AxisScore("overlap", AXIS_LABELS["overlap"], 0.5,
                          detail="기존보험이 대부분을 덮고 있어요")
     inner = amount_score(db, insurer_code, plan_tier, gap_weights)
-    return AxisScore("overlap", AXIS_LABELS["overlap"], inner.score, available=inner.available,
-                     detail="기존보험이 안 덮는 담보만 따로 계산했어요")
+    return AxisScore(
+        "overlap", AXIS_LABELS["overlap"], inner.score,
+        available=inner.available,
+        detail="기존보험이 안 덮는 담보만 따로 계산했어요",
+        comparison_state=inner.comparison_state,
+    )
 
 
 def activity_score(entry: dict, trip_context: dict | None) -> AxisScore:
@@ -349,9 +378,14 @@ def activity_score(entry: dict, trip_context: dict | None) -> AxisScore:
     risky = bool(context.get("activities")) or context.get("risk_level") in ("높음", "매우높음", "high")
     dimensions = {d.get("code"): d for d in (entry.get("dimensions") or [])}
     restrictions = dimensions.get("restrictions")
-    if restrictions is None:
+    restriction_available = (
+        restrictions is not None
+        and restrictions.get("available", (restrictions.get("level") or 0) > 0)
+        and restrictions.get("comparison_state", AVAILABLE) == AVAILABLE
+    )
+    if not restriction_available:
         return AxisScore("activity", AXIS_LABELS["activity"], 0.0, available=False,
-                         detail="제한조건 자료가 없어요")
+                         detail="제한조건이 미검증 상태라 총점에서 제외했어요")
     score = (restrictions.get("level") or 0) / 5
     if not risky:
         # 위험 요소를 고르지 않았으면 이 축이 순위를 크게 흔들 이유가 없다.

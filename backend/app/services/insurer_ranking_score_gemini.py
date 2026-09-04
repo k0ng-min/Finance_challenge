@@ -15,7 +15,7 @@ claim_simplicity / restrictions)만 보고 순위를 정한다. 이 축들은 "�
 Gemini에게는 지어낼 여지를 주지 않는다. 넘기는 것은 전부 DB에 실제로 있는 값이다.
   · 사용자가 고른 비교 기준(tier)과 그 기준의 정의
   · 여행 맥락(목적지·기간·위험도·활동·걱정되는 사고유형)
-  · 보험사별 약관 근거 네 축의 단계(1~5)와 그 근거 문장 — insurer_ranking.py가 계산한 값
+  · 보험사별 비교 가능한 약관 근거 축의 단계(1~5)와 근거 문장 — UNKNOWN 축은 제외
   · **그 등급의 실제 보장금액 표**(InsurerComparisonMetric의 해당 plan_name 행)
 받는 것은 보험사별 점수(0~100)와 이유 2~3문장뿐이다. 순서는 우리가 점수로 정렬해서
 만든다 — 모델이 "1위"라고 써 준 걸 그대로 믿지 않는다.
@@ -91,7 +91,10 @@ def _cache_key(
         "ranking": [
             {
                 "code": item["insurer_code"],
-                "dims": [(d.get("code"), d.get("level")) for d in item["dimensions"]],
+                "dims": [
+                    (d.get("code"), d.get("level"), d.get("comparison_state"), d.get("available"))
+                    for d in item["dimensions"]
+                ],
             }
             for item in ranking
         ],
@@ -116,7 +119,7 @@ _PROMPT = """당신은 여행자보험 {insurer_count}개 보험사를 실제 �
 {trip_context}
 
 아래에는 보험사마다 세 종류의 자료가 있습니다.
-1. 약관 근거 네 축의 상대 단계(1~5, 높을수록 사용자에게 유리) — 실제 약관 조항을 집계한 값입니다.
+1. 비교 가능한 약관 근거 축의 상대 단계(1~5, 높을수록 사용자에게 유리)입니다.
 2. **{plan_tier_label} 등급의 실제 보장금액** — 각 보험사 다이렉트 사이트에서 조회한 값입니다.
 3. **등급에 따라 달라지는 항목** — 같은 항목을 실속 → 표준 → 고급 순으로 나열한 값입니다.
    이 사용자가 고른 등급은 **{plan_tier_label}**이므로, 그 자리의 값이 이번 판단의 기준입니다.
@@ -136,6 +139,8 @@ _PROMPT = """당신은 여행자보험 {insurer_count}개 보험사를 실제 �
 2. 보험료(가격)는 자료에 없습니다. 가격을 근거로 들지 마세요.
 3. 아래 나열된 보험사를 하나도 빠짐없이, 각각 정확히 한 번씩 포함하세요.
 4. insurer_code는 대괄호 안에 주어진 코드를 그대로 사용하세요.
+5. UNKNOWN/NOT_APPLICABLE인 약관 축은 아래 목록에서 제외했습니다. 빠진 축을 0점이나
+   좋은 점수로 추정하지 말고, 보험사 간 비교 근거로 사용하지 마세요.
 
 {insurer_blocks}
 """
@@ -263,10 +268,16 @@ def score_ranking(
     blocks = []
     for item in ranking:
         code = item["insurer_code"]
+        available_dimensions = [
+            dimension
+            for dimension in item["dimensions"]
+            if dimension.get("available", (dimension.get("level") or 0) > 0)
+            and dimension.get("comparison_state", "AVAILABLE") == "AVAILABLE"
+        ]
         dims = "\n".join(
             f"  - {d['label']}: 5단계 중 {d['level']}단계 ({d['status']}) — {d['summary']}"
-            for d in item["dimensions"]
-        )
+            for d in available_dimensions
+        ) or "  - (비교 가능한 약관 근거 축 없음)"
         coverage = "\n".join(f"  - {line}" for line in amounts.get(code, [])) or "  - (이 등급의 보장금액 자료 없음)"
         diff = _tier_diff_lines(
             {tier: _as_label_map(by_tier[tier].get(code, [])) for tier in (0, 1, 2)}
