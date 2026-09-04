@@ -18,7 +18,7 @@
 - 보험사 **7개사** — DB, HYUNDAI, KAKAOPAY, KB, MERITZ, SAMSUNG, SHINHAN
 - 약관 조항 **558개**, 담보 **170개**, 조항↔사고유형 매핑 **711건**, 정량조건 **174건**, 담보↔서류 매핑 **633건**
 - 실제 보험료 **2,794행** (7개사), 등급별 담보 가입금액표 **483행** (7개사)
-- 백엔드 테스트 **365건**
+- 백엔드 테스트 **370건**
 - API **66개**(경로 60개)
 
 이 숫자는 `backend/scripts/generate_docs.py`가 DB·코드에서 직접 세어 씁니다. 자세한 내역은 [`docs/data_status.md`](docs/data_status.md).
