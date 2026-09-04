@@ -19,7 +19,7 @@ from app.schemas import (
 )
 from app.services.kb_seed_common import ADMIN_STD_CODES, raw_text_is_grounded
 from app.services.insurer_ranking import TIERS, list_tiers, rank_insurers
-from app.services.insurer_ranking_score_gemini import last_scores, score_ranking
+from app.services.insurer_ranking_explain_gemini import explain_ranking
 from app.services import ranking_score
 from app.models.external import ExternalPolicy
 from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
@@ -690,6 +690,32 @@ def _external_policies(db: Session, user_id: int | None) -> list[ExternalPolicy]
     return db.query(ExternalPolicy).filter(ExternalPolicy.user_id == user_id).all()
 
 
+def _deterministic_reasons(scored: "ranking_score.InsurerScore") -> list[str]:
+    """Gemini 없이도 "왜 이 순서인가"를 말할 수 있는 설명. 축 계산에서 그대로 나온다.
+
+    이 문장들이 기본값이고, Gemini는 그 위에 더 읽기 좋은 문장을 덮어쓸 뿐이다. 모델을
+    끄든 켜든, 실패하든 성공하든 사용자는 언제나 근거가 붙은 설명을 본다 — 그리고 그
+    근거는 총점을 실제로 만든 값 그 자체다.
+
+    기여도가 큰 축부터 두 개까지 말한다. 셋 이상 늘어놓으면 무엇이 결정적이었는지가
+    도리어 흐려진다."""
+    usable = sorted(
+        (a for a in scored.axes if a.available and a.contribution > 0),
+        key=lambda a: -a.contribution,
+    )
+    reasons = [
+        f"{axis.label} (+{axis.contribution:.1f}점) — {axis.detail}"
+        for axis in usable[:2]
+    ]
+    dropped = [a for a in scored.axes if not a.available]
+    if dropped:
+        names = ", ".join(a.label for a in dropped)
+        reasons.append(
+            f"자료가 없는 축({names})은 0점으로 세지 않고 빼서, 나머지 축으로 다시 100%를 맞췄어요."
+        )
+    return reasons or [f"총점 {scored.total:.1f}점 — 쓸 수 있는 축 자료가 없었어요."]
+
+
 @router.get("/ranking", response_model=InsurerRankingOut)
 @limiter.limit("20/minute")
 def get_insurer_ranking(
@@ -750,38 +776,46 @@ def get_insurer_ranking(
             external_policies=external_policies,
         )
 
+        # 순위와 총점은 여기서 끝난다. score_insurers()가 이미 (총점 내림차순, 동점이면
+        # 보험사 코드순)으로 정렬해 돌려주므로 그 순서를 그대로 쓴다.
+        #
+        # 반올림한 점수로 다시 정렬하지 않는 것이 중요하다 — 61.234와 61.236은 반올림하면
+        # 같은 61.23이 되고, 그때 정렬을 다시 하면 원래 앞서 있던 쪽이 뒤로 갈 수 있다.
+        # 순서는 온전한 정밀도로 이미 정해졌고, 반올림은 표시용일 뿐이다.
+        by_code = {entry["insurer_code"]: entry for entry in ranking}
+        merged = []
+        for index, scored in enumerate(weighted, start=1):
+            entry = dict(by_code[scored.insurer_code])
+            entry["rank"] = index
+            entry["total_score"] = round(scored.total, 2)
+            # 축별 점수·비중·기여도를 그대로 내려보낸다. "왜 이 순서인가"가 응답 안에서
+            # 끝까지 되짚어져야 한다 — 총점은 available한 축들의 contribution 합이다.
+            entry["axes"] = [vars(axis) for axis in scored.axes]
+            entry["reasons"] = _deterministic_reasons(scored)
+            entry["comparison_basis"] = (
+                f"{tier} 기준 · {TIER_LABELS[plan_tier]} 등급 · 여행 준비 선택 반영"
+            )
+            merged.append(entry)
+
+        # Gemini는 여기서 처음이자 마지막으로 등장하고, 하는 일은 문장을 다듬는 것뿐이다.
+        # 순위·총점은 위에서 이미 확정됐고 아래 어디에서도 다시 건드리지 않는다.
+        # 실패하면 위에서 축 근거로 만들어 둔 결정적 설명이 그대로 남는다.
         tier_meta = TIERS.get(tier, {})
-        # Gemini는 순서를 정하지 않는다 — 점수와 이유 문장만 받아 쓴다.
-        score_ranking(
+        explanations = explain_ranking(
             db,
             tier_code=tier,
             tier_label=tier_meta.get("label", tier),
             tier_description=tier_meta.get("description", ""),
             plan_tier=plan_tier,
             trip_context=trip_context,
-            ranking=ranking,
+            ranked=merged,
         )
-        gemini = last_scores()
+        if explanations:
+            for entry in merged:
+                said = explanations.get(entry["insurer_code"])
+                if said:
+                    entry["reasons"] = said
 
-        by_code = {entry["insurer_code"]: entry for entry in ranking}
-        merged = []
-        for scored in weighted:
-            entry = dict(by_code[scored.insurer_code])
-            gem = gemini.get(scored.insurer_code)
-            entry["total_score"] = round(
-                ranking_score.blend(weighted=scored.total, gemini=gem["score"] if gem else None), 2
-            )
-            entry["axes"] = [vars(axis) for axis in scored.axes]
-            if gem and gem.get("reasons"):
-                entry["reasons"] = gem["reasons"]
-            entry["comparison_basis"] = (
-                f"{tier} 기준 · {TIER_LABELS[plan_tier]} 등급 · 여행 준비 선택 반영"
-            )
-            merged.append(entry)
-
-        merged.sort(key=lambda e: (-e["total_score"], e["insurer_code"]))
-        for index, entry in enumerate(merged, start=1):
-            entry["rank"] = index
         ranking = merged
 
     # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,

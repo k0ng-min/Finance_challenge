@@ -414,17 +414,13 @@ def activity_score(entry: dict, trip_context: dict | None) -> AxisScore:
     return AxisScore("activity", AXIS_LABELS["activity"], score, detail=detail)
 
 
-# 최종 점수에서 Gemini가 차지하는 몫. 순위는 재현 가능한 수식이 주로 정하고, 모델은
-# 수식이 놓친 맥락(예: 이번 활동이 면책으로 걸려 있음)만 거든다.
-GEMINI_RATIO = 0.2
-
-
-def blend(*, weighted: float, gemini: float | None) -> float:
-    """가중치 점수와 Gemini 점수를 8:2로 섞는다. Gemini가 없으면 가중치 점수 그대로 —
-    순위가 LLM 가용성에 묶이지 않는다."""
-    if gemini is None:
-        return weighted
-    return weighted * (1 - GEMINI_RATIO) + gemini * GEMINI_RATIO
+# 예전에는 여기에 GEMINI_RATIO = 0.2과 blend()가 있었다. 결정적 점수와 Gemini 점수를
+# 8:2로 섞어 최종 총점을 만들었고, 호출부가 그 총점으로 다시 정렬했다 — 즉 모델이 순위를
+# 바꿀 수 있었다. 금융상품 추천에서 그건 감당하기 어려운 성질이다. 같은 자료·같은 입력인데
+# 모델이 바뀌면 순서가 바뀌고, "왜 1위인가"의 마지막 20%를 수식으로 되짚을 수 없다.
+#
+# 이제 총점은 이 파일의 계산만으로 끝난다. 모델은 확정된 순위를 받아 문장만 쓴다
+# (services/insurer_ranking_explain_gemini.py).
 
 
 def score_insurers(

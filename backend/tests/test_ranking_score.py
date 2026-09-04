@@ -130,11 +130,9 @@ def test_총점은_쓰인_축의_기여도_합과_같다(db_session, kb):
     assert abs(총점 - 기여도합) < 1e-6
 
 
-def test_최종_점수는_가중치_8_제미나이_2로_섞인다():
-    """순위는 재현 가능한 수식이 주로 정하고, 모델은 거들기만 한다."""
-    assert ranking_score.blend(weighted=60.0, gemini=100.0) == pytest.approx(68.0)
-
-
-def test_제미나이_점수가_없으면_가중치_점수만_쓴다():
-    """모델이 실패해도 순위는 그대로 나와야 한다 — 순위가 LLM 가용성에 묶이지 않는다."""
-    assert ranking_score.blend(weighted=60.0, gemini=None) == 60.0
+def test_점수를_섞는_수단_자체가_없다():
+    """예전에는 blend()가 결정적 점수와 Gemini 점수를 8:2로 섞어 최종 총점을 만들었고,
+    호출부가 그 총점으로 다시 정렬했다 — 모델이 순위를 바꿀 수 있었다. 그 함수를 없앴다.
+    다시 생기면 순위가 또 LLM에 묶이므로 여기서 못 박아 둔다."""
+    assert not hasattr(ranking_score, "blend"), "점수를 섞는 함수가 되살아났습니다"
+    assert not hasattr(ranking_score, "GEMINI_RATIO")
