@@ -776,10 +776,9 @@ def get_insurer_ranking(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # 규칙 기반 순위는 약관 근거 네 축만 보므로 사용자가 무엇을 골랐든, 등급을 무엇으로
-    # 바꾸든 결과가 같다. 여행 준비에서 고른 것과 등급별 보장금액·보험료를 다섯 축으로
-    # 점수화해 순위를 다시 매기고(ranking_score), 거기에 Gemini 점수를 8:2로 섞는다.
-    # Gemini가 실패해도 가중치 점수만으로 순위가 그대로 나온다.
+    # 1차 약관 근거 순위에 여행 준비 선택과 등급별 보장금액·보험료를 결합해 다섯 축을
+    # 결정적으로 점수화한다. 최종 순위와 총점은 ranking_score에서 확정하고, Gemini는
+    # 그 결과를 설명하는 문장만 다듬는다.
     excluded_note = None
     if plan_tier is not None:
         ranking, dropped = _drop_insurers_without_plan(ranking, plan_tier)
