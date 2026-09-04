@@ -134,3 +134,113 @@ pytest -q backend/tests/test_incident_classifier_fallback.py \
 않는지와, 높은 confidence만 L2로 자동 확정되는지를 검증한다. 낮은 L1 confidence로 잘못
 보류된 루트가 후속 답변을 반영해 다른 L1/L2로 바뀔 수 있는지도 검증한다. 평가 계산에서는
 L1/L2 abstention 분리, 독립 임계값, 80/80 분할과 81개 조합 탐색을 확인한다.
+
+## 청구지원 End-to-End Golden Set
+
+사고분류 단독 평가는 그대로 유지한다. 그 위에
+`data/eval/claim_pipeline_gold.jsonl`의 40개 synthetic 사고를 사용해 다음 연결 전체를
+평가한다.
+
+`사고 자유서술 → L1/L2 → 가입담보 → 약관 → 필수서류 → 직접/조건부/면책 → unsupported`
+
+데이터셋은 L1마다 5건씩이며 easy 24건, hard 8건, ambiguous 8건이다. 사고 문구와 L1/L2는
+기존 `incidents_gold.jsonl`에서 그대로 가져온다. downstream 정답은 보험사·표준담보 코드와
+`coverage_id`를 명시하고, evaluator가 실행 시 `ClauseIncidentMap`과 `CoverageDocMap`을
+조회해 담보·관계·필수서류가 현재 KB와 정확히 같은지 검증한다. 따라서 현재 모델 출력에
+gold label을 맞춰 적는 방식으로 성능을 부풀릴 수 없다.
+
+ambiguous 8건은 `expected_l2=null`, `expected_l2_abstain=true`이며 특정 담보·관계·서류를
+정답으로 강제하지 않는다. 모든 행에 `synthetic=true`가 명시돼 실제 고객 사고처럼 오인되지
+않게 했다.
+
+### 재현 명령
+
+아래 명령은 외부 API를 호출하지 않고 JSONL 구조, 기존 classifier gold와의 동일성, 실제 KB
+mapping만 검증한다.
+
+```bash
+cd backend
+python -m eval.evaluate_claim_pipeline \
+  --validate-only \
+  --output eval/results/claim_pipeline_eval.validation.json
+```
+
+기존 사고분류 평가가 저장한 원시 예측을 재사용하는 기본 E2E 평가는 다음과 같다. 분류 이후
+설명용 Gemini 호출은 끄고 실제 결정적 `generate_claim_findings()`와 체크리스트 mapping을
+평가하므로 반복 실행할 수 있다.
+
+```bash
+cd backend
+python -m eval.evaluate_claim_pipeline \
+  --classifier-predictions eval/results/incident_eval.json \
+  --output eval/results/claim_pipeline_eval.json
+```
+
+새 모델의 실제 예측을 수집하려면 명시적으로 `--live-classifier`를 사용한다. 장시간 실행은
+checkpoint로 재개할 수 있다.
+
+```bash
+cd backend
+python -m eval.evaluate_claim_pipeline \
+  --live-classifier \
+  --request-interval 4.2 \
+  --retry-wait 65 \
+  --checkpoint /tmp/claim-pipeline-predictions.json \
+  --output eval/results/claim_pipeline_eval.live.json
+```
+
+분류 오차를 제거하고 downstream KB 경로만 격리하려면 `--gold-routing`을 쓴다. 이 결과는
+모델 E2E 성능이 아니며 report의 `routing_mode`에도 oracle임을 기록한다.
+
+### 지표 정의
+
+- L1 Macro-F1: abstain을 오답으로 포함한 전체 L1 분류 성능
+- L2 E2E Macro-F1: L1부터 L2까지 모두 통과한 clear 사례 성능
+- Coverage Precision/Recall: 가입담보 중 반환한 표준담보 코드의 micro 지표
+- Mandatory Document Precision/Recall: 반환한 필수 표준서류 코드의 micro 지표
+- Citation Grounding Rate: `quote_clause()`가 만든 인용문이 해당 `Clause.text`의 실제 연속
+  부분 문자열인지 확인한 비율
+- Unsupported Recommendation Rate: 단정적 담보/제한 결과 중 가입담보·분류 route의 실제
+  `ClauseIncidentMap` 근거가 없는 결과의 비율
+- Exact Success: 분류, 담보, 필수서류, 관계, unsupported 상태가 모두 정확히 같은 시나리오 비율
+- Acceptable Success: 허용 L1/L2와 필수 정답 recall, 금지 담보 미포함, grounding 및 unsupported
+  안전조건을 모두 만족한 비율
+
+### 현재 저장된 E2E 결과
+
+`eval/results/claim_pipeline_eval.json`은 기존 `incident_eval.json`의
+`gemini-3.5-flash-lite` 원시예측과 운영 임계값 L1 `0.40`, L2 `0.80`을 재사용한 결과다.
+
+| 지표 | 전체 | easy | hard | ambiguous |
+|---|---:|---:|---:|---:|
+| L1 Macro-F1 | 0.9688 | 1.0000 | 0.8750 | 0.8750 |
+| L2 E2E Macro-F1 | 0.9643 | 1.0000 | 0.8750 | N/A |
+| Coverage Precision / Recall | 0.9677 / 1.0000 | 1.0000 / 1.0000 | 1.0000 / 1.0000 | 0.0000 / 0.0000 |
+| Mandatory Document Precision / Recall | 0.9663 / 1.0000 | 1.0000 / 1.0000 | 1.0000 / 1.0000 | 0.0000 / 0.0000 |
+| Citation Grounding Rate | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| Unsupported Recommendation Rate | 0.0000 | 0.0000 | 0.0000 | 0.0000 |
+| E2E Exact / Acceptable | 0.9250 / 0.9250 | 1.0000 / 1.0000 | 0.8750 / 0.8750 | 0.7500 / 0.7500 |
+
+초기 평가에서 드러난 세 가지 개선점을 코드에 반영했다. L2가 보류되면 L1 루트의 모든 하위
+유형을 담보 후보로 펼치지 않고 후속 질문과 명시적 확인불가 결과를 반환한다. L1부터 보류돼도
+빈 결과 대신 확인불가 finding을 만든다. 또한 `긴급 이송`, `구급차로`처럼 의미가 명확한
+의료이송 표현만 좁은 결정론적 규칙으로 `EMG_MEDICAL_TRANSPORT`에 연결한다. 이 규칙은 저장된
+원시 모델 예측을 재평가할 때도 적용되며 report metadata에 적용 여부를 남긴다.
+
+그 결과 coverage false positive는 13건에서 1건, document false positive는 25건에서 3건으로
+감소했고 easy 24건은 모두 정확히 통과했다. `EMG-005` 의료이송 누락도 해소됐다. 남은 실제
+추천 오탐은 `TRV-018` 한 건이다. "수하물이 아직 없지만 늦는 것인지 영구 분실인지 모른다"는
+문장을 저장된 모델이 지연으로 과확정해 항공기 지연 담보와 필수서류를 반환했다. 이 경계는
+단순 키워드 보정보다 classifier의 ambiguity 학습·confidence calibration으로 개선해야 한다.
+
+`SPC-015`와 `SPC-017`은 각각 hard/ambiguous 분류 정답과 달라 E2E 실패지만, 현재 파이프라인은
+담보·서류를 단정하지 않고 명시적 확인불가를 반환한다. 따라서 두 사례는 사용자 안전 관점의
+unsupported 처리는 성공했고 분류 품질 개선 대상으로 남는다. 다음 우선순위는 (1) 수하물
+지연/분실의 불확실성 표현에 대한 abstention 강화, (2) SPC 기타사고와 미확정 특수사고의 L1
+경계 보강, (3) 별도 검수자가 synthetic gold와 허용정답을 정기 재검토하는 절차 추가다.
+
+회귀 테스트:
+
+```bash
+pytest -q backend/tests/test_claim_pipeline_evaluation.py
+```

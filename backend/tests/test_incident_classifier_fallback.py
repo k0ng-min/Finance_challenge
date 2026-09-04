@@ -27,6 +27,10 @@ TAXONOMY = [
         ("TRV_FLIGHT_DELAY", "항공지연·결항"),
         ("TRV_BAGGAGE_DELAY", "수하물지연"),
     ]),
+    ("EMG", "긴급지원", [
+        ("EMG_MEDICAL_TRANSPORT", "의료이송"),
+        ("EMG_RESCUE", "구조·수색"),
+    ]),
 ]
 
 
@@ -249,20 +253,34 @@ def test_new_type_suggestion_is_not_auto_created_and_keeps_l1_confidence(db_sess
     assert confidence == 0.91
 
 
-def test_L1_루트로_보류된_사고도_그_대분류의_조항을_찾는다(db_session):
-    """조항 매핑(clause_incident_map)은 전부 L2에 달려 있다. L2 분류가 확신이 없어 L1
-    루트에 보류되면 루트 type_id로는 매핑이 하나도 안 걸려서 "관련 약관을 찾지 못했다"가
-    나온다 — KB에 그 대분류 약관이 그대로 있는데도.
-
-    예: "다리를 다쳤어요"가 상해(INJ)까지만 잡히고 세부유형이 안 정해진 경우."""
+def test_L1_루트로_보류되면_하위_L2를_추천하지_않는다(db_session):
+    """세부유형을 모르는 상태에서 하위 L2 전체를 펼치면 서로 반대인 직접/면책 담보까지
+    한꺼번에 추천된다. 루트만 남겨 호출부가 확인불가와 추가 질문으로 안내해야 한다."""
     _seed_taxonomy(db_session)
     root = db_session.query(IncidentType).filter_by(l1_code="INJ", parent_id=None).one()
-    children = db_session.query(IncidentType).filter_by(parent_id=root.type_id).all()
 
     ids = resolve_type_ids(db_session, root.type_id, {})
 
-    assert ids[0] == root.type_id
-    assert {c.type_id for c in children} <= set(ids), "L1 루트만으로는 세부유형 조항을 못 찾는다"
+    assert ids == [root.type_id]
+
+
+def test_명시적_의료이송은_Gemini보다_먼저_EMG로_확정한다(db_session, monkeypatch):
+    _seed_taxonomy(db_session)
+    monkeypatch.setattr(config, "GEMINI_ENABLED", True)
+
+    def should_not_call_model():
+        raise AssertionError("명시적 의료이송 표현에 Gemini를 호출하면 안 됩니다")
+
+    monkeypatch.setattr(classifier, "_get_client", should_not_call_model)
+    text = "부상 후 구급차로 현지 병원에 긴급 이송되었습니다."
+
+    l1_code, l1_confidence, _reason = classifier.classify_l1(text)
+    l2 = classifier.classify_l2(db_session, l1_code, text)
+
+    assert (l1_code, l1_confidence) == ("EMG", 1.0)
+    assert l2.l2_code == "EMG_MEDICAL_TRANSPORT"
+    assert l2.confidence == 1.0
+    assert l2.abstained is False
 
 
 def test_세부유형까지_정해졌으면_형제유형까지_끌어오지_않는다(db_session):
