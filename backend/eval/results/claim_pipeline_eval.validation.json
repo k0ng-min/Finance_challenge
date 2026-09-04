@@ -1,0 +1,30 @@
+{
+  "evaluation_version": "claim-pipeline-eval-v1",
+  "generated_at": "2026-09-04T04:37:46.339534+00:00",
+  "status": "dataset_validated_no_pipeline_run",
+  "dataset_sha256": "ff2e5b2dfac9cd8e86ef99abfbcef0bd79c003309341d71fe810daf4348b7bb3",
+  "dataset": {
+    "sample_count": 40,
+    "synthetic": true,
+    "l1_counts": {
+      "CHG": 5,
+      "EMG": 5,
+      "ILL": 5,
+      "INJ": 5,
+      "LIA": 5,
+      "PROP": 5,
+      "SPC": 5,
+      "TRV": 5
+    },
+    "difficulty_counts": {
+      "ambiguous": 8,
+      "easy": 24,
+      "hard": 8
+    },
+    "expected_unsupported_count": 10,
+    "insured_coverage_reference_count": 85,
+    "grounded_gold_clause_count": 58
+  },
+  "metrics": null,
+  "note": "구조·기존 classifier gold·실제 KB mapping만 검증했으며 성능 수치가 아니다."
+}

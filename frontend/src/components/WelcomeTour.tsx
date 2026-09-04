@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, type MotionProps, type TargetAndTransition } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { INSURER_COUNT } from "../data/insurers";
 
 const LS_TOUR_SEEN = "travel_ai_tour_seen";
 
@@ -377,7 +378,7 @@ const S3_SHOW: Press = { x: 144, y: 217, at: 1.0 };
 const SCENES: Scene[] = [
   {
     stage: "여행 전",
-    caption: "여행 정보만 넣으면 7개사를 비교해요",
+    caption: `여행 정보만 넣으면 ${INSURER_COUNT}개사를 비교해요`,
     render: (playing) => (
       <>
         <motion.div className="tour-panel" {...panelOut(playing, S1_SWAP)}>

@@ -103,7 +103,7 @@ export function Simulate() {
           icon="target"
           eyebrow="SIMULATION"
           title={"이런 일이 나면\n어떻게 될까요?"}
-          subtitle="여행 정보를 등록하면 그 여행에서 실제로 일어날 만한 사고를 보험사별로 미리 돌려봐요."
+          subtitle="여행 정보를 등록하면 그 여행에서 살펴볼 사고 사례를 보험사별 약관에 미리 대조해요."
         />
         <div className="empty-state">
           <Icon3D src="suitcase" size={56} />

@@ -82,23 +82,13 @@ def resolve_type_ids(db: Session, incident_type_id: int | None, merged: dict[str
     분류된 주 유형(incident_type_id) 하나가 기본이고, item_damage_type이 확인됐는데 주
     유형이 PROP 계열이 아니면(=상해+휴대품 혼합 사고) 그 유형도 추가한다.
 
-    주 유형이 L1 루트면(=세부유형이 확신 없어 보류된 상태) 그 아래 세부유형을 전부
-    같이 본다. 조항 매핑은 전부 L2에 달려 있어서, 루트 하나만으로는 걸리는 조항이
-    0건이다 — "다리를 다쳤어요"가 상해까지만 잡혔을 때 KB에 상해 약관이 그대로 있는데도
-    "관련 약관을 찾지 못했다"가 나오던 원인이다. 세부유형이 확정된 경우에는 형제 유형을
-    끌어오지 않는다(상관없는 담보가 청구검토 후보로 섞인다)."""
+    주 유형이 L1 루트면 세부유형을 확정하지 못한 abstain 상태다. 이때 하위 L2를 전부
+    펼치면 도난/분실, 국내/해외치료처럼 결론이 서로 다른 담보까지 한꺼번에 추천된다.
+    따라서 루트만 유지해 매핑 결과를 만들지 않고, 호출부가 확인불가와 추가 질문으로
+    안내한다. 명시적인 item_damage_type처럼 구조화 근거가 있으면 해당 L2만 추가한다."""
     type_ids: list[int] = []
     if incident_type_id is not None:
         type_ids.append(incident_type_id)
-        node = db.get(IncidentType, incident_type_id)
-        if node is not None and node.parent_id is None:
-            children = (
-                db.query(IncidentType)
-                .filter(IncidentType.parent_id == incident_type_id, IncidentType.is_active.is_(True))
-                .order_by(IncidentType.type_id)
-                .all()
-            )
-            type_ids.extend(c.type_id for c in children)
     item_field = merged.get("item_damage_type")
     item_type_id = _item_damage_type_id(db, item_field.value if item_field else None)
     if item_type_id is not None and item_type_id not in type_ids:
@@ -350,21 +340,37 @@ def generate_claim_findings(
             "evidence": [],
         })
 
-    # 유형은 분류됐는데(=사고가 뭔지는 알겠는데) 위에서 아무 finding도 못 만들었다면(예: 등록된
-    # 보험에 아직 해당 유형 관련 담보가 매핑되지 않은 경우) 왜 못 찾았는지 정직하게 안내한다.
-    if type_ids and not findings:
-        type_row = db.get(IncidentType, type_ids[0])
-        type_name = type_row.name if type_row else "이번 사고"
+    # 분류가 보류됐거나, 유형은 정해졌지만 관련 담보 매핑이 없으면 빈 배열로 끝내지 않는다.
+    # 특히 L1 루트는 "그 대분류의 모든 담보"를 추천할 근거가 아니므로 확인불가로 남기고
+    # 후속 질문을 기다린다.
+    if not findings:
+        type_row = db.get(IncidentType, type_ids[0]) if type_ids else None
+        is_l1_abstain = type_row is not None and type_row.parent_id is None
+        if type_row is None:
+            target_ref = "사고유형 미확정"
+            description = (
+                "사고유형을 판단할 근거가 부족해 관련 담보를 아직 정할 수 없습니다. "
+                "추가 질문에 답하거나 보험회사에 직접 확인해 주세요."
+            )
+        elif is_l1_abstain:
+            target_ref = f"{type_row.name} 세부유형 미확정"
+            description = (
+                f"말씀하신 내용은 '{type_row.name}' 범주에 가깝지만 세부유형을 확정할 근거가 "
+                "부족해 특정 담보·조건·면책을 안내하지 않았습니다. 추가 질문에 답해 주세요."
+            )
+        else:
+            target_ref = type_row.name
+            description = (
+                f"말씀하신 내용은 '{type_row.name}'에 가까워 보이지만, 등록하신 보험에서 관련 "
+                "담보를 찾지 못했습니다. 실제 가입 여부를 보험회사에 직접 확인해 주세요."
+            )
         findings.append({
             "finding_type": "보장공백",
             "status": "확인불가",
-            "target_ref": type_name,
+            "target_ref": target_ref,
             "insurer_code": None,
             "insurer_name": None,
-            "description": (
-                f"말씀하신 내용은 '{type_name}'에 가까워 보이지만, 등록하신 보험에서 관련 담보를 "
-                "찾지 못했습니다. 실제로 가입돼 있는지 보험사에 직접 확인해 주세요."
-            ),
+            "description": description,
             "confidence": None,
             "evidence": [],
         })

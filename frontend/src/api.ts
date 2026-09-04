@@ -518,7 +518,7 @@ export interface PremiumComparisonOut {
   items: InsurerPremiumOut[];
   /** 가격을 추적 중인데 이 나이만 가입연령 범위 밖인 보험사(이름) */
   unavailable_insurers: string[];
-  /** 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드). 지금은 6개사 전부
+  /** 나이와 무관하게 가격을 아직 하나도 못 구한 보험사(코드). 현재 비교 대상은 전부
    *  가격이 있어 비어 있지만, 보험사를 새로 추가하면 그 사이 다시 채워진다. */
   no_data_insurer_codes: string[];
 }

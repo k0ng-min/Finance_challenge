@@ -293,6 +293,33 @@ _FALLBACK_L2_KEYWORDS: dict[str, tuple[tuple[str, tuple[str, ...]], ...]] = {
 }
 
 
+_HIGH_PRECISION_ROUTES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    # 치료를 받았다는 사실과 환자를 다른 의료기관으로 '옮긴' 서비스는 다르다. 구급차·
+    # 의료헬기·에어앰뷸런스처럼 이송 수단이 명시된 경우는 오분류 비용보다 규칙의 정밀도가
+    # 충분히 높아 Gemini보다 먼저 EMG/의료이송으로 고정한다.
+    (
+        "EMG", "EMG_MEDICAL_TRANSPORT",
+        ("긴급 이송", "의료 이송", "병원으로 이송", "병원에 이송", "구급차로",
+         "의료 헬기", "의료헬기", "에어앰뷸런스", "에어 앰뷸런스", "환자를 운송"),
+    ),
+)
+
+
+def deterministic_route_override(text: str) -> tuple[str, str, str] | None:
+    """명시적이고 충돌 가능성이 낮은 표현만 L1/L2로 고정한다.
+
+    반환값은 ``(l1_code, l2_code, matched_phrase)``. 해당하지 않으면 None이며 일반 Gemini
+    분류와 confidence abstention 계약을 그대로 따른다. evaluator도 이 함수를 재사용해
+    저장된 원시 모델 예측 위에 현재 운영 안전규칙을 동일하게 적용한다.
+    """
+    lowered = (text or "").lower()
+    for l1_code, l2_code, phrases in _HIGH_PRECISION_ROUTES:
+        matched = next((phrase for phrase in phrases if phrase in lowered), None)
+        if matched:
+            return l1_code, l2_code, matched
+    return None
+
+
 def _fallback_l2(l1_code: str, text: str) -> tuple[str, str] | None:
     """(l2_code, 걸린 단서). 단서가 없으면 None."""
     table = _FALLBACK_L2_KEYWORDS.get(l1_code)
@@ -321,6 +348,10 @@ def classify_l1(free_text: str, *, raise_on_error: bool = False) -> tuple[str, f
     text = (free_text or "").strip()
     if not text:
         return "SPC", 0.0, "분류 근거 없음(자유서술 없음)"
+    override = deterministic_route_override(text)
+    if override is not None:
+        l1_code, _l2_code, phrase = override
+        return l1_code, 1.0, f"명시적 '{phrase}' 표현으로 대분류 확정"
     if not config.GEMINI_ENABLED:
         return _fallback_l1(text) or ("SPC", 0.0, "분류 근거 없음(Gemini 미설정, 짚을 단서도 없음)")
 
@@ -381,6 +412,18 @@ def classify_l2(
             type_id=root.type_id if root else None, l2_code=None, confidence=0.0,
             reason="L2 후보 없음(L1 루트에서 추가 정보 확인)", abstained=True,
         )
+
+    override = deterministic_route_override(free_text)
+    if override is not None and override[0] == l1_code:
+        chosen = next((candidate for candidate in candidates if candidate.l2_code == override[1]), None)
+        if chosen is not None:
+            return L2ClassifyResult(
+                type_id=chosen.type_id,
+                l2_code=chosen.l2_code,
+                confidence=1.0,
+                reason=f"명시적 '{override[2]}' 표현으로 세부유형 확정",
+                abstained=False,
+            )
 
     if not config.GEMINI_ENABLED or not (free_text or "").strip():
         narrowed = _l2_from_keywords(candidates, l1_code, free_text, root)

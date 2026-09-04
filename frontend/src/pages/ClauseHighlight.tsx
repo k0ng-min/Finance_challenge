@@ -307,8 +307,8 @@ export function ClauseHighlight() {
       <PageHero
         icon="highlighter"
         eyebrow="CLAUSE HIGHLIGHT"
-        title={"이 사고와 관련된 부분,\n노란색으로 한눈에"}
-        subtitle="이번 사고와 직접 관련된 실제 약관 원문만 노랗게 표시했어요. 표시가 다 준비되면 관련도가 높은 순서로 정렬해 드려요."
+        title={"이 사고와 관련해 찾은 부분,\n노란색으로 한눈에"}
+        subtitle="이번 사고유형과 연결된 실제 약관 원문을 노랗게 표시했어요. 표시가 다 준비되면 관련도가 높은 순서로 정렬해 드려요."
       />
       <IncidentPicker userId={userId} value={activeIncidentId} onChange={setActiveIncidentId} />
       {tripContext && (
