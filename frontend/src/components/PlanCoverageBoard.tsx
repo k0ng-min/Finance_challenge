@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, type InsurerPlanCoverageOut, type InsurerPlansOut } from "../api";
+import { premiumBasisLabel } from "../utils/premiumProvenance";
 
 /**
  * 보험사 한 곳의 등급(플랜)을 고르고, 그 등급의 담보 보장금액표를 스크롤로 훑어보는 카드.
@@ -71,7 +72,7 @@ export function PlanCoverageBoard({
   const planNames = plans && !plans.price_unavailable
     ? plans.plans.map((p) => p.plan_name)
     : coverage?.plan_names ?? [];
-  const priceByPlan = new Map((plans?.plans ?? []).map((p) => [p.plan_name, p.premium]));
+  const priceByPlan = new Map((plans?.plans ?? []).map((p) => [p.plan_name, p]));
   const rows = (coverage?.rows ?? []).filter((r) => r.plan_name === selectedPlan);
 
   return (
@@ -87,7 +88,13 @@ export function PlanCoverageBoard({
             >
               <strong>{name}</strong>
               {priceByPlan.has(name) && (
-                <span>{priceByPlan.get(name)!.toLocaleString()}원/{plans?.premium_period_days ?? 1}일</span>
+                <span>
+                  {priceByPlan.get(name)!.premium.toLocaleString()}원 · {premiumBasisLabel(
+                    priceByPlan.get(name)!.value_origin,
+                    priceByPlan.get(name)!.premium_period_days,
+                    priceByPlan.get(name)!.source_period_days,
+                  )}
+                </span>
               )}
             </button>
           ))}

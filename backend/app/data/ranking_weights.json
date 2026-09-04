@@ -1,9 +1,14 @@
 {
-  "generated_at": "2026-08-25",
+  "generated_at": "2026-09-04",
   "generated_by": "analysis/ranking_weights.R",
   "source_rows": {
     "coverage": 326,
-    "premium": 2794
+    "premium_total": 2794,
+    "premium_eligible": 2672
+  },
+  "premium_origin_policy": {
+    "included": ["DIRECT_QUOTE", "DERIVED"],
+    "excluded": ["IMPUTED", "UNKNOWN"]
   },
   "priority_multiplier": 3,
   "priced_insurers": ["DB", "HYUNDAI", "KAKAOPAY", "KB", "MERITZ", "SAMSUNG", "SHINHAN"],

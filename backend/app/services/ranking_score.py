@@ -15,7 +15,7 @@
 
   amount   — 사고유형별 보장금액 (등급에 따라 변한다)
   clause   — 약관 근거 네 축 (insurer_ranking.py가 계산한 단계)
-  price    — 사용자의 나이·성별·등급·여행일수로 조회한 실제 보험료
+  price    — 사용자의 나이·성별·등급에 맞는 직접조회/검증된 환산 보험료 지표
   overlap  — 기존보험과 겹치면 감점, 비는 곳을 메우면 가점
   activity — 활동·목적지 위험에 대한 대응
 
@@ -40,7 +40,14 @@ from dataclasses import dataclass, field
 
 from sqlalchemy.orm import Session
 
-from app.models.kb import Insurer, InsurerComparisonMetric, InsurerPremium
+from app.models.kb import (
+    PREMIUM_ORIGIN_DERIVED,
+    PREMIUM_ORIGIN_DIRECT_QUOTE,
+    PREMIUM_ORIGIN_IMPUTED,
+    Insurer,
+    InsurerComparisonMetric,
+    InsurerPremium,
+)
 from app.services.coverage_overlap import diagnose, insurer_coverage_std_ids
 from app.services.insurer_tiers import plan_name_for_tier
 
@@ -280,10 +287,10 @@ def price_score(
     db: Session, insurer_code: str, plan_tier: int, *, age: int | None, sex: str | None,
     trip_days: int,
 ) -> AxisScore:
-    """1일 보험료를 나이대 구간으로 편 점수. 쌀수록 높다.
+    """비교 가능한 보험료 지표를 나이대 구간으로 편 점수. 쌀수록 높다.
 
-    자료가 없는 보험사는 available=False로 두고, 총점 계산에서 이 축의 비중을 빼고
-    나머지로 다시 100%를 맞춘다 — 자료가 없다는 이유로 불리해지지 않게."""
+    DIRECT_QUOTE와 변환 근거가 완전한 DERIVED만 사용한다. IMPUTED/UNKNOWN은
+    available=False로 두고 나머지 축 비중을 다시 100%로 맞춘다."""
     config = load_weights()
     plan_name = plan_name_for_tier(insurer_code, plan_tier)
     insurer = db.query(Insurer).filter(Insurer.code == insurer_code).first()
@@ -304,19 +311,47 @@ def price_score(
         return AxisScore("price", AXIS_LABELS["price"], 0.0, available=False,
                          detail="보험료 자료가 아직 없어요")
 
+    if row.value_origin == PREMIUM_ORIGIN_IMPUTED:
+        return AxisScore(
+            "price", AXIS_LABELS["price"], 0.0, available=False,
+            detail="산술 보간한 추정 보험료라 추천 점수에서 제외했어요",
+        )
+    if row.value_origin == PREMIUM_ORIGIN_DERIVED and not all((
+        row.source_value is not None,
+        row.source_period_days,
+        row.transformation,
+        row.transformation_reason,
+    )):
+        return AxisScore(
+            "price", AXIS_LABELS["price"], 0.0, available=False,
+            detail="환산 근거가 완전하지 않아 추천 점수에서 제외했어요",
+        )
+    if row.value_origin not in {PREMIUM_ORIGIN_DIRECT_QUOTE, PREMIUM_ORIGIN_DERIVED}:
+        return AxisScore(
+            "price", AXIS_LABELS["price"], 0.0, available=False,
+            detail="보험료 출처 성격을 확인할 수 없어 추천 점수에서 제외했어요",
+        )
+
     daily = row.premium / max(row.period_days or 1, 1)
+    if row.value_origin == PREMIUM_ORIGIN_DERIVED:
+        price_detail = f"비교용 1일 환산 보험료 {int(daily):,}원"
+    elif row.period_days == 1:
+        price_detail = f"1일 직접 조회 보험료 {int(row.premium):,}원"
+    else:
+        price_detail = (
+            f"{row.period_days}일 직접 조회값의 비교용 1일 환산지수 {int(daily):,}원"
+        )
     band = str(min((age or 30) // 10 * 10, 70))
     norm = (config.get("premium_norm") or {}).get(band)
     if not norm or float(norm["max"]) <= float(norm["min"]):
         return AxisScore("price", AXIS_LABELS["price"], 0.5,
-                         detail=f"{int(daily * max(trip_days, 1)):,}원 (기준 구간 없음)")
+                         detail=f"{price_detail} (정규화 기준 구간 없음)")
     low, high = float(norm["min"]), float(norm["max"])
     scaled = (daily - low) / (high - low)
     # 쌀수록 좋다 — 뒤집는다.
     score = max(0.0, min(1.0, 1.0 - scaled))
-    total = int(daily * max(trip_days, 1))
-    return AxisScore("price", AXIS_LABELS["price"], score,
-                     detail=f"{max(trip_days, 1)}일 기준 약 {total:,}원")
+    _ = trip_days  # 여행기간 선형 비례 근거가 없어 실제 N일 가격을 만들지 않는다.
+    return AxisScore("price", AXIS_LABELS["price"], score, detail=price_detail)
 
 
 def clause_score(entry: dict) -> AxisScore:

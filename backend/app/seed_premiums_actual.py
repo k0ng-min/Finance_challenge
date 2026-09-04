@@ -1,14 +1,15 @@
-"""보험사 다이렉트 사이트에서 사용자가 직접 조회한 실제 보험료를 적재한다.
+"""보험사 다이렉트 보험료 자료와 값별 provenance를 적재한다.
 
 2026-08-19 이전에는 보험다모아 비교공시(crawl_premiums.py → seed_premiums.py)를 썼다.
 그건 "표준조건" 한 값이라 보험사가 실제로 파는 여러 등급(플랜)의 가격 차이를 보여주지
 못했다. 이 스크립트는 그걸 완전히 대체한다 — 사용자가 각 사 다이렉트 계산기에서
-나이·성별·등급별로 직접 조회한 실제 값(backend/data/source_files/insurer_premiums_*.xlsx)을
-그대로 적재한다.
+나이·성별·등급별 자료(backend/data/source_files/insurer_premiums_*.xlsx)를 적재한다.
+대부분은 직접조회값이지만 카카오는 3일 값을 1일로 환산했고, 메리츠 추천플랜은 양쪽
+직접조회 플랜의 산술평균이다. 이 차이를 value_origin과 변환 메타데이터로 보존한다.
 
 시트 구조가 보험사마다 다르다(카카오는 나이·성별·등급이 한 행씩인 세로형, 나머지는
 등급 3개가 열로 나란한 가로형) — _rows_from_sheet()가 그 차이를 흡수해서 전부
-(나이, 성별, 등급, 보험료) 튜플로 통일한다.
+ParsedPremium으로 통일한다.
 
 아직 실제 가격을 조회하지 못한 보험사는 시트 자체가 없다. 그 보험사는 이 스크립트를
 몇 번을 돌려도 그냥 조용히 건너뛴다 — 나중에 같은 형식의 시트를 엑셀에 추가하고
@@ -21,28 +22,27 @@ Run from ``backend``::
 from __future__ import annotations
 
 import sys
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 
 import openpyxl
-from sqlalchemy import text
 
-from app.database import Base, SessionLocal, engine
+from app.database import SessionLocal, engine
 from app import models  # noqa: F401  (모델 등록)
-from app.models.kb import Insurer, InsurerPremium
+from app import schema_migrations
+from app.models.kb import (
+    PREMIUM_ORIGIN_DERIVED,
+    PREMIUM_ORIGIN_DIRECT_QUOTE,
+    PREMIUM_ORIGIN_IMPUTED,
+    Insurer,
+    InsurerPremium,
+)
 
 
 def _ensure_new_schema() -> None:
-    """예전 스키마의 insurer_premium은 (insurer_id, sex, age)에 UNIQUE가 걸려 있어
-    등급별로 여러 행을 못 넣는다. SQLite는 ALTER로 UNIQUE 제약을 못 바꾸므로,
-    plan_name이 없는 옛 테이블이면 통째로 지우고 새 모델 정의로 다시 만든다 —
-    사용자가 "예전 값 싹 다 지우고 바꿔달라"고 요청한 부분이라 데이터 손실 우려가 없다."""
-    with engine.connect() as conn:
-        existing = {row[1] for row in conn.execute(text("PRAGMA table_info(insurer_premium)"))}
-        if existing and "plan_name" not in existing:
-            conn.execute(text("DROP TABLE insurer_premium"))
-        conn.commit()
-    Base.metadata.create_all(bind=engine)
+    """앱 기동과 같은 멱등 migration을 적용한다."""
+    schema_migrations.apply(engine)
 
 _SOURCE_DIR = Path(__file__).resolve().parents[1] / "data" / "source_files"
 DEFAULT_PATH = _SOURCE_DIR / "insurer_premiums_2026-08.xlsx"
@@ -109,6 +109,20 @@ _COLLECTED_AT_BY_CODE: dict[str, date] = {
 }
 
 
+@dataclass(frozen=True)
+class ParsedPremium:
+    age: int
+    sex: str
+    plan_name: str
+    premium: int
+    value_origin: str
+    source_value: int | None
+    source_period_days: int | None
+    transformation: str | None
+    transformation_reason: str | None
+    source_reference: str
+
+
 def _find_header_row(rows: list[tuple]) -> int:
     """'성별' 열이 있는 행을 헤더로 본다 — 시트마다 그 위에 제목/주의문구 행 수가 다르다."""
     for i, row in enumerate(rows):
@@ -117,27 +131,39 @@ def _find_header_row(rows: list[tuple]) -> int:
     raise ValueError("헤더 행('성별' 열)을 찾지 못했습니다.")
 
 
-def _rows_from_sheet(sheet_name: str, rows: list[tuple], vertical: bool) -> list[tuple[int, str, str, int]]:
-    """시트 데이터를 (나이, 성별(M/F), 등급명, 보험료) 튜플 목록으로 통일한다."""
+def _rows_from_sheet(
+    sheet_name: str,
+    rows: list[tuple],
+    vertical: bool,
+    source_filename: str,
+) -> list[ParsedPremium]:
+    """시트 값과 원본 셀을 provenance가 포함된 행으로 통일한다."""
     header_idx = _find_header_row(rows)
     header = rows[header_idx]
     data_rows = rows[header_idx + 1:]
-    out: list[tuple[int, str, str, int]] = []
+    out: list[ParsedPremium] = []
 
     if vertical:
         # 카카오: 나이, 성별, 가입플랜, 3일보험료, 1일환산보험료 — 한 행에 등급 하나.
-        for row in data_rows:
+        for excel_row, row in enumerate(data_rows, start=header_idx + 2):
             if not row or not isinstance(row[0], (int, float)) or row[1] not in _SEX_MAP:
                 continue
-            age, sex_raw, plan_name, _three_day, one_day = row[0], row[1], row[2], row[3], row[4]
-            if one_day is None:
+            age, sex_raw, plan_name, three_day, one_day = row[0], row[1], row[2], row[3], row[4]
+            if three_day is None or one_day is None:
                 continue
-            out.append((int(age), _SEX_MAP[sex_raw], plan_name, int(one_day)))
+            out.append(ParsedPremium(
+                age=int(age), sex=_SEX_MAP[sex_raw], plan_name=str(plan_name),
+                premium=int(one_day), value_origin=PREMIUM_ORIGIN_DERIVED,
+                source_value=int(three_day), source_period_days=3,
+                transformation="ROUND(source_value / source_period_days, 0)",
+                transformation_reason="3일 직접 조회값을 1일 비교용 값으로 환산",
+                source_reference=f"{source_filename}#{sheet_name}!D{excel_row}:E{excel_row}",
+            ))
         return out
 
     # 현대해상/kb/삼성: 나이, 성별, 등급1, 등급2, 등급3[, 비고] — 등급이 열로 나란함.
     plan_names = [str(h).split("(")[0] for h in header[2:] if h and str(h) != "비고"]
-    for row in data_rows:
+    for excel_row, row in enumerate(data_rows, start=header_idx + 2):
         if not row or not isinstance(row[0], (int, float)) or row[1] not in _SEX_MAP:
             continue
         age, sex_raw = row[0], row[1]
@@ -145,7 +171,30 @@ def _rows_from_sheet(sheet_name: str, rows: list[tuple], vertical: bool) -> list
             premium = row[2 + col_offset]
             if premium is None:
                 continue  # 가입연령 범위 밖 등 — 이 나이·등급은 조회 자체가 안 됨
-            out.append((int(age), _SEX_MAP[sex_raw], plan_name, int(premium)))
+            column_number = 3 + col_offset
+            column_letter = openpyxl.utils.get_column_letter(column_number)
+            is_meritz_interpolation = sheet_name == "메리츠" and plan_name == "표준형"
+            if is_meritz_interpolation:
+                origin = PREMIUM_ORIGIN_IMPUTED
+                source_value = None
+                transformation = "ROUND((실속플랜 + 보장이큰플랜) / 2, 0)"
+                reason = "두 직접 조회 플랜 사이의 산술평균으로 만든 중간값"
+                reference = (
+                    f"{source_filename}#{sheet_name}!C{excel_row},E{excel_row}->D{excel_row}"
+                )
+            else:
+                origin = PREMIUM_ORIGIN_DIRECT_QUOTE
+                source_value = int(premium)
+                transformation = None
+                reason = None
+                reference = f"{source_filename}#{sheet_name}!{column_letter}{excel_row}"
+            out.append(ParsedPremium(
+                age=int(age), sex=_SEX_MAP[sex_raw], plan_name=plan_name,
+                premium=int(premium), value_origin=origin,
+                source_value=source_value, source_period_days=1,
+                transformation=transformation, transformation_reason=reason,
+                source_reference=reference,
+            ))
     return out
 
 
@@ -158,9 +207,9 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
     # read_only로 연다 — 엑셀에서 다시 저장된 파일은 서식 정의가 어긋나 있을 때가
     # 있는데(실제로 메리츠 시트가 추가된 판본이 그랬다), 일반 모드는 그 서식을 읽다가
     # 통째로 실패한다. 값만 읽으면 되므로 서식을 건너뛴다.
-    workbooks = [openpyxl.load_workbook(path, data_only=True, read_only=True)]
+    workbooks = [(path, openpyxl.load_workbook(path, data_only=True, read_only=True))]
     workbooks += [
-        openpyxl.load_workbook(extra, data_only=True, read_only=True)
+        (extra, openpyxl.load_workbook(extra, data_only=True, read_only=True))
         for extra in EXTRA_PATHS if extra.exists()
     ]
     db = SessionLocal()
@@ -169,9 +218,10 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
         counts: dict[str, int] = {}
 
         for sheet_name, (insurer_code, vertical, standard_plan) in _SHEET_CONFIG.items():
-            wb = next((w for w in workbooks if sheet_name in w.sheetnames), None)
-            if wb is None:
+            workbook = next(((p, w) for p, w in workbooks if sheet_name in w.sheetnames), None)
+            if workbook is None:
                 continue
+            workbook_path, wb = workbook
             insurer_id = code_to_id.get(insurer_code)
             if insurer_id is None:
                 continue
@@ -182,16 +232,25 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
             db.query(InsurerPremium).filter(InsurerPremium.insurer_id == insurer_id).delete()
 
             rows = list(wb[sheet_name].iter_rows(values_only=True))
-            parsed = _rows_from_sheet(sheet_name, rows, vertical)
+            parsed = _rows_from_sheet(sheet_name, rows, vertical, workbook_path.name)
             aliases = _PLAN_NAME_ALIASES.get(insurer_code, {})
-            parsed = [(age, sex, aliases.get(plan_name, plan_name), premium) for age, sex, plan_name, premium in parsed]
+            parsed = [
+                replace(row, plan_name=aliases.get(row.plan_name, row.plan_name))
+                for row in parsed
+            ]
             collected_at = _COLLECTED_AT_BY_CODE.get(insurer_code, _COLLECTED_AT)
-            for age, sex, plan_name, premium in parsed:
+            for row in parsed:
                 db.add(InsurerPremium(
-                    insurer_id=insurer_id, sex=sex, age=age, plan_name=plan_name,
-                    is_standard_tier=(plan_name == standard_plan),
-                    premium=premium, period_days=1,
-                    product_name=plan_name,
+                    insurer_id=insurer_id, sex=row.sex, age=row.age, plan_name=row.plan_name,
+                    is_standard_tier=(row.plan_name == standard_plan),
+                    premium=row.premium, period_days=1,
+                    value_origin=row.value_origin,
+                    source_value=row.source_value,
+                    source_period_days=row.source_period_days,
+                    transformation=row.transformation,
+                    transformation_reason=row.transformation_reason,
+                    source_reference=row.source_reference,
+                    product_name=row.plan_name,
                     age_range=None,
                     basis=_BASIS[insurer_code], source=_SOURCE, source_url=None,
                     collected_at=collected_at,
@@ -208,6 +267,8 @@ def run(path: Path = DEFAULT_PATH) -> dict[str, int]:
         return counts
     finally:
         db.close()
+        for _path, workbook in workbooks:
+            workbook.close()
 
 
 if __name__ == "__main__":

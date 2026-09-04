@@ -86,7 +86,10 @@ def export_coverage_amounts(conn: sqlite3.Connection) -> int:
 def export_premiums(conn: sqlite3.Connection) -> int:
     rows = conn.execute(
         """
-        SELECT i.code, p.plan_name, p.sex, p.age, p.premium, p.period_days
+        SELECT i.code, p.plan_name, p.sex, p.age, p.premium, p.period_days,
+               p.value_origin, p.source_value, p.source_period_days,
+               p.transformation, p.transformation_reason, p.source_reference,
+               p.collected_at
         FROM insurer_premium p
         JOIN insurer i ON i.insurer_id = p.insurer_id
         ORDER BY i.code, p.plan_name, p.sex, p.age
@@ -97,12 +100,24 @@ def export_premiums(conn: sqlite3.Connection) -> int:
     written = 0
     with out.open("w", encoding="utf-8", newline="") as fh:
         writer = csv.writer(fh)
-        writer.writerow(["insurer_code", "plan_name", "plan_tier", "sex", "age", "premium", "period_days"])
-        for code, plan_name, sex, age, premium, period_days in rows:
+        writer.writerow([
+            "insurer_code", "plan_name", "plan_tier", "sex", "age", "premium",
+            "period_days", "value_origin", "source_value", "source_period_days",
+            "transformation", "transformation_reason", "source_reference", "collected_at",
+        ])
+        for (
+            code, plan_name, sex, age, premium, period_days, value_origin,
+            source_value, source_period_days, transformation, transformation_reason,
+            source_reference, collected_at,
+        ) in rows:
             tier = _tier_of(code, plan_name)
             if tier is None:
                 continue
-            writer.writerow([code, plan_name, tier, sex, age, premium, period_days])
+            writer.writerow([
+                code, plan_name, tier, sex, age, premium, period_days, value_origin,
+                source_value, source_period_days, transformation, transformation_reason,
+                source_reference, collected_at,
+            ])
             written += 1
     return written
 

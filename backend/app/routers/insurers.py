@@ -27,21 +27,20 @@ from app.services.insurer_tiers import TIER_LABELS, plan_name_for_tier
 router = APIRouter(prefix="/insurers", tags=["insurers"])
 
 _RELEVANCE_ORDER = {"직접": 0, "조건부": 1, "면책": 2}
-# 보험다모아에서 수집한 원문 공시값의 보험기간(일) — DB/premiums.json에는 수집한
-# 그대로 보관한다.
-COLLECTED_PREMIUM_PERIOD_DAYS = 7
-# 화면에 표기하는 기준 일수.
-DISPLAY_PREMIUM_PERIOD_DAYS = 1
-
-
 def _display_basis(basis: str | None) -> str:
-    """기준 문구의 보험기간 표기를 화면 표기 일수(1일)에 맞춘다."""
-    if not basis:
-        return ""
-    return basis.replace(
-        f"보험기간 {COLLECTED_PREMIUM_PERIOD_DAYS}일",
-        f"보험기간 {DISPLAY_PREMIUM_PERIOD_DAYS}일",
-    )
+    """원본 조회 전제를 기간 변환 없이 그대로 표시한다."""
+    return basis or ""
+
+
+def _premium_provenance(row: InsurerPremium) -> dict:
+    return {
+        "value_origin": row.value_origin or "UNKNOWN",
+        "source_value": row.source_value,
+        "source_period_days": row.source_period_days,
+        "transformation": row.transformation,
+        "transformation_reason": row.transformation_reason,
+        "source_reference": row.source_reference,
+    }
 
 
 def _latest_policy_version(db: Session, insurer_code: str) -> tuple[Insurer, PolicyVersion | None]:
@@ -74,10 +73,10 @@ def get_premium_comparison(
     plan_tier: int | None = None,  # 0=실속, 1=표준(기본), 2=고급 — insurer_tiers.TIER_LABELS
     db: Session = Depends(get_db),
 ):
-    """해당 나이·성별의 1일 기준 실제 보험료를 보험사별로 돌려준다.
+    """해당 나이·성별의 보험료와 값의 생성 경로를 보험사별로 돌려준다.
 
     2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
-    사용자가 직접 조회한 실제 등급별 가격을 쓴다. plan_tier를 안 주면 보험사마다 표준
+    직접조회값과 출처가 명시된 환산·추정값을 쓴다. plan_tier를 안 주면 보험사마다 표준
     등급(is_standard_tier) 하나만 대표로 내려준다 — 화면의 "실속/표준/고급" 전체
     선택기가 이 파라미터로 한 번에 모든 보험사 가격을 바꾼다.
 
@@ -156,14 +155,16 @@ def get_premium_comparison(
         age=age, sex=sex,
         basis=_display_basis(first.basis), source=first.source, source_url=first.source_url,
         collected_at=max(collected_dates) if collected_dates else None,
-        premium_period_days=DISPLAY_PREMIUM_PERIOD_DAYS,
+        premium_period_days=first.period_days,
         no_data_insurer_codes=no_data,
         items=[
             InsurerPremiumOut(
                 insurer_code=r.insurer.code, insurer_name=r.insurer.name,
                 product_name=r.product_name, published_premium=r.premium,
+                premium_period_days=r.period_days,
                 age_range=r.age_range,
-                basis=_display_basis(r.basis), collected_at=r.collected_at,
+                basis=_display_basis(r.basis), source=r.source, source_url=r.source_url,
+                collected_at=r.collected_at, **_premium_provenance(r),
             )
             for r in rows
         ],
@@ -197,10 +198,16 @@ def get_insurer_premium_curve(insurer_code: str, sex: str, db: Session = Depends
     return InsurerPremiumCurveOut(
         insurer_code=insurer.code, insurer_name=insurer.name,
         product_name=rows[0].product_name, sex=sex,
-        premium_period_days=DISPLAY_PREMIUM_PERIOD_DAYS,
+        premium_period_days=rows[0].period_days,
         basis=_display_basis(rows[0].basis), source=rows[0].source, source_url=rows[0].source_url,
         collected_at=rows[0].collected_at,
-        points=[PremiumPointOut(age=r.age, published_premium=r.premium) for r in rows],
+        points=[
+            PremiumPointOut(
+                age=r.age, published_premium=r.premium,
+                premium_period_days=r.period_days, **_premium_provenance(r),
+            )
+            for r in rows
+        ],
     )
 
 
@@ -251,9 +258,15 @@ def get_insurer_plans(
 
     return InsurerPlansOut(
         insurer_code=insurer.code, insurer_name=insurer.name,
-        premium_period_days=DISPLAY_PREMIUM_PERIOD_DAYS,
+        premium_period_days=rows[0].period_days,
         plans=[
-            InsurerPlanOut(plan_name=r.plan_name, premium=r.premium, is_standard_tier=r.is_standard_tier)
+            InsurerPlanOut(
+                plan_name=r.plan_name, premium=r.premium,
+                premium_period_days=r.period_days,
+                is_standard_tier=r.is_standard_tier,
+                collected_at=r.collected_at,
+                **_premium_provenance(r),
+            )
             for r in rows
         ],
     )
@@ -364,10 +377,10 @@ def _attach_published_premiums(
     sex: str | None,
     tier_rank: int | None = None,
 ) -> None:
-    """랭킹에 공시 원문 값과 근거 메타데이터만 붙인다.
+    """랭킹에 저장 보험료와 생성 경로를 붙인다.
 
-    trip_days는 의도적으로 받지 않는다. 공시값을 일할 계산할 근거가 없고, 보험료는
-    랭킹 점수에도 섞지 않는다.
+    trip_days는 의도적으로 받지 않는다. 저장값을 일할 계산할 근거가 없기 때문이다.
+    추천 가격축 사용 여부는 ranking_score.price_score가 value_origin으로 결정한다.
 
     tier_rank(0=실속, 1=표준, 2=고급)를 주면 보험사마다 그 등급의 가격을 붙인다 —
     화면의 "기준 다시 선택" 옆 등급 선택기가 이걸 쓴다. 안 주면(None) 예전처럼
@@ -425,26 +438,38 @@ def _attach_published_premiums(
         if row:
             item["published_premium"] = row.premium
             item["plan_name"] = row.plan_name
-            item["premium_period_days"] = DISPLAY_PREMIUM_PERIOD_DAYS
+            item["premium_period_days"] = row.period_days
             item["premium_basis"] = _display_basis(row.basis)
             item["premium_source"] = row.source
             item["premium_source_url"] = row.source_url
             item["premium_collected_at"] = row.collected_at
+            item["premium_value_origin"] = row.value_origin or "UNKNOWN"
+            item["premium_source_value"] = row.source_value
+            item["premium_source_period_days"] = row.source_period_days
+            item["premium_transformation"] = row.transformation
+            item["premium_transformation_reason"] = row.transformation_reason
+            item["premium_source_reference"] = row.source_reference
             item["premium_note"] = None
         else:
             item["published_premium"] = None
             # 가격은 없어도 등급 이름은 안다(InsurerPlanCoverage에 담보한도표가 있다) —
             # 상세 화면에 들어갔을 때 목록에서 고른 등급 그대로 이어지게 채워 둔다.
             item["plan_name"] = plan_name_for_tier(item["insurer_code"], tier_rank) if tier_rank is not None else None
-            item["premium_period_days"] = DISPLAY_PREMIUM_PERIOD_DAYS
+            item["premium_period_days"] = None
             item["premium_basis"] = None
             item["premium_source"] = None
             item["premium_source_url"] = None
             item["premium_collected_at"] = None
+            item["premium_value_origin"] = None
+            item["premium_source_value"] = None
+            item["premium_source_period_days"] = None
+            item["premium_transformation"] = None
+            item["premium_transformation_reason"] = None
+            item["premium_source_reference"] = None
             item["premium_note"] = (
                 "이 나이·성별은 가입연령 범위 밖이에요"
                 if item["insurer_code"] in tracked_codes
-                else "아직 실제 보험료를 확보하지 못했어요"
+                else "아직 보험료 근거를 확보하지 못했어요"
             )
 
 
@@ -818,8 +843,8 @@ def get_insurer_ranking(
 
         ranking = merged
 
-    # 나이·성별을 함께 받았으면 순위 카드에 공시 원문 값만 붙인다. trip_days로 환산하지 않으며,
-    # 보험료는 외부 비교공시 값이므로 순위 산정에도 섞지 않는다.
+    # 나이·성별을 함께 받았으면 순위 카드에 보험료 provenance를 붙인다. trip_days로
+    # 환산하지 않으며, 가격축은 DIRECT_QUOTE/검증된 DERIVED만 사용한다.
     _attach_published_premiums(db, ranking, age, sex, plan_tier)
     _attach_plan_coverage_summary(db, ranking)
 

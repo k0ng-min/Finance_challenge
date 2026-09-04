@@ -297,6 +297,63 @@ def audit_kb(database: Path | str = DEFAULT_DATABASE, manifest_path: Path | str 
         ranking_excluded = sum(count for value, count in relevance_counts.items() if value not in RANKING_RELEVANCE)
         checks.append(_check("incident_map_relevance", unknown_relevance, ranking_excluded, relevance_counts))
 
+        premium_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(insurer_premium)")
+        }
+        required_premium_columns = {
+            "value_origin", "source_value", "source_period_days", "transformation",
+            "transformation_reason", "source_reference", "collected_at",
+        }
+        if required_premium_columns <= premium_columns:
+            premium_errors = {
+                "invalid_origin": _scalar(connection, """
+                    SELECT COUNT(*) FROM insurer_premium
+                     WHERE value_origin NOT IN ('DIRECT_QUOTE', 'DERIVED', 'IMPUTED', 'UNKNOWN')
+                """),
+                "direct_missing_source": _scalar(connection, """
+                    SELECT COUNT(*) FROM insurer_premium
+                     WHERE value_origin='DIRECT_QUOTE'
+                       AND (source_value IS NULL OR source_period_days IS NULL OR source_reference IS NULL)
+                """),
+                "derived_missing_transformation": _scalar(connection, """
+                    SELECT COUNT(*) FROM insurer_premium
+                     WHERE value_origin='DERIVED'
+                       AND (source_value IS NULL OR source_period_days IS NULL
+                            OR transformation IS NULL OR transformation_reason IS NULL
+                            OR source_reference IS NULL)
+                """),
+                "imputed_missing_reason": _scalar(connection, """
+                    SELECT COUNT(*) FROM insurer_premium
+                     WHERE value_origin='IMPUTED'
+                       AND (transformation IS NULL OR transformation_reason IS NULL
+                            OR source_reference IS NULL)
+                """),
+                "missing_collected_at": _scalar(connection, """
+                    SELECT COUNT(*) FROM insurer_premium WHERE collected_at IS NULL
+                """),
+            }
+            unknown_premiums = _scalar(
+                connection, "SELECT COUNT(*) FROM insurer_premium WHERE value_origin='UNKNOWN'"
+            )
+            origin_counts = {
+                row["value_origin"]: row["count"]
+                for row in connection.execute(
+                    "SELECT value_origin, COUNT(*) AS count FROM insurer_premium GROUP BY value_origin"
+                )
+            }
+            checks.append(_check(
+                "premium_provenance",
+                sum(premium_errors.values()),
+                unknown_premiums,
+                {"errors": premium_errors, "origin_counts": origin_counts},
+            ))
+        else:
+            checks.append(_check(
+                "premium_provenance",
+                error_count=len(required_premium_columns - premium_columns),
+                details={"missing_columns": sorted(required_premium_columns - premium_columns)},
+            ))
+
         term_rows = connection.execute("SELECT t.term_id, t.raw_text, cl.text FROM clause_term t JOIN clause cl ON cl.clause_id=t.clause_id").fetchall()
         ungrounded_terms = [row["term_id"] for row in term_rows if _normalized(row["raw_text"]) not in _normalized(row["text"])]
         anchor_rows = connection.execute("SELECT r.rule_id, r.anchor_phrase, cl.text FROM overlap_rule r JOIN clause cl ON cl.clause_id=r.clause_id WHERE r.anchor_phrase IS NOT NULL AND trim(r.anchor_phrase)<>''").fetchall()
