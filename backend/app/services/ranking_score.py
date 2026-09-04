@@ -167,14 +167,54 @@ def renormalize(weights: dict[str, float], unavailable: set[str]) -> dict[str, f
     return normalized
 
 
+@dataclass(frozen=True)
+class Heuristics:
+    """개인화에 쓰는 정책 계수.
+
+    이 값들은 약관에서 뽑아낸 것이 아니다. "스키를 타면 상해 무게를 얼마나 올릴까"에
+    정답이 있는 게 아니라, 우리가 정한 것이다. 그래서 코드 여기저기 숫자로 흩어 두지
+    않고 한 자리에 모아 이름을 붙였다 — 정책이라는 사실이 드러나야 하고, 값을 바꿔
+    가며 결과가 얼마나 흔들리는지 재 볼 수 있어야 한다
+    (analysis/ranking_sensitivity.py가 이 dataclass를 그대로 흔든다).
+
+    기본값은 예전에 함수 안에 박혀 있던 숫자 그대로다 — 이 묶음을 만든 것으로 서비스
+    동작이 달라지지는 않는다.
+    """
+
+    #: 사용자가 직접 고른 사고유형의 무게에 곱하는 값. None이면 ranking_weights.json.
+    priority_multiplier: float | None = None
+    #: 위험한 활동 하나가 관련 사고유형에 더하는 무게.
+    activity_bump: float = 0.5
+    #: 동행 유형이 관련 사고유형에 더하는 무게.
+    companion_bump: float = 0.4
+    #: 렌터카를 몬다고 답했을 때 배상책임에 더하는 무게.
+    rental_car_bump: float = 0.6
+    #: 여행경보가 걸린 목적지에서 긴급지원·질병에 더하는 무게.
+    risk_emergency_bump: float = 0.6
+    risk_illness_bump: float = 0.4
+    #: 긴 여행에서 질병·일정변경에 더하는 무게, 그리고 "길다"의 기준(일).
+    long_trip_bump: float = 0.3
+    long_trip_days: int = 8
+    #: 고령에서 질병·긴급지원에 더하는 무게, 그리고 "고령"의 기준(세).
+    senior_illness_bump: float = 0.5
+    senior_emergency_bump: float = 0.3
+    senior_age: int = 60
+
+
+DEFAULT_HEURISTICS = Heuristics()
+
+
 def incident_weights(
     trip_context: dict | None,
     *,
     age: int | None = None,
+    heuristics: Heuristics = DEFAULT_HEURISTICS,
 ) -> dict[str, float]:
     """사고유형별 무게. 여행 준비에서 고른 것이 전부 여기로 들어온다."""
     config = load_weights()
-    multiplier = float(config.get("priority_multiplier", 3.0))
+    multiplier = heuristics.priority_multiplier
+    if multiplier is None:
+        multiplier = float(config.get("priority_multiplier", 3.0))
     context = trip_context or {}
     weights = {code: 1.0 for code in L1_CODES}
 
@@ -186,31 +226,31 @@ def incident_weights(
     # 2) 활동 — 스키·스쿠버처럼 다칠 위험이 큰 활동은 상해·긴급지원 무게를 올린다.
     for activity in context.get("activities") or []:
         for code in ACTIVITY_TO_INCIDENT.get(activity, ()):
-            weights[code] += 0.5
+            weights[code] += heuristics.activity_bump
 
     # 3) 동행 — 가족이나 반려동물과 함께면 남에게 끼치는 손해 위험이 커진다.
     for code in COMPANION_TO_INCIDENT.get(context.get("companion_type") or "", ()):
-        weights[code] += 0.4
+        weights[code] += heuristics.companion_bump
 
     if context.get("rental_car"):
-        weights["LIA"] += 0.6
+        weights["LIA"] += heuristics.rental_car_bump
 
     # 4) 목적지 위험도 — 여행경보가 걸린 곳은 질병·긴급지원 무게를 올린다.
     risk = context.get("risk_level")
     if risk in ("높음", "매우높음", "high"):
-        weights["EMG"] += 0.6
-        weights["ILL"] += 0.4
+        weights["EMG"] += heuristics.risk_emergency_bump
+        weights["ILL"] += heuristics.risk_illness_bump
 
     # 5) 여행 기간 — 길수록 병에 걸리거나 일정이 틀어질 여지가 커진다.
     trip_days = context.get("trip_days") or 0
-    if trip_days >= 8:
-        weights["ILL"] += 0.3
-        weights["CHG"] += 0.3
+    if trip_days >= heuristics.long_trip_days:
+        weights["ILL"] += heuristics.long_trip_bump
+        weights["CHG"] += heuristics.long_trip_bump
 
     # 6) 나이 — 고령일수록 질병·긴급지원 쪽 위험이 크다.
-    if age is not None and age >= 60:
-        weights["ILL"] += 0.5
-        weights["EMG"] += 0.3
+    if age is not None and age >= heuristics.senior_age:
+        weights["ILL"] += heuristics.senior_illness_bump
+        weights["EMG"] += heuristics.senior_emergency_bump
 
     # 기존보험은 여기서 다루지 않는다 — 위 주석 참고. overlap 축이 근거로만 반영한다.
     return weights
@@ -498,15 +538,27 @@ def score_insurers(
     age: int | None = None,
     sex: str | None = None,
     external_policies: list | None = None,
+    heuristics: Heuristics = DEFAULT_HEURISTICS,
+    axis_weights_override: dict[str, float] | None = None,
 ) -> list[InsurerScore]:
     """(보험사 × 등급)마다 다섯 축을 계산해 0~100 총점으로 합산하고 내림차순 정렬한다.
 
-    동점이면 보험사 코드순 — 같은 입력에는 언제나 같은 순서가 나온다."""
+    동점이면 보험사 코드순 — 같은 입력에는 언제나 같은 순서가 나온다.
+
+    heuristics·axis_weights_override는 민감도 분석용 입구다. 서비스는 둘 다 건드리지
+    않고 기본값으로 부르므로 동작이 달라지지 않는다. 이 입구가 있어야 "계수를 조금
+    흔들면 순위가 얼마나 흔들리는가"를 서비스 코드를 복제하지 않고 실제 경로 그대로
+    잴 수 있다(analysis/ranking_sensitivity.py).
+    """
     config = load_weights()
-    axis_weights = (config.get("axis_weights") or {}).get(tier_code) or _default_axis_weights()
+    axis_weights = (
+        axis_weights_override
+        or (config.get("axis_weights") or {}).get(tier_code)
+        or _default_axis_weights()
+    )
     context = trip_context or {}
     trip_days = int(context.get("trip_days") or 1)
-    weights = incident_weights(context, age=age)
+    weights = incident_weights(context, age=age, heuristics=heuristics)
 
     results: list[InsurerScore] = []
     for entry in ranking:

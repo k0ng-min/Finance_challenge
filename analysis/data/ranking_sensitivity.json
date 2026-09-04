@@ -1,0 +1,653 @@
+{
+  "scenarios": {
+    "plain": {
+      "label": "아무것도 안 고른 짧은 여행(계수가 거의 안 걸림)",
+      "tier": "균형형",
+      "plan_tier": 1,
+      "baseline": [
+        "SHINHAN",
+        "KAKAOPAY",
+        "HYUNDAI",
+        "MERITZ",
+        "KB",
+        "DB",
+        "SAMSUNG"
+      ],
+      "baseline_totals": {
+        "SHINHAN": 64.17,
+        "KAKAOPAY": 61.241,
+        "HYUNDAI": 59.748,
+        "MERITZ": 53.95,
+        "KB": 53.767,
+        "DB": 51.182,
+        "SAMSUNG": 43.572
+      },
+      "top2_margin": 2.929,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.08482142857142856,
+        "max_abs_rank_change": 1,
+        "kendall_tau_mean": 0.9717261904761905,
+        "kendall_tau_min": 0.9047619047619048,
+        "spearman_mean": 0.9893973214285714,
+        "spearman_min": 0.9642857142857143
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.10285714285714284,
+        "max_abs_rank_change": 1,
+        "kendall_tau_mean": 0.9657142857142857,
+        "kendall_tau_min": 0.9047619047619048,
+        "spearman_mean": 0.9871428571428571,
+        "spearman_min": 0.9642857142857143
+      }
+    },
+    "priority_injury": {
+      "label": "상해가 걱정된다고 고름(priority_multiplier만 걸림)",
+      "tier": "균형형",
+      "plan_tier": 1,
+      "baseline": [
+        "SHINHAN",
+        "KAKAOPAY",
+        "HYUNDAI",
+        "KB",
+        "MERITZ",
+        "DB",
+        "SAMSUNG"
+      ],
+      "baseline_totals": {
+        "SHINHAN": 61.366,
+        "KAKAOPAY": 57.857,
+        "HYUNDAI": 57.246,
+        "KB": 52.929,
+        "MERITZ": 52.478,
+        "DB": 51.932,
+        "SAMSUNG": 43.884
+      },
+      "top2_margin": 3.509,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.09375,
+        "max_abs_rank_change": 2,
+        "kendall_tau_mean": 0.96875,
+        "kendall_tau_min": 0.8095238095238095,
+        "spearman_mean": 0.9877232142857143,
+        "spearman_min": 0.8928571428571429
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.11571428571428571,
+        "max_abs_rank_change": 2,
+        "kendall_tau_mean": 0.9614285714285714,
+        "kendall_tau_min": 0.8095238095238095,
+        "spearman_mean": 0.9848214285714286,
+        "spearman_min": 0.8928571428571429
+      }
+    },
+    "ski": {
+      "label": "스키 여행(활동 계수)",
+      "tier": "안정형",
+      "plan_tier": 2,
+      "baseline": [
+        "KAKAOPAY",
+        "HYUNDAI",
+        "KB",
+        "SAMSUNG",
+        "SHINHAN",
+        "MERITZ",
+        "DB"
+      ],
+      "baseline_totals": {
+        "KAKAOPAY": 62.084,
+        "HYUNDAI": 59.853,
+        "KB": 59.075,
+        "SAMSUNG": 57.904,
+        "SHINHAN": 56.957,
+        "MERITZ": 53.507,
+        "DB": 53.278
+      },
+      "top2_margin": 2.231,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 0.9609375,
+        "top3_order_kept_rate": 0.91796875,
+        "mean_abs_rank_change": 0.13504464285714285,
+        "max_abs_rank_change": 2,
+        "kendall_tau_mean": 0.9546130952380952,
+        "kendall_tau_min": 0.7142857142857143,
+        "spearman_mean": 0.9815848214285714,
+        "spearman_min": 0.8571428571428572
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 0.95,
+        "top3_order_kept_rate": 0.895,
+        "mean_abs_rank_change": 0.16428571428571426,
+        "max_abs_rank_change": 2,
+        "kendall_tau_mean": 0.9447619047619048,
+        "kendall_tau_min": 0.7142857142857143,
+        "spearman_mean": 0.9775,
+        "spearman_min": 0.8571428571428572
+      }
+    },
+    "family_rentalcar": {
+      "label": "가족과 렌터카(동행·렌터카 계수)",
+      "tier": "실속형",
+      "plan_tier": 0,
+      "baseline": [
+        "KB",
+        "KAKAOPAY",
+        "SHINHAN",
+        "MERITZ",
+        "HYUNDAI",
+        "DB",
+        "SAMSUNG"
+      ],
+      "baseline_totals": {
+        "KB": 60.51,
+        "KAKAOPAY": 60.417,
+        "SHINHAN": 60.348,
+        "MERITZ": 59.558,
+        "HYUNDAI": 57.41,
+        "DB": 53.509,
+        "SAMSUNG": 48.059
+      },
+      "top2_margin": 0.093,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 0.578125,
+        "top3_set_kept_rate": 0.79296875,
+        "top3_order_kept_rate": 0.265625,
+        "mean_abs_rank_change": 0.34933035714285715,
+        "max_abs_rank_change": 3,
+        "kendall_tau_mean": 0.8761160714285714,
+        "kendall_tau_min": 0.5238095238095238,
+        "spearman_mean": 0.9356863839285715,
+        "spearman_min": 0.6785714285714286
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 0.495,
+        "top3_set_kept_rate": 0.75,
+        "top3_order_kept_rate": 0.12,
+        "mean_abs_rank_change": 0.42,
+        "max_abs_rank_change": 3,
+        "kendall_tau_mean": 0.8514285714285714,
+        "kendall_tau_min": 0.5238095238095238,
+        "spearman_mean": 0.9226785714285713,
+        "spearman_min": 0.6785714285714286
+      }
+    },
+    "senior_long": {
+      "label": "고령·장기 여행(나이·기간 계수)",
+      "tier": "최대보장형",
+      "plan_tier": 2,
+      "baseline": [
+        "SAMSUNG",
+        "KAKAOPAY",
+        "HYUNDAI",
+        "KB",
+        "SHINHAN",
+        "MERITZ",
+        "DB"
+      ],
+      "baseline_totals": {
+        "SAMSUNG": 65.867,
+        "KAKAOPAY": 65.474,
+        "HYUNDAI": 63.763,
+        "KB": 62.104,
+        "SHINHAN": 56.667,
+        "MERITZ": 54.513,
+        "DB": 46.46
+      },
+      "top2_margin": 0.394,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 0.82421875,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 0.82421875,
+        "mean_abs_rank_change": 0.05022321428571428,
+        "max_abs_rank_change": 1,
+        "kendall_tau_mean": 0.9832589285714286,
+        "kendall_tau_min": 0.9047619047619048,
+        "spearman_mean": 0.9937220982142857,
+        "spearman_min": 0.9642857142857143
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 0.785,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 0.785,
+        "mean_abs_rank_change": 0.06142857142857142,
+        "max_abs_rank_change": 1,
+        "kendall_tau_mean": 0.9795238095238095,
+        "kendall_tau_min": 0.9047619047619048,
+        "spearman_mean": 0.9923214285714286,
+        "spearman_min": 0.9642857142857143
+      }
+    },
+    "high_risk": {
+      "label": "위험지역 배낭여행(위험도·활동·기간이 함께 걸림)",
+      "tier": "안정형",
+      "plan_tier": 1,
+      "baseline": [
+        "SHINHAN",
+        "KAKAOPAY",
+        "HYUNDAI",
+        "MERITZ",
+        "KB",
+        "DB",
+        "SAMSUNG"
+      ],
+      "baseline_totals": {
+        "SHINHAN": 61.246,
+        "KAKAOPAY": 57.81,
+        "HYUNDAI": 54.609,
+        "MERITZ": 52.878,
+        "KB": 51.769,
+        "DB": 50.255,
+        "SAMSUNG": 43.829
+      },
+      "top2_margin": 3.436,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.0,
+        "max_abs_rank_change": 0,
+        "kendall_tau_mean": 1.0,
+        "kendall_tau_min": 1.0,
+        "spearman_mean": 1.0,
+        "spearman_min": 1.0
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.0,
+        "max_abs_rank_change": 0,
+        "kendall_tau_mean": 1.0,
+        "kendall_tau_min": 1.0,
+        "spearman_mean": 1.0,
+        "spearman_min": 1.0
+      }
+    },
+    "claim_simple": {
+      "label": "청구 편의 우선(축 비중이 다른 기준)",
+      "tier": "간편청구형",
+      "plan_tier": 1,
+      "baseline": [
+        "SHINHAN",
+        "HYUNDAI",
+        "KAKAOPAY",
+        "MERITZ",
+        "KB",
+        "DB",
+        "SAMSUNG"
+      ],
+      "baseline_totals": {
+        "SHINHAN": 60.638,
+        "HYUNDAI": 59.118,
+        "KAKAOPAY": 58.246,
+        "MERITZ": 54.926,
+        "KB": 53.833,
+        "DB": 52.4,
+        "SAMSUNG": 45.849
+      },
+      "top2_margin": 1.52,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.0011160714285714285,
+        "max_abs_rank_change": 1,
+        "kendall_tau_mean": 0.9996279761904762,
+        "kendall_tau_min": 0.9047619047619048,
+        "spearman_mean": 0.9998604910714286,
+        "spearman_min": 0.9642857142857143
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.0014285714285714286,
+        "max_abs_rank_change": 1,
+        "kendall_tau_mean": 0.9995238095238095,
+        "kendall_tau_min": 0.9047619047619048,
+        "spearman_mean": 0.9998214285714286,
+        "spearman_min": 0.9642857142857143
+      }
+    },
+    "everything": {
+      "label": "고를 수 있는 걸 다 고른 경우(계수가 전부 걸림)",
+      "tier": "균형형",
+      "plan_tier": 1,
+      "baseline": [
+        "SHINHAN",
+        "KAKAOPAY",
+        "HYUNDAI",
+        "MERITZ",
+        "KB",
+        "DB",
+        "SAMSUNG"
+      ],
+      "baseline_totals": {
+        "SHINHAN": 64.453,
+        "KAKAOPAY": 61.453,
+        "HYUNDAI": 58.535,
+        "MERITZ": 53.685,
+        "KB": 51.416,
+        "DB": 49.504,
+        "SAMSUNG": 45.337
+      },
+      "top2_margin": 3.0,
+      "metrics": {
+        "runs": 256,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.0,
+        "max_abs_rank_change": 0,
+        "kendall_tau_mean": 1.0,
+        "kendall_tau_min": 1.0,
+        "spearman_mean": 1.0,
+        "spearman_min": 1.0
+      },
+      "monte_carlo": {
+        "runs": 200,
+        "top1_kept_rate": 1.0,
+        "top3_set_kept_rate": 1.0,
+        "top3_order_kept_rate": 1.0,
+        "mean_abs_rank_change": 0.0,
+        "max_abs_rank_change": 0,
+        "kendall_tau_mean": 1.0,
+        "kendall_tau_min": 1.0,
+        "spearman_mean": 1.0,
+        "spearman_min": 1.0
+      }
+    }
+  },
+  "by_factor": {
+    "activity_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "axis:activity": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "axis:amount": {
+      "runs": 32,
+      "top1_kept_rate": 0.90625,
+      "top3_set_kept_rate": 0.96875,
+      "top3_order_kept_rate": 0.84375,
+      "mean_abs_rank_change": 0.11607142857142856,
+      "max_abs_rank_change": 2,
+      "kendall_tau_mean": 0.9613095238095238,
+      "kendall_tau_min": 0.8095238095238095,
+      "spearman_mean": 0.9832589285714286,
+      "spearman_min": 0.8928571428571429
+    },
+    "axis:clause": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "axis:overlap": {
+      "runs": 32,
+      "top1_kept_rate": 0.96875,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 0.9375,
+      "mean_abs_rank_change": 0.017857142857142856,
+      "max_abs_rank_change": 1,
+      "kendall_tau_mean": 0.9940476190476191,
+      "kendall_tau_min": 0.9047619047619048,
+      "spearman_mean": 0.9977678571428571,
+      "spearman_min": 0.9642857142857143
+    },
+    "axis:price": {
+      "runs": 32,
+      "top1_kept_rate": 0.90625,
+      "top3_set_kept_rate": 0.9375,
+      "top3_order_kept_rate": 0.84375,
+      "mean_abs_rank_change": 0.125,
+      "max_abs_rank_change": 2,
+      "kendall_tau_mean": 0.9583333333333334,
+      "kendall_tau_min": 0.8095238095238095,
+      "spearman_mean": 0.9810267857142857,
+      "spearman_min": 0.8928571428571429
+    },
+    "companion_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "long_trip_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "priority_multiplier": {
+      "runs": 32,
+      "top1_kept_rate": 0.9375,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 0.9375,
+      "mean_abs_rank_change": 0.04464285714285714,
+      "max_abs_rank_change": 2,
+      "kendall_tau_mean": 0.9791666666666666,
+      "kendall_tau_min": 0.7142857142857143,
+      "spearman_mean": 0.9899553571428571,
+      "spearman_min": 0.8571428571428572
+    },
+    "rental_car_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "risk_emergency_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "risk_illness_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "senior_emergency_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    },
+    "senior_illness_bump": {
+      "runs": 32,
+      "top1_kept_rate": 1.0,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 1.0,
+      "mean_abs_rank_change": 0.0,
+      "max_abs_rank_change": 0,
+      "kendall_tau_mean": 1.0,
+      "kendall_tau_min": 1.0,
+      "spearman_mean": 1.0,
+      "spearman_min": 1.0
+    }
+  },
+  "monte_carlo": {},
+  "per_insurer": {
+    "DB": {
+      "observations": 2048,
+      "mean_abs_change": 0.05126953125,
+      "max_abs_change": 2,
+      "moved_at_all_rate": 0.04931640625
+    },
+    "HYUNDAI": {
+      "observations": 2048,
+      "mean_abs_change": 0.01513671875,
+      "max_abs_change": 2,
+      "moved_at_all_rate": 0.01025390625
+    },
+    "KAKAOPAY": {
+      "observations": 2048,
+      "mean_abs_change": 0.1376953125,
+      "max_abs_change": 2,
+      "moved_at_all_rate": 0.11181640625
+    },
+    "KB": {
+      "observations": 2048,
+      "mean_abs_change": 0.14697265625,
+      "max_abs_change": 2,
+      "moved_at_all_rate": 0.119140625
+    },
+    "MERITZ": {
+      "observations": 2048,
+      "mean_abs_change": 0.13818359375,
+      "max_abs_change": 3,
+      "moved_at_all_rate": 0.12890625
+    },
+    "SAMSUNG": {
+      "observations": 2048,
+      "mean_abs_change": 0.04443359375,
+      "max_abs_change": 2,
+      "moved_at_all_rate": 0.0439453125
+    },
+    "SHINHAN": {
+      "observations": 2048,
+      "mean_abs_change": 0.09130859375,
+      "max_abs_change": 2,
+      "moved_at_all_rate": 0.08349609375
+    }
+  },
+  "overall": {
+    "runs": 2048,
+    "top1_kept_rate": 0.92529296875,
+    "top3_set_kept_rate": 0.96923828125,
+    "top3_order_kept_rate": 0.8759765625,
+    "mean_abs_rank_change": 0.08928571428571427,
+    "max_abs_rank_change": 3,
+    "kendall_tau_mean": 0.9692615327380952,
+    "kendall_tau_min": 0.5238095238095238,
+    "spearman_mean": 0.9859967912946429,
+    "spearman_min": 0.6785714285714286
+  },
+  "by_kind": {
+    "oat_heuristic": {
+      "runs": 288,
+      "top1_kept_rate": 0.9930555555555556,
+      "top3_set_kept_rate": 1.0,
+      "top3_order_kept_rate": 0.9930555555555556,
+      "mean_abs_rank_change": 0.00496031746031746,
+      "max_abs_rank_change": 2,
+      "kendall_tau_mean": 0.9976851851851851,
+      "kendall_tau_min": 0.7142857142857143,
+      "spearman_mean": 0.9988839285714286,
+      "spearman_min": 0.8571428571428572
+    },
+    "oat_axis": {
+      "runs": 160,
+      "top1_kept_rate": 0.95625,
+      "top3_set_kept_rate": 0.98125,
+      "top3_order_kept_rate": 0.925,
+      "mean_abs_rank_change": 0.05178571428571428,
+      "max_abs_rank_change": 2,
+      "kendall_tau_mean": 0.9827380952380953,
+      "kendall_tau_min": 0.8095238095238095,
+      "spearman_mean": 0.9924107142857143,
+      "spearman_min": 0.8928571428571429
+    },
+    "monte_carlo": {
+      "runs": 1600,
+      "top1_kept_rate": 0.91,
+      "top3_set_kept_rate": 0.9625,
+      "top3_order_kept_rate": 0.85,
+      "mean_abs_rank_change": 0.10821428571428571,
+      "max_abs_rank_change": 3,
+      "kendall_tau_mean": 0.962797619047619,
+      "kendall_tau_min": 0.5238095238095238,
+      "spearman_mean": 0.9830357142857143,
+      "spearman_min": 0.6785714285714286
+    }
+  }
+}
