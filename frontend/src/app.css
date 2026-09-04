@@ -1637,7 +1637,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .legend__dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 
-/* --- 약관 형광펜: 문서 리더 (조항 단위 이전/다음 탐색) --- */
+/* --- 보험 형광펜: 문서 리더 (조항 단위 이전/다음 탐색) --- */
 .clause-reader { margin-top: 8px; }
 .clause-reader__nav {
   display: flex;
@@ -1733,7 +1733,7 @@ button { cursor: pointer; font-family: inherit; }
 
 .coverage-list__label { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; font-weight: 700; }
 
-/* 사고 화면(서류체크/실수방지/약관형광펜)에서 그 사고가 어느 여행과 연결됐는지 보여주는 배지 */
+/* 사고 화면(서류체크/실수방지/보험형광펜)에서 그 사고가 어느 여행과 연결됐는지 보여주는 배지 */
 .trip-context-badge {
   display: flex;
   align-items: center;
@@ -3347,7 +3347,7 @@ button { cursor: pointer; font-family: inherit; }
 /* ============================================================
    홈 화면 히어로(나침반 자리) — 펜이 "보험형광펜"을 한 글자씩 쓰고,
    다 쓰면 노란 형광펜이 훑고 지나가며 배경을 칠하는 2단계 애니메이션
-   (PenWriteCompass.tsx, 참고: 약관형광펜 Writing.mp4). 펜·형광펜은 이 앱의 다른
+   (PenWriteCompass.tsx, 참고: 보험형광펜 Writing.mp4). 펜·형광펜은 이 앱의 다른
    아이콘과 같은 출처(Fluent Emoji 3D, MIT)에서 받은 실제 이미지 에셋이다. 이
    블록만 지우고 호출부를 원래 Icon3D(compass)로 되돌리면 원래대로 복원된다.
    ============================================================ */

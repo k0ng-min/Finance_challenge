@@ -353,7 +353,7 @@ class IncidentAnalysisOut(BaseModel):
     linked_insurer_code: Optional[str] = None
     linked_insurer_name: Optional[str] = None
     linked_product_name: Optional[str] = None
-    # 이 사고가 어느 여행과 연결됐는지 — 서류체크/실수방지/약관형광펜 화면에서 "무슨 여행 중
+    # 이 사고가 어느 여행과 연결됐는지 — 서류체크/실수방지/보험형광펜 화면에서 "무슨 여행 중
     # 사고인지"를 한눈에 보여주기 위함. 연결된 여행(trip)이 없으면 사고 접수 시 직접 입력한
     # country만 대신 보여준다(둘 다 없으면 전부 None).
     trip_id: Optional[int] = None

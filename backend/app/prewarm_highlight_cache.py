@@ -1,4 +1,4 @@
-"""약관형광펜(조항 색상 하이라이트) Gemini 캐시를 배포 전에 미리 채운다.
+"""보험형광펜(조항 색상 하이라이트) Gemini 캐시를 배포 전에 미리 채운다.
 
 Clause.highlight_spans는 최초로 그 조항을 누가 열어볼 때 Gemini를 호출해서
 채워지는 지연 캐시다(clause_spans_gemini.get_highlight_spans). 그래서 배포

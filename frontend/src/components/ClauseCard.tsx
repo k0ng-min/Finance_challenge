@@ -32,7 +32,7 @@ function DelayBaselineNote({ hours }: { hours: number }) {
   );
 }
 
-/** 조항 원문을 통째로 보여주지 않고 짧게 미리보기만 보여준다. 눌리면 항상 약관형광펜으로
+/** 조항 원문을 통째로 보여주지 않고 짧게 미리보기만 보여준다. 눌리면 항상 보험형광펜으로
  * 이동해서 그 조항을 바로 열어 보여준다 — incidentId가 있으면 그 사고 기준 관련도로,
  * 없으면(가입 전 추천처럼 사고와 무관한 화면) 조항 원문만 보여주는 모드로 연다. */
 export function ClauseCard({ clause, incidentId }: { clause: ClauseOut; incidentId?: number }) {
@@ -73,7 +73,7 @@ export function ClauseCard({ clause, incidentId }: { clause: ClauseOut; incident
             .map((t, i) => <DelayBaselineNote key={i} hours={t.value_num as number} />)}
         </div>
       )}
-      <span className="clause-card__link">약관형광펜에서 자세히 보기 →</span>
+      <span className="clause-card__link">보험형광펜에서 자세히 보기 →</span>
       {clause.page_ref && <div className="clause-page">원문 위치: {clause.page_ref}</div>}
     </button>
   );

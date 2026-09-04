@@ -25,7 +25,7 @@ const QUICK_GUEST = { to: "/premium", icon: "wallet", title: "보험료 비교" 
 const QUICK_REST = [
   { to: "/checklist", icon: "file-text", title: "청구 전 점검" },
   { to: "/onsite", icon: "airplane", title: "해외 서류 챙기기" },
-  { to: "/highlights", icon: "highlighter", title: "약관 형광펜" },
+  { to: "/highlights", icon: "highlighter", title: "보험 형광펜" },
 ];
 
 export function Home() {

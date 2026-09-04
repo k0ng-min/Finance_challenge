@@ -232,7 +232,7 @@ def _linked_policy_names(incident: Incident) -> tuple[str | None, str | None, st
 
 
 def _trip_context(incident: Incident) -> dict:
-    """서류체크·실수방지·약관형광펜 화면에서 "이 사고가 어느 여행 건인지"를 한눈에 보여주기
+    """서류체크·실수방지·보험형광펜 화면에서 "이 사고가 어느 여행 건인지"를 한눈에 보여주기
     위한 컨텍스트. 연결된 여행(trip_id)이 있으면 그 목적지·기간을, 없으면(사고만 단독 접수한
     경우) 사고 접수 시 입력한 country만 보여준다 — 여행 기록과 사고 기록이 서로 무관하게
     따로 떠 보이던 문제를 없애기 위함."""

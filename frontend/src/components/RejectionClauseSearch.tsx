@@ -14,7 +14,7 @@ const RELEVANCE_BADGE: Record<string, string> = { 직접: "badge--ok", 조건부
  * 매핑돼 있는지"까지만 보여주고, 실제 이번 사고에 적용되는지는 사람이 판단해야 한다는
  * 것을 화면에 명시한다.
  *
- * "약관 형광펜"에서 사고를 아직 안 골랐을 때(=사고 연결 조항이 없을 때) 대신 보여준다 —
+ * "보험 형광펜"에서 사고를 아직 안 골랐을 때(=사고 연결 조항이 없을 때) 대신 보여준다 —
  * 부지급 통지서는 앱에 접수한 사고와 무관하게 받을 수 있어, 사고 선택을 강제하지 않는다. */
 export function RejectionClauseSearch() {
   const [insurerCode, setInsurerCode] = useState<string | null>(null);

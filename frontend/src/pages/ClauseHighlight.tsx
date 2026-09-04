@@ -234,7 +234,7 @@ export function ClauseHighlight() {
   if (soloLoading) {
     return (
       <div className="page">
-        <TopBar title="약관 형광펜" />
+        <TopBar title="보험 형광펜" />
         <LoadingScreen icon="highlighter" title="조항을 불러오고 있어요" />
       </div>
     );
@@ -243,7 +243,7 @@ export function ClauseHighlight() {
   if (soloClause) {
     return (
       <div className="page">
-        <TopBar title="약관 형광펜" />
+        <TopBar title="보험 형광펜" />
         <PageHero
           icon="highlighter"
           eyebrow="CLAUSE"
@@ -269,7 +269,7 @@ export function ClauseHighlight() {
     // 접수한 사고와 무관하게 받을 수 있으므로, 보험사·조항 번호로 직접 찾아보게 한다.
     return (
       <div className="page">
-        <TopBar title="약관 형광펜" />
+        <TopBar title="보험 형광펜" />
         <PageHero
           icon="highlighter"
           eyebrow="CLAUSE HIGHLIGHT"
@@ -303,7 +303,7 @@ export function ClauseHighlight() {
 
   return (
     <div className="page">
-      <TopBar title="약관 형광펜" />
+      <TopBar title="보험 형광펜" />
       <PageHero
         icon="highlighter"
         eyebrow="CLAUSE HIGHLIGHT"

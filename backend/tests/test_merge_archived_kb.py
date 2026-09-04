@@ -185,7 +185,7 @@ def test_담보_자체가_없으면_담보도_같이_들여온다(db_session, ar
 
 
 def test_이미_같은_원문이_있으면_조항을_또_만들지_않는다(db_session, archived_db):
-    """같은 문장이 두 번 들어가면 약관 형광펜에 같은 조항이 나란히 두 번 뜬다."""
+    """같은 문장이 두 번 들어가면 보험 형광펜에 같은 조항이 나란히 두 번 뜬다."""
     archived, path = archived_db
     _seed_types(db_session)
     _build(db_session, clause_text="똑같은 조항 원문", type_id=11,
