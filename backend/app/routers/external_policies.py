@@ -2,6 +2,7 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -9,20 +10,44 @@ from app.models.external import ExternalCoverage, ExternalPolicy
 from app.models.kb import Coverage, CoverageStd
 from app.models.user import AppUser, Trip, UserPolicy
 from app.routers.auth import get_current_user_optional, verify_owner
-from app.schemas import (
-    ExternalPolicyLinkRequest, ExternalPolicyOut, OverlapReportOut, ProviderOut,
-)
+from app.schemas import ExternalPolicyLinkRequest, ExternalPolicyOut, OverlapReportOut
 from app.services.coverage_overlap import diagnose
 from app.services.external_policy.registry import get_provider, list_available_providers
 
 router = APIRouter(prefix="/users/{user_id}/external-policies", tags=["external-policies"])
 
 
-@router.get("/providers", response_model=list[ProviderOut])
+class ProviderInfoOut(BaseModel):
+    """수집 방식 하나를 화면에 그리는 데 필요한 전부.
+
+    is_demo/notice를 이름과 같이 내려보내는 이유: mock처럼 미리 만들어 둔 예시를 돌려주는
+    방식이 켜져 있을 때, 화면이 그것을 실제 조회 결과처럼 그릴 수 없게 하기 위해서다.
+    버튼을 그리는 쪽이 안내 문구를 같은 응답에서 받으므로 빠뜨릴 여지가 줄어든다.
+    """
+    name: str
+    label: str
+    requires_login: bool
+    #: 결과가 실제 조회가 아니라 시연용 예시 데이터인가
+    is_demo: bool = False
+    #: is_demo일 때 화면에 반드시 함께 보여줄 안내 문구
+    notice: str | None = None
+
+
+@router.get("/providers", response_model=list[ProviderInfoOut])
 def list_providers(user_id: int):
-    """프론트는 이 목록으로 버튼을 그린다 — CODEF가 꺼져 있으면 버튼 자체가 안 보인다."""
-    return [ProviderOut(name=p.name, requires_login=p.requires_login)
-            for p in list_available_providers()]
+    """프론트는 이 목록으로 버튼을 그린다.
+
+    설정으로 켜 두었고 실제로 구현된 방식만 나온다 — 배포 기본값은 '직접 입력'(manual)
+    하나뿐이고, 시연용 mock은 EXTERNAL_POLICY_PROVIDERS에 넣었을 때만, CODEF는 구현을
+    마친 뒤에만 나온다(registry 참고).
+    """
+    return [
+        ProviderInfoOut(
+            name=p.name, label=p.label, requires_login=p.requires_login,
+            is_demo=p.is_demo, notice=p.notice,
+        )
+        for p in list_available_providers()
+    ]
 
 
 @router.get("", response_model=list[ExternalPolicyOut])
@@ -49,6 +74,8 @@ def link_external_policies(
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
+    # 켜 두지 않았거나 아직 구현되지 않은 방식은 여기서 막는다 — 목록에 없는 이름을
+    # 직접 POST해서 우회하는 길을 닫아둔다.
     available = {p.name for p in list_available_providers()}
     if provider.name not in available:
         raise HTTPException(status_code=400, detail=f"'{provider.name}' 연동은 아직 사용할 수 없습니다.")

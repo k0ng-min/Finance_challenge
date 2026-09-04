@@ -37,7 +37,7 @@
       "incident_map_count": 80,
       "term_count": 32,
       "doc_map_count": 69,
-      "known_gap": "표지가 이미지라 약관 버전 코드와 시행일이 인쇄돼 있지 않다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+      "known_gap": "표지가 이미지라 약관 버전 코드와 시행일이 인쇄돼 있지 않다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 11건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "HYUNDAI",
@@ -55,7 +55,7 @@
       "incident_map_count": 50,
       "term_count": 12,
       "doc_map_count": 72,
-      "known_gap": " clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+      "known_gap": " clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 11건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "MERITZ",
@@ -73,7 +73,7 @@
       "incident_map_count": 152,
       "term_count": 67,
       "doc_map_count": 162,
-      "known_gap": "약관번호 뒷자리(2607A)를 시행일로 단정할 근거가 없어 effective_date를 비워 뒀다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+      "known_gap": "약관번호 뒷자리(2607A)를 시행일로 단정할 근거가 없어 effective_date를 비워 뒀다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 11건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "KB",
@@ -91,7 +91,7 @@
       "incident_map_count": 76,
       "term_count": 31,
       "doc_map_count": 92,
-      "known_gap": "표지 표기는 \"2026.06\"뿐이라 정확한 시행일로 단정 못해 effective_date를 비워 뒀다. 실손의료비 특별약관(p.170-286)은 핵심 보장정의·면책만 넣고 비급여 세부·미가입자 추가특약은 범위 밖으로 남겼다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+      "known_gap": "표지 표기는 \"2026.06\"뿐이라 정확한 시행일로 단정 못해 effective_date를 비워 뒀다. 실손의료비 특별약관(p.170-286)은 핵심 보장정의·면책만 넣고 비급여 세부·미가입자 추가특약은 범위 밖으로 남겼다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 11건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "DB",
@@ -109,7 +109,7 @@
       "incident_map_count": 171,
       "term_count": 18,
       "doc_map_count": 68,
-      "known_gap": "버전 코드·시행일이 본문에 인쇄돼 있지 않아 effective_date를 비워 뒀다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+      "known_gap": "버전 코드·시행일이 본문에 인쇄돼 있지 않아 effective_date를 비워 뒀다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 11건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "KAKAOPAY",
@@ -127,7 +127,7 @@
       "incident_map_count": 39,
       "term_count": 14,
       "doc_map_count": 71,
-      "known_gap": "「함께하는 해외여행보험」(f558fafbd3439e91525bea49cb46299d43afcf667deb20c5cf505edde997d16b)과 「함께하는 해외여행보험II」(a4b41ae4d606121188a838e6ebc7838dc579d6324c433253b7c394738866d19a) 두 파일을 함께 읽어 본문이 「해외여행보험」(기준 파일, 위 sha256)과 동일함을 확인하고 하나로 통합했다. file_hash는 기준 파일의 것이다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 9건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
+      "known_gap": "「함께하는 해외여행보험」(f558fafbd3439e91525bea49cb46299d43afcf667deb20c5cf505edde997d16b)과 「함께하는 해외여행보험II」(a4b41ae4d606121188a838e6ebc7838dc579d6324c433253b7c394738866d19a) 두 파일을 함께 읽어 본문이 「해외여행보험」(기준 파일, 위 sha256)과 동일함을 확인하고 하나로 통합했다. file_hash는 기준 파일의 것이다. clause_term(정량조건)·doc_requirement(서류 세부요건)·overlap_rule(중복판정)·clause_standard_map(표준약관 대조)을 이번에 새로 만들었다(term_count 갱신, doc_requirement 1건, overlap_rule 7건, clause_standard_map 11건 — 전부 전역 공용 데이터라 특정 보험사에 종속되지 않는다)."
     },
     {
       "insurer": "SHINHAN",
@@ -145,7 +145,7 @@
       "incident_map_count": 143,
       "term_count": 0,
       "doc_map_count": 99,
-      "known_gap": "7번째 보험사로 2026-08-25에 추가. 공시 페이지가 화면에 파일 링크를 그리지 않고 자체 API(POST /shezApi)로 내려주는 구조라 source_url은 공시 페이지 주소를 적었다(직접 링크 없음). 약관 원문 236쪽은 전부 정독해 조항을 뽑았고 원문 대조 100%를 통과한다. 다만 (1) 실제 보험료를 아직 확보하지 못해 순위에서 가격 축을 빼고 재정규화한다, (2) 실속케어·안심케어 2등급만 판매해 고급 등급 비교에서는 제외된다, (3) 등급별 보장금액의 출처가 엑셀이 아니라 다이렉트 「보장 비교하기」 화면 캡처다, (4) clause_term(정량조건)은 아직 만들지 않았다."
+      "known_gap": "7번째 보험사로 2026-08-25에 추가. 공시 페이지가 화면에 파일 링크를 그리지 않고 자체 API(POST /shezApi)로 내려주는 구조라 source_url은 공시 페이지 주소를 적었다(직접 링크 없음). 약관 원문 236쪽은 전부 정독해 조항을 뽑았고 원문 대조 100%를 통과한다. 실제 보험료는 2026-08-25에 확보했다(다이렉트 조회 244행). 다만 (1) 실속케어·안심케어 2등급만 판매해 고급 등급 비교에서는 제외된다, (2) 등급별 보장금액의 출처가 엑셀이 아니라 다이렉트 「보장 비교하기」 화면 캡처다, (3) clause_term(정량조건)은 아직 만들지 않았다."
     }
   ]
 }

@@ -1,7 +1,7 @@
 import datetime as dt
 from typing import Literal, Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class TripCreate(BaseModel):
@@ -54,8 +54,7 @@ class ClauseTermOut(BaseModel):
     condition_text: Optional[str] = None
     raw_text: str  # 조항 원문 중 이 수치의 근거가 된 부분(그대로 인용)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ClauseOut(BaseModel):
@@ -76,8 +75,7 @@ class ClauseOut(BaseModel):
     def _fallback_color(cls, v):
         return v or "회색"
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FindingOut(BaseModel):
@@ -451,8 +449,7 @@ class StandardClauseOut(BaseModel):
     text: str
     amended_at: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StandardClauseComparisonOut(BaseModel):
@@ -489,8 +486,7 @@ class FlightDelayStatOut(BaseModel):
     avg_delay_minutes: Optional[float] = None
     passengers_affected: Optional[int] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FlightDelayStatsOut(BaseModel):
@@ -524,8 +520,7 @@ class NonpaymentRateOut(BaseModel):
     unpaid_rate: float
     post_claim_cancel_rate: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NonpaymentRatesOut(BaseModel):
@@ -655,8 +650,7 @@ class ExternalCoverageOut(BaseModel):
     subscribed_amount: Optional[str] = None
     amount_source: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ExternalPolicyOut(BaseModel):
@@ -669,8 +663,7 @@ class ExternalPolicyOut(BaseModel):
     indemnity_gen: Optional[int] = None
     coverages: list[ExternalCoverageOut] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProviderOut(BaseModel):

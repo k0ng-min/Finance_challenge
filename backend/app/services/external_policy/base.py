@@ -42,8 +42,19 @@ class ExternalPolicyDTO:
 class ExternalPolicyProvider(ABC):
     #: 화면과 API에서 이 구현체를 가리키는 이름
     name: str
+    #: 사용자에게 보여줄 한국어 이름
+    label: str
     #: 외부 서비스 인증이 필요한가. False면 게스트도 쓸 수 있다.
     requires_login: bool
+    #: fetch()가 실제로 동작하는가. 자리만 잡아둔 구현체는 False로 두고,
+    #: registry가 사용가능 목록에서 빼고 설정에 들어 있으면 기동 때 막는다.
+    #: 껍데기만 있는 연동이 켜져 있는 것처럼 보이는 일을 막기 위한 표시다.
+    implemented: bool = True
+    #: 결과가 실제 조회가 아니라 미리 정해 둔 예시 데이터인가.
+    #: True면 화면은 반드시 notice를 함께 보여줘 실제 조회 결과와 구분해야 한다.
+    is_demo: bool = False
+    #: 시연용일 때 화면에 함께 띄울 안내 문구.
+    notice: str | None = None
 
     @abstractmethod
     def fetch(self, *, user, credentials: dict) -> list[ExternalPolicyDTO]:

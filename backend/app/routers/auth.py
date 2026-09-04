@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -72,8 +72,7 @@ class AuthUserOut(BaseModel):
     # 이메일+비밀번호로도 로그인할 수 있게 비밀번호를 설정해 뒀는지(계정 화면 표시용).
     has_password: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NicknameIn(BaseModel):

@@ -271,11 +271,29 @@ def run(mc_runs: int, seed: int) -> dict:
                 baseline_scores[0][1] - baseline_scores[1][1]
                 if len(baseline_scores) >= 2 else None
             )
+            # 그 축이 실제로 총점에 들어갔는지. 자료가 없어 빠진 축은 비중을 흔들어도
+            # 아무 일이 일어나지 않는데, 그걸 모르면 "흔들어도 순위가 안 변한다"를
+            # 견고함으로 읽게 된다. 실제로 activity 축이 그 상태다.
+            used = ranking_score.score_insurers(
+                db, tier_code=scenario.tier, plan_tier=scenario.plan_tier,
+                trip_context=scenario.trip_context, ranking=rank_insurers(
+                    db, scenario.tier, scenario.trip_context),
+                age=scenario.age, sex=scenario.sex, external_policies=None,
+                heuristics=resolved, axis_weights_override=axis_base,
+            )
+            axis_used = {
+                axis.code: any(
+                    a.available for row in used for a in row.axes if a.code == axis.code
+                )
+                for axis in used[0].axes
+            } if used else {}
+
             summary["scenarios"][scenario.key] = {
                 "label": scenario.label, "tier": scenario.tier,
                 "plan_tier": scenario.plan_tier, "baseline": base,
                 "baseline_totals": {c: round(t, 3) for c, t in baseline_scores},
                 "top2_margin": round(margin, 3) if margin is not None else None,
+                "axis_used": axis_used,
             }
             if len(base) < 2:
                 continue
@@ -505,6 +523,36 @@ def render_report(s: dict) -> str:
             f"| {_pct(m['top3_set_kept_rate'])} | {_num(m['mean_abs_rank_change'], 2)} "
             f"| {_num(m['kendall_tau_min'])} |")
     add("")
+
+    # 계산에 아예 안 들어간 축을 먼저 밝힌다. 안 그러면 그 축의 "100% 유지"가
+    # 견고함으로 읽힌다 — 실제로는 흔들 대상이 없었다는 뜻인데.
+    inert = sorted({
+        code
+        for info in s["scenarios"].values()
+        for code, used in (info.get("axis_used") or {}).items()
+        if not used
+    })
+    partly = sorted({
+        code
+        for info in s["scenarios"].values()
+        for code, used in (info.get("axis_used") or {}).items()
+        if used
+    })
+    if inert:
+        add("## 흔들어도 아무 일이 없는 축 (읽을 때 주의)")
+        add("")
+        add("아래 축은 이번 기준 실행에서 **어느 시나리오에서도 총점에 들어가지 않았다**.")
+        add("자료가 없어 `available=false`로 빠졌기 때문이다. 그러니 이 축의 비중을 흔든")
+        add("결과가 \"Top-1 유지 100%\"로 나오는 것은 견고하다는 뜻이 아니라, **흔들 대상이")
+        add("애초에 없었다**는 뜻이다.")
+        add("")
+        for code in inert:
+            add(f"- `axis:{code}`" + (
+                " — 약관 근거 축 `restrictions`가 모든 보험사에서 UNKNOWN이라 이 축도 함께 빠진다."
+                if code == "activity" else ""))
+        add("")
+        add(f"실제로 순위를 가른 축은 {', '.join('`axis:' + c + '`' for c in partly if c not in inert)}뿐이다.")
+        add("")
 
     add("## 어느 계수가 가장 민감한가")
     add("")

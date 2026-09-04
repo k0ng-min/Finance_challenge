@@ -14,6 +14,7 @@ from app.services.external_policy.indemnity import resolve_indemnity_generation
 
 class ManualProvider(ExternalPolicyProvider):
     name = "manual"
+    label = "직접 입력"
     requires_login = False
 
     def fetch(self, *, user, credentials: dict) -> list[ExternalPolicyDTO]:

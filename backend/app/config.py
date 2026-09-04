@@ -30,9 +30,18 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 GEMINI_ENABLED = bool(GEMINI_API_KEY)
 
-# 기존보험 수집에 쓸 방식. codef는 주민등록번호 처리 요건을 갖춘 뒤에만 켠다.
+# 기존보험 수집에 쓸 방식. 배포 기본값은 사용자가 화면에서 직접 고르는 manual 하나뿐이다.
+#
+# mock은 고정된 예시(삼성화재 실손 등)를 돌려주는 시연용이라 기본값에서 뺐다 — 켜 둔 채로
+# 배포하면 화면에 뜬 예시가 실제 조회 결과처럼 보인다. 시연·테스트 환경에서만
+# EXTERNAL_POLICY_PROVIDERS="manual,mock"으로 켜고, 이때 API는 그 방식이 시연용임을
+# is_demo/notice로 함께 내려준다.
+#
+# codef는 fetch()가 비어 있는 자리표시자다(주민등록번호 처리 근거 부재 — codef.py 참고).
+# 여기에 이름을 넣어도 켜지지 않고 기동할 때 오류로 막힌다
+# (app/services/external_policy/registry.py의 validate_configured_providers).
 EXTERNAL_POLICY_PROVIDERS = [
-    p.strip() for p in os.getenv("EXTERNAL_POLICY_PROVIDERS", "manual,mock").split(",")
+    p.strip() for p in os.getenv("EXTERNAL_POLICY_PROVIDERS", "manual").split(",")
     if p.strip()
 ]
 

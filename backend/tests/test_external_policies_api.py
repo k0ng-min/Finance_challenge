@@ -29,13 +29,30 @@ def client(db_session):
     app.dependency_overrides.clear()
 
 
-def test_사용가능한_수집방식에_codef는_빠져있다(client):
+def test_배포_기본값으로는_직접입력만_보인다(client):
+    """예전에는 mock도 함께 내려줬다. 고정된 예시(삼성화재 실손 등)를 돌려주는 시연용인데
+    배포 기본값에 들어 있어서, 화면에 뜬 예시가 실제 조회 결과처럼 보일 수 있었다.
+    codef는 fetch()가 비어 있는 자리표시자라 예전부터 빠져 있었고 그대로 둔다."""
     res = client.get("/users/1/external-policies/providers")
     assert res.status_code == 200
     names = [p["name"] for p in res.json()]
-    assert "manual" in names
-    assert "mock" in names
-    assert "codef" not in names
+    assert names == ["manual"], f"배포 기본값에 없어야 할 방식이 보입니다: {names}"
+
+
+def test_시연용_방식은_시연용이라고_함께_알려준다(client, monkeypatch):
+    """mock을 켜는 것 자체는 시연에 필요하다. 켜더라도 실제 조회와 구분되지 않으면
+    안 되므로, 목록에 그 사실이 함께 실려 내려가야 한다."""
+    from app import config
+
+    monkeypatch.setattr(config, "EXTERNAL_POLICY_PROVIDERS", ["manual", "mock"])
+    res = client.get("/users/1/external-policies/providers")
+    assert res.status_code == 200
+
+    by_name = {p["name"]: p for p in res.json()}
+    assert set(by_name) == {"manual", "mock"}
+    assert by_name["manual"].get("is_demo") is False
+    assert by_name["mock"].get("is_demo") is True
+    assert by_name["mock"].get("notice"), "시연용인데 안내 문구가 비어 있습니다"
 
 
 def test_수동입력_실손은_세대까지_저장된다(client):

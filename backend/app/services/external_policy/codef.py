@@ -4,7 +4,9 @@
   신용정보원 '내보험다보여' 회원가입에는 주민등록번호가 필요하다. 개인정보보호법 제24조의2는
   주민등록번호를 법령에 구체적 근거가 있을 때만 처리하도록 하고, 정보주체 동의로 갈음할 수
   없다. 이 서비스에는 그 근거가 없다. 운영 주체가 법적 요건을 갖춘 뒤 fetch()를 채우고
-  EXTERNAL_POLICY_PROVIDERS에 codef를 넣어 활성화한다.
+  implemented=True로 바꾼 다음에야 EXTERNAL_POLICY_PROVIDERS에 codef를 넣어 활성화할 수
+  있다 — 구현 없이 환경변수만 켜면 기동할 때 오류로 막힌다
+  (registry.validate_configured_providers).
 
 어느 서비스를 쓰는가:
   CODEF 보험 카테고리에는 신용정보원 '내보험다보여'(/insurance/each/credit4u/*)와
@@ -29,7 +31,13 @@ FIELD_MAP = {
 
 class CodefProvider(ExternalPolicyProvider):
     name = "codef"
+    label = "내보험다보여(CODEF) 연동"
     requires_login = True
+    # fetch()가 비어 있는 자리표시자라는 표시. registry가 이 표시를 보고 사용가능 목록에서
+    # 빼고, EXTERNAL_POLICY_PROVIDERS에 codef가 들어 있으면 기동 때 오류로 막는다.
+    # 환경변수만 켜서 "연동된 것처럼" 보이게 만드는 길을 없애기 위한 장치다.
+    implemented = False
+    notice = "CODEF 연동은 아직 구현되지 않았습니다."
 
     def fetch(self, *, user, credentials: dict) -> list[ExternalPolicyDTO]:
         raise NotImplementedError(

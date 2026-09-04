@@ -23,6 +23,13 @@
         "SAMSUNG": 43.572
       },
       "top2_margin": 2.929,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 1.0,
@@ -71,6 +78,13 @@
         "SAMSUNG": 43.884
       },
       "top2_margin": 3.509,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 1.0,
@@ -119,6 +133,13 @@
         "DB": 53.278
       },
       "top2_margin": 2.231,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 1.0,
@@ -167,6 +188,13 @@
         "SAMSUNG": 48.059
       },
       "top2_margin": 0.093,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 0.578125,
@@ -215,6 +243,13 @@
         "DB": 46.46
       },
       "top2_margin": 0.394,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 0.82421875,
@@ -263,6 +298,13 @@
         "SAMSUNG": 43.829
       },
       "top2_margin": 3.436,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 1.0,
@@ -311,6 +353,13 @@
         "SAMSUNG": 45.849
       },
       "top2_margin": 1.52,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 1.0,
@@ -359,6 +408,13 @@
         "SAMSUNG": 45.337
       },
       "top2_margin": 3.0,
+      "axis_used": {
+        "amount": true,
+        "clause": true,
+        "price": true,
+        "overlap": true,
+        "activity": false
+      },
       "metrics": {
         "runs": 256,
         "top1_kept_rate": 1.0,

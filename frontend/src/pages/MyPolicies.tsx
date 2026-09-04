@@ -384,20 +384,46 @@ export function MyPolicies() {
           비는 담보를 약관 원문 근거와 함께 알려드려요.
         </p>
 
-        {external.map((e) => (
-          <div className="card ext-card" key={e.external_policy_id}>
-            <div className="ext-card__body">
-              <div className="ext-card__kind">{KIND_LABELS[e.kind]}</div>
-              <div className="ext-card__meta">
-                {e.insurer_name_raw ?? "보험사 미상"}
-                {e.indemnity_gen ? ` · ${e.indemnity_gen}세대 실손` : ""}
-                {e.enrolled_ym ? ` · ${e.enrolled_ym} 가입` : ""}
+        {external.map((e) => {
+          // source가 manual이면 사용자가 직접 고른 것이다. 그 밖의 출처(시연용 mock 등)는
+          // 실제 조회 결과가 아닌데 카드 모양이 똑같아서 구분이 안 된다. 그래서 출처가
+          // 직접 입력이 아닐 때만 표식과 한 줄 안내를 붙인다 — 평소 화면(직접 입력)은
+          // 그대로 두고, 예시 데이터일 때만 반드시 그렇게 말하게 하는 방식이다.
+          const isDemo = e.source !== "manual";
+          return (
+            <div className="card ext-card" key={e.external_policy_id}>
+              <div className="ext-card__body">
+                <div className="ext-card__kind">
+                  {KIND_LABELS[e.kind]}
+                  {isDemo && (
+                    <span
+                      style={{
+                        marginLeft: 8, fontSize: "0.72rem", fontWeight: 700,
+                        color: "var(--orange)", border: "1px solid var(--orange)",
+                        borderRadius: 999, padding: "2px 8px", verticalAlign: "middle",
+                      }}
+                    >
+                      시연용 예시
+                    </span>
+                  )}
+                </div>
+                <div className="ext-card__meta">
+                  {e.insurer_name_raw ?? "보험사 미상"}
+                  {e.indemnity_gen ? ` · ${e.indemnity_gen}세대 실손` : ""}
+                  {e.enrolled_ym ? ` · ${e.enrolled_ym} 가입` : ""}
+                </div>
+                {isDemo && (
+                  <div className="ext-card__meta" style={{ color: "var(--orange)" }}>
+                    실제 보험 조회 결과가 아니라, 화면 흐름을 보여주기 위해 넣어 둔 예시
+                    데이터예요.
+                  </div>
+                )}
               </div>
+              <button type="button" className="history-card__delete" title="삭제"
+                onClick={() => handleDeleteExternal(e.external_policy_id)}>🗑</button>
             </div>
-            <button type="button" className="history-card__delete" title="삭제"
-              onClick={() => handleDeleteExternal(e.external_policy_id)}>🗑</button>
-          </div>
-        ))}
+          );
+        })}
 
         {picking ? (
           <div className="card">
