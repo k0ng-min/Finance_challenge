@@ -104,6 +104,25 @@ def test_A_AI를_끄든_켜든_순위와_총점이_같다(client, monkeypatch):
     assert on.json()["ranking"][0]["reasons"] == [f"{codes[0]} 설명 문장"]
 
 
+def test_A3_자료_없는_축은_우열의_근거로_쓰지_말라고_못_박는다(client, monkeypatch):
+    """동료가 점수 프롬프트에 넣어 둔 안전장치를 설명 프롬프트에도 옮겨 왔다.
+    빠진 축은 이름만 남기고(그래야 "자료가 없어 뺐어요"를 말할 수 있다), 그것으로
+    보험사를 비교하지는 못하게 한다."""
+    codes = [r["insurer_code"] for r in client.get(QUERY).json()["ranking"]]
+    payload = {"items": [{"insurer_code": c, "reasons": ["설명"]} for c in codes]}
+    calls = []
+    _install_gemini(monkeypatch, payload, calls)
+    client.get(QUERY)
+
+    prompt = calls[0]
+    assert "0점이나 좋은 점수로 추정하지 말고" in prompt
+    assert "비교 근거로 쓰지 마세요" in prompt
+    # 자료 없는 축은 점수처럼 보이는 숫자로 들어가지 않는다.
+    for line in prompt.splitlines():
+        if "자료 없음" in line:
+            assert "= +" not in line, f"자료 없는 축에 기여도 숫자가 붙었습니다: {line}"
+
+
 def test_A2_모델은_점수를_돌려줄_수_없다(client, monkeypatch):
     """설명 스키마에 점수 필드 자체가 없다. 모델이 점수를 써 보내도 들어올 곳이 없다."""
     fields = explainer._ExplanationItem.model_fields

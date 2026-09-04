@@ -397,7 +397,11 @@ export function InsurerRankingFlow({
                           <i style={{ width: `${Math.round(axis.score * 100)}%` }} />
                         </span>
                         <span className="rank-axis__value">
-                          {axis.available ? `+${axis.contribution.toFixed(1)}` : "자료 없음"}
+                          {axis.available
+                            ? `+${axis.contribution.toFixed(1)}`
+                            : axis.comparison_state === "NOT_APPLICABLE"
+                              ? "해당 없음"
+                              : "비교 제외"}
                         </span>
                       </div>
                     ))}

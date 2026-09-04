@@ -168,6 +168,92 @@ def build_coverage_matrix(connection: sqlite3.Connection) -> list[dict[str, Any]
     return matrix
 
 
+def build_ranking_completeness_matrix(
+    connection: sqlite3.Connection,
+) -> list[dict[str, Any]]:
+    """Expose annotation coverage without pretending it is product performance.
+
+    These counts are diagnostic only. In particular, a low term/map count must not
+    be converted to a low insurer score; the ranking service reports that axis as
+    UNKNOWN until an explicit review-complete marker exists.
+    """
+    result: list[dict[str, Any]] = []
+    for code in sorted(row[0] for row in connection.execute("SELECT code FROM insurer")):
+        mapped_l1_count = _scalar(connection, """
+            SELECT COUNT(DISTINCT it.l1_code)
+              FROM clause_incident_map m
+              JOIN incident_type it ON it.type_id=m.type_id
+              JOIN clause cl ON cl.clause_id=m.clause_id
+              JOIN policy_version pv ON pv.policy_version_id=cl.policy_version_id
+              JOIN product p ON p.product_id=pv.product_id
+              JOIN insurer i ON i.insurer_id=p.insurer_id
+             WHERE i.code=? AND m.relevance IN ('직접', '조건부', '면책')
+        """, (code,))
+        supported_coverage_count = _scalar(connection, """
+            SELECT COUNT(DISTINCT cl.coverage_id)
+              FROM clause_incident_map m
+              JOIN clause cl ON cl.clause_id=m.clause_id
+              JOIN policy_version pv ON pv.policy_version_id=cl.policy_version_id
+              JOIN product p ON p.product_id=pv.product_id
+              JOIN insurer i ON i.insurer_id=p.insurer_id
+             WHERE i.code=? AND m.relevance IN ('직접', '조건부')
+               AND cl.coverage_id IS NOT NULL
+        """, (code,))
+        term_coverage_count = _scalar(connection, """
+            SELECT COUNT(DISTINCT supported.coverage_id)
+              FROM (
+                    SELECT DISTINCT cl.coverage_id
+                      FROM clause_incident_map m
+                      JOIN clause cl ON cl.clause_id=m.clause_id
+                      JOIN policy_version pv ON pv.policy_version_id=cl.policy_version_id
+                      JOIN product p ON p.product_id=pv.product_id
+                      JOIN insurer i ON i.insurer_id=p.insurer_id
+                     WHERE i.code=? AND m.relevance IN ('직접', '조건부')
+                       AND cl.coverage_id IS NOT NULL
+                   ) supported
+             WHERE EXISTS (
+                    SELECT 1 FROM clause term_clause
+                    JOIN clause_term term ON term.clause_id=term_clause.clause_id
+                    WHERE term_clause.coverage_id=supported.coverage_id
+                   )
+        """, (code,))
+        doc_coverage_count = _scalar(connection, """
+            SELECT COUNT(DISTINCT supported.coverage_id)
+              FROM (
+                    SELECT DISTINCT cl.coverage_id
+                      FROM clause_incident_map m
+                      JOIN clause cl ON cl.clause_id=m.clause_id
+                      JOIN policy_version pv ON pv.policy_version_id=cl.policy_version_id
+                      JOIN product p ON p.product_id=pv.product_id
+                      JOIN insurer i ON i.insurer_id=p.insurer_id
+                     WHERE i.code=? AND m.relevance IN ('직접', '조건부')
+                       AND cl.coverage_id IS NOT NULL
+                   ) supported
+             WHERE EXISTS (
+                    SELECT 1 FROM coverage_doc_map doc
+                    WHERE doc.coverage_id=supported.coverage_id
+                   )
+        """, (code,))
+        result.append({
+            "insurer": code,
+            "mapped_l1_count": mapped_l1_count,
+            "mapped_l1_total": len({"INJ", "ILL", "PROP", "LIA", "TRV", "CHG", "EMG", "SPC"}),
+            "supported_coverage_count": supported_coverage_count,
+            "term_coverage_count": term_coverage_count,
+            "doc_coverage_count": doc_coverage_count,
+            "condition_clarity_state": (
+                "AVAILABLE"
+                if supported_coverage_count > 0 and term_coverage_count == supported_coverage_count
+                else "UNKNOWN"
+            ),
+            "claim_simplicity_state": "UNKNOWN",
+            # The schema has positive restriction annotations but no explicit
+            # review-complete/no-restriction marker.
+            "restrictions_state": "UNKNOWN",
+        })
+    return result
+
+
 def audit_kb(database: Path | str = DEFAULT_DATABASE, manifest_path: Path | str = DEFAULT_MANIFEST) -> dict[str, Any]:
     database = Path(database)
     manifest_path = Path(manifest_path)
@@ -291,6 +377,8 @@ def audit_kb(database: Path | str = DEFAULT_DATABASE, manifest_path: Path | str 
         checks.append(_check("manifest_database_alignment", len(source_mismatches), len(source_alignment_warnings), details=source_mismatches + source_alignment_warnings))
         checks.append(_check("source_freshness_and_ranking_gate", warning_count=len(freshness_warnings), details=freshness_warnings))
 
+        comparison_completeness = build_ranking_completeness_matrix(connection)
+
         actual_fingerprint = compute_kb_fingerprint(connection)
         expected_fingerprint = manifest.get("kb_content_sha256")
         checks.append(_check("dataset_freeze", int(actual_fingerprint != expected_fingerprint), details={"expected": expected_fingerprint, "actual": actual_fingerprint}))
@@ -307,6 +395,7 @@ def audit_kb(database: Path | str = DEFAULT_DATABASE, manifest_path: Path | str 
         "warning_count": warning_count,
         "checks": checks,
         "coverage_matrix": matrix,
+        "ranking_completeness": comparison_completeness,
     }
 
 
@@ -330,6 +419,16 @@ def _print_human(report: dict[str, Any]) -> None:
     print("insurer | coverage | clause | incident_map | term | doc_map")
     for row in report["coverage_matrix"]:
         print(f"{row['insurer']} | {row['coverage_count']} | {row['clause_count']} | {row['incident_map_count']} | {row['term_count']} | {row['doc_map_count']}")
+    print("\nRanking evidence completeness (diagnostic; never a product score)")
+    print("insurer | mapped L1 | supported coverage | term coverage | doc coverage | clarity | claim | restrictions")
+    for row in report["ranking_completeness"]:
+        print(
+            f"{row['insurer']} | {row['mapped_l1_count']}/{row['mapped_l1_total']} | "
+            f"{row['supported_coverage_count']} | {row['term_coverage_count']} | "
+            f"{row['doc_coverage_count']} | {row['condition_clarity_state']} | "
+            f"{row['claim_simplicity_state']} | "
+            f"{row['restrictions_state']}"
+        )
 
 
 def main(argv: list[str] | None = None) -> int:

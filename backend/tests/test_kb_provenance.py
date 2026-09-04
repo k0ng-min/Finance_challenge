@@ -29,6 +29,11 @@ def test_committed_kb_passes_all_hard_integrity_checks():
     assert _check(report, "evidence_text_grounding")["status"] == "PASS"
     assert _check(report, "manifest_database_alignment")["status"] in {"PASS", "WARN"}
     assert _check(report, "dataset_freeze")["status"] == "PASS"
+    completeness = {row["insurer"]: row for row in report["ranking_completeness"]}
+    assert set(completeness) == EXPECTED_INSURERS
+    assert completeness["SHINHAN"]["condition_clarity_state"] == "UNKNOWN"
+    assert all(row["claim_simplicity_state"] == "UNKNOWN" for row in completeness.values())
+    assert all(row["restrictions_state"] == "UNKNOWN" for row in completeness.values())
 
 
 def test_source_manifest_covers_every_insurer_and_enforces_ranking_gate():

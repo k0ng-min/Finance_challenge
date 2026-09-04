@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator
 
@@ -555,6 +555,11 @@ class RankingDimensionOut(BaseModel):
     summary: str
     evidence_count: int
     evidence: list[RankingEvidenceOut] = []
+    comparison_state: Literal["AVAILABLE", "UNKNOWN", "NOT_APPLICABLE"]
+    available: bool
+    known_count: int
+    total_count: int
+    completeness_rate: Optional[float] = None
 
 
 class RankingAxisOut(BaseModel):
@@ -567,6 +572,7 @@ class RankingAxisOut(BaseModel):
     contribution: float  # score × weight × 100
     available: bool    # False면 자료가 없어 이 축을 빼고 나머지로 100%를 다시 맞췄다
     detail: str
+    comparison_state: Literal["AVAILABLE", "UNKNOWN", "NOT_APPLICABLE"]
 
 
 class InsurerRankOut(BaseModel):

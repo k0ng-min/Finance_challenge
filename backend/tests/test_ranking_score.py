@@ -93,14 +93,43 @@ def test_가격_자료가_없으면_그_축을_빼고_나머지로_다시_100퍼
 
 
 def test_쓸_수_없는_축은_비중에서_빠지고_나머지가_100퍼센트가_된다():
+    """Case B: UNKNOWN 축 제거 뒤 남은 가중치 합은 정확히 1이다."""
     axes = {"amount": 0.34, "clause": 0.32, "price": 0.10, "overlap": 0.14, "activity": 0.10}
 
     적용 = ranking_score.renormalize(axes, unavailable={"price"})
 
     assert "price" not in 적용
-    assert abs(sum(적용.values()) - 1.0) < 1e-9
+    assert sum(적용.values()) == 1.0
     # 남은 축끼리의 상대 비율은 그대로다.
     assert abs(적용["amount"] / 적용["clause"] - 0.34 / 0.32) < 1e-9
+
+
+def test_available_false_axis_has_zero_weight_and_contribution(db_session, kb):
+    """Case C: 비교 제외 축은 최종점수에 기여하지 않는다."""
+    ranking = [{
+        "insurer_code": "HYUNDAI",
+        "insurer_name": "현대해상",
+        "dimensions": [{
+            "code": "condition_clarity",
+            "level": 0,
+            "available": False,
+            "comparison_state": "UNKNOWN",
+        }],
+    }]
+
+    scored = ranking_score.score_insurers(
+        db_session, tier_code="균형형", plan_tier=1, trip_context={}, ranking=ranking,
+        age=30, sex="M",
+    )[0]
+    excluded = [axis for axis in scored.axes if not axis.available]
+
+    assert excluded
+    assert all(axis.weight == 0.0 for axis in excluded)
+    assert all(axis.contribution == 0.0 for axis in excluded)
+    assert sum(axis.weight for axis in scored.axes if axis.available) == pytest.approx(1.0)
+    assert scored.total == pytest.approx(
+        sum(axis.contribution for axis in scored.axes if axis.available)
+    )
 
 
 def test_같은_입력이면_언제나_같은_순서다(db_session, kb):

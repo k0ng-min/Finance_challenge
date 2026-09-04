@@ -48,7 +48,7 @@ export function RankingRadar({
   if (axes.length !== 5 || average.length !== 5) return null;
 
   // 자료가 없어 계산에서 빠진 축은 0으로 찍는다 — 점수가 0이어서가 아니라 그릴 값이
-  // 없어서다. 그 사실은 왼쪽 목록에 "자료 없음"으로 이미 적혀 있다.
+  // 없어서다. 그 사실은 왼쪽 목록에 "비교 제외" 또는 "해당 없음"으로 적혀 있다.
   const mine = axes.map((axis) => (axis.available ? axis.score : 0));
 
   return (

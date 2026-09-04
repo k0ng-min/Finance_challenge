@@ -142,24 +142,58 @@ def test_every_exposed_evidence_reference_exists(db_session, monkeypatch):
         assert db_session.get(model, reference["source_id"]) is not None
 
 
-def test_removing_clause_term_reduces_clarity_level(db_session, monkeypatch):
+def test_missing_clause_term_is_unknown_and_does_not_lower_rank(db_session, monkeypatch):
+    """Case A: 동일 보장인데 한 보험사만 미구축이어도 0점 감점하지 않는다."""
     monkeypatch.setattr(config, "GEMINI_ENABLED", False)
     prop = _incident(db_session, "PROP")
-    _coverage_with_mapping(db_session, insurer_code="A", incident=prop, relevance="직접", with_term=True)
-    _coverage_with_mapping(db_session, insurer_code="B", incident=prop, relevance="직접", with_term=False)
+    _coverage_with_mapping(db_session, insurer_code="A", incident=prop, relevance="직접", with_term=False)
+    _coverage_with_mapping(db_session, insurer_code="B", incident=prop, relevance="직접", with_term=True)
     db_session.commit()
 
-    before = rank_insurers(db_session, "최대보장형", {"coverage_priority": ["PROP"]})
-    before_a = next(item for item in before if item["insurer_code"] == "A")
-    before_level = _dimension(before_a, "condition_clarity")["level"]
+    ranking = rank_insurers(db_session, "최대보장형", {"coverage_priority": ["PROP"]})
+    dimensions = {
+        item["insurer_code"]: _dimension(item, "condition_clarity")
+        for item in ranking
+    }
 
-    db_session.query(ClauseTerm).delete()
+    assert [item["insurer_code"] for item in ranking] == ["A", "B"]
+    assert dimensions["A"]["comparison_state"] == "UNKNOWN"
+    assert dimensions["B"]["comparison_state"] == "UNKNOWN"
+    assert dimensions["A"]["available"] is False
+    assert dimensions["B"]["available"] is False
+    assert dimensions["A"]["level"] == dimensions["B"]["level"] == 0
+    assert dimensions["A"]["completeness_rate"] == 0.0
+    assert dimensions["B"]["completeness_rate"] == 100.0
+
+
+def test_unmapped_incident_is_unknown_not_noncoverage(db_session, monkeypatch):
+    prop = _incident(db_session, "PROP")
+    _incident(db_session, "EMG")
+    _coverage_with_mapping(db_session, insurer_code="A", incident=prop, relevance="직접")
     db_session.commit()
-    after = rank_insurers(db_session, "최대보장형", {"coverage_priority": ["PROP"]})
-    after_a = next(item for item in after if item["insurer_code"] == "A")
-    after_level = _dimension(after_a, "condition_clarity")["level"]
 
-    assert before_level > after_level
+    item = rank_insurers(
+        db_session, "균형형", {"coverage_priority": ["PROP", "EMG"]}
+    )[0]
+    coverage_fit = _dimension(item, "coverage_fit")
+
+    assert coverage_fit["comparison_state"] == "UNKNOWN"
+    assert coverage_fit["available"] is False
+    assert coverage_fit["known_count"] == 1
+    assert coverage_fit["total_count"] == 2
+
+
+def test_restrictions_are_excluded_without_negative_review_marker(db_session, monkeypatch):
+    prop = _incident(db_session, "PROP")
+    _coverage_with_mapping(db_session, insurer_code="A", incident=prop, relevance="조건부")
+    db_session.commit()
+
+    item = rank_insurers(db_session, "안정형", {"coverage_priority": ["PROP"]})[0]
+    restrictions = _dimension(item, "restrictions")
+
+    assert restrictions["comparison_state"] == "UNKNOWN"
+    assert restrictions["available"] is False
+    assert restrictions["level"] == 0
 
 
 def test_missing_document_mapping_is_not_treated_as_easy_claim(db_session, monkeypatch):
