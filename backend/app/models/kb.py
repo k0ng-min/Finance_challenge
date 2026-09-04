@@ -386,10 +386,11 @@ class NonpaymentRate(Base):
 
 
 class InsurerPremium(Base):
-    """보험사 다이렉트 사이트에서 직접 조회한 나이·성별·플랜별 실제 보험료.
+    """보험사별 보험료 값과 그 값이 만들어진 경로.
 
     2026-08-19 이전에는 보험다모아 비교공시(표준조건 1개 값)를 크롤링해서 채웠다.
-    지금은 사용자가 각 사 다이렉트 계산기에서 직접 조회한 값으로 전면 교체했다 —
+    지금은 각 사 다이렉트 계산기에서 수집한 자료로 전면 교체했다. 다만 일부 행은
+    기간 환산이나 플랜 보간을 거치므로 value_origin으로 반드시 구분한다 —
     보험사마다 실제로 파는 등급(플랜)이 여러 개(예: 라이트/베이직/플러스)라 등급별로
     가격이 다르므로, plan_name을 기본키의 일부로 둔다.
 
@@ -411,8 +412,16 @@ class InsurerPremium(Base):
     # 등급 선택 UI가 아직 없는 화면(보험료 비교·순위표)에 대표로 보여줄 등급 하나를
     # 표시한다 — 보험사마다 "표준" 격에 해당하는 등급 하나씩만 True다.
     is_standard_tier = Column(Boolean, nullable=False, default=False)
-    premium = Column(Integer, nullable=False)     # 실제 조회한 보험료(원)
-    period_days = Column(Integer, nullable=False, default=1)  # 조회값의 기준 보험기간(일)
+    premium = Column(Integer, nullable=False)     # 화면/비교에 쓰는 저장값(원)
+    period_days = Column(Integer, nullable=False, default=1)  # 저장값 자체의 기준 보험기간(일)
+    # DIRECT_QUOTE=직접 조회값, DERIVED=명시적 환산값, IMPUTED=보간/추정값,
+    # UNKNOWN=기존 자료 중 출처 성격을 안전하게 확정할 수 없는 값.
+    value_origin = Column(String, nullable=False, default="UNKNOWN")
+    source_value = Column(Integer)                # 변환 전 단일 직접 조회값(있을 때만)
+    source_period_days = Column(Integer)          # source_value가 실제로 조회된 보험기간
+    transformation = Column(String)               # 예: ROUND(source_value / 3, 0)
+    transformation_reason = Column(Text)
+    source_reference = Column(String)              # 원본 파일·시트·셀 또는 URL
     product_name = Column(String)                 # 화면 표시용 등급명(plan_name과 동일하게 채운다)
     source_product_code = Column(String)          # 보험다모아 상품코드(옛 크롤링 자료 호환용, 신규 값엔 비움)
     age_range = Column(String)                    # 해당 상품의 가입연령 표기(예: "19~79")
@@ -422,6 +431,12 @@ class InsurerPremium(Base):
     collected_at = Column(Date)
 
     insurer = relationship("Insurer")
+
+
+PREMIUM_ORIGIN_DIRECT_QUOTE = "DIRECT_QUOTE"
+PREMIUM_ORIGIN_DERIVED = "DERIVED"
+PREMIUM_ORIGIN_IMPUTED = "IMPUTED"
+PREMIUM_ORIGIN_UNKNOWN = "UNKNOWN"
 
 
 class InsurerPlanCoverage(Base):

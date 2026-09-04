@@ -15,7 +15,7 @@ from pathlib import Path
 
 from app.database import Base, SessionLocal, engine
 from app import models  # noqa: F401  (모델 등록)
-from app.models.kb import Insurer, InsurerPremium
+from app.models.kb import PREMIUM_ORIGIN_DIRECT_QUOTE, Insurer, InsurerPremium
 
 DEFAULT_PATH = Path(__file__).resolve().parents[1] / "data" / "premiums.json"
 
@@ -60,6 +60,12 @@ def run(path: Path = DEFAULT_PATH) -> None:
                 updated += 1
             row.premium = rec["premium"]
             row.period_days = period_days
+            row.value_origin = PREMIUM_ORIGIN_DIRECT_QUOTE
+            row.source_value = rec["premium"]
+            row.source_period_days = period_days
+            row.transformation = None
+            row.transformation_reason = None
+            row.source_reference = source_url
             row.product_name = rec.get("product_name")
             row.source_product_code = rec.get("prdt_cd")
             row.age_range = rec.get("age_range")

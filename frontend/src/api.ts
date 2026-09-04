@@ -460,6 +460,12 @@ export interface InsurerRankOut {
   premium_source: string | null;
   premium_source_url: string | null;
   premium_collected_at: string | null;
+  premium_value_origin: PremiumValueOrigin | null;
+  premium_source_value: number | null;
+  premium_source_period_days: number | null;
+  premium_transformation: string | null;
+  premium_transformation_reason: string | null;
+  premium_source_reference: string | null;
   premium_note: string | null;
   /** 가중치 점수 모델의 총점(0~100). plan_tier를 함께 넘겼을 때만 채워진다. */
   total_score: number | null;
@@ -476,14 +482,28 @@ export interface InsurerRankingOut {
   excluded_note: string | null;
 }
 
-export interface InsurerPremiumOut {
+export type PremiumValueOrigin = "DIRECT_QUOTE" | "DERIVED" | "IMPUTED" | "UNKNOWN";
+
+export interface PremiumProvenanceOut {
+  value_origin: PremiumValueOrigin;
+  source_value: number | null;
+  source_period_days: number | null;
+  transformation: string | null;
+  transformation_reason: string | null;
+  source_reference: string | null;
+}
+
+export interface InsurerPremiumOut extends PremiumProvenanceOut {
   insurer_code: string;
   insurer_name: string;
   product_name: string | null;
   published_premium: number;
+  premium_period_days: number;
   age_range: string | null;
   /** 이 보험사의 산출 전제와 조회일 — 보험사마다 다르다(전제·조회일이 갈린다). */
   basis: string | null;
+  source: string | null;
+  source_url: string | null;
   collected_at: string | null;
 }
 
@@ -503,10 +523,12 @@ export interface PremiumComparisonOut {
   no_data_insurer_codes: string[];
 }
 
-export interface InsurerPlanOut {
+export interface InsurerPlanOut extends PremiumProvenanceOut {
   plan_name: string;
   premium: number;
+  premium_period_days: number;
   is_standard_tier: boolean;
+  collected_at: string | null;
 }
 
 export interface InsurerPlansOut {

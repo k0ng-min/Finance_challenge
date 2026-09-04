@@ -19,6 +19,7 @@ import { PlanCoverageBoard } from "./PlanCoverageBoard";
 import { Modal } from "./Modal";
 import { shortInsurerName } from "../data/insurers";
 import { INSURER_COUNT } from "../data/insurers";
+import { premiumBasisLabel } from "../utils/premiumProvenance";
 
 type Phase = "tier" | "ranking" | "detail";
 
@@ -365,7 +366,11 @@ export function InsurerRankingFlow({
                         <b>{r.published_premium.toLocaleString()}</b>
                         <i>원</i>
                       </span>
-                      <small>{r.premium_period_days ?? 1}일 기준</small>
+                      <small>{premiumBasisLabel(
+                        r.premium_value_origin,
+                        r.premium_period_days,
+                        r.premium_source_period_days,
+                      )}</small>
                     </>
                   ) : (
                     // 왜 금액이 없는지는 서버가 문구로 알려준다(가입연령 밖 등). 조용히 빼지 않는다.
@@ -424,8 +429,8 @@ export function InsurerRankingFlow({
             위에 있으면 순위를 보기도 전에 회색 글씨부터 읽게 된다. */}
         {excludedNote && <p className="rank-excluded-note">{excludedNote}</p>}
         <p className="rank-premium-note">
-          카드의 금액은 각 보험사 다이렉트 사이트에서 직접 조회한 {ranking[0]?.premium_period_days ?? 1}일 기준
-          실제 가격이며, 선택한 여행일수로 환산한 견적이 아닙니다.
+          직접조회값과 비교용 환산값을 구분해 표시합니다. 추정값은 가격축에서 제외하며,
+          어떤 값도 선택한 여행일수의 실제 견적으로 선형 환산하지 않습니다.
         </p>
 
         {ranking.map((r) => (

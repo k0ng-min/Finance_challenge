@@ -107,11 +107,16 @@ print(metric_norm %>% arrange(desc(tier_spread)) %>% select(metric_label, min, m
 # ---------------------------------------------------------------------------
 # 3. 보험료 정규화 구간
 #
-# 보험료는 1일 기준으로 환산해서 비교한다(조회값의 period_days가 보험사마다 다르다).
+# DIRECT_QUOTE와 변환 근거가 남은 DERIVED만 비교한다. IMPUTED/UNKNOWN을 정규화 구간에
+# 넣으면 서비스가 해당 행을 제외해도 다른 보험사의 상대 점수 구간을 추정값이 흔든다.
+# 여러 일 직접조회값은 실제 N일 견적으로 부르지 않고 1일 비교지수로만 환산한다.
 # 나이·성별에 따라 값이 크게 달라지므로 구간은 나이대별로 따로 잡는다 — 20대 요율로
 # 60대를 재면 모든 보험사가 나란히 비싸 보여서 가격 축이 순위를 못 가른다.
 # ---------------------------------------------------------------------------
-premium_norm <- premiums %>%
+eligible_premiums <- premiums %>%
+  filter(value_origin %in% c("DIRECT_QUOTE", "DERIVED"))
+
+premium_norm <- eligible_premiums %>%
   mutate(daily = premium / pmax(period_days, 1),
          age_band = pmin(floor(age / 10) * 10, 70)) %>%
   group_by(age_band) %>%
@@ -120,7 +125,7 @@ premium_norm <- premiums %>%
 cat("\n== 나이대별 1일 보험료 구간 ==\n")
 print(premium_norm)
 
-priced_insurers <- sort(unique(premiums$insurer_code))
+priced_insurers <- sort(unique(eligible_premiums$insurer_code))
 cat("\n보험료 자료가 있는 보험사:", paste(priced_insurers, collapse = ", "), "\n")
 
 # ---------------------------------------------------------------------------
@@ -155,7 +160,15 @@ metric_to_incident <- metric_map %>%
 out <- list(
   generated_at = format(Sys.time(), "%Y-%m-%d"),
   generated_by = "analysis/ranking_weights.R",
-  source_rows = list(coverage = nrow(amounts), premium = nrow(premiums)),
+  source_rows = list(
+    coverage = nrow(amounts),
+    premium_total = nrow(premiums),
+    premium_eligible = nrow(eligible_premiums)
+  ),
+  premium_origin_policy = list(
+    included = c("DIRECT_QUOTE", "DERIVED"),
+    excluded = c("IMPUTED", "UNKNOWN")
+  ),
   # 사용자가 "걱정되는 사고유형"으로 고른 유형의 보장금액 항목에 곱하는 배수.
   priority_multiplier = 3.0,
   priced_insurers = priced_insurers,

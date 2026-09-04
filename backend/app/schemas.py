@@ -144,28 +144,44 @@ class InsurerCoverageOut(BaseModel):
     deductible: Optional[str] = None
 
 
-class InsurerPremiumOut(BaseModel):
-    """나이·성별 하나에 대한 보험사별 1일 기준 실제 보험료(표준 등급 하나 대표)."""
+PremiumValueOrigin = Literal["DIRECT_QUOTE", "DERIVED", "IMPUTED", "UNKNOWN"]
+
+
+class PremiumProvenanceOut(BaseModel):
+    value_origin: PremiumValueOrigin = "UNKNOWN"
+    source_value: Optional[int] = None
+    source_period_days: Optional[int] = None
+    transformation: Optional[str] = None
+    transformation_reason: Optional[str] = None
+    source_reference: Optional[str] = None
+
+
+class InsurerPremiumOut(PremiumProvenanceOut):
+    """나이·성별 하나에 대한 보험사별 보험료와 값의 생성 경로."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None  # 대표로 보여주는 등급명(예: "표준형")
-    published_premium: int    # 다이렉트 사이트에서 직접 조회한 값. 여행일수로 환산하지 않는다.
+    published_premium: int
+    premium_period_days: int
     age_range: Optional[str] = None
     #: 이 보험사의 산출 전제와 조회일. 보험사마다 다르다 — 예를 들어 삼성은 항공지연 지수형
     #: 특약 2종이 기본 포함된 값이고, 조회일도 2026-08-17(최초 6개사)·08-23(DB)·08-25(신한)로
     #: 갈린다. 바깥의 basis/collected_at 하나로 뭉뚱그리면 다른 전제로 조회한 값을 같은
     #: 조건으로 비교한 것처럼 보여주게 된다.
     basis: Optional[str] = None
+    source: Optional[str] = None
+    source_url: Optional[str] = None
     collected_at: Optional[dt.date] = None
 
 
-class PremiumPointOut(BaseModel):
+class PremiumPointOut(PremiumProvenanceOut):
     age: int
     published_premium: int
+    premium_period_days: int
 
 
 class InsurerPremiumCurveOut(BaseModel):
-    """한 보험사의 나이별 1일 기준 실제 보험료 곡선(표준 등급 하나 대표)."""
+    """한 보험사의 나이별 보험료 곡선(표준 등급 하나 대표)."""
     insurer_code: str
     insurer_name: str
     product_name: Optional[str] = None
@@ -179,7 +195,7 @@ class InsurerPremiumCurveOut(BaseModel):
 
 
 class PremiumComparisonOut(BaseModel):
-    """보험료는 보험사 다이렉트 사이트에서 직접 조회한 값이라 전제·출처를 항상 함께 내려보낸다."""
+    """보험료와 직접조회/환산/추정 provenance를 함께 내려보낸다."""
     age: int
     sex: str
     #: 보험사마다 다를 수 있는 값의 대표치다. 정확한 전제·조회일은 items 각각에 붙어 있다.
@@ -197,11 +213,13 @@ class PremiumComparisonOut(BaseModel):
 
 # --- 보험사 등급(플랜) — 가격·담보한도 비교 --------------------------------
 
-class InsurerPlanOut(BaseModel):
-    """보험사 한 곳의 등급 하나(예: "표준형")와 그 나이·성별 기준 1일 가격."""
+class InsurerPlanOut(PremiumProvenanceOut):
+    """보험사 한 곳의 등급 하나와 보험료 provenance."""
     plan_name: str
     premium: int
+    premium_period_days: int = 1
     is_standard_tier: bool
+    collected_at: Optional[dt.date] = None
 
 
 class InsurerPlansOut(BaseModel):
@@ -584,7 +602,7 @@ class InsurerRankOut(BaseModel):
     reasons: list[str]
     tags: list[str] = []
     official_url: Optional[str] = None
-    # 나이·성별을 함께 받은 경우에만 채워진다. 여행일수로 환산하지 않은 공시 원문 값이다.
+    # 나이·성별을 함께 받은 경우에만 채워진다. 여행일수로 새 견적을 만들지 않는다.
     published_premium: Optional[int] = None
     # published_premium이 어느 등급 가격인지(plan_tier로 고른 등급, 또는 기본 표준 등급).
     # 이 보험사 상세 화면(등급 선택)에 처음 들어갈 때 여기 등급을 그대로 이어서 보여준다 —
@@ -595,6 +613,12 @@ class InsurerRankOut(BaseModel):
     premium_source: Optional[str] = None
     premium_source_url: Optional[str] = None
     premium_collected_at: Optional[dt.date] = None
+    premium_value_origin: Optional[PremiumValueOrigin] = None
+    premium_source_value: Optional[int] = None
+    premium_source_period_days: Optional[int] = None
+    premium_transformation: Optional[str] = None
+    premium_transformation_reason: Optional[str] = None
+    premium_source_reference: Optional[str] = None
     premium_note: Optional[str] = None
     # 가중치 점수 모델의 결과. plan_tier를 함께 받았을 때만 채워진다.
     total_score: Optional[float] = None

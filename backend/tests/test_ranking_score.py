@@ -12,7 +12,14 @@
 """
 import pytest
 
-from app.models.kb import Insurer, InsurerComparisonMetric, InsurerPremium
+from app.models.kb import (
+    PREMIUM_ORIGIN_DERIVED,
+    PREMIUM_ORIGIN_DIRECT_QUOTE,
+    PREMIUM_ORIGIN_IMPUTED,
+    Insurer,
+    InsurerComparisonMetric,
+    InsurerPremium,
+)
 from app.services import ranking_score
 
 
@@ -31,10 +38,24 @@ def _metric(db, insurer, plan_name, label, amount, category="의료비"):
     ))
 
 
-def _premium(db, insurer, plan_name, amount, sex="M", age=30, period_days=1):
+def _premium(
+    db, insurer, plan_name, amount, sex="M", age=30, period_days=1,
+    value_origin=PREMIUM_ORIGIN_DIRECT_QUOTE,
+):
     db.add(InsurerPremium(
         insurer_id=insurer.insurer_id, plan_name=plan_name, sex=sex, age=age,
         premium=amount, period_days=period_days,
+        value_origin=value_origin,
+        source_value=amount if value_origin != PREMIUM_ORIGIN_IMPUTED else None,
+        source_period_days=period_days,
+        transformation=(
+            "ROUND(source_value / source_period_days, 0)"
+            if value_origin == PREMIUM_ORIGIN_DERIVED else None
+        ),
+        transformation_reason=(
+            "비교용 환산"
+            if value_origin == PREMIUM_ORIGIN_DERIVED else None
+        ),
     ))
 
 
@@ -90,6 +111,73 @@ def test_가격_자료가_없으면_그_축을_빼고_나머지로_다시_100퍼
     assert 현대.available is True
     assert 디비.available is False
     assert 디비.score == 0.0  # 점수 자체는 0이지만 비중이 0이라 총점에 안 들어간다
+
+
+def test_direct_quote_price_axis_is_available(db_session, kb):
+    _premium(db_session, kb["hyundai"], "표준형", 3_000)
+    db_session.flush()
+
+    axis = ranking_score.price_score(
+        db_session, "HYUNDAI", 1, age=30, sex="M", trip_days=7
+    )
+
+    assert axis.available is True
+    assert "7일 기준 약" not in axis.detail
+    assert "직접 조회" in axis.detail
+
+
+def test_imputed_price_axis_is_unavailable(db_session, kb):
+    _premium(
+        db_session, kb["hyundai"], "표준형", 3_000,
+        value_origin=PREMIUM_ORIGIN_IMPUTED,
+    )
+    db_session.flush()
+
+    axis = ranking_score.price_score(
+        db_session, "HYUNDAI", 1, age=30, sex="M", trip_days=7
+    )
+
+    assert axis.available is False
+    assert axis.comparison_state == "UNKNOWN"
+    assert "추정 보험료" in axis.detail
+
+    scored = ranking_score.score_insurers(
+        db_session,
+        tier_code="균형형",
+        plan_tier=1,
+        trip_context={},
+        ranking=[{
+            "insurer_code": "HYUNDAI",
+            "insurer_name": "현대해상",
+            "dimensions": [{
+                "code": "coverage_fit", "level": 3,
+                "available": True, "comparison_state": "AVAILABLE",
+            }],
+        }],
+        age=30,
+        sex="M",
+    )[0]
+    price = next(item for item in scored.axes if item.code == "price")
+    assert price.available is False
+    assert price.weight == 0.0
+    assert price.contribution == 0.0
+    assert sum(item.weight for item in scored.axes if item.available) == 1.0
+
+
+def test_derived_price_requires_complete_transformation_provenance(db_session, kb):
+    _premium(
+        db_session, kb["hyundai"], "표준형", 3_000,
+        value_origin=PREMIUM_ORIGIN_DERIVED,
+    )
+    db_session.flush()
+
+    axis = ranking_score.price_score(
+        db_session, "HYUNDAI", 1, age=30, sex="M", trip_days=9
+    )
+
+    assert axis.available is True
+    assert "비교용 1일 환산" in axis.detail
+    assert "9일 기준" not in axis.detail
 
 
 def test_쓸_수_없는_축은_비중에서_빠지고_나머지가_100퍼센트가_된다():

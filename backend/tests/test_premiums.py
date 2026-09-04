@@ -1,6 +1,14 @@
 from datetime import date
 
-from app.models.kb import Insurer, InsurerPremium
+from sqlalchemy import create_engine, text
+
+from app import schema_migrations
+from app.models.kb import (
+    PREMIUM_ORIGIN_DERIVED,
+    PREMIUM_ORIGIN_DIRECT_QUOTE,
+    Insurer,
+    InsurerPremium,
+)
 from app.routers.insurers import _attach_published_premiums, get_premium_comparison
 
 
@@ -16,6 +24,10 @@ def _seed_premium(db_session, premium: int = 10_000) -> None:
         is_standard_tier=True,
         premium=premium,
         period_days=7,
+        value_origin=PREMIUM_ORIGIN_DIRECT_QUOTE,
+        source_value=premium,
+        source_period_days=7,
+        source_reference="https://example.test/premiums#TEST-M-30",
         product_name="테스트 해외여행보험",
         basis="보험기간 7일 / 표준보장 담보 기준",
         source="보험다모아",
@@ -34,7 +46,9 @@ def test_published_premium_is_not_scaled_by_requested_trip_days(db_session):
     ]
 
     assert [r.items[0].published_premium for r in results] == [10_000, 10_000, 10_000]
-    assert [r.premium_period_days for r in results] == [1, 1, 1]
+    assert [r.premium_period_days for r in results] == [7, 7, 7]
+    assert [r.items[0].premium_period_days for r in results] == [7, 7, 7]
+    assert all(r.items[0].value_origin == "DIRECT_QUOTE" for r in results)
     assert all("premium_total" not in r.model_dump() for r in results)
 
 
@@ -46,11 +60,85 @@ def test_ranking_receives_only_published_premium_and_metadata(db_session):
 
     item = ranking[0]
     assert item["published_premium"] == 10_000
-    assert item["premium_period_days"] == 1
-    assert item["premium_basis"] == "보험기간 1일 / 표준보장 담보 기준"
+    assert item["premium_period_days"] == 7
+    assert item["premium_basis"] == "보험기간 7일 / 표준보장 담보 기준"
     assert item["premium_source"] == "보험다모아"
+    assert item["premium_value_origin"] == "DIRECT_QUOTE"
+    assert item["premium_source_value"] == 10_000
+    assert item["premium_source_period_days"] == 7
+    assert item["premium_collected_at"] == date(2026, 8, 2)
     assert "premium_total" not in item
     assert "premium_days" not in item
+
+
+def test_derived_provenance_is_exposed_by_premium_api(db_session):
+    insurer = Insurer(name="환산보험", code="DERIVED")
+    db_session.add(insurer)
+    db_session.flush()
+    db_session.add(InsurerPremium(
+        insurer_id=insurer.insurer_id, sex="M", age=30, plan_name="표준",
+        is_standard_tier=True, premium=3_333, period_days=1,
+        value_origin=PREMIUM_ORIGIN_DERIVED,
+        source_value=10_000, source_period_days=3,
+        transformation="ROUND(source_value / source_period_days, 0)",
+        transformation_reason="3일 직접 조회값을 1일 비교용 값으로 환산",
+        source_reference="quotes.xlsx#환산!D2:E2",
+        collected_at=date(2026, 8, 9),
+    ))
+    db_session.commit()
+
+    result = get_premium_comparison(age=30, sex="M", db=db_session)
+    item = result.items[0]
+
+    assert item.value_origin == "DERIVED"
+    assert item.source_value == 10_000
+    assert item.source_period_days == 3
+    assert item.transformation
+    assert item.transformation_reason
+    assert item.source_reference == "quotes.xlsx#환산!D2:E2"
+    assert item.collected_at == date(2026, 8, 9)
+
+
+def test_existing_rows_are_backfilled_without_changing_value_or_collection_date(tmp_path):
+    engine = create_engine(f"sqlite:///{(tmp_path / 'legacy.db').as_posix()}")
+    with engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TABLE insurer (
+                insurer_id INTEGER PRIMARY KEY, name VARCHAR NOT NULL, code VARCHAR NOT NULL
+            )
+        """))
+        connection.execute(text("""
+            CREATE TABLE insurer_premium (
+                premium_id INTEGER PRIMARY KEY, insurer_id INTEGER NOT NULL,
+                sex VARCHAR NOT NULL, age INTEGER NOT NULL, plan_name VARCHAR NOT NULL,
+                is_standard_tier BOOLEAN NOT NULL, premium INTEGER NOT NULL,
+                period_days INTEGER NOT NULL, product_name VARCHAR,
+                source_product_code VARCHAR, age_range VARCHAR, basis VARCHAR,
+                source VARCHAR, source_url VARCHAR, collected_at DATE
+            )
+        """))
+        connection.execute(text(
+            "INSERT INTO insurer VALUES (1, '메리츠화재', 'MERITZ')"
+        ))
+        connection.execute(text("""
+            INSERT INTO insurer_premium
+                (premium_id, insurer_id, sex, age, plan_name, is_standard_tier,
+                 premium, period_days, source, collected_at)
+            VALUES (1, 1, 'M', 30, '추천플랜', 1, 4945, 1,
+                    '보험사 다이렉트 홈페이지 보험료 계산기(직접 조회)', '2026-08-17')
+        """))
+
+    schema_migrations.apply(engine)
+
+    with engine.connect() as connection:
+        row = connection.execute(text("""
+            SELECT premium, collected_at, value_origin, transformation_reason
+              FROM insurer_premium WHERE premium_id=1
+        """)).one()
+    assert row.premium == 4945
+    assert row.collected_at == "2026-08-17"
+    assert row.value_origin == "IMPUTED"
+    assert "산술평균" in row.transformation_reason
 
 
 def test_가격표_등급명이_등급_매핑과_어긋나지_않는다():
@@ -151,3 +239,40 @@ def test_등급이_올라가면_보험료도_올라간다(kb_session):
                 assert tiers == sorted(tiers), (
                     f"{code} {sex} {age}세: 등급이 올라가는데 값이 내려간다 — {tiers}"
                 )
+
+
+def test_현재_보험료_origin과_수집일이_보험사별로_보존된다(kb_session):
+    rows = (
+        kb_session.query(Insurer.code, InsurerPremium.plan_name,
+                         InsurerPremium.value_origin, InsurerPremium.collected_at)
+        .join(InsurerPremium, Insurer.insurer_id == InsurerPremium.insurer_id)
+        .all()
+    )
+    origins = {(code, plan): origin for code, plan, origin, _ in rows}
+    dates = {code: collected_at for code, _, _, collected_at in rows}
+
+    assert {origin for (code, _), origin in origins.items() if code == "KAKAOPAY"} == {"DERIVED"}
+    assert origins[("MERITZ", "추천플랜")] == "IMPUTED"
+    assert origins[("MERITZ", "실속플랜")] == "DIRECT_QUOTE"
+    assert origins[("MERITZ", "보장이큰플랜")] == "DIRECT_QUOTE"
+    assert dates["DB"] == date(2026, 8, 23)
+    assert dates["SHINHAN"] == date(2026, 8, 25)
+    assert dates["KAKAOPAY"] == date(2026, 8, 17)
+
+    kakao = (
+        kb_session.query(InsurerPremium)
+        .join(Insurer, Insurer.insurer_id == InsurerPremium.insurer_id)
+        .filter(Insurer.code == "KAKAOPAY")
+        .first()
+    )
+    meritz = (
+        kb_session.query(InsurerPremium)
+        .join(Insurer, Insurer.insurer_id == InsurerPremium.insurer_id)
+        .filter(Insurer.code == "MERITZ", InsurerPremium.plan_name == "추천플랜")
+        .first()
+    )
+    assert kakao.source_value is not None
+    assert kakao.source_period_days == 3
+    assert "#카카오!" in kakao.source_reference
+    assert meritz.source_value is None
+    assert "산술평균" in meritz.transformation_reason

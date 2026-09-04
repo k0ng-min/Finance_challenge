@@ -11,6 +11,7 @@ import { Icon3D } from "../components/Icon3D";
 import { PlanCoverageBoard } from "../components/PlanCoverageBoard";
 import { Modal } from "../components/Modal";
 import { INSURER_COUNT } from "../data/insurers";
+import { premiumBasisLabel, premiumOriginLabel } from "../utils/premiumProvenance";
 
 const INSURERS = [
   { code: "SAMSUNG", label: "삼성화재" },
@@ -36,10 +37,10 @@ function isCoveredValue(value: string | undefined | null): boolean {
 }
 
 /**
- * 보험료 비교 — 보험사를 골라 나이·성별에 따른 1일 기준 실제 보험료를 비교한다.
+ * 보험료 비교 — 직접조회값·환산값·추정값을 구분해 비교한다.
  *
  * 2026-08-19부터 보험다모아 비교공시(표준조건 한 값) 대신, 각 사 다이렉트 사이트에서
- * 직접 조회한 실제 등급(플랜)별 가격을 쓴다. 필터의 "등급" 선택기(실속/표준/고급)로
+ * 직접 조회한 등급별 가격과 명시적인 환산·추정값을 쓴다. 필터의 "등급" 선택기로
  * 목록 전체 가격을 한 번에 바꿀 수 있고, 행마다 보험사 이름을 누르면 그 보험사만 다른
  * 등급으로 따로 볼 수도 있다(PlanCoverageBoard 팝업) — 전체로 바꾸면 행별 개별 선택은
  * 초기화된다(둘이 뒤섞이면 헷갈리므로). "N등급 · N개사 보장금액 한눈에 비교" 버튼은
@@ -236,8 +237,8 @@ export function PremiumCalc() {
       <PageHero
         icon="wallet"
         eyebrow="PREMIUM"
-        title={"1일 기준\n실제 보험료를 비교해요"}
-        subtitle="각 보험사 다이렉트 사이트에서 직접 조회한 등급별 가격을 비교해 드려요."
+        title={"출처가 보이는\n보험료를 비교해요"}
+        subtitle="직접조회값·환산값·추정값을 구분해서 보여드려요."
       />
 
       <div className="card">
@@ -368,7 +369,7 @@ export function PremiumCalc() {
             </div>
 
             <div className="calc-filter-group">
-              <span className="calc-filter-group__label">가격대 (1일 기준, 원)</span>
+              <span className="calc-filter-group__label">가격대 (표시된 비교 기준, 원)</span>
               <div className="calc-filter-group__row">
                 <input
                   type="number"
@@ -421,8 +422,11 @@ export function PremiumCalc() {
             {rows.map((item, i) => {
               const chosenPlan = planByInsurer[item.insurer_code];
               const livePlans = plansByInsurer[item.insurer_code];
-              const chosenPremium = livePlans?.plans.find((p) => p.plan_name === chosenPlan)?.premium
-                ?? item.published_premium;
+              const chosenRecord = livePlans?.plans.find((p) => p.plan_name === chosenPlan);
+              const chosenPremium = chosenRecord?.premium ?? item.published_premium;
+              const chosenOrigin = chosenRecord?.value_origin ?? item.value_origin;
+              const chosenPeriod = chosenRecord?.premium_period_days ?? item.premium_period_days;
+              const chosenSourcePeriod = chosenRecord?.source_period_days ?? item.source_period_days;
               const chosenLabel = chosenPlan ?? item.product_name;
               const menuOpen = menuOpenFor === item.insurer_code;
               return (
@@ -446,7 +450,7 @@ export function PremiumCalc() {
                     </button>
                     <span className="premium-row__amount">
                       <span className="premium-row__cost">{chosenPremium.toLocaleString()}원</span>
-                      <small>1일 기준</small>
+                      <small>{premiumBasisLabel(chosenOrigin, chosenPeriod, chosenSourcePeriod)}</small>
                     </span>
                     <button
                       type="button"
@@ -510,7 +514,7 @@ export function PremiumCalc() {
           )}
           {missing.noDataYet.length > 0 && (
             <p className="muted premium-basis">
-              {missing.noDataYet.map((m) => m.label).join(", ")} — 아직 실제 보험료를 확보하지 못해
+              {missing.noDataYet.map((m) => m.label).join(", ")} — 아직 보험료 근거를 확보하지 못해
               비교에서 빠졌어요(나이·성별과는 무관해요).
             </p>
           )}
@@ -519,7 +523,8 @@ export function PremiumCalc() {
 
       {!loading && data && selected.length > 0 && rows.length > 0 && (
         <p className="premium-basis">
-          <strong>{data.premium_period_days}일 기준으로 조회한 실제 보험료입니다.</strong>
+          <strong>직접조회값·환산값·추정값을 금액별로 구분해 표시합니다.</strong><br />
+          환산값은 비교용 지표이며, 추정값은 추천 가격 점수에 사용하지 않습니다.
         </p>
       )}
 
@@ -660,17 +665,19 @@ export function PremiumCalc() {
               <h3 className="share-card__title">
                 만 {age}세 {sex === "M" ? "남성" : "여성"} · {PLAN_TIER_LABELS[planTierRank]} 등급 보험료 비교
               </h3>
-              <p className="share-card__subtitle">1일 기준 실제 보험료</p>
+              <p className="share-card__subtitle">출처 성격을 구분한 보험료 비교</p>
               <div className="share-card__list">
                 {rows.map((item, i) => (
                   <div key={item.insurer_code} className="share-card__row">
                     <span className="share-card__name">{i + 1}. {item.insurer_name}</span>
-                    <span className="share-card__price">{item.published_premium.toLocaleString()}원</span>
+                    <span className="share-card__price">
+                      {item.published_premium.toLocaleString()}원 · {premiumOriginLabel(item.value_origin)}
+                    </span>
                   </div>
                 ))}
               </div>
               <p className="share-card__footnote">
-                각 보험사 다이렉트 사이트에서 직접 조회한 값이며, 실제 가입조건에 따라 달라질 수 있어요.
+                환산값은 비교용 지표이고 추정값은 추천 가격 점수에서 제외됩니다.
               </p>
             </div>
             <button

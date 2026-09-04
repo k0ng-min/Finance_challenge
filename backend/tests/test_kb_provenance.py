@@ -26,6 +26,7 @@ def test_committed_kb_passes_all_hard_integrity_checks():
     assert report["error_count"] == 0
     assert _check(report, "clause_coverage_policy_traceability")["status"] == "PASS"
     assert _check(report, "ranking_evidence_references")["status"] == "PASS"
+    assert _check(report, "premium_provenance")["status"] == "PASS"
     assert _check(report, "evidence_text_grounding")["status"] == "PASS"
     assert _check(report, "manifest_database_alignment")["status"] in {"PASS", "WARN"}
     assert _check(report, "dataset_freeze")["status"] == "PASS"

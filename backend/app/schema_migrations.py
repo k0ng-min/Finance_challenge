@@ -77,6 +77,12 @@ _COLUMN_ADDITIONS: dict[str, dict[str, str]] = {
     },
     "insurer_premium": {
         "period_days": "ALTER TABLE insurer_premium ADD COLUMN period_days INTEGER DEFAULT 7 NOT NULL",
+        "value_origin": "ALTER TABLE insurer_premium ADD COLUMN value_origin VARCHAR DEFAULT 'UNKNOWN' NOT NULL",
+        "source_value": "ALTER TABLE insurer_premium ADD COLUMN source_value INTEGER",
+        "source_period_days": "ALTER TABLE insurer_premium ADD COLUMN source_period_days INTEGER",
+        "transformation": "ALTER TABLE insurer_premium ADD COLUMN transformation VARCHAR",
+        "transformation_reason": "ALTER TABLE insurer_premium ADD COLUMN transformation_reason TEXT",
+        "source_reference": "ALTER TABLE insurer_premium ADD COLUMN source_reference VARCHAR",
     },
 }
 
@@ -106,9 +112,63 @@ def _migrate_insurer_premium_to_plan_schema(engine) -> None:
                   "python -m app.seed_premiums_actual 로 다시 채워주세요.")
 
 
+def _backfill_insurer_premium_provenance(engine) -> None:
+    """기존 저장값은 바꾸지 않고 현재 원본에서 확정 가능한 출처 성격만 채운다.
+
+    카카오의 변환 전 3일 값과 셀 주소는 DB에 없으므로 여기서 premium*3으로 복원하지
+    않는다. 원본 엑셀을 읽는 seed_premiums_actual을 실행하면 정확한 source_value와
+    행별 셀 주소까지 채워진다. 그 전까지 DERIVED 행은 랭킹에서 안전하게 제외된다.
+    """
+    with engine.connect() as conn:
+        table_exists = conn.execute(text(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='insurer_premium'"
+        )).scalar()
+        if not table_exists:
+            return
+
+        conn.execute(text("""
+            UPDATE insurer_premium
+               SET value_origin='DERIVED', source_period_days=3,
+                   transformation='ROUND(source_value / source_period_days, 0)',
+                   transformation_reason='3일 직접 조회값을 1일 비교용 값으로 환산',
+                   source_reference='insurer_premiums_2026-08.xlsx#카카오'
+             WHERE value_origin='UNKNOWN'
+               AND insurer_id=(SELECT insurer_id FROM insurer WHERE code='KAKAOPAY')
+        """))
+        conn.execute(text("""
+            UPDATE insurer_premium
+               SET value_origin='IMPUTED', source_period_days=1,
+                   transformation='ROUND((실속플랜 + 보장이큰플랜) / 2, 0)',
+                   transformation_reason='두 직접 조회 플랜 사이의 산술평균으로 만든 중간값',
+                   source_reference='insurer_premiums_2026-08.xlsx#메리츠'
+             WHERE value_origin='UNKNOWN' AND plan_name='추천플랜'
+               AND insurer_id=(SELECT insurer_id FROM insurer WHERE code='MERITZ')
+        """))
+
+        source_by_code = {
+            "DB": "insurer_premiums_2026-08.xlsx#db",
+            "HYUNDAI": "insurer_premiums_2026-08.xlsx#현대해상",
+            "KB": "insurer_premiums_2026-08.xlsx#kb",
+            "MERITZ": "insurer_premiums_2026-08.xlsx#메리츠",
+            "SAMSUNG": "insurer_premiums_2026-08.xlsx#삼성",
+            "SHINHAN": "insurer_premiums_shinhan_2026-08.xlsx#신한",
+        }
+        for code, reference in source_by_code.items():
+            conn.execute(text("""
+                UPDATE insurer_premium
+                   SET value_origin='DIRECT_QUOTE', source_value=premium,
+                       source_period_days=period_days, source_reference=:reference
+                 WHERE value_origin='UNKNOWN'
+                   AND source LIKE '%다이렉트%'
+                   AND insurer_id=(SELECT insurer_id FROM insurer WHERE code=:code)
+            """), {"code": code, "reference": reference})
+        conn.commit()
+
+
 def apply(engine) -> None:
     """이 engine이 가리키는 DB의 스키마를 모델에 맞춘다. 몇 번을 돌려도 결과가 같다."""
     Base.metadata.create_all(bind=engine)
     for table, additions in _COLUMN_ADDITIONS.items():
         _add_missing_columns(engine, table, additions)
     _migrate_insurer_premium_to_plan_schema(engine)
+    _backfill_insurer_premium_provenance(engine)

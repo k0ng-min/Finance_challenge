@@ -143,6 +143,15 @@ def test_가입_전_여정이_근거와_함께_끝까지_이어진다(client):
             # 값이 없으면 왜 없는지 밝혀야 한다(조용히 빼지 않는다).
             assert item["premium_note"], "보험료가 없는데 사유가 비어 있습니다"
 
+    by_code = {item["insurer_code"]: item for item in rows}
+    assert by_code["KAKAOPAY"]["premium_value_origin"] == "DERIVED"
+    assert by_code["KAKAOPAY"]["premium_source_period_days"] == 3
+    assert by_code["MERITZ"]["premium_value_origin"] == "IMPUTED"
+    meritz_price = next(axis for axis in by_code["MERITZ"]["axes"] if axis["code"] == "price")
+    assert meritz_price["available"] is False
+    assert meritz_price["weight"] == 0.0
+    assert meritz_price["contribution"] == 0.0
+
 
 def test_근거_검증_자체가_동작한다():
     """위 여정들은 현재 근거 없는 단정을 만들지 않아서, 불변식 검사가 무증상으로 통과한다.
