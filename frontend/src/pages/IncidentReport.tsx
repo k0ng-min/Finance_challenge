@@ -73,6 +73,7 @@ export function IncidentReport() {
   // 있다가 진단 조회 직전에 기다린다(핸들러 자체는 여전히 안 기다리고 화면을 바로 넘긴다).
   const [hasPickedExternal, setHasPickedExternal] = useState(false);
   const externalLinkReadyRef = useRef<Promise<unknown>>(Promise.resolve());
+  const answeredQuestionIdsRef = useRef<Set<number>>(new Set());
   const [overlap, setOverlap] = useState<OverlapReportOut | null>(null);
 
   // 한 번 입력한 나이·성별은 자동으로 채워준다 — 매번 다시 입력할 필요 없게.
@@ -152,6 +153,7 @@ export function IncidentReport() {
     if (resumeIncidentId) {
       setResuming(true);
       setIncidentId(resumeIncidentId);
+      answeredQuestionIdsRef.current.clear();
       api.getIncident(resumeIncidentId).then((res) => {
         setAnalysis(res);
         setPhase(res.pending_questions.length > 0 ? "questions" : "result");
@@ -188,6 +190,7 @@ export function IncidentReport() {
 
   async function handleStart() {
     if (!userId || !freeText.trim()) return;
+    answeredQuestionIdsRef.current.clear();
     setLoading(true);
     setError(null);
     try {
@@ -235,18 +238,27 @@ export function IncidentReport() {
 
   async function handleAnswer() {
     if (!analysis) return;
+    const currentQuestionIds = analysis.pending_questions.map((q) => q.question_id);
     const filled = analysis.pending_questions
       .map((q) => ({ question_id: q.question_id, answer_text: (answers[q.question_id] ?? "").trim() }))
       .filter((a) => a.answer_text !== "");
     setLoading(true);
+    setError(null);
     try {
       const res = await api.answerQuestionsBatch(analysis.incident_id, filled, extraNote.trim());
-      setAnalysis(res);
+      currentQuestionIds.forEach((id) => answeredQuestionIdsRef.current.add(id));
+      const next = {
+        ...res,
+        pending_questions: res.pending_questions.filter(
+          (q) => !answeredQuestionIdsRef.current.has(q.question_id),
+        ),
+      };
+      setAnalysis(next);
       // 다음 단계 질문은 다른 문항이다 — 앞 단계 답이 남아 있으면 안 고른 항목이
       // 이미 답한 것처럼 보인다.
       setAnswers({});
       setExtraNote("");
-      setPhase(res.pending_questions.length > 0 ? "questions" : "result");
+      setPhase(next.pending_questions.length > 0 ? "questions" : "result");
     } catch (err) {
       setError(userMessage(err));
     } finally {

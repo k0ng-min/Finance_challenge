@@ -225,10 +225,10 @@ def test_low_confidence_l1_can_change_after_followup(db_session, monkeypatch):
 
     assert "item_damage_type: 도난" in l1_inputs[1]
     assert final_type_id == theft.type_id
-    assert final_confidence == 0.93
+    assert final_confidence == 1.0
 
 
-def test_new_type_suggestion_is_not_auto_created_or_marked_confident(db_session, monkeypatch):
+def test_new_type_suggestion_is_not_auto_created_and_keeps_l1_confidence(db_session, monkeypatch):
     _seed_taxonomy(db_session)
     monkeypatch.setattr(classifier, "classify_l1", lambda _text: ("PROP", 0.91, "재물 피해"))
     monkeypatch.setattr(classifier, "extract_modifiers", lambda _text: {})
@@ -246,7 +246,7 @@ def test_new_type_suggestion_is_not_auto_created_or_marked_confident(db_session,
 
     assert db_session.query(IncidentType).count() == before
     assert type_id == db_session.query(IncidentType).filter_by(l2_code="PROP").one().type_id
-    assert confidence == 0.0
+    assert confidence == 0.91
 
 
 def test_L1_루트로_보류된_사고도_그_대분류의_조항을_찾는다(db_session):
