@@ -323,8 +323,8 @@ export function MyPolicies() {
     <div className="page">
       <TopBar title="내 보험 보관함" />
       <p className="page-desc">
-        가입한 보험을 등록하면 보험사명을 실제 약관과 자동으로 매칭해서, 그 상품이 실제로 파는 담보를 그대로
-        불러와요. 매칭된 담보만 사고 후 청구 검토 대상이 됩니다.
+        가입한 보험을 등록하면 보험사·상품명을 보유한 약관 자료와 대조해 매칭 가능한 담보를 불러와요.
+        자료에서 확인된 담보만 사고 후 청구 검토 대상으로 사용합니다.
       </p>
 
       {/* 두 버튼은 성격이 같다 — "보험을 들이는 일"과 "얼마인지 보는 일". 세로로 쌓으면
@@ -341,7 +341,7 @@ export function MyPolicies() {
           <Icon3D src="gift" size={44} />
           <div className="home-card__text">
             <strong>새 보험 등록하기</strong>
-            <span>2단계면 충분해요</span>
+            <span>보험사·등급·가입정보를 간단히 알려주세요</span>
           </div>
           <span className="home-card__arrow">›</span>
         </motion.button>
@@ -355,7 +355,7 @@ export function MyPolicies() {
           <Icon3D src="wallet" size={44} />
           <div className="home-card__text">
             <strong>보험료 비교</strong>
-            <span>공시 보험료 비교</span>
+            <span>직접조회·환산·추정값을 구분해요</span>
           </div>
           <span className="home-card__arrow">›</span>
         </motion.button>

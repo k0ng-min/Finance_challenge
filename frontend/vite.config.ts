@@ -18,7 +18,7 @@ export default defineConfig({
       manifest: {
         name: '약관 형광펜 — 근거 기반 여행자보험 AI',
         short_name: '약관형광펜',
-        description: '7개 손해보험사 약관 원문을 근거로 여행 전 비교부터 사고 후 청구까지.',
+        description: '여러 손해보험사 약관 원문을 근거로 여행 전 비교부터 사고 후 청구 준비까지.',
         theme_color: '#4b84ec',
         background_color: '#f8fbff',
         display: 'standalone',

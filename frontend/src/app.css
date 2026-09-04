@@ -1002,7 +1002,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .rank-compare-trigger__arrow { font-size: 1.1rem; flex-shrink: 0; }
 
-/* 6개사 보장금액 비교(InsurerComparisonMetric) — 팝업(Modal) 안이라 옆으로 스크롤해도
+/* 보험사별 보장금액 비교(InsurerComparisonMetric) — 팝업(Modal) 안이라 옆으로 스크롤해도
    맥락(다른 화면 내용)이 안 끊긴다. 카드로 세로로 쌓으면 같은 보험사 값끼리 눈으로
    이어보기 어렵다는 피드백을 받아 표로 되돌렸다 — 대신 팝업을 넓혀 쓰고(modal-card--wide),
    담보명 칸을 고정해 옆으로 스크롤해도 "지금 어느 항목을 보고 있는지"는 계속 보인다. */
@@ -3659,7 +3659,7 @@ button { cursor: pointer; font-family: inherit; }
 }
 .sim-card__title { flex: 1; font-size: 1.02rem; color: var(--heading); }
 
-/* 6개사 판정 분포를 표보다 먼저 보여주는 띠. */
+/* 보험사별 판정 분포를 표보다 먼저 보여주는 띠. */
 .sim-summary { margin-top: 12px; }
 .sim-summary__bar {
   display: flex;
