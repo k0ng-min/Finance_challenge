@@ -118,7 +118,7 @@ export function Home() {
         ))}
       </div>
 
-      <p className="home__footer">© 2026 BohumPen</p>
+      <p className="home__footer">© 2026 Finpoint</p>
 
       <AnimatePresence>
         {tourOpen && <WelcomeTour onClose={() => setTourOpen(false)} />}

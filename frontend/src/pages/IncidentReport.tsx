@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, type IncidentAnalysisOut, type UserPolicyOut, type TripSummaryOut, type OverlapReportOut, userMessage } from "../api";
 import { useApp } from "../context/AppContext";
@@ -102,6 +102,27 @@ export function IncidentReport() {
       setSelectedTripId((prev) => (prev != null && list.some((t) => t.trip_id === prev) ? prev : null));
     }).catch(() => {});
   }, [userId]);
+
+  // 지금 고른 보험으로 청구할 수 있는 여행만 남긴다.
+  //
+  // 예전에는 등록된 여행을 전부 보여줬다. 그래서 삼성화재 보험을 고른 뒤에도 현대해상으로
+  // 등록해 둔 여행이 목록에 떴고, 그걸 고르면 서류·실수방지·형광펜까지 엉뚱한 보험의
+  // 맥락으로 이어졌다. 아직 보험을 붙이지 않은 여행(user_policy_id == null)은 남겨 둔다 —
+  // 이번 접수에서 그 여행에 이 보험이 붙게 되고(backend incidents.py), 그게 정상 경로다.
+  const selectableTrips = useMemo(
+    () => (selectedPolicyId == null
+      ? trips
+      : trips.filter((t) => t.user_policy_id == null || t.user_policy_id === selectedPolicyId)),
+    [trips, selectedPolicyId],
+  );
+
+  // 보험을 바꿔서 고르고 있던 여행이 목록에서 빠지면 선택도 같이 놓는다 — 안 그러면
+  // 화면에 안 보이는 여행이 그대로 접수된다.
+  useEffect(() => {
+    setSelectedTripId((prev) =>
+      prev != null && !selectableTrips.some((t) => t.trip_id === prev) ? null : prev
+    );
+  }, [selectableTrips]);
 
   // 사고 일시의 선택 범위·안내 문구는 "고른 기존 여행"이든 "방금 만든 새 여행"이든
   // 똑같이 필요하다 — 두 경우를 같은 모양으로 맞춰 아래에서 한 번만 다룬다.
@@ -478,13 +499,13 @@ export function IncidentReport() {
               맥락이라 반드시 정하고 넘어간다. 등록된 여행이 없거나, 있어도 이번 사고가
               그중 어느 것도 아닐 수 있으므로 새 여행을 만드는 길을 항상 같이 둔다. */}
           <label style={{ marginTop: 14 }}>어느 여행에서 있었던 일인가요?</label>
-          {trips.length > 0 && (
+          {selectableTrips.length > 0 && (
             <PickerField
               value={newTrip ? "" : String(selectedTripId ?? "")}
               onChange={(v) => { setNewTrip(null); setSelectedTripId(Number(v)); }}
               modalTitle="여행 선택"
               placeholder="여행을 선택하세요"
-              options={trips.map((t) => ({
+              options={selectableTrips.map((t) => ({
                 value: String(t.trip_id),
                 label: `${t.destination} · ${t.start_date} ~ ${t.end_date}`,
               }))}

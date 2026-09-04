@@ -31,6 +31,10 @@ class TripSummaryOut(BaseModel):
     start_date: str | None
     end_date: str | None
     risk_level: str | None
+    # 이 여행에 대해 등록해 둔 보험. 사고 접수 화면은 보험을 먼저 고르고 여행을 고르는데,
+    # 이 값이 없으면 "지금 고른 보험의 여행"을 가려낼 수 없어 다른 보험으로 등록한 여행까지
+    # 같이 보였다. 아직 보험을 붙이지 않은 여행은 None이며, 어느 보험을 골라도 보인다.
+    user_policy_id: int | None = None
 
 
 class IncidentSummaryOut(BaseModel):
@@ -95,6 +99,7 @@ def list_trips(
             start_date=t.start_date.isoformat() if t.start_date else None,
             end_date=t.end_date.isoformat() if t.end_date else None,
             risk_level=risk_level,
+            user_policy_id=t.user_policy_id,
         ))
     return out
 

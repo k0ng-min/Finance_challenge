@@ -33,7 +33,6 @@ export function hasSeenTour(): boolean {
 export function WelcomeTour({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
   const [scene, setScene] = useState(0);
-  const [dontShowAgain, setDontShowAgain] = useState(true);
   // 사람이 점이나 화살표를 눌렀다 = 자기 속도로 보겠다는 뜻이다. 그 뒤로는 안 넘긴다.
   const [paused, setPaused] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -44,16 +43,15 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
     window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   const playing = !paused && !reduceMotion;
 
+  // 한 번 닫으면 다시 띄우지 않는다 — 처음 온 사람에게만 필요한 안내다.
   const close = useCallback(() => {
-    if (dontShowAgain) {
-      try {
-        localStorage.setItem(LS_TOUR_SEEN, "1");
-      } catch {
-        // 저장에 실패하면 다음에 또 뜬다. 안내가 한 번 더 보이는 것뿐이라 그냥 둔다.
-      }
+    try {
+      localStorage.setItem(LS_TOUR_SEEN, "1");
+    } catch {
+      // 저장에 실패하면 다음에 또 뜬다. 안내가 한 번 더 보이는 것뿐이라 그냥 둔다.
     }
     onClose();
-  }, [dontShowAgain, onClose]);
+  }, [onClose]);
 
   // 마지막 장면에서는 멈춘다 — 저 혼자 닫히면 형광펜이 그어지는 장면을 놓친다.
   useEffect(() => {
@@ -195,15 +193,6 @@ export function WelcomeTour({ onClose }: { onClose: () => void }) {
             내 여행부터 준비하기
           </motion.button>
         )}
-
-        <label className="tour-card__again">
-          <input
-            type="checkbox"
-            checked={dontShowAgain}
-            onChange={(e) => setDontShowAgain(e.target.checked)}
-          />
-          다시 보지 않기
-        </label>
       </motion.div>
     </motion.div>
   );

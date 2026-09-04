@@ -2231,17 +2231,6 @@ button { cursor: pointer; font-family: inherit; }
 }
 .tour-card__cta:hover { background: var(--primary-dark); }
 
-.tour-card__again {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.76rem;
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-}
-.tour-card__again input { accent-color: var(--primary); cursor: pointer; }
-
 /* 근거 검증 현황(EvidenceStats). "근거 없는 결과를 내지 않는다"는 원칙이 실제로 지켜지고
    있는지를 DB 실측 숫자로 보여주는 구획이라, 못 채운 항목도 가리지 않고 같은 모양으로 둔다. */
 .evidence { margin-top: 26px; }
@@ -2478,6 +2467,22 @@ button { cursor: pointer; font-family: inherit; }
 }
 .modal-policy strong { display: block; font-size: 0.88rem; color: var(--heading); margin-bottom: 4px; }
 .modal-policy__row { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.modal-policy__note { font-size: 0.8rem; color: var(--muted); margin: 0; }
+/* 담보 목록을 여는 줄. 접힌 상태가 기본이라, 눌러서 펼칠 수 있다는 게 보여야 한다. */
+.modal-policy__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+}
+.modal-policy__toggle:hover { color: var(--text); }
 
 
 .loading-screen {

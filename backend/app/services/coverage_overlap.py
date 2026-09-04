@@ -10,8 +10,29 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 
 from app.models.external import ExternalPolicy, OverlapRule
-from app.models.kb import Clause, CoverageStd
+from app.models.kb import Clause, Coverage, CoverageStd, Insurer, PolicyVersion, Product
 from app.services.clause_quote import quote_clause
+
+
+def insurer_coverage_std_ids(db: Session, insurer_code: str) -> list[int]:
+    """그 보험사의 약관에 실제로 들어 있는 표준담보 id들.
+
+    아직 가입하지 않은 후보 보험사를 진단 대상으로 삼을 때 쓴다. 등급(plan)이 아니라
+    보험사 단위인 이유: 담보는 policy_version(약관)에 매달려 있고 등급은 그 담보의
+    '금액'만 바꾼다 — 등급별로 담보 목록을 따로 가진 표가 KB에 없다. 없는 구분을
+    지어내지 않고, 이 값이 보험사 단위라는 사실을 부르는 쪽에서 그대로 말한다.
+    """
+    rows = (
+        db.query(Coverage.coverage_std_id)
+        .join(PolicyVersion, Coverage.policy_version_id == PolicyVersion.policy_version_id)
+        .join(Product, PolicyVersion.product_id == Product.product_id)
+        .join(Insurer, Product.insurer_id == Insurer.insurer_id)
+        .filter(Insurer.code == insurer_code)
+        .filter(Coverage.coverage_std_id.isnot(None))
+        .distinct()
+        .all()
+    )
+    return sorted({row[0] for row in rows})
 
 
 @dataclass

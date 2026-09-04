@@ -602,6 +602,8 @@ export interface TripSummaryOut {
   start_date: string | null;
   end_date: string | null;
   risk_level: string | null;
+  /** 이 여행에 등록해 둔 보험. 아직 보험을 붙이지 않았으면 null. */
+  user_policy_id: number | null;
 }
 
 export interface IncidentSummaryOut {

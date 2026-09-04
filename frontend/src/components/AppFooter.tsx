@@ -4,5 +4,5 @@
  * 끝까지 내리면 화면마다 마감이 달라 보였다. 홈은 프레임 높이에 딱 맞춰 배치가 짜여
  * 있어(flex 밴드) 자기 것을 그대로 두고, 나머지 화면은 App이 라우트 뒤에 이걸 한 번 붙인다. */
 export function AppFooter() {
-  return <p className="app-footer">© 2026 BohumPen</p>;
+  return <p className="app-footer">© 2026 Finpoint</p>;
 }

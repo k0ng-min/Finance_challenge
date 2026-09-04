@@ -36,6 +36,41 @@ function googleAuthorizeUrl(clientId: string, redirectUri: string) {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
+/** 보험 한 건을 모달에서 한 줄로 보여준다. 담보 목록은 접어 둔다.
+ *
+ * 예전에는 담보를 전부 펼쳐 놨다. 보험사에 따라 15~27줄이라, 여행 기록을 눌렀을 때
+ * "상해사망·후유장해"가 여섯 줄 이어지는 화면이 먼저 나왔다. 사용자가 그 화면에서
+ * 확인하려던 건 "어느 여행에 어느 보험을 걸어 놨더라"인데 그게 스크롤 위로 밀려났다.
+ * 담보 수만 먼저 말하고, 필요할 때 펼치게 한다. */
+function PolicySummary({ policy }: { policy: UserPolicyOut }) {
+  const [open, setOpen] = useState(false);
+  const name = shortInsurerName(
+    policy.matched_insurer_code, policy.matched_insurer_name ?? policy.insurer_name_raw
+  );
+  return (
+    <div className="modal-policy">
+      <strong>{name} 여행자보험</strong>
+      {policy.coverages.length === 0 ? (
+        <p className="modal-policy__note">담보 정보가 없어요.</p>
+      ) : (
+        <>
+          <button type="button" className="modal-policy__toggle" onClick={() => setOpen((v) => !v)}>
+            <span>담보 {policy.coverages.length}종</span>
+            <span aria-hidden>{open ? "접기 ⌃" : "자세히 ⌄"}</span>
+          </button>
+          {open && policy.coverages.map((c) => (
+            <div className="modal-policy__row" key={c.user_coverage_id}>
+              <span>{c.matched_std_name ?? c.raw_name}</span>
+              <span>{c.subscribed_amount ?? "-"}</span>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
+  );
+}
+
+
 export function Account() {
   const {
     isLoggedIn, userId, nickname, email, age, logout, deleteAccount,
@@ -153,6 +188,10 @@ export function Account() {
     refreshHistory();
   }
 
+  // 이 여행에 실제로 걸어 둔 보험 한 건. trip.user_policy_id가 그 연결이다.
+  const tripPolicy = tripModal
+    ? policies.find((p) => p.user_policy_id === tripModal.user_policy_id)
+    : undefined;
   const linkedPolicy = incidentModal
     ? policies.find((p) => p.user_policy_id === incidentModal.user_policy_id)
     : undefined;
@@ -277,19 +316,13 @@ export function Account() {
               <p style={{ marginTop: 0 }}>
                 <strong>{tripModal.destination}</strong>으로의 여행 · {tripModal.start_date} ~ {tripModal.end_date}
               </p>
-              <p className="muted" style={{ fontSize: "0.82rem", marginBottom: 12 }}>등록된 보험</p>
-              {policies.length === 0 && <p className="muted" style={{ fontSize: "0.85rem" }}>등록된 보험이 없어요.</p>}
-              {policies.map((p) => (
-                <div className="modal-policy" key={p.user_policy_id}>
-                  <strong>{shortInsurerName(p.matched_insurer_code, p.matched_insurer_name ?? p.insurer_name_raw)} 여행자보험</strong>
-                  {p.coverages.map((c) => (
-                    <div className="modal-policy__row" key={c.user_coverage_id}>
-                      <span>{c.matched_std_name ?? c.raw_name}</span>
-                      <span>{c.subscribed_amount ?? "-"}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
+              {/* 등록된 보험을 전부 늘어놓던 자리다. 이 여행에 실제로 걸어 둔 보험만
+                  보여준다 — 다른 여행에 든 보험까지 같이 뜨면 어느 게 이 여행 건지
+                  화면만 봐서는 알 수 없었다. */}
+              <p className="muted" style={{ fontSize: "0.82rem", marginBottom: 8 }}>이 여행에 등록한 보험</p>
+              {tripPolicy
+                ? <PolicySummary policy={tripPolicy} />
+                : <p className="muted" style={{ fontSize: "0.85rem" }}>아직 등록한 보험이 없어요.</p>}
               {editingTrip ? (
                 <>
                   <label>
@@ -384,15 +417,7 @@ export function Account() {
               )}
               <p className="muted" style={{ fontSize: "0.82rem", margin: "12px 0 8px" }}>연계된 보험</p>
               {linkedPolicy ? (
-                <div className="modal-policy">
-                  <strong>{shortInsurerName(linkedPolicy.matched_insurer_code, linkedPolicy.matched_insurer_name ?? linkedPolicy.insurer_name_raw)} 여행자보험</strong>
-                  {linkedPolicy.coverages.map((c) => (
-                    <div className="modal-policy__row" key={c.user_coverage_id}>
-                      <span>{c.matched_std_name ?? c.raw_name}</span>
-                      <span>{c.subscribed_amount ?? "-"}</span>
-                    </div>
-                  ))}
-                </div>
+                <PolicySummary policy={linkedPolicy} />
               ) : (
                 <p className="muted" style={{ fontSize: "0.85rem" }}>연계된 보험이 없어요.</p>
               )}

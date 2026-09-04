@@ -41,6 +41,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 
 from app.models.kb import Insurer, InsurerComparisonMetric, InsurerPremium
+from app.services.coverage_overlap import diagnose, insurer_coverage_std_ids
 from app.services.insurer_tiers import plan_name_for_tier
 
 WEIGHTS_PATH = pathlib.Path(__file__).resolve().parents[1] / "data" / "ranking_weights.json"
@@ -79,14 +80,15 @@ COMPANION_TO_INCIDENT: dict[str, tuple[str, ...]] = {
     "반려동물 동반": ("SPC", "LIA"),
 }
 
-# 기존보험 종류가 어느 사고유형과 겹치는지. 겹치면 그 유형의 무게를 낮춘다 —
-# 이미 받을 수 있는 보장에 또 돈을 쓰지 않게.
-EXTERNAL_KIND_TO_INCIDENT: dict[str, tuple[str, ...]] = {
-    "MEDICAL_INDEMNITY": ("INJ", "ILL"),
-    "ACCIDENT": ("INJ",),
-    "DAILY_LIABILITY": ("LIA",),
-    "DRIVER": ("LIA",),
-}
+# 기존보험 종류를 사고유형(L1)에 직접 매핑하던 표는 없앴다.
+#
+# 예전에는 MEDICAL_INDEMNITY → INJ·ILL, DRIVER → LIA 식으로 넓게 이어 붙이고 그 유형의
+# 무게를 낮췄다. 그런데 근거 기반 중복 판정 엔진(services/coverage_overlap.py)은 바로
+# 그 조합들을 UNKNOWN — "약관 근거를 확보하지 못했다" — 으로 판정하고 있었다. 한쪽은
+# "모른다"고 말하면서 다른 쪽은 "이미 덮고 있다"고 감점했으니, 두 화면의 설명이 서로
+# 어긋났다. 종류만 아는 기존보험으로 사고유형 전체를 기보장 처리하지 않는다.
+#
+# 기존보험의 영향은 이제 overlap 축 한 곳에서만, 실제 OverlapRule 근거로만 반영한다.
 
 
 @dataclass
@@ -146,7 +148,6 @@ def incident_weights(
     trip_context: dict | None,
     *,
     age: int | None = None,
-    external_kinds: list[str] | None = None,
 ) -> dict[str, float]:
     """사고유형별 무게. 여행 준비에서 고른 것이 전부 여기로 들어온다."""
     config = load_weights()
@@ -188,11 +189,7 @@ def incident_weights(
         weights["ILL"] += 0.5
         weights["EMG"] += 0.3
 
-    # 7) 기존보험 — 이미 받을 수 있는 보장은 무게를 낮춘다(0 아래로는 내리지 않는다).
-    for kind in external_kinds or []:
-        for code in EXTERNAL_KIND_TO_INCIDENT.get(kind, ()):
-            weights[code] = max(0.2, weights[code] - 0.5)
-
+    # 기존보험은 여기서 다루지 않는다 — 위 주석 참고. overlap 축이 근거로만 반영한다.
     return weights
 
 
@@ -318,25 +315,82 @@ def clause_score(entry: dict) -> AxisScore:
                      detail=f"약관 근거 {len(levels)}개 축 평균 {sum(levels) / len(levels):.1f}단계")
 
 
-def overlap_score(db: Session, insurer_code: str, plan_tier: int,
-                  weights: dict[str, float], external_kinds: list[str] | None) -> AxisScore:
-    """기존보험과 겹치지 않는 쪽에 가점.
+#: 근거로 확인된 관계마다 "보완효용"을 얼마로 볼지.
+#
+#   NO_OVERLAP        겹치지 않는다는 근거가 있다 → 온전히 새로 얻는 보장
+#   PARTIAL           일부만 겹친다는 근거가 있다 → 절반만 인정
+#   DUPLICATE_PRORATA 비례분담·1개 계약 한정 지급이 근거로 확인됐다 → 새로 얻는 것이 없다
+#
+# DUPLICATE_FIXED와 UNKNOWN은 이 표에 없다. 둘 다 중립이라 분모에도 들어가지 않는다.
+#   DUPLICATE_FIXED — 정액 담보는 계약마다 각각 지급된다. 겹친다는 이유만으로 깎으면
+#                     사실과 반대되는 감점이 된다.
+#   UNKNOWN         — 근거가 없다는 뜻이지 "겹친다"도 "안 겹친다"도 아니다.
+COMPLEMENT_VALUE = {
+    "NO_OVERLAP": 1.0,
+    "PARTIAL": 0.5,
+    "DUPLICATE_PRORATA": 0.0,
+}
 
-    겹치는 사고유형의 무게는 이미 incident_weights에서 낮췄다. 여기서는 "낮춰진 무게가
-    실린 항목에서 이 보험사가 얼마나 잘하는가"를 본다 — 즉 비는 자리를 메우는 정도다."""
-    if not external_kinds:
+
+def overlap_score(db: Session, insurer_code: str,
+                  external_policies: list | None) -> AxisScore:
+    """기존보험 위에 이 보험사가 얼마나 '새로' 얹어 주는지를, 약관 근거로만 판단한다.
+
+    사고유형(L1)을 넓게 기보장 처리하던 예전 방식을 버리고, 중복 진단 화면과 똑같은
+    엔진(services/coverage_overlap.diagnose)을 그대로 쓴다. 대상 담보만 다르다 — 저기선
+    "내가 등록한 여행자보험"이고 여기선 "후보 보험사가 파는 담보"다. 판정 규칙과 근거
+    조항은 같으므로 두 화면의 설명이 어긋날 수 없다.
+
+    근거로 판정된 관계가 하나도 없으면 점수를 만들지 않고 축을 내린다(available=False).
+    모르는 것을 0점으로 세면 "자료가 없다"가 "겹친다"로 읽히고, 그건 틀린 감점이다.
+    """
+    if not external_policies:
         return AxisScore("overlap", AXIS_LABELS["overlap"], 0.5,
                          detail="등록한 기존보험이 없어 겹침 없이 계산했어요")
-    covered: set[str] = set()
-    for kind in external_kinds:
-        covered.update(EXTERNAL_KIND_TO_INCIDENT.get(kind, ()))
-    gap_weights = {code: (0.0 if code in covered else w) for code, w in weights.items()}
-    if sum(gap_weights.values()) <= 0:
-        return AxisScore("overlap", AXIS_LABELS["overlap"], 0.5,
-                         detail="기존보험이 대부분을 덮고 있어요")
-    inner = amount_score(db, insurer_code, plan_tier, gap_weights)
-    return AxisScore("overlap", AXIS_LABELS["overlap"], inner.score, available=inner.available,
-                     detail="기존보험이 안 덮는 담보만 따로 계산했어요")
+
+    target_ids = insurer_coverage_std_ids(db, insurer_code)
+    if not target_ids:
+        return AxisScore("overlap", AXIS_LABELS["overlap"], 0.0, available=False,
+                         detail="이 보험사의 담보 자료가 없어 겹침을 판단하지 않았어요")
+
+    report = diagnose(db, external_policies=external_policies, target_coverage_std_ids=target_ids)
+
+    judged = [
+        f for f in (report.duplicates + report.gaps)
+        if f.relation in COMPLEMENT_VALUE
+    ]
+    fixed = len(report.fixed_ok)
+    unknown = len(report.unknown)
+
+    if not judged:
+        return AxisScore(
+            "overlap", AXIS_LABELS["overlap"], 0.0, available=False,
+            detail=(f"기존보험과의 관계를 확인할 약관 근거가 없어 이 축은 빼고 계산했어요"
+                    f" (근거 없음 {unknown}건" + (f", 정액 중복 {fixed}건" if fixed else "") + ")"),
+        )
+
+    score = sum(COMPLEMENT_VALUE[f.relation] for f in judged) / len(judged)
+
+    counts: dict[str, int] = {}
+    for f in judged:
+        counts[f.relation] = counts.get(f.relation, 0) + 1
+    parts = []
+    if counts.get("NO_OVERLAP"):
+        parts.append(f"안 겹침 {counts['NO_OVERLAP']}건")
+    if counts.get("PARTIAL"):
+        parts.append(f"일부 겹침 {counts['PARTIAL']}건")
+    if counts.get("DUPLICATE_PRORATA"):
+        parts.append(f"비례분담 중복 {counts['DUPLICATE_PRORATA']}건")
+    neutral = []
+    if fixed:
+        neutral.append(f"정액 중복 {fixed}건은 각각 다 받으므로 감점하지 않았어요")
+    if unknown:
+        neutral.append(f"근거 없는 {unknown}건은 중립으로 뒀어요")
+
+    detail = "약관 근거로 " + " · ".join(parts)
+    if neutral:
+        detail += " (" + ", ".join(neutral) + ")"
+    return AxisScore("overlap", AXIS_LABELS["overlap"], score, detail=detail)
 
 
 def activity_score(entry: dict, trip_context: dict | None) -> AxisScore:
@@ -382,7 +436,7 @@ def score_insurers(
     ranking: list[dict],
     age: int | None = None,
     sex: str | None = None,
-    external_kinds: list[str] | None = None,
+    external_policies: list | None = None,
 ) -> list[InsurerScore]:
     """(보험사 × 등급)마다 다섯 축을 계산해 0~100 총점으로 합산하고 내림차순 정렬한다.
 
@@ -391,7 +445,7 @@ def score_insurers(
     axis_weights = (config.get("axis_weights") or {}).get(tier_code) or _default_axis_weights()
     context = trip_context or {}
     trip_days = int(context.get("trip_days") or 1)
-    weights = incident_weights(context, age=age, external_kinds=external_kinds)
+    weights = incident_weights(context, age=age)
 
     results: list[InsurerScore] = []
     for entry in ranking:
@@ -400,7 +454,7 @@ def score_insurers(
             amount_score(db, code, plan_tier, weights),
             clause_score(entry),
             price_score(db, code, plan_tier, age=age, sex=sex, trip_days=trip_days),
-            overlap_score(db, code, plan_tier, weights, external_kinds),
+            overlap_score(db, code, external_policies),
             activity_score(entry, context),
         ]
         unavailable = {axis.code for axis in axes if not axis.available}

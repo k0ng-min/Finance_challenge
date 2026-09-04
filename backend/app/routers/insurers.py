@@ -680,12 +680,14 @@ def _subject_particle(word: str) -> str:
     return "은"
 
 
-def _external_policy_kinds(db: Session, user_id: int | None) -> list[str]:
-    """이 사용자가 등록해 둔 기존보험 종류. 없으면 빈 목록 — 겹침 축을 중립으로 둔다."""
+def _external_policies(db: Session, user_id: int | None) -> list[ExternalPolicy]:
+    """이 사용자가 등록해 둔 기존보험. 없으면 빈 목록 — 겹침 축을 중립으로 둔다.
+
+    종류(kind)만 뽑아 넘기던 것을 행 그대로 넘긴다. 겹침 축이 중복 진단 화면과 같은
+    엔진을 쓰게 됐고, 그 엔진이 기존보험 객체를 받기 때문이다."""
     if user_id is None:
         return []
-    rows = db.query(ExternalPolicy.kind).filter(ExternalPolicy.user_id == user_id).all()
-    return sorted({row[0] for row in rows if row[0]})
+    return db.query(ExternalPolicy).filter(ExternalPolicy.user_id == user_id).all()
 
 
 @router.get("/ranking", response_model=InsurerRankingOut)
@@ -736,7 +738,7 @@ def get_insurer_ranking(
                 f"{names}{_subject_particle(dropped[-1])} {TIER_LABELS[plan_tier]} 등급 "
                 "상품이 없어 이번 비교에서 빠졌어요."
             )
-        external_kinds = _external_policy_kinds(db, user_id)
+        external_policies = _external_policies(db, user_id)
         weighted = ranking_score.score_insurers(
             db,
             tier_code=tier,
@@ -745,7 +747,7 @@ def get_insurer_ranking(
             ranking=ranking,
             age=age,
             sex=sex,
-            external_kinds=external_kinds,
+            external_policies=external_policies,
         )
 
         tier_meta = TIERS.get(tier, {})
